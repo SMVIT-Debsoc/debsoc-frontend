@@ -193,7 +193,7 @@ export default function HomeClient() {
         </nav>
 
         {/* Main Background Mic Image */}
-        <div className="mic-wrapper absolute inset-0 z-10 flex items-center justify-center md:justify-start md:left-[10%] pointer-events-none">
+        <div className={`mic-wrapper absolute inset-0 z-10 flex items-center justify-center md:justify-start md:left-[10%] pointer-events-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isExploreOpen ? "opacity-0 scale-95 blur-md translate-y-8" : "opacity-100 scale-100 blur-0 translate-y-0"}`}>
           <img
             src="/mic-nobg.png"
             alt="Silver Retro Microphone"
@@ -203,7 +203,7 @@ export default function HomeClient() {
         </div>
 
         {/* Right Side Content Container */}
-        <div className="absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 md:pl-0 z-0">
+        <div className={`absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 md:pl-0 z-0 transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isExploreOpen ? "opacity-0 translate-x-16" : "opacity-100 translate-x-0"}`}>
           {/* Mission Box & Events Row */}
           <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
             {/* Mission Box */}
@@ -305,7 +305,7 @@ export default function HomeClient() {
         </div>
 
         {/* Bottom Left Titling */}
-        <div className="hero-text-container absolute bottom-12 md:bottom-20 left-8 md:left-12 z-20 flex flex-col pointer-events-none">
+        <div className={`hero-text-container absolute bottom-12 md:bottom-20 left-8 md:left-12 z-20 flex flex-col pointer-events-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isExploreOpen ? "opacity-0 translate-y-12 blur-sm" : "opacity-100 translate-y-0 blur-0"}`}>
           <h1 className="hero-text text-[3rem] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 max-w-4xl drop-shadow-lg">
             DEBSOC:
             <br />
@@ -342,7 +342,7 @@ export default function HomeClient() {
 
       {/* Fullscreen Explore Overlay */}
       <div
-        className={`fixed inset-0 z-[100] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center justify-start ${
+        className={`fixed inset-0 z-[100] transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center justify-start ${
           isExploreOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -350,7 +350,7 @@ export default function HomeClient() {
       >
         {/* Backdrop Blob / Blur */}
         <div
-          className={`absolute inset-0 bg-black/60 backdrop-blur-3xl transition-opacity duration-700 ${
+          className={`absolute inset-0 bg-black/60 backdrop-blur-3xl transition-opacity duration-[1000ms] ${
             isExploreOpen ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setIsExploreOpen(false)}
@@ -366,7 +366,7 @@ export default function HomeClient() {
         {/* Fullscreen Slider Container */}
         <div
           ref={sliderRef}
-          className={`relative z-[105] flex gap-12 px-[10vw] overflow-x-auto w-full h-[60vh] md:h-[70vh] items-center hide-scrollbar transition-transform duration-[1000ms] ease-out ${
+          className={`relative z-[105] flex gap-12 px-[10vw] overflow-x-auto w-full h-[60vh] md:h-[70vh] items-center hide-scrollbar transition-transform duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isExploreOpen
               ? "translate-x-0 opacity-100"
               : "translate-x-32 opacity-0"
