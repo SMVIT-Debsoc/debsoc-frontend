@@ -7,6 +7,7 @@ import {useGSAP} from "@gsap/react";
 import {Menu, Sparkles, X} from "lucide-react";
 import Image from "next/image";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
+import TeamSection from "./TeamSection";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -19,6 +20,8 @@ export default function HomeClient() {
   const whyChooseRef = useRef<HTMLDivElement>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
   const [isWhyChooseOpen, setIsWhyChooseOpen] = useState(false);
+  const [isTeamOpen, setIsTeamOpen] = useState(false);
+  const teamRef = useRef<HTMLDivElement>(null);
 
   // Map vertical wheel scroll to the explore overlay logic
   useEffect(() => {
@@ -27,6 +30,18 @@ export default function HomeClient() {
       if (Math.abs(e.deltaY) < 10) return;
 
       // Ensure that wheel events bubbling up from the slider don't conflict
+      // Handle Team section scroll
+      if (isTeamOpen) {
+        if (teamRef.current) {
+          const tr = teamRef.current;
+          if (e.deltaY < 0 && tr.scrollTop <= 0) {
+            setIsTeamOpen(false);
+            setIsWhyChooseOpen(true);
+          }
+        }
+        return;
+      }
+
       if (isWhyChooseOpen) {
         if (whyChooseRef.current) {
            const wc = whyChooseRef.current;
@@ -34,6 +49,12 @@ export default function HomeClient() {
            if (e.deltaY < 0 && wc.scrollTop <= 0) {
               setIsWhyChooseOpen(false);
               setIsExploreOpen(true);
+           }
+           // If we scroll down at the bottom, go to Team
+           const isAtBottom = wc.scrollTop + wc.clientHeight >= wc.scrollHeight - 2;
+           if (e.deltaY > 0 && isAtBottom) {
+              setIsWhyChooseOpen(false);
+              setIsTeamOpen(true);
            }
         }
         return;
@@ -68,7 +89,7 @@ export default function HomeClient() {
 
     window.addEventListener("wheel", handleWheel);
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [isExploreOpen, isWhyChooseOpen]);
+  }, [isExploreOpen, isWhyChooseOpen, isTeamOpen]);
 
   useGSAP(
     () => {
@@ -190,9 +211,9 @@ export default function HomeClient() {
   return (
     // Outer Root container that translates natively
     <div className="bg-[#000000] h-screen w-full overflow-hidden relative">
-      {/* Container that slides up to reveal Why Choose Debsoc */}
+      {/* Container that slides up to reveal sections */}
       <div 
-        className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isWhyChooseOpen ? "-translate-y-full" : "translate-y-0"}`}
+        className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isTeamOpen ? "-translate-y-[200%]" : isWhyChooseOpen ? "-translate-y-full" : "translate-y-0"}`}
       >
         {/* Main Hero Container */}
         <div
@@ -348,12 +369,12 @@ export default function HomeClient() {
 
         {/* Footer Links */}
         <div className="absolute bottom-8 right-8 md:right-12 z-20 flex gap-6 text-xs text-zinc-400 font-light tracking-wider hero-text-container">
-          <a
-            href="#"
+          <button
+            onClick={() => { setIsTeamOpen(true); }}
             className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
           >
             Our Team
-          </a>
+          </button>
           <a
             href="#"
             className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
@@ -457,6 +478,9 @@ export default function HomeClient() {
 
       {/* Why Choose Debsoc Section Component */}
       <WhyChooseDebsoc isWhyChooseOpen={isWhyChooseOpen} whyChooseRef={whyChooseRef} />
+
+      {/* Team Section */}
+      <TeamSection isTeamOpen={isTeamOpen} teamRef={teamRef} />
       
       </div>
 
