@@ -14,7 +14,38 @@ if (typeof window !== "undefined") {
 export default function HomeClient() {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
+
+  // Map vertical wheel scroll to the explore overlay logic
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Ignore very small scroll deltas
+      if (Math.abs(e.deltaY) < 10) return;
+
+      if (!isExploreOpen) {
+        // If closed, and user scrolls down, expand the options!
+        if (e.deltaY > 0) {
+          setIsExploreOpen(true);
+        }
+      } else {
+        // If opened, map the vertical wheel to horizontal slider scrolling
+        if (sliderRef.current) {
+          const slider = sliderRef.current;
+          if (e.deltaY < 0 && slider.scrollLeft <= 0) {
+            // Scrolled up while at the very start -> close it!
+            setIsExploreOpen(false);
+          } else {
+            // Scroll the horizontal track
+            slider.scrollBy({left: e.deltaY * 1.5});
+          }
+        }
+      }
+    };
+
+    window.addEventListener("wheel", handleWheel);
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [isExploreOpen]);
 
   useGSAP(
     () => {
@@ -152,7 +183,7 @@ export default function HomeClient() {
           </div>
 
           <div className="flex items-center gap-6 z-50 relative">
-            <button 
+            <button
               className="text-white opacity-80 hover:opacity-100 transition-opacity"
               onClick={() => setIsExploreOpen(true)}
             >
@@ -195,7 +226,7 @@ export default function HomeClient() {
                 <h3 className="text-zinc-200 text-lg tracking-[0.1em] uppercase font-light">
                   Explore
                 </h3>
-                <button 
+                <button
                   onClick={() => setIsExploreOpen(true)}
                   className="text-xs text-white/50 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/10 px-3 py-1 rounded transition-all"
                 >
@@ -206,16 +237,27 @@ export default function HomeClient() {
               {/* Cards Scroll Container */}
               <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar w-full relative">
                 {[
-                  { title: "Team", sub1: "Current Roster", sub2: "Board Members" },
-                  { title: "Achievements", sub1: "Trophies", sub2: "Milestones" },
-                  { title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters" },
-                  { title: "Debate Timer", sub1: "Launch App", sub2: "Settings" },
-                  { title: "Session", sub1: "Next Meet", sub2: "Resources" },
-                  { title: "Equity", sub1: "Guidelines", sub2: "Report" },
-                  { title: "Gallery", sub1: "Photos", sub2: "Videos" }
+                  {
+                    title: "Team",
+                    sub1: "Current Roster",
+                    sub2: "Board Members",
+                  },
+                  {title: "Achievements", sub1: "Trophies", sub2: "Milestones"},
+                  {
+                    title: "Alumni",
+                    sub1: "Hall of Fame",
+                    sub2: "Past Debaters",
+                  },
+                  {title: "Debate Timer", sub1: "Launch App", sub2: "Settings"},
+                  {title: "Session", sub1: "Next Meet", sub2: "Resources"},
+                  {title: "Equity", sub1: "Guidelines", sub2: "Report"},
+                  {title: "Gallery", sub1: "Photos", sub2: "Videos"},
                 ].flatMap((navItem, i) => [
                   // Rendering 2 cards for each navbar item as requested
-                  <div key={`${navItem.title}-1`} className="event-card relative min-w-[280px] h-[160px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900">
+                  <div
+                    key={`${navItem.title}-1`}
+                    className="event-card relative min-w-[280px] h-[160px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
+                  >
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10"></div>
                     <img
                       src={`/event${(i % 2) + 1}.png`}
@@ -224,7 +266,8 @@ export default function HomeClient() {
                     />
                     <div className="absolute bottom-4 left-4 z-20 pr-4">
                       <h4 className="text-sm text-white font-light uppercase tracking-wider leading-snug">
-                        {navItem.title}:<br />{navItem.sub1}
+                        {navItem.title}:<br />
+                        {navItem.sub1}
                       </h4>
                     </div>
                     <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -233,7 +276,10 @@ export default function HomeClient() {
                       </div>
                     </div>
                   </div>,
-                  <div key={`${navItem.title}-2`} className="event-card relative min-w-[280px] h-[160px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900">
+                  <div
+                    key={`${navItem.title}-2`}
+                    className="event-card relative min-w-[280px] h-[160px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
+                  >
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10"></div>
                     <img
                       src={`/event${((i + 1) % 2) + 1}.png`}
@@ -242,7 +288,8 @@ export default function HomeClient() {
                     />
                     <div className="absolute bottom-4 left-4 z-20 pr-4">
                       <h4 className="text-sm text-white font-light uppercase tracking-wider leading-snug">
-                        {navItem.title}:<br />{navItem.sub2}
+                        {navItem.title}:<br />
+                        {navItem.sub2}
                       </h4>
                     </div>
                     <div className="absolute inset-0 z-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -250,7 +297,7 @@ export default function HomeClient() {
                         <X size={14} /> View
                       </div>
                     </div>
-                  </div>
+                  </div>,
                 ])}
               </div>
             </div>
@@ -294,20 +341,22 @@ export default function HomeClient() {
       </div>
 
       {/* Fullscreen Explore Overlay */}
-      <div 
+      <div
         className={`fixed inset-0 z-[100] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center justify-start ${
-          isExploreOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isExploreOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
       >
         {/* Backdrop Blob / Blur */}
-        <div 
+        <div
           className={`absolute inset-0 bg-black/60 backdrop-blur-3xl transition-opacity duration-700 ${
             isExploreOpen ? "opacity-100" : "opacity-0"
-          }`} 
+          }`}
           onClick={() => setIsExploreOpen(false)}
         ></div>
-        
-        <button 
+
+        <button
           className="absolute top-8 right-8 md:right-12 text-white z-[110] p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90"
           onClick={() => setIsExploreOpen(false)}
         >
@@ -315,21 +364,27 @@ export default function HomeClient() {
         </button>
 
         {/* Fullscreen Slider Container */}
-        <div 
+        <div
+          ref={sliderRef}
           className={`relative z-[105] flex gap-12 px-[10vw] overflow-x-auto w-full h-[60vh] md:h-[70vh] items-center hide-scrollbar transition-transform duration-[1000ms] ease-out ${
-            isExploreOpen ? "translate-x-0 opacity-100" : "translate-x-32 opacity-0"
+            isExploreOpen
+              ? "translate-x-0 opacity-100"
+              : "translate-x-32 opacity-0"
           }`}
         >
           {[
-            { title: "Team", sub1: "Current Roster", sub2: "Board Members" },
-            { title: "Achievements", sub1: "Trophies", sub2: "Milestones" },
-            { title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters" },
-            { title: "Debate Timer", sub1: "Launch App", sub2: "Settings" },
-            { title: "Session", sub1: "Next Meet", sub2: "Resources" },
-            { title: "Equity", sub1: "Guidelines", sub2: "Report" },
-            { title: "Gallery", sub1: "Photos", sub2: "Videos" }
+            {title: "Team", sub1: "Current Roster", sub2: "Board Members"},
+            {title: "Achievements", sub1: "Trophies", sub2: "Milestones"},
+            {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters"},
+            {title: "Debate Timer", sub1: "Launch App", sub2: "Settings"},
+            {title: "Session", sub1: "Next Meet", sub2: "Resources"},
+            {title: "Equity", sub1: "Guidelines", sub2: "Report"},
+            {title: "Gallery", sub1: "Photos", sub2: "Videos"},
           ].flatMap((navItem, i) => [
-            <div key={`full-${navItem.title}-1`} className="relative min-w-[300px] md:min-w-[450px] lg:min-w-[550px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div
+              key={`full-${navItem.title}-1`}
+              className="relative min-w-[300px] md:min-w-[450px] lg:min-w-[550px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+            >
               <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500"></div>
               <img
                 src={`/event${(i % 2) + 1}.png`}
@@ -339,11 +394,16 @@ export default function HomeClient() {
               <div className="absolute bottom-8 left-8 z-20 pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
                 <h4 className="text-2xl md:text-4xl text-white font-light uppercase tracking-widest leading-snug drop-shadow-lg">
                   {navItem.title}:<br />
-                  <span className="text-zinc-300 text-lg md:text-2xl">{navItem.sub1}</span>
+                  <span className="text-zinc-300 text-lg md:text-2xl">
+                    {navItem.sub1}
+                  </span>
                 </h4>
               </div>
             </div>,
-            <div key={`full-${navItem.title}-2`} className="relative min-w-[300px] md:min-w-[450px] lg:min-w-[550px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+            <div
+              key={`full-${navItem.title}-2`}
+              className="relative min-w-[300px] md:min-w-[450px] lg:min-w-[550px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+            >
               <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500"></div>
               <img
                 src={`/event${((i + 1) % 2) + 1}.png`}
@@ -353,10 +413,12 @@ export default function HomeClient() {
               <div className="absolute bottom-8 left-8 z-20 pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
                 <h4 className="text-2xl md:text-4xl text-white font-light uppercase tracking-widest leading-snug drop-shadow-lg">
                   {navItem.title}:<br />
-                  <span className="text-zinc-300 text-lg md:text-2xl">{navItem.sub2}</span>
+                  <span className="text-zinc-300 text-lg md:text-2xl">
+                    {navItem.sub2}
+                  </span>
                 </h4>
               </div>
-            </div>
+            </div>,
           ])}
         </div>
       </div>
