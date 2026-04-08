@@ -13,8 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SMVIT Debsoc",
+  title: "SMVIT DEBSOC",
   description: "Debate Society of SMVIT",
+  icons: {
+    icon: [
+      {
+        url: "/quote-image.jpg",
+        type: "image/jpeg",
+      },
+    ],
+    apple: [
+      {
+        url: "/quote-image.jpg",
+        type: "image/jpeg",
+      },
+    ],
+   },
 };
 
 export default function RootLayout({
