@@ -32,9 +32,8 @@ const DEPARTMENTS: Department[] = [
     subtext: "Logistics / Control / Deploy",
     intro: "Orchestrating the rhythm of discourse. Our operational wing ensures the infrastructure of debate remains monolithic and unyielding.",
     icon: <Zap size={16} className="text-zinc-400" />,
-    lead: { name: "Aditya Kumar Singh", role: "Vice President", photo: "/media/AdityaKumarSingh.jpg", isLead: true },
+    lead: { name: "Dhruv Kumar", role: "Operational Lead", photo: "/media/DhruveKumar.jpg", isLead: true },
     members: [
-      { name: "Dhruv Kumar", role: "Operational Head", photo: "/media/DhruveKumar.jpg" },
       { name: "Rohan Singh", role: "Operational Head", photo: "/media/RohanSingh.jpg" },
     ]
   },
@@ -272,6 +271,11 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
           SECTION 01 — THE ARCHITECT (President)
           ───────────────────────────────────────────── */}
       <section id="identity" className="relative w-full min-h-screen flex flex-col justify-end overflow-hidden border-b border-white/[0.05]">
+        {/* Watermark Section Number */}
+        <div className="absolute top-12 right-8 md:right-12 text-[8rem] md:text-[14rem] font-black text-white/[0.02] leading-none pointer-events-none select-none">
+          01
+        </div>
+
         {/* Navigation header */}
         <div className="absolute top-0 left-0 w-full flex justify-between items-center p-8 md:px-12 z-30">
           <span className="text-[9px] md:text-xs tracking-[0.4em] uppercase text-zinc-500 font-light">
@@ -284,57 +288,75 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
           </div>
         </div>
 
-        {/* Tier label */}
-        <AnimatedSection className="absolute top-24 left-8 md:left-12 z-20">
-          <span className="text-[10px] tracking-[0.5em] uppercase text-zinc-700 block mb-3">
-            Presidential Anchor
-          </span>
-          <div className="w-12 h-[1px] bg-zinc-800" />
-        </AnimatedSection>
+        {/* Main Spread */}
+        <div className="flex flex-col lg:grid lg:grid-cols-12 items-start justify-between w-full px-8 md:px-12 pb-16 md:pb-24 gap-12 z-10 relative lg:h-full min-h-[90vh]">
+          
+          {/* Left Column: Title + Aditya */}
+          <div className="lg:col-span-7 pt-12 lg:pt-16 flex flex-col items-start w-full pr-12">
+            <AnimatedSection delay={200}>
+              <h1 className="text-[3.5rem] md:text-[5.5rem] lg:text-[7.5rem] font-black leading-none tracking-[-0.05em] uppercase pointer-events-none text-white mb-8">
+                PRESIDENT
+              </h1>
+            </AnimatedSection>
 
-        {/* Hero Content */}
-        <div className="flex flex-col md:flex-row items-end justify-between w-full px-8 md:px-12 pb-16 md:pb-24 gap-12 z-10 relative">
-          <AnimatedSection className="flex-1 max-w-3xl" delay={200}>
-            <h1 className="text-[5rem] md:text-[9.5rem] lg:text-[12rem] font-black leading-[0.85] tracking-[-0.05em] uppercase pointer-events-none">
-              THE
-              <br />
-              <span className="text-transparent [-webkit-text-stroke:1.5px_rgba(255,255,255,0.4)]">
-                ARCHITECT
-              </span>
-            </h1>
-            <p className="text-zinc-600 text-xs md:text-sm font-light leading-relaxed mt-10 max-w-sm">
-              Governing the monolithic structure of SMVIT DEBSOC. 
-              Engineering the second century of discourse through radical architecture and unyielding logic.
-            </p>
-            <div className="mt-8 flex items-center gap-4">
-              <div className="w-12 h-[1px] bg-zinc-800" />
-              <span className="text-[9px] tracking-[0.4em] uppercase text-zinc-500">
-                KANISHK CHAUDHARY
-              </span>
+            {/* ADITYA: Space added below headline + Scaled down labels */}
+            <div className="flex flex-col md:flex-row items-start gap-8 md:gap-12 mt-12">
+              <AnimatedSection className="group shrink-0" delay={400}>
+                <div className="relative w-44 h-64 md:w-80 md:h-[500px] overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
+                  <Image
+                    src="/media/AdityaKumarSingh.jpg"
+                    alt="Vice President"
+                    fill
+                    className="object-cover"
+                    sizes="600px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 shadow-[inset_0_-20px_40px_rgba(0,0,0,0.6)]" />
+                  
+                  {/* Name Inside Photo */}
+                  <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 text-left">
+                    <h3 className="text-sm md:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                      Aditya Kumar
+                      <br />
+                      Singh
+                    </h3>
+                  </div>
+                </div>
+              </AnimatedSection>
+
+              <AnimatedSection delay={500} className="flex flex-col pt-12 md:pt-16">
+                <span className="text-[2.5rem] md:text-[4.5rem] lg:text-[6rem] font-black uppercase tracking-[-0.05em] text-white leading-[0.75] mb-4">
+                  VICE
+                  <br />
+                  <span className="text-zinc-300">PRESIDENT</span>
+                </span>
+                <div className="w-16 h-[3px] bg-zinc-300/40 mb-2" />
+              </AnimatedSection>
             </div>
-          </AnimatedSection>
+          </div>
 
-          <AnimatedSection className="relative w-full md:w-[400px] lg:w-[480px] aspect-[1/1.2] flex-shrink-0" delay={400}>
-            <div className="absolute inset-0 overflow-hidden grayscale contrast-125 brightness-90 shadow-2xl">
-              <div className="absolute inset-0 border border-white/5 z-20" />
+          {/* Right Column: KANISHK (Narrower Photo) */}
+          <div className="lg:col-span-5 w-full h-full flex flex-col justify-end lg:items-end">
+            <AnimatedSection className="relative w-full max-w-[450px] aspect-[3/4.5] overflow-hidden grayscale contrast-125 brightness-90 shadow-2xl group lg:ml-auto" delay={400}>
+              <div className="absolute inset-0 border border-white/10 z-20 pointer-events-none" />
               <Image
                 src="/media/KanishkChaudhary.jpg"
                 alt="President"
                 fill
-                className="object-cover"
+                className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out"
                 priority
-                sizes="500px"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
-            </div>
-            
-            {/* Subtle floating label */}
-            <div className="absolute top-1/2 -left-12 -rotate-90 origin-left">
-              <span className="text-[9px] tracking-[0.6em] uppercase text-zinc-800">
-                DIRECTIVE / 01
-              </span>
-            </div>
-          </AnimatedSection>
+              
+              {/* Identity Overlay - Removed 'President' as per request */}
+              <div className="absolute bottom-12 right-10 text-right z-30">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-[-0.03em] leading-none text-white">
+                  Kanishk
+                  <br />
+                  Chaudhary
+                </h2>
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
 
         {/* Background Mic Mark */}
