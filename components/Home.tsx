@@ -579,9 +579,9 @@ export default function HomeClient() {
                                     ref={sliderRef}
                                     className="relative z-[105] flex gap-10 px-[8vw] overflow-x-auto w-full h-[65vh] md:h-[72vh] items-center hide-scrollbar"
                                 >
-                                    {navItems.flatMap((item, i) => [
+                                    {navItems.map((item, i) => (
                                         <div
-                                            key={`${item.title}-1`}
+                                            key={item.title}
                                             className="relative min-w-[300px] md:min-w-[420px] lg:min-w-[500px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
@@ -596,29 +596,14 @@ export default function HomeClient() {
                                                     <span className="text-zinc-300 text-lg md:text-2xl">
                                                         {item.sub1}
                                                     </span>
-                                                </h4>
-                                            </div>
-                                        </div>,
-                                        <div
-                                            key={`${item.title}-2`}
-                                            className="relative min-w-[300px] md:min-w-[420px] lg:min-w-[500px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
-                                        >
-                                            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
-                                            <img
-                                                src={`/event${((i + 1) % 2) + 1}.png`}
-                                                alt={item.title}
-                                                className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
-                                            />
-                                            <div className="absolute bottom-8 left-8 z-20 pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
-                                                <h4 className="text-2xl md:text-4xl text-white font-light uppercase tracking-widest leading-snug drop-shadow-lg">
-                                                    {item.title}:<br />
-                                                    <span className="text-zinc-300 text-lg md:text-2xl">
+                                                    <br />
+                                                    <span className="text-zinc-400 text-base md:text-lg">
                                                         {item.sub2}
                                                     </span>
                                                 </h4>
                                             </div>
-                                        </div>,
-                                    ])}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                             {/* ══════════════ END EXPLORE OVERLAY ══════════════════════ */}
