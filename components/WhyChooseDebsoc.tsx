@@ -47,6 +47,28 @@ export default function WhyChooseDebsoc({
   const lineRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Fix for scroll lock issue: Intercept wheel events to allow internal scrolling
+  // and only bubble up to Home.tsx when we hit the boundaries.
+  useEffect(() => {
+    const scroller = whyChooseRef.current;
+    if (!scroller || !isWhyChooseOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = scroller;
+      const isAtTop = scrollTop <= 0;
+      const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 5;
+
+      // If scrolling down and not yet at the bottom, or up and not yet at the top:
+      // Stop propagation so Home.tsx doesn't preventDefault() the native scroll.
+      if ((e.deltaY > 0 && !isAtBottom) || (e.deltaY < 0 && !isAtTop)) {
+        e.stopPropagation();
+      }
+    };
+
+    scroller.addEventListener("wheel", handleWheel, { passive: false });
+    return () => scroller.removeEventListener("wheel", handleWheel);
+  }, [isWhyChooseOpen, whyChooseRef]);
+
   // Set up GSAP scroll animations when section becomes visible
   useEffect(() => {
     if (!isWhyChooseOpen) {

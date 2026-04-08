@@ -183,9 +183,19 @@ export default function HomeClient() {
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       const cur = sectionRef.current;
+      const teamScroller = teamRef.current;
 
-      // Team section: let it scroll natively — do NOT intercept
-      if (cur === "team") return;
+      // Team section: let it scroll natively, but intercept at the top to go back
+      if (cur === "team") {
+        if (e.deltaY < 0 && teamScroller && teamScroller.scrollTop <= 0) {
+          // We are at the top and scrolling up — transition back to whychoose
+          e.preventDefault();
+          if (transitionLockRef.current) return;
+          lockTransition();
+          setSectionSynced("whychoose");
+        }
+        return;
+      }
 
       // For all other sections we own the scroll
       e.preventDefault();
