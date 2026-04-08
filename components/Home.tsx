@@ -14,14 +14,22 @@ if (typeof window !== "undefined") {
 }
 
 // ── Section enum so we never have stale-closure issues ─────────────────────────
-type Section = "home" | "explore" | "whychoose" | "team";
+type Section = "home" | "explore" | "whychoose" | "team" | "alumni";
 
 export default function HomeClient() {
+    const SECTION_BOUNDARY_EPSILON = 4;
+    const HOME_SCRUB_SENSITIVITY = 0.0012;
+    const HOME_SCRUB_TWEEN_DURATION = 0.75;
+    const MIC_INTRO_DURATION = 1.9;
+    const OPEN_EXPLORE_DURATION = 1.35;
+    const CLOSE_EXPLORE_DURATION = 0.85;
+
     const containerRef = useRef<HTMLDivElement>(null);
     const stickyRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
     const whyChooseRef = useRef<HTMLDivElement>(null);
     const teamRef = useRef<HTMLDivElement>(null);
+    const alumniRef = useRef<HTMLDivElement>(null);
 
     // mic refs
     const micWrapperRef = useRef<HTMLDivElement>(null);
@@ -212,13 +220,20 @@ export default function HomeClient() {
             gsap.from(".mic-element", {
                 y: -150,
                 opacity: 0,
-                duration: 1.6,
+                duration: MIC_INTRO_DURATION,
                 ease: "elastic.out(1, 0.55)",
                 delay: 0.1,
             });
         },
         {scope: containerRef},
     );
+
+    // Ensure the page itself stays pinned at top while using section-based scrolling.
+    useEffect(() => {
+        if (section === "home" && window.scrollY !== 0) {
+            window.scrollTo({top: 0, left: 0, behavior: "auto"});
+        }
+    }, [section]);
 
     // ══════════════════════════════════════════════════════════════════════
     //  Wheel handler — reads from sectionRef to avoid stale closures
@@ -227,19 +242,64 @@ export default function HomeClient() {
         const handleWheel = (e: WheelEvent) => {
             const cur = sectionRef.current;
             const teamScroller = teamRef.current;
+            const alumniScroller = alumniRef.current;
 
             // Team section: let it scroll natively, but intercept at the top to go back
             if (cur === "team") {
-                if (
-                    e.deltaY < 0 &&
-                    teamScroller &&
-                    teamScroller.scrollTop <= 0
-                ) {
+                const atTop = teamScroller
+                    ? teamScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
+                    : true;
+                const atBottom = teamScroller
+                    ? Math.abs(
+                          teamScroller.scrollHeight -
+                              teamScroller.clientHeight -
+                              teamScroller.scrollTop,
+                      ) <= SECTION_BOUNDARY_EPSILON
+                    : false;
+
+                if (e.deltaY < 0 && atTop) {
                     // We are at the top and scrolling up — transition back to whychoose
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
                     setSectionSynced("whychoose");
+                    return;
+                }
+
+                if (e.deltaY > 0 && atBottom) {
+                    // Move from Team into Alumni when user scrolls down at the end.
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("alumni");
+                }
+                return;
+            }
+
+            // Alumni section: allow native internal scroll, but transition back to Team at the top.
+            if (cur === "alumni") {
+                if (!alumniScroller) return;
+
+                const atTop =
+                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        alumniScroller.scrollHeight -
+                            alumniScroller.clientHeight -
+                            alumniScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (e.deltaY < 0 && atTop) {
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("team");
+                    return;
+                }
+
+                // Clamp at the end so page scroll never drifts out of the section stack.
+                if (e.deltaY > 0 && atBottom) {
+                    e.preventDefault();
                 }
                 return;
             }
@@ -269,13 +329,14 @@ export default function HomeClient() {
                     0,
                     Math.min(
                         1.05,
-                        scrubProgressRef.current + e.deltaY * 0.0016,
+                        scrubProgressRef.current +
+                            e.deltaY * HOME_SCRUB_SENSITIVITY,
                     ),
                 );
 
                 gsap.to(tl, {
                     progress: Math.min(1, scrubProgressRef.current),
-                    duration: 0.55,
+                    duration: HOME_SCRUB_TWEEN_DURATION,
                     ease: "power2.out",
                     onComplete: () => {
                         if (
@@ -331,7 +392,7 @@ export default function HomeClient() {
         scrubProgressRef.current = 1;
         gsap.to(animTimelineRef.current, {
             progress: 1,
-            duration: 1.1,
+            duration: OPEN_EXPLORE_DURATION,
             ease: "power2.inOut",
             onComplete: () => setSectionSynced("explore"),
         });
@@ -341,7 +402,7 @@ export default function HomeClient() {
         scrubProgressRef.current = 0;
         gsap.to(animTimelineRef.current, {
             progress: 0,
-            duration: 0.7,
+            duration: CLOSE_EXPLORE_DURATION,
             ease: "power2.inOut",
             onComplete: () => setSectionSynced("home"),
         });
@@ -349,11 +410,13 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "team"
-            ? "-translate-y-[200%]"
-            : section === "whychoose"
-              ? "-translate-y-full"
-              : "translate-y-0";
+        section === "alumni"
+            ? "-translate-y-[300%]"
+            : section === "team"
+              ? "-translate-y-[200%]"
+              : section === "whychoose"
+                ? "-translate-y-full"
+                : "translate-y-0";
 
     return (
         <>
@@ -619,6 +682,12 @@ export default function HomeClient() {
                         isTeamOpen={section === "team"}
                         teamRef={teamRef}
                     />
+                    <div
+                        ref={alumniRef}
+                        className="absolute top-[300%] left-0 w-full h-screen overflow-y-auto hide-scrollbar bg-[#000000]"
+                    >
+                        <AlumniSection />
+                    </div>
                 </div>
 
                 <style
@@ -627,8 +696,6 @@ export default function HomeClient() {
                     }}
                 />
             </div>
-
-            <AlumniSection />
         </>
     );
 }

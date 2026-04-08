@@ -46,11 +46,11 @@ export default function AlumniSection({items}: AlumniSectionProps) {
     return (
         <section
             id="alumni"
-            className="relative isolate overflow-hidden bg-[#0a0a0a] text-zinc-100 py-24 sm:py-28"
+            className="relative isolate overflow-hidden bg-[#000000] text-zinc-100 py-24 sm:py-28"
         >
-            <div className="pointer-events-none absolute inset-0 opacity-70">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.14),transparent_38%),radial-gradient(circle_at_82%_25%,rgba(255,255,255,0.08),transparent_42%),radial-gradient(circle_at_50%_90%,rgba(255,255,255,0.06),transparent_42%)]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.02),transparent_25%,transparent_75%,rgba(255,255,255,0.02))]" />
+            <div className="pointer-events-none absolute inset-0 opacity-45">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.08),transparent_38%),radial-gradient(circle_at_82%_25%,rgba(255,255,255,0.05),transparent_42%),radial-gradient(circle_at_50%_90%,rgba(255,255,255,0.04),transparent_42%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.65),transparent_20%,transparent_80%,rgba(0,0,0,0.65))]" />
             </div>
 
             <div className="relative mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-14">
@@ -77,8 +77,8 @@ export default function AlumniSection({items}: AlumniSectionProps) {
             </div>
 
             <div className="relative left-1/2 w-screen -translate-x-1/2">
-                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24 bg-linear-to-r from-[#0a0a0a] to-transparent" />
-                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24 bg-linear-to-l from-[#0a0a0a] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24 bg-linear-to-r from-[#000000] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24 bg-linear-to-l from-[#000000] to-transparent" />
 
                 <div className="overflow-hidden py-2">
                     <div
