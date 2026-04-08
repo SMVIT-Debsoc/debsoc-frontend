@@ -12,266 +12,342 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+// ── Section enum so we never have stale-closure issues ─────────────────────────
+type Section = "home" | "explore" | "whychoose" | "team";
+
 export default function HomeClient() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const whyChooseRef = useRef<HTMLDivElement>(null);
-  const teamRef = useRef<HTMLDivElement>(null);
+  const containerRef   = useRef<HTMLDivElement>(null);
+  const stickyRef      = useRef<HTMLDivElement>(null);
+  const sliderRef      = useRef<HTMLDivElement>(null);
+  const whyChooseRef   = useRef<HTMLDivElement>(null);
+  const teamRef        = useRef<HTMLDivElement>(null);
 
-  // Mic split refs (always rendered, toggled by GSAP)
-  const micWrapperRef = useRef<HTMLDivElement>(null);
-  const micTopRef = useRef<HTMLDivElement>(null);
-  const micBotRef = useRef<HTMLDivElement>(null);
-  const crackRef = useRef<HTMLDivElement>(null);
+  // mic refs
+  const micWrapperRef  = useRef<HTMLDivElement>(null);
+  const micTopRef      = useRef<HTMLDivElement>(null);
+  const micBotRef      = useRef<HTMLDivElement>(null);
+  const crackRef       = useRef<HTMLDivElement>(null);
 
-  const [isExploreOpen, setIsExploreOpen] = useState(false);
-  const [isWhyChooseOpen, setIsWhyChooseOpen] = useState(false);
-  const [isTeamOpen, setIsTeamOpen] = useState(false);
+  // React state (drives CSS class on the sliding container)
+  const [section, setSection] = useState<Section>("home");
 
-  // Scrubbable timeline refs — no state needed, avoids re-renders
-  const animTimelineRef = useRef<gsap.core.Timeline | null>(null);
-  const scrubProgressRef = useRef(0); // 0–1
+  // ── Use a REF mirror of section to avoid stale closures in wheel handler ──
+  const sectionRef = useRef<Section>("home");
+  const setSectionSynced = (s: Section) => {
+    sectionRef.current = s;
+    setSection(s);
+  };
+
+  // Scrubbable timeline state
+  const animTimelineRef  = useRef<gsap.core.Timeline | null>(null);
+  const scrubProgressRef = useRef(0); // 0 → 1
+
+  // Transition lock — prevents cascading section jumps from one scroll gesture
+  const transitionLockRef = useRef(false);
+  const lockTransition = (ms = 1300) => {
+    transitionLockRef.current = true;
+    setTimeout(() => { transitionLockRef.current = false; }, ms);
+  };
 
   const navItems = [
-    { title: "Team", sub1: "Current Roster", sub2: "Board Members" },
-    { title: "Achievements", sub1: "Trophies", sub2: "Milestones" },
-    { title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters" },
-    { title: "Debate Timer", sub1: "Launch App", sub2: "Settings" },
-    { title: "Session", sub1: "Next Meet", sub2: "Resources" },
-    { title: "Equity", sub1: "Guidelines", sub2: "Report" },
-    { title: "Gallery", sub1: "Photos", sub2: "Videos" },
+    { title: "Team",        sub1: "Current Roster", sub2: "Board Members"  },
+    { title: "Achievements",sub1: "Trophies",        sub2: "Milestones"     },
+    { title: "Alumni",      sub1: "Hall of Fame",    sub2: "Past Debaters"  },
+    { title: "Debate Timer",sub1: "Launch App",      sub2: "Settings"       },
+    { title: "Session",     sub1: "Next Meet",       sub2: "Resources"      },
+    { title: "Equity",      sub1: "Guidelines",      sub2: "Report"         },
+    { title: "Gallery",     sub1: "Photos",          sub2: "Videos"         },
   ];
 
-  // ─── Build the scrubbable GSAP master timeline ─────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+  //  Scrubbable GSAP timeline
+  // ══════════════════════════════════════════════════════════════════════
   useGSAP(() => {
     const micWrapper = micWrapperRef.current;
-    const micTop = micTopRef.current;
-    const micBot = micBotRef.current;
-    const crack = crackRef.current;
-    const slider = sliderRef.current;
+    const micTop     = micTopRef.current;
+    const micBot     = micBotRef.current;
+    const crack      = crackRef.current;
+    const slider     = sliderRef.current;
     const rightPanel = document.querySelector<HTMLElement>(".right-content-panel");
-    const blurBg = document.querySelector<HTMLElement>(".blur-overlay-bg");
-    const heroText = document.querySelector<HTMLElement>(".hero-text-container");
+    const heroText   = document.querySelector<HTMLElement>(".hero-text-container");
+    const blurBg     = document.querySelector<HTMLElement>(".blur-overlay-bg");
 
     if (!micWrapper || !micTop || !micBot || !crack || !slider) return;
+
+    // Make sure split halves start hidden & slider invisible
+    gsap.set([micTop, micBot], { opacity: 0 });
+    gsap.set(crack, { scaleX: 0, opacity: 0 });
+    gsap.set(slider, { autoAlpha: 0 });
+
+    const cards = Array.from(slider.children) as HTMLElement[];
+    cards.forEach(c => gsap.set(c, { scale: 0, opacity: 0 }));
 
     const tl = gsap.timeline({ paused: true });
     animTimelineRef.current = tl;
 
-    // ── Phase 0→0.3 : Move mic from its starting position to centre ─────────
+    // ─── Phase 1 (0 → 0.35) : Mic travels from left to centre ─────────────
     tl.to(micWrapper, {
       left: "50%",
       xPercent: -50,
-      duration: 0.3,
+      duration: 0.35,
       ease: "power2.inOut",
     }, 0);
 
-    // Fade out the right panel and hero text while mic travels
-    if (rightPanel) tl.to(rightPanel, { opacity: 0, x: 40, duration: 0.25 }, 0);
-    if (heroText)   tl.to(heroText,   { opacity: 0, y: 30, duration: 0.25 }, 0);
+    // Fade out right panel & hero text as mic moves
+    if (rightPanel) tl.to(rightPanel, { opacity: 0, x: 30, duration: 0.3 }, 0);
+    if (heroText)   tl.to(heroText,   { opacity: 0, y: 20, duration: 0.3 }, 0);
+    if (blurBg)     tl.to(blurBg,     { opacity: 1, duration: 0.35       }, 0.05);
 
-    // Bring in the blur backdrop
-    if (blurBg) tl.to(blurBg, { opacity: 1, duration: 0.3 }, 0.05);
-
-    // ── Phase 0.3→0.45 : Vibrate / charge-up ───────────────────────────────
+    // ─── Phase 2 (0.35 → 0.52) : Mic vibrates / charges up ────────────────
     tl.to(micWrapper, {
-      x: "+=8",
-      duration: 0.04,
+      x: "+=10",
+      duration: 0.05,
       yoyo: true,
-      repeat: 7,
+      repeat: 9,        // 10 bounces ≈ 0.5s total charge-up
       ease: "power1.inOut",
-    }, 0.3);
+    }, 0.35);
 
-    // ── Phase 0.45 : Switch to the split-mic halves ─────────────────────────
-    tl.set(micWrapper, { opacity: 0 }, 0.45);
-    tl.set([micTop, micBot], { opacity: 1 }, 0.45);
+    // ─── Phase 3 (0.55) : Seamless swap — show halves, hide wrapper ────────
+    // Set split halves visible FIRST (same GSAP frame), THEN hide wrapper
+    // This prevents the 1-frame flash of black.
+    tl.set(micTop, { opacity: 1 }, 0.55);
+    tl.set(micBot, { opacity: 1 }, 0.55);
+    tl.set(micWrapper, { opacity: 0 }, 0.55);
 
-    // Flash the crack line
-    tl.to(crack, { scaleX: 1, opacity: 1, duration: 0.08, ease: "power4.out" }, 0.45);
+    // Flash crack line at the 50% height of mic (mic is 80vh, bottom-aligned
+    // the visual midpoint sits at ~50vh from bottom → 50vh from top ≈ top-[50vh])
+    tl.to(crack, {
+      scaleX: 1,
+      opacity: 1,
+      duration: 0.12,
+      ease: "power4.out",
+    }, 0.55);
 
-    // ── Phase 0.5→0.75 : Split vertically ──────────────────────────────────
-    tl.to(micTop, { y: "-40vh", rotationZ: -8, scale: 0.75, opacity: 0, duration: 0.35, ease: "power3.in" }, 0.5);
-    tl.to(micBot, { y:  "40vh", rotationZ:  5, scale: 0.75, opacity: 0, duration: 0.35, ease: "power3.in" }, 0.5);
-    tl.to(crack,  { scaleY: 25, opacity: 0, duration: 0.3, ease: "power2.in" }, 0.55);
+    // ─── Phase 4 (0.63 → 1.3) : Slow cinematic split ──────────────────────
+    tl.to(micTop, {
+      y: "-38vh",
+      rotationZ: -6,
+      scale: 0.8,
+      opacity: 0,
+      duration: 0.85,       // slow & cinematic
+      ease: "power2.inOut",
+    }, 0.63);
 
-    // ── Phase 0.65→1.0 : Real cards fly in from centre ─────────────────────
-    // Make slider visible
-    tl.set(slider, { autoAlpha: 1 }, 0.65);
+    tl.to(micBot, {
+      y: "38vh",
+      rotationZ: 4,
+      scale: 0.8,
+      opacity: 0,
+      duration: 0.85,
+      ease: "power2.inOut",
+    }, 0.63);
 
-    const cards = Array.from(slider.children) as HTMLElement[];
+    tl.to(crack, {
+      scaleY: 30,
+      opacity: 0,
+      duration: 0.7,
+      ease: "power2.in",
+    }, 0.68);
+
+    // ─── Phase 5 (0.85 → 1.4) : Real cards scale in from centre ───────────
+    tl.set(slider, { autoAlpha: 1 }, 0.85);
+
     cards.forEach((card, i) => {
-      gsap.set(card, { scale: 0, opacity: 0 });
       tl.to(card, {
         scale: 1,
         opacity: 1,
-        duration: 0.3,
-        ease: "back.out(1.4)",
-      }, 0.65 + i * 0.025);
+        duration: 0.4,
+        ease: "back.out(1.3)",
+      }, 0.87 + i * 0.03);
     });
 
   }, { scope: containerRef });
 
-  // ─── Wheel handler: scrub timeline or scroll slider ────────────────────────
+  // ══════════════════════════════════════════════════════════════════════
+  //  On-mount: mic drop-in animation
+  // ══════════════════════════════════════════════════════════════════════
+  useGSAP(() => {
+    if (!containerRef.current) return;
+    gsap.from(".mic-element", {
+      y: -150,
+      opacity: 0,
+      duration: 1.6,
+      ease: "elastic.out(1, 0.55)",
+      delay: 0.1,
+    });
+  }, { scope: containerRef });
+
+  // ══════════════════════════════════════════════════════════════════════
+  //  Wheel handler — reads from sectionRef to avoid stale closures
+  // ══════════════════════════════════════════════════════════════════════
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      const cur = sectionRef.current;
+
+      // Team section: let it scroll natively — do NOT intercept
+      if (cur === "team") return;
+
+      // For all other sections we own the scroll
       e.preventDefault();
 
-      // If Why-Choose or Team are open, let them handle it separately
-      if (isWhyChooseOpen) {
-        if (e.deltaY > 0) setIsTeamOpen(true);
+      // Ignore events right after a section change (prevents cascading)
+      if (transitionLockRef.current) return;
+
+      if (cur === "whychoose") {
+        if (e.deltaY > 0) {
+          lockTransition();
+          setSectionSynced("team");
+        } else if (e.deltaY < 0) {
+          lockTransition();
+          setSectionSynced("explore");
+        }
         return;
       }
-      if (isTeamOpen) return;
 
-      if (!isExploreOpen) {
-        // Scrub the timeline with scroll
+      if (cur === "home") {
         const tl = animTimelineRef.current;
         if (!tl) return;
 
         scrubProgressRef.current = Math.max(
           0,
-          Math.min(1.05, scrubProgressRef.current + e.deltaY * 0.0018)
+          Math.min(1.05, scrubProgressRef.current + e.deltaY * 0.0016)
         );
 
         gsap.to(tl, {
           progress: Math.min(1, scrubProgressRef.current),
-          duration: 0.5,
+          duration: 0.55,
           ease: "power2.out",
           onComplete: () => {
-            if (scrubProgressRef.current >= 1.0) {
-              setIsExploreOpen(true);
+            if (scrubProgressRef.current >= 1.0 && sectionRef.current === "home") {
+              lockTransition(800);
+              setSectionSynced("explore");
             }
           },
         });
-      } else {
-        // Explore is open: map wheel to horizontal scroll
+        return;
+      }
+
+      if (cur === "explore") {
         const slider = sliderRef.current;
-        if (!slider) return;
 
-        const atStart = slider.scrollLeft <= 0;
-        const atEnd = slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 2;
-
-        if (e.deltaY < 0 && atStart) {
-          // Scrub back — close explore overlay
-          scrubProgressRef.current = Math.max(0, scrubProgressRef.current - 0.15);
-          gsap.to(animTimelineRef.current, {
-            progress: scrubProgressRef.current,
-            duration: 0.5,
-            ease: "power2.out",
-          });
-          setIsExploreOpen(false);
-        } else if (e.deltaY > 0 && atEnd) {
-          setIsExploreOpen(false);
-          setIsWhyChooseOpen(true);
+        if (e.deltaY < 0) {
+          if (!slider || slider.scrollLeft <= 2) {
+            // At the start — close explore and go back to home
+            lockTransition();
+            scrubProgressRef.current = 0;
+            gsap.to(animTimelineRef.current, {
+              progress: 0,
+              duration: 0.7,
+              ease: "power2.inOut",
+            });
+            setSectionSynced("home");
+          } else if (slider) {
+            slider.scrollBy({ left: e.deltaY * 0.85 });
+          }
         } else {
-          slider.scrollBy({ left: e.deltaY * 0.85 });
+          if (!slider) return;
+          const atEnd = slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 4;
+          if (atEnd) {
+            // At the end of cards — go to Why Choose (with lock!)
+            lockTransition();
+            setSectionSynced("whychoose");
+          } else {
+            slider.scrollBy({ left: e.deltaY * 0.85 });
+          }
         }
       }
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [isExploreOpen, isWhyChooseOpen, isTeamOpen]);
-
-  // ─── Existing drop-in + scroll-to-icon GSAP animation ──────────────────────
-  useGSAP(() => {
-    if (!containerRef.current) return;
-
-    gsap.set(".mic-wrapper", { perspective: 1000 });
-    gsap.set(".mic-element", { transformOrigin: "center center" });
-
-    const dropTimeline = gsap.timeline();
-
-    // Drop in from above
-    dropTimeline.from(".mic-element", {
-      y: -120,
-      rotationX: -40,
-      opacity: 0,
-      duration: 1.4,
-      ease: "elastic.out(1, 0.6)",
-    });
-
-    // Subtle floating idle loop
-    gsap.to(".mic-element", {
-      y: "-=12",
-      rotationY: "+=3",
-      duration: 3.5,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut",
-      delay: 1.5,
-    });
-  }, { scope: containerRef });
+  }, []); // ← empty deps: we read section from sectionRef, never stale
 
   const openExplore = () => {
-    const tl = animTimelineRef.current;
-    if (!tl) return;
     scrubProgressRef.current = 1;
-    gsap.to(tl, { progress: 1, duration: 0.9, ease: "power2.inOut", onComplete: () => setIsExploreOpen(true) });
+    gsap.to(animTimelineRef.current, {
+      progress: 1,
+      duration: 1.1,
+      ease: "power2.inOut",
+      onComplete: () => setSectionSynced("explore"),
+    });
   };
+
+  const closeExplore = () => {
+    scrubProgressRef.current = 0;
+    gsap.to(animTimelineRef.current, {
+      progress: 0,
+      duration: 0.7,
+      ease: "power2.inOut",
+      onComplete: () => setSectionSynced("home"),
+    });
+  };
+
+  // Derive CSS translate for the sliding container
+  const containerTranslate =
+    section === "team"      ? "-translate-y-[200%]" :
+    section === "whychoose" ? "-translate-y-full"   :
+    "translate-y-0";
 
   return (
     <div className="bg-[#000000] h-screen w-full overflow-hidden relative">
-      {/* Container that slides up */}
+      {/* Sliding container — shifts up to reveal sub-sections */}
       <div
-        className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isTeamOpen ? "-translate-y-[200%]" : isWhyChooseOpen ? "-translate-y-full" : "translate-y-0"
-        }`}
+        className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${containerTranslate}`}
       >
-        {/* ── Main Hero ─────────────────────────────────────────────────────── */}
+
+        {/* ══════════════ MAIN HERO ══════════════ */}
         <div
           className="bg-[#000000] text-zinc-100 font-sans h-screen w-full overflow-hidden selection:bg-white/20 selection:text-white"
           ref={containerRef}
         >
           <div ref={stickyRef} className="sticky top-0 w-full h-screen overflow-hidden">
 
-            {/* Navbar */}
+            {/* ── Navbar ─────────────────────────────────────────────── */}
             <nav className="absolute top-0 w-full flex justify-between items-center p-8 md:px-12 z-50">
-              <div className="flex items-center gap-1 font-light tracking-widest text-xl uppercase relative z-50">
+              <div className="flex items-center gap-1 font-light tracking-widest text-xl uppercase">
                 <Sparkles size={18} strokeWidth={1} className="text-white" />
                 DEBSOC
               </div>
-              <div className="flex items-center gap-6 z-50 relative">
-                <button
-                  className="text-white opacity-80 hover:opacity-100 transition-opacity"
-                  onClick={openExplore}
-                >
-                  <Menu size={28} strokeWidth={1} />
-                </button>
-              </div>
+              <button
+                className="text-white opacity-80 hover:opacity-100 transition-opacity"
+                onClick={openExplore}
+              >
+                <Menu size={28} strokeWidth={1} />
+              </button>
             </nav>
 
-            {/* ── Main Mic (starts at left, GSAP moves to centre) ───────────── */}
+            {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
+            {/*
+              FIX: positioned at bottom-0, left-[10%] to start.
+              GSAP animates left → 50% and xPercent → -50 so it centres perfectly.
+              Split halves mirror this exact layout (bottom-0, left-1/2 -translate-x-1/2).
+            */}
             <div
               ref={micWrapperRef}
-              className="mic-wrapper absolute inset-y-0 left-[10%] z-10 flex items-end pointer-events-none"
-              style={{ width: "auto" }}
+              className="mic-wrapper absolute bottom-0 z-10 pointer-events-none"
+              style={{ left: "10%" }}
             >
               <img
                 src="/mic-nobg.png"
-                alt="Silver Retro Microphone"
+                alt="Retro Microphone"
                 className="mic-element h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
-                style={{ transformStyle: "preserve-3d" }}
+                style={{ transformStyle: "preserve-3d", display: "block" }}
               />
             </div>
 
-            {/* ── Right-side content panel ──────────────────────────────────── */}
-            <div className="right-content-panel absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 md:pl-0 z-0">
-              {/* Mission Box & Events Row */}
+            {/* ── Right content panel ─────────────────────────────────── */}
+            <div className="right-content-panel absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 z-0">
               <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
-                {/* Mission Text */}
-                <div className="mission-card hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-[220px]">
-                  <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
-                    Mission
-                  </p>
+                {/* Mission card */}
+                <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-[220px]">
+                  <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">Mission</p>
                   <p className="text-sm text-zinc-200 font-light leading-relaxed">
                     We curate intellectual battlegrounds. To amplify voices, challenge perspectives, and elevate the debate.
                   </p>
                   <p className="text-sm text-zinc-400 font-light mt-3">We are DEBSOC.</p>
                 </div>
 
-                {/* Explore Teaser Cards */}
+                {/* Explore teaser */}
                 <div className="flex flex-col gap-3 items-end">
                   <div className="flex items-center justify-between w-full max-w-[320px] mb-1">
                     <h3 className="text-xs text-zinc-400 uppercase tracking-[0.25em] font-light">Explore</h3>
@@ -286,7 +362,7 @@ export default function HomeClient() {
                     {navItems.slice(0, 2).map((item, i) => (
                       <div
                         key={item.title}
-                        className="event-card relative w-[145px] h-[100px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
+                        className="relative w-[145px] h-[100px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
                         onClick={openExplore}
                       >
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
@@ -307,7 +383,7 @@ export default function HomeClient() {
               </div>
             </div>
 
-            {/* ── Hero text (bottom-left) ───────────────────────────────────── */}
+            {/* ── Hero text ───────────────────────────────────────────── */}
             <div className="hero-text-container absolute bottom-12 md:bottom-20 left-8 md:left-12 z-20 flex flex-col pointer-events-none">
               <h1 className="hero-text text-[3rem] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 max-w-4xl drop-shadow-lg">
                 DEBSOC:<br />
@@ -318,10 +394,10 @@ export default function HomeClient() {
               </p>
             </div>
 
-            {/* ── Footer Links ─────────────────────────────────────────────── */}
+            {/* ── Footer links ────────────────────────────────────────── */}
             <div className="absolute bottom-8 right-8 md:right-12 z-20 flex gap-6 text-xs text-zinc-400 font-light tracking-wider">
               <button
-                onClick={() => setIsTeamOpen(true)}
+                onClick={() => setSectionSynced("team")}
                 className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
               >
                 Our Team
@@ -334,67 +410,73 @@ export default function HomeClient() {
               </a>
             </div>
 
-            {/* ════════════════════════════════════════════════════════════════
-                EXPLORE OVERLAY — all controlled by GSAP, always rendered
-            ════════════════════════════════════════════════════════════════ */}
+            {/* ══════════════════ EXPLORE OVERLAY ══════════════════════ */}
+            {/*
+              Always rendered — GSAP manages visibility,
+              React only controls pointer-events.
+            */}
             <div
               className={`absolute inset-0 z-[100] flex items-center justify-start ${
-                isExploreOpen ? "pointer-events-auto" : "pointer-events-none"
+                section === "explore" ? "pointer-events-auto" : "pointer-events-none"
               }`}
             >
               {/* Blur backdrop */}
               <div className="blur-overlay-bg absolute inset-0 bg-black/80 backdrop-blur-3xl opacity-0 pointer-events-none" />
 
-              {/* Split mic halves (initially hidden, shown by GSAP) */}
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                {/* Top half */}
+              {/*
+                FIX: Split halves are positioned bottom-0, left-1/2 -translate-x-1/2
+                This EXACTLY mirrors the mic-wrapper after GSAP centres it.
+                No positional jump when swapping between wrapper and halves.
+              */}
+              <div className="absolute inset-0 z-[1] pointer-events-none">
+                {/* Top half (clips bottom 50% of image) */}
                 <div
                   ref={micTopRef}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 will-change-transform"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
                   style={{ clipPath: "inset(0 0 50% 0)" }}
                 >
                   <img
                     src="/mic-nobg.png"
                     alt=""
-                    className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.2)]"
+                    className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                    style={{ display: "block" }}
                   />
                 </div>
-                {/* Bottom half */}
+
+                {/* Bottom half (clips top 50% of image) */}
                 <div
                   ref={micBotRef}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 will-change-transform"
+                  className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
                   style={{ clipPath: "inset(50% 0 0 0)" }}
                 >
                   <img
                     src="/mic-nobg.png"
                     alt=""
-                    className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.2)]"
+                    className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                    style={{ display: "block" }}
                   />
                 </div>
-                {/* Crack line */}
+
+                {/* Crack / light flash — positioned at 50% height of an 80vh mic = 60vh from top */}
                 <div
                   ref={crackRef}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-[3px] bg-white shadow-[0_0_80px_20px_rgba(255,255,255,0.9)] origin-center will-change-transform opacity-0 scale-x-0"
+                  className="absolute w-full h-[3px] bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform"
+                  style={{ bottom: "40vh" }} // midpoint of 80vh mic sitting at bottom
                 />
               </div>
 
               {/* Close button */}
               <button
-                className="absolute top-8 right-8 md:right-12 text-white z-[110] p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90"
-                onClick={() => {
-                  scrubProgressRef.current = 0;
-                  gsap.to(animTimelineRef.current, { progress: 0, duration: 0.6, ease: "power2.inOut" });
-                  setIsExploreOpen(false);
-                }}
+                className="absolute top-8 right-8 md:right-12 text-white z-[110] p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90 duration-300"
+                onClick={closeExplore}
               >
                 <X size={36} strokeWidth={1} />
               </button>
 
-              {/* ── Fullscreen card slider ─────────────────────────────────── */}
+              {/* Fullscreen card slider */}
               <div
                 ref={sliderRef}
                 className="relative z-[105] flex gap-10 px-[8vw] overflow-x-auto w-full h-[65vh] md:h-[72vh] items-center hide-scrollbar"
-                style={{ visibility: "hidden", opacity: 0 }}
               >
                 {navItems.flatMap((item, i) => [
                   <div
@@ -434,20 +516,18 @@ export default function HomeClient() {
                 ])}
               </div>
             </div>
-            {/* ═══ END EXPLORE OVERLAY ════════════════════════════════════════ */}
+            {/* ══════════════ END EXPLORE OVERLAY ══════════════════════ */}
 
           </div>
         </div>
-        {/* ── End Main Hero ──────────────────────────────────────────────────── */}
+        {/* ══════════════ END MAIN HERO ══════════════ */}
 
-        {/* Why Choose Debsoc Section */}
-        <WhyChooseDebsoc isWhyChooseOpen={isWhyChooseOpen} whyChooseRef={whyChooseRef} />
+        <WhyChooseDebsoc isWhyChooseOpen={section === "whychoose"} whyChooseRef={whyChooseRef} />
+        <TeamSection isTeamOpen={section === "team"} teamRef={teamRef} />
 
-        {/* Team Section */}
-        <TeamSection isTeamOpen={isTeamOpen} teamRef={teamRef} />
       </div>
 
-      <style dangerouslySetInnerHTML={{ __html: `.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `.hide-scrollbar::-webkit-scrollbar{display:none}.hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}` }} />
     </div>
   );
 }
