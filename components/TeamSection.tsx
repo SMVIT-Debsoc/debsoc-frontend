@@ -2,7 +2,7 @@
 
 import React, {useEffect, useRef, useState} from "react";
 import Image from "next/image";
-import {motion, AnimatePresence} from "framer-motion";
+import {motion} from "framer-motion";
 import {
     Shield,
     Zap,
@@ -14,7 +14,6 @@ import {
     Share2,
     FileText,
     Code,
-    X,
     ArrowUpRight,
 } from "lucide-react";
 
@@ -206,8 +205,6 @@ const DEPARTMENTS: Department[] = [
     },
 ];
 
-const CURATORS: Member[] = [];
-
 /* ─────────────────────────────────────────────
    Animated Section Wrapper
    ───────────────────────────────────────────── */
@@ -310,7 +307,6 @@ function MemberCard({
 }
 
 function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
-    const [isExpanded, setIsExpanded] = useState(false);
     const isOpCore = dept.name === "Operational Core";
     const isEquity = dept.name === "Equity Alliance";
     const isSpecialGrid = isOpCore || isEquity;
@@ -347,9 +343,8 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
         ${
             isEquity
                 ? "flex-1 h-full p-4 md:p-6"
-                : "flex-1 w-full max-w-3xl p-4 md:p-6 cursor-pointer"
+                : "flex-1 w-full max-w-3xl p-4 md:p-6"
         }`}
-            onMouseEnter={() => setIsExpanded(true)}
         >
             <div className="flex justify-between items-center mb-2 md:mb-3 shrink-0">
                 <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30 group-hover:text-white/60 transition-colors">
@@ -377,89 +372,6 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
             id={id}
             className="relative w-full h-screen py-8 px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
         >
-            {/* Immersive Overlay Explanation (Same as before) */}
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{opacity: 0}}
-                        animate={{opacity: 1}}
-                        exit={{opacity: 0}}
-                        className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-8 md:p-24"
-                        onMouseLeave={() => setIsExpanded(false)}
-                    >
-                        <motion.div
-                            initial={{y: 50, opacity: 0}}
-                            animate={{y: 0, opacity: 1}}
-                            transition={{delay: 0.1}}
-                            className="max-w-4xl w-full"
-                        >
-                            <div className="flex justify-between items-start mb-12">
-                                <h4 className="text-zinc-600 font-black uppercase tracking-[0.4em] text-xs">
-                                    Manifesto / {dept.name}
-                                </h4>
-                                <button
-                                    onClick={() => setIsExpanded(false)}
-                                    className="text-white/20 hover:text-white transition-colors"
-                                >
-                                    <X size={32} />
-                                </button>
-                            </div>
-                            <h3 className="text-4xl md:text-8xl font-black text-white uppercase tracking-tighter leading-[0.85] mb-12">
-                                {isOpCore
-                                    ? "Logistics. Control. Deploy."
-                                    : isEquity
-                                      ? "Guideline. Report. Resolve."
-                                      : "Vision. Impact. Reach."}
-                            </h3>
-                            <p className="text-lg md:text-2xl text-zinc-400 font-light leading-relaxed mb-12 italic max-h-[40vh] overflow-y-auto pr-4 custom-scrollbar">
-                                {isOpCore
-                                    ? "The Operational Core is the tactical heartbeat of the society. We bridge the gap between abstract planning and physical reality, orchestrating the complex logistics behind Axiom, DPL, and Literary Lane. Our directive is simple: perfect execution, unfailing reliability, and the successful deployment of every society event."
-                                    : isEquity
-                                      ? dept.intro
-                                      : dept.intro}
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12 border-t border-white/5">
-                                {[
-                                    {
-                                        label: "Core Principle",
-                                        detail: isOpCore
-                                            ? "Execution"
-                                            : isEquity
-                                              ? "Radical Inclusion"
-                                              : "Excellence",
-                                    },
-                                    {
-                                        label: "Methodology",
-                                        detail: isOpCore
-                                            ? "Strategic Deployment"
-                                            : isEquity
-                                              ? "Conflict Resolution"
-                                              : "Research",
-                                    },
-                                    {
-                                        label: "Goal",
-                                        detail: isOpCore
-                                            ? "Flawless Events"
-                                            : isEquity
-                                              ? "Ethical Excellence"
-                                              : "Impact",
-                                    },
-                                ].map((stat, i) => (
-                                    <div key={i}>
-                                        <span className="block text-[10px] uppercase tracking-widest text-zinc-600 mb-2">
-                                            {stat.label}
-                                        </span>
-                                        <p className="text-white font-medium italic">
-                                            {stat.detail}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
                 {dept.id}
             </div>
@@ -747,12 +659,6 @@ export default function TeamSection({isTeamOpen, teamRef}: TeamSectionProps) {
                         >
                             Ranks
                         </button>
-                        <button
-                            onClick={() => scrollTo("equity")}
-                            className="hover:text-white transition-colors cursor-pointer"
-                        >
-                            Equity
-                        </button>
                     </div>
                 </div>
 
@@ -870,110 +776,6 @@ export default function TeamSection({isTeamOpen, teamRef}: TeamSectionProps) {
                     <DepartmentSection key={dept.id} dept={dept} />
                 ))}
             </div>
-
-            {/* ─────────────────────────────────────────────
-          SECTION 07 — INTERFACE CURATORS (Collective)
-          ───────────────────────────────────────────── */}
-            <section className="relative w-full py-32 px-8 md:px-12 bg-black/40">
-                <AnimatedSection className="mb-24 text-center">
-                    <h2 className="text-2xl md:text-5xl font-black tracking-[-0.02em] uppercase mb-4">
-                        Interface Curators
-                    </h2>
-                    <div className="flex items-center justify-center gap-4">
-                        <div className="w-8 h-[1px] bg-zinc-800" />
-                        <span className="text-[10px] tracking-[0.5em] uppercase text-zinc-700 italic">
-                            The Collective
-                        </span>
-                        <div className="w-8 h-[1px] bg-zinc-800" />
-                    </div>
-                </AnimatedSection>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 max-w-7xl mx-auto">
-                    {CURATORS.map((member, i) => (
-                        <AnimatedSection
-                            key={member.name}
-                            delay={i * 50}
-                            className="border-l border-white/5 pl-8"
-                        >
-                            <div className="flex items-center gap-6 group hover:translate-x-2 transition-transform duration-500">
-                                <div className="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 overflow-hidden rounded-full grayscale group-hover:grayscale-0 transition-all duration-700 border border-white/10">
-                                    <Image
-                                        src={member.photo}
-                                        alt={member.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="100px"
-                                    />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300 group-hover:text-white transition-colors">
-                                        {member.name}
-                                    </h4>
-                                    <span className="text-[9px] tracking-[0.3em] uppercase text-zinc-600 block mt-1">
-                                        System Operator
-                                    </span>
-                                    <div className="w-4 h-[1px] bg-zinc-800 mt-3 group-hover:w-8 transition-all" />
-                                </div>
-                            </div>
-                        </AnimatedSection>
-                    ))}
-                </div>
-            </section>
-
-            {/* ─────────────────────────────────────────────
-          SECTION 08 — ETHICS & EQUITY (Footer)
-          ───────────────────────────────────────────── */}
-            <section
-                id="equity"
-                className="relative w-full py-40 px-8 md:px-12 flex flex-col items-center"
-            >
-                <AnimatedSection className="max-w-4xl w-full text-center">
-                    <div className="mb-12 inline-block p-4 border border-white/5 bg-white/[0.01]">
-                        <Shield size={24} className="text-zinc-600" />
-                    </div>
-                    <h2 className="text-4xl md:text-7xl font-black tracking-[-0.05em] uppercase mb-8 leading-[0.9]">
-                        The Social
-                        <br />
-                        <span className="text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.3)] italic">
-                            Compass
-                        </span>
-                    </h2>
-                    <p className="text-zinc-600 text-sm md:text-lg font-light leading-relaxed max-w-xl mx-auto mb-16">
-                        Establishing the framework of radical inclusion.
-                        Ensuring the frequency of discourse remains ethical,
-                        balanced, and centered on collective growth.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row gap-12 items-center justify-center opacity-40 grayscale group hover:grayscale-0 hover:opacity-100 transition-all duration-1000">
-                        <div className="flex flex-col items-start text-left">
-                            <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300">
-                                Equity Program
-                            </span>
-                            <span className="text-[9px] tracking-[0.2em] uppercase text-zinc-600 mt-1">
-                                Status: Operational
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-start text-left">
-                            <span className="text-[10px] tracking-[0.3em] uppercase text-zinc-300">
-                                Safety Protocol
-                            </span>
-                            <span className="text-[9px] tracking-[0.2em] uppercase text-zinc-600 mt-1">
-                                Status: Active
-                            </span>
-                        </div>
-                    </div>
-                </AnimatedSection>
-            </section>
-
-            <footer className="w-full py-12 px-8 md:px-12 border-t border-white/[0.03] flex flex-col md:flex-row justify-between items-center gap-8">
-                <span className="text-[9px] tracking-[0.4em] uppercase text-zinc-700 font-light">
-                    © 2026 / SMVIT DEBSOC / Monolith v2
-                </span>
-                <div className="h-[1px] flex-1 bg-zinc-900 mx-8 hidden md:block" />
-                <span className="text-[9px] tracking-[0.4em] uppercase text-zinc-700 font-light cursor-pointer hover:text-white transition-colors">
-                    Return to Identity
-                </span>
-            </footer>
         </div>
     );
 }
