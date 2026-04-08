@@ -106,11 +106,12 @@ function AnimatedSection({
   children,
   className = "",
   delay = 0,
+  ...props
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -133,6 +134,7 @@ function AnimatedSection({
   return (
     <div
       ref={ref}
+      {...props}
       className={`transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
         } ${className}`}
     >
@@ -187,7 +189,7 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
   const isOpCore = dept.name === "Operational Core";
   const isEquity = dept.name === "Equity Alliance";
   const isSpecialGrid = isOpCore || isEquity;
-  
+
   const allMembers = [dept.lead, ...dept.members];
 
   // Grouping logic for hierarchy
@@ -197,20 +199,20 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
   const executives = allMembers.filter(m =>
     m.role.toLowerCase().includes("executive") && !m.role.toLowerCase().includes("member")
   );
-  
+
   // Members (Base tier)
   const regularMembers = allMembers.filter(m =>
-    (m.role.toLowerCase().includes("member") || (isEquity && m.name === "Stuti Padhi")) && 
-    !m.role.toLowerCase().includes("lead") && 
+    (m.role.toLowerCase().includes("member") || (isEquity && m.name === "Stuti Padhi")) &&
+    !m.role.toLowerCase().includes("lead") &&
     !m.role.toLowerCase().includes("head")
   );
 
   const missionDirective = (
-    <AnimatedSection 
-      delay={150} 
+    <AnimatedSection
+      delay={150}
       className={`relative group overflow-hidden transition-all flex flex-col justify-center border border-white/5 bg-white/[0.02] lg:hover:bg-white/[0.04]
-        ${isEquity 
-          ? 'flex-1 h-full p-4 md:p-6' 
+        ${isEquity
+          ? 'flex-1 h-full p-4 md:p-6'
           : 'flex-1 w-full max-w-3xl p-4 md:p-6 cursor-pointer'}`}
       onMouseEnter={() => setIsExpanded(true)}
     >
@@ -226,7 +228,7 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
         </p>
       </div>
       <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-white/10 group-hover:border-white/40 transition-colors" />
-      <motion.div 
+      <motion.div
         className="absolute inset-0 bg-white/[0.01] -z-10 translate-y-full group-hover:translate-y-0 transition-transform duration-500"
       />
     </AnimatedSection>
@@ -237,14 +239,14 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
       {/* Immersive Overlay Explanation (Same as before) */}
       <AnimatePresence>
         {isExpanded && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-8 md:p-24"
             onMouseLeave={() => setIsExpanded(false)}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.1 }}
@@ -262,9 +264,9 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 {isOpCore ? "Logistics. Control. Deploy." : isEquity ? "Guideline. Report. Resolve." : "Vision. Impact. Reach."}
               </h3>
               <p className="text-lg md:text-2xl text-zinc-400 font-light leading-relaxed mb-12 italic max-h-[40vh] overflow-y-auto pr-4 custom-scrollbar">
-                {isOpCore 
+                {isOpCore
                   ? "The Operational Core is the tactical heartbeat of the society. We bridge the gap between abstract planning and physical reality, orchestrating the complex logistics behind Axiom, DPL, and Literary Lane. Our directive is simple: perfect execution, unfailing reliability, and the successful deployment of every society event."
-                  : isEquity 
+                  : isEquity
                     ? dept.intro
                     : dept.intro
                 }
@@ -299,17 +301,17 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
             {dept.subtext}
           </span>
         </AnimatedSection>
-        
-        {!isEquity && missionDirective}
+
+        {!isEquity && dept.name !== "Tech Monolith" && dept.name !== "Social Sphere" && missionDirective}
       </div>
 
       <div className="flex-1 min-h-0 z-10 pb-4">
         {dept.name === "Social Sphere" ? (
           <div className="h-full flex gap-4 md:gap-6">
-            <div className="w-[35%] md:w-[28%] lg:w-[22%] h-full shrink-0">
-              {leads[0] && <MemberCard member={leads[0]} size="lg" delay={200} objectPosition="center" />}
+            <div className="w-[30%] md:w-[24%] lg:w-[20%] h-full shrink-0">
+              {leads[0] && <MemberCard member={leads[0]} size="lg" delay={200} objectPosition="top" />}
             </div>
-            <div className="w-[35%] md:w-[28%] lg:w-[22%] h-full flex flex-col gap-4 shrink-0">
+            <div className="w-[30%] md:w-[24%] lg:w-[20%] h-full flex flex-col gap-4 shrink-0">
               <div className="flex-1 min-h-0">
                 {regularMembers[0] && <MemberCard member={regularMembers[0]} size="md" delay={300} objectPosition="center" />}
               </div>
@@ -317,24 +319,27 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 {regularMembers[1] && <MemberCard member={regularMembers[1]} size="md" delay={400} objectPosition="bottom" />}
               </div>
             </div>
+            <div className="flex-1 h-full shrink-0">
+              {missionDirective}
+            </div>
           </div>
         ) : isSpecialGrid ? (
           <div className="h-full flex gap-4 md:gap-6">
             {/* LEADS COLUMN (Vertical Stack - Reduced width to enforce portrait framing) */}
-            <div className="w-[28%] md:w-[24%] lg:w-[20%] flex flex-col gap-4 shrink-0">
+            <div className="w-[35%] md:w-[30%] lg:w-[28%] flex flex-col gap-4 shrink-0">
               <div className="flex-1 min-h-0">
-                <MemberCard 
-                  member={leads.find(m => m.name.includes("Dhruv") || m.name.includes("Vittala")) || leads[0]} 
-                  size="lg" 
+                <MemberCard
+                  member={leads.find(m => m.name.includes("Dhruv") || m.name.includes("Vittala")) || leads[0]}
+                  size="lg"
                   delay={200}
                   objectPosition="center 10%"
                 />
               </div>
               <div className="flex-1 min-h-0">
-                <MemberCard 
-                  member={leads.find(m => m.name.includes("Rohan") || m.name.includes("Owais")) || leads[1]} 
-                  size="lg" 
-                  delay={400} 
+                <MemberCard
+                  member={leads.find(m => m.name.includes("Rohan") || m.name.includes("Owais")) || leads[1]}
+                  size="lg"
+                  delay={400}
                   objectPosition={(leads.find(m => m.name.includes("Rohan") || m.name.includes("Owais")) || leads[1]).name.includes("Rohan") ? "center" : "center 10%"}
                 />
               </div>
@@ -343,14 +348,14 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
             {/* TEAM GRID (Flexible Remaining Space) */}
             <div className="flex-1 flex flex-col gap-4 md:gap-6">
               {/* EXECUTIVES SECTION (Bigger weight) */}
-              <div className="flex-[1.5] min-h-0">
+              <div className="flex-1 min-h-0">
                 <div className="h-full flex gap-4">
                   {executives.map((m, i) => (
                     <div key={m.name} className={`flex-1 h-full min-h-0 ${executives.length === 1 ? 'md:max-w-xs' : ''}`}>
-                      <MemberCard 
-                        member={m} 
-                        size="md" 
-                        delay={300 + i * 50} 
+                      <MemberCard
+                        member={m}
+                        size="sm"
+                        delay={300 + i * 50}
                         objectPosition="center 10%"
                       />
                     </div>
@@ -365,10 +370,10 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 <div className="h-full flex gap-3 md:gap-4 overflow-x-auto hide-scrollbar">
                   {regularMembers.map((m, i) => (
                     <div key={m.name} className="min-w-[140px] md:min-w-0 md:flex-1 h-full min-h-0">
-                      <MemberCard 
-                        member={m} 
-                        size="sm" 
-                        delay={500 + i * 50} 
+                      <MemberCard
+                        member={m}
+                        size="sm"
+                        delay={500 + i * 50}
                         objectPosition="center 10%"
                       />
                     </div>
@@ -376,6 +381,15 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                   {regularMembers.length < 4 && <div className="flex-1 hidden md:block" />}
                 </div>
               </div>
+            </div>
+          </div>
+        ) : dept.name === "Tech Monolith" ? (
+          <div className="h-full flex gap-4 md:gap-6">
+            <div className="w-[30%] md:w-[24%] lg:w-[20%] h-full shrink-0">
+              {leads[0] && <MemberCard member={leads[0]} size="lg" delay={200} objectPosition="center" />}
+            </div>
+            <div className="flex-1 h-full shrink-0">
+              {missionDirective}
             </div>
           </div>
         ) : (
@@ -451,21 +465,66 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
           </div>
         </div>
 
-        {/* Main Spread */}
-        <div className="flex flex-col lg:grid lg:grid-cols-12 items-start justify-between w-full px-8 md:px-12 pb-16 md:pb-24 gap-12 z-10 relative lg:h-full min-h-[90vh]">
+        {/* Main Spread — CSS Grid matching wireframe */}
+        <div className="w-full px-8 md:px-12 pb-12 z-10 relative flex-1 flex flex-col min-h-0 pt-24 lg:pt-28">
 
-          {/* Left Column: Title + Aditya */}
-          <div className="lg:col-span-7 pt-12 lg:pt-16 flex flex-col items-start w-full pr-12">
-            <AnimatedSection delay={200}>
-              <h1 className="text-[3.5rem] md:text-[5.5rem] lg:text-[7.5rem] font-black leading-none tracking-[-0.05em] uppercase pointer-events-none text-white mb-8">
-                PRESIDENT
-              </h1>
-            </AnimatedSection>
+          {/* LEADERSHIP heading */}
+          <AnimatedSection delay={100} className="mb-6 md:mb-8 shrink-0">
+            <h1 className="text-[3rem] md:text-[5rem] lg:text-[7rem] font-black leading-none tracking-[-0.05em] uppercase text-white">
+              LEADERSHIP
+            </h1>
+          </AnimatedSection>
 
-            {/* ADITYA */}
-            <div className="flex flex-col md:flex-row items-start gap-8 md:gap-12 mt-12">
-              <AnimatedSection className="group shrink-0" delay={400}>
-                <div className="relative w-44 h-64 md:w-80 md:h-[500px] overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
+          {/* Grid: 
+               Row 1: [Kanishk photo] [PRESIDENT text]  [empty]
+               Row 2: [Kanishk photo] [empty]           [Aditya photo]
+               Row 3: [Kanishk photo] [VICE PRESIDENT]  [Aditya photo]
+          */}
+          <div className="flex-1 min-h-0 grid grid-cols-[30%_1fr_35%] grid-rows-[auto_1fr_auto] gap-x-6 lg:gap-x-10 gap-y-0">
+
+            {/* Kanishk photo — spans all 3 rows on the left */}
+            <div className="row-span-3 col-start-1 min-h-[300px]">
+              <AnimatedSection className="group w-full h-full" delay={300}>
+                <div className="relative w-full h-full overflow-hidden grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
+                  <Image
+                    src="/media/KanishkChaudhary.jpg"
+                    alt="President"
+                    fill
+                    className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
+                  <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 text-left z-30">
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[-0.03em] leading-none text-white">
+                      Kanishk
+                      <br />
+                      Chaudhary
+                    </h2>
+                  </div>
+                </div>
+              </AnimatedSection>
+            </div>
+
+            {/* PRESIDENT — top of column 2, right next to Kanishk's top-right edge */}
+            <div className="col-start-2 row-start-1 flex items-start pt-2">
+              <AnimatedSection delay={200}>
+                <span className="text-[2rem] md:text-[3.5rem] lg:text-[5rem] font-black uppercase tracking-[-0.04em] text-white leading-none">
+                  PRESIDENT
+                </span>
+                <div className="w-16 h-[2px] bg-white/30 mt-3" />
+              </AnimatedSection>
+            </div>
+
+            {/* Empty space — middle of column 2 */}
+            <div className="col-start-2 row-start-2" />
+
+            {/* Empty space — top of column 3 (Aditya is pushed down) */}
+            <div className="col-start-3 row-start-1" />
+
+            {/* Aditya photo — rows 2-3 on the right, pushed down */}
+            <div className="row-span-2 col-start-3 row-start-2 min-h-[250px]">
+              <AnimatedSection className="group w-full h-full" delay={400}>
+                <div className="relative w-full h-full overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
                   <Image
                     src="/media/AdityaKumarSingh.jpg"
                     alt="Vice President"
@@ -473,11 +532,9 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
                     className="object-cover"
                     sizes="600px"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 shadow-[inset_0_-20px_40px_rgba(0,0,0,0.6)]" />
-
-                  {/* Name Inside Photo */}
-                  <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 text-left">
-                    <h3 className="text-sm md:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95" />
+                  <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 text-left z-30">
+                    <h3 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                       Aditya Kumar
                       <br />
                       Singh
@@ -485,39 +542,20 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
                   </div>
                 </div>
               </AnimatedSection>
+            </div>
 
-              <AnimatedSection delay={500} className="flex flex-col pt-12 md:pt-16">
-                <span className="text-[2.5rem] md:text-[4.5rem] lg:text-[6rem] font-black uppercase tracking-[-0.05em] text-white leading-[0.75] mb-4">
+            {/* VICE PRESIDENT — bottom of column 2, between the two photos */}
+            <div className="col-start-2 row-start-3 flex items-end pb-2">
+              <AnimatedSection delay={500}>
+                <span className="text-[1.5rem] md:text-[2.5rem] lg:text-[3.5rem] font-black uppercase tracking-[-0.04em] text-zinc-500 leading-none">
                   VICE
                   <br />
-                  <span className="text-zinc-300">PRESIDENT</span>
+                  PRESIDENT
                 </span>
-                <div className="w-16 h-[3px] bg-zinc-300/40 mb-2" />
+                <div className="w-12 h-[2px] bg-zinc-600/40 mt-3" />
               </AnimatedSection>
             </div>
-          </div>
 
-          {/* Right Column: KANISHK */}
-          <div className="lg:col-span-5 w-full h-full flex flex-col justify-end lg:items-end">
-            <AnimatedSection className="relative w-full max-w-[450px] aspect-[3/4.5] overflow-hidden grayscale contrast-125 brightness-90 shadow-2xl group lg:ml-auto" delay={400}>
-              <div className="absolute inset-0 border border-white/10 z-20 pointer-events-none" />
-              <Image
-                src="/media/KanishkChaudhary.jpg"
-                alt="President"
-                fill
-                className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
-
-              <div className="absolute bottom-12 right-10 text-right z-30">
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-[-0.03em] leading-none text-white">
-                  Kanishk
-                  <br />
-                  Chaudhary
-                </h2>
-              </div>
-            </AnimatedSection>
           </div>
         </div>
 
