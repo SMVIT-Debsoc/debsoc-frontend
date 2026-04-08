@@ -6,6 +6,7 @@ import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
 import {Menu, Sparkles, X} from "lucide-react";
 import Image from "next/image";
+import WhyChooseDebsoc from "./WhyChooseDebsoc";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -15,13 +16,28 @@ export default function HomeClient() {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const whyChooseRef = useRef<HTMLDivElement>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
+  const [isWhyChooseOpen, setIsWhyChooseOpen] = useState(false);
 
   // Map vertical wheel scroll to the explore overlay logic
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       // Ignore very small scroll deltas
       if (Math.abs(e.deltaY) < 10) return;
+
+      // Ensure that wheel events bubbling up from the slider don't conflict
+      if (isWhyChooseOpen) {
+        if (whyChooseRef.current) {
+           const wc = whyChooseRef.current;
+           // If we scroll up and are at the very top of the section
+           if (e.deltaY < 0 && wc.scrollTop <= 0) {
+              setIsWhyChooseOpen(false);
+              setIsExploreOpen(true);
+           }
+        }
+        return;
+      }
 
       if (!isExploreOpen) {
         // If closed, and user scrolls down, expand the options!
@@ -32,12 +48,19 @@ export default function HomeClient() {
         // If opened, map the vertical wheel to horizontal slider scrolling
         if (sliderRef.current) {
           const slider = sliderRef.current;
-          if (e.deltaY < 0 && slider.scrollLeft <= 0) {
+          const isAtStart = slider.scrollLeft <= 0;
+          const isAtEnd = slider.scrollLeft + slider.clientWidth >= slider.scrollWidth - 2;
+
+          if (e.deltaY < 0 && isAtStart) {
             // Scrolled up while at the very start -> close it!
             setIsExploreOpen(false);
+          } else if (e.deltaY > 0 && isAtEnd) {
+            // Scrolled down while at the very end -> go to Why Choose Debsoc
+            setIsExploreOpen(false);
+            setIsWhyChooseOpen(true);
           } else {
             // Scroll the horizontal track
-            slider.scrollBy({left: e.deltaY * 1.5});
+            slider.scrollBy({left: e.deltaY * 0.8});
           }
         }
       }
@@ -45,7 +68,7 @@ export default function HomeClient() {
 
     window.addEventListener("wheel", handleWheel);
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [isExploreOpen]);
+  }, [isExploreOpen, isWhyChooseOpen]);
 
   useGSAP(
     () => {
@@ -165,16 +188,22 @@ export default function HomeClient() {
   );
 
   return (
-    // Main container (vertical scroll removed)
-    <div
-      className="bg-[#000000] text-zinc-100 font-sans h-screen overflow-hidden selection:bg-white/20 selection:text-white"
-      ref={containerRef}
-    >
-      {/* Sticky wrapper to keep layout locked while scrolling */}
-      <div
-        ref={stickyRef}
-        className="sticky top-0 w-full h-screen overflow-hidden"
+    // Outer Root container that translates natively
+    <div className="bg-[#000000] h-screen w-full overflow-hidden relative">
+      {/* Container that slides up to reveal Why Choose Debsoc */}
+      <div 
+        className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isWhyChooseOpen ? "-translate-y-full" : "translate-y-0"}`}
       >
+        {/* Main Hero Container */}
+        <div
+          className="bg-[#000000] text-zinc-100 font-sans h-screen w-full overflow-hidden selection:bg-white/20 selection:text-white"
+          ref={containerRef}
+        >
+          {/* Sticky wrapper to keep layout locked while scrolling */}
+          <div
+            ref={stickyRef}
+            className="sticky top-0 w-full h-screen overflow-hidden"
+          >
         {/* Top Navbar */}
         <nav className="absolute top-0 w-full flex justify-between items-center p-8 md:px-12 z-50">
           <div className="flex items-center gap-1 font-light tracking-widest text-xl uppercase relative z-50">
@@ -340,9 +369,9 @@ export default function HomeClient() {
         </div>
       </div>
 
-      {/* Fullscreen Explore Overlay */}
+      {/* Fullscreen Explore Overlay - Note it sits OUTSIDE the h-screen container but INSIDE the slider */}
       <div
-        className={`fixed inset-0 z-[100] transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center justify-start ${
+        className={`absolute inset-0 z-[100] transition-all duration-[1000ms] ease-[cubic-bezier(0.22,1,0.36,1)] flex items-center justify-start ${
           isExploreOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -422,20 +451,17 @@ export default function HomeClient() {
           ])}
         </div>
       </div>
+      
+      </div>
+      {/* End of Main Hero Container */}
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `,
-        }}
-      />
+      {/* Why Choose Debsoc Section Component */}
+      <WhyChooseDebsoc isWhyChooseOpen={isWhyChooseOpen} whyChooseRef={whyChooseRef} />
+      
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: '.hide-scrollbar::-webkit-scrollbar { display: none; } .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }' }} />
     </div>
   );
 }
+
