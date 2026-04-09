@@ -61,8 +61,8 @@ export default function DebateTimerPage() {
             </div>
 
             <main
-                className="relative z-10 min-h-screen px-4 md:px-8 pb-10"
-                style={{paddingTop: `${navHeight + 28}px`}}
+                className="relative z-10 min-h-screen px-2 sm:px-4 md:px-6 lg:px-8 pb-6 sm:pb-10"
+                style={{paddingTop: `${navHeight + 16}px`}}
             >
                 <div className="mx-auto w-full max-w-7xl h-full flex items-stretch">
                     <DebateTimerPanel />

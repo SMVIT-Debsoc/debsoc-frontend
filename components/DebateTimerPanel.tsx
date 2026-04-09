@@ -118,27 +118,27 @@ export default function DebateTimerPanel() {
             : seconds < 60 || seconds >= 360);
 
     const controlButtonBase =
-        "px-6 py-3 rounded-xl font-semibold tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed";
+        "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3 rounded-xl font-semibold text-sm sm:text-base tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed";
 
     return (
         <>
-            <div className="w-full max-w-6xl rounded-3xl border border-white/10 bg-black/25 backdrop-blur-2xl p-5 md:p-10 text-white shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
-                <div className="grid gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
+            <div className="w-full max-w-6xl rounded-2xl sm:rounded-3xl border border-white/10 bg-black/25 backdrop-blur-2xl p-3 sm:p-5 md:p-8 lg:p-10 text-white shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-[minmax(260px,360px)_minmax(0,1fr)] lg:grid-cols-[400px_minmax(0,1fr)]">
                     <motion.aside
                         initial={{opacity: 0, x: -20}}
                         animate={{opacity: 1, x: 0}}
                         transition={{duration: 0.55}}
-                        className="rounded-2xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 space-y-6"
+                        className="rounded-xl sm:rounded-2xl border border-white/10 bg-zinc-950/70 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-6"
                     >
                         <div className="space-y-3">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.2em] text-zinc-300">
                                 <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
                                 Debate Timer Engine
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight">
                                 Precision Panel
                             </h1>
-                            <p className="text-zinc-400 text-sm leading-relaxed">
+                            <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
                                 Parliamentary-ready timer with live centisecond
                                 precision and POI protection guidance.
                             </p>
@@ -200,7 +200,7 @@ export default function DebateTimerPanel() {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             <button
                                 onClick={handleStart}
                                 disabled={!clockType}
@@ -229,7 +229,7 @@ export default function DebateTimerPanel() {
                         initial={{opacity: 0, y: 20}}
                         animate={{opacity: 1, y: 0}}
                         transition={{duration: 0.6, delay: 0.08}}
-                        className="rounded-2xl border border-white/10 bg-zinc-950/60 p-6 md:p-10 flex flex-col justify-between gap-8"
+                        className="rounded-xl sm:rounded-2xl border border-white/10 bg-zinc-950/60 p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-between gap-4 sm:gap-6 md:gap-8"
                     >
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="inline-flex items-center gap-2 text-zinc-300">
@@ -260,7 +260,7 @@ export default function DebateTimerPanel() {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-white/10 bg-black/40 p-6 md:p-8 text-center">
+                        <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-black/40 p-4 sm:p-6 md:p-8 text-center">
                             <motion.div
                                 key={
                                     clockType === "Timer" && timeMs === 0
@@ -270,18 +270,18 @@ export default function DebateTimerPanel() {
                                 initial={{opacity: 0, y: 6}}
                                 animate={{opacity: 1, y: 0}}
                                 transition={{duration: 0.25}}
-                                className="font-mono text-5xl md:text-7xl tracking-[0.08em] text-white"
+                                className="font-mono text-3xl sm:text-4xl md:text-5xl lg:text-7xl tracking-[0.08em] text-white"
                             >
                                 {clockType === "Timer" && timeMs === 0
                                     ? "Time's Up!"
                                     : formatClock(timeMs)}
                             </motion.div>
-                            <p className="mt-4 text-xs uppercase tracking-[0.24em] text-zinc-500">
+                            <p className="mt-2 sm:mt-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.24em] text-zinc-500">
                                 Minutes : Seconds : Centiseconds
                             </p>
                         </div>
 
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                             <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                                 <div className="flex items-center gap-2 mb-2 text-zinc-300">
                                     <ShieldAlert className="w-4 h-4" />
@@ -290,7 +290,7 @@ export default function DebateTimerPanel() {
                                     </p>
                                 </div>
                                 <p
-                                    className={`text-sm md:text-base font-medium ${
+                                    className={`text-xs sm:text-sm md:text-base font-medium ${
                                         isProtected
                                             ? "text-amber-300"
                                             : "text-emerald-300"
