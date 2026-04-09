@@ -587,6 +587,7 @@ export default function Session() {
                                 },
                                 {
                                     tag: "TH, as X",
+                                    bgTag: "AP",
                                     title: "Actor Perspectives",
                                     desc: "Incentive-based debate. Argue purely from the best interests of 'X', regardless of global morality or fairness.",
                                 },
@@ -601,7 +602,7 @@ export default function Session() {
                                     className="bg-[#080808] p-16 group hover:bg-[#0c0c0c] border border-white/5 hover:border-white/30 transition-all duration-500 relative overflow-hidden rounded-sm text-left"
                                 >
                                     <div className="absolute -right-8 -bottom-8 text-[120px] font-black text-white/[0.02] group-hover:text-white/[0.05] transition-all duration-700 pointer-events-none">
-                                        {type.tag}
+                                        {type.bgTag ?? type.tag}
                                     </div>
                                     <div className="relative z-10 space-y-8">
                                         <div className="text-[11px] text-zinc-500 uppercase tracking-[0.5em] mb-4 group-hover:text-white transition-colors flex items-center gap-3 font-black">
@@ -705,43 +706,6 @@ export default function Session() {
                         </div>
                     </section>
 
-                    {/* FOOTER CALL TO ACTION */}
-                    <section className="pt-20 pb-40 text-center relative">
-                        <div className="absolute inset-0 flex items-center justify-center -z-10">
-                            <div className="w-[1000px] h-[500px] bg-white/[0.03] blur-[150px] rounded-full" />
-                        </div>
-
-                        <div className="max-w-2xl mx-auto space-y-16">
-                            <div className="space-y-8">
-                                <h2 className="text-4xl md:text-7xl font-light text-white uppercase tracking-widest leading-tight italic">
-                                    Master the{" "}
-                                    <span className="not-italic text-zinc-500">
-                                        Microphone
-                                    </span>
-                                </h2>
-                                <p className="text-sm text-zinc-400 leading-relaxed uppercase tracking-[0.8em] font-medium opacity-50">
-                                    "Logic is the beginning of wisdom, not the
-                                    end."
-                                </p>
-                            </div>
-
-                            <div className="flex flex-col items-center gap-12">
-                                <motion.div
-                                    initial={{width: 0}}
-                                    whileInView={{width: "200px"}}
-                                    className="h-[2px] bg-white"
-                                />
-                                <motion.a
-                                    href="/"
-                                    whileHover={{y: -5, color: "#fff"}}
-                                    className="group flex flex-col items-center gap-6 text-[12px] text-zinc-500 uppercase tracking-[0.8em] transition-all font-black"
-                                >
-                                    Return to Station
-                                    <div className="w-2 h-2 bg-zinc-800 rounded-full group-hover:scale-[3] group-hover:bg-white transition-all duration-700" />
-                                </motion.a>
-                            </div>
-                        </div>
-                    </section>
                 </section>
             </main>
 
