@@ -8,13 +8,14 @@ import {Menu, Sparkles, X} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
+import AchievementSection from "./AchievementSection";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
 }
 
 // ── Section enum so we never have stale-closure issues ─────────────────────────
-type Section = "home" | "explore" | "whychoose" | "team" | "alumni";
+type Section = "home" | "explore" | "whychoose" | "achievements" | "team" | "alumni";
 
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
@@ -28,6 +29,7 @@ export default function HomeClient() {
     const stickyRef = useRef<HTMLDivElement>(null);
     const sliderRef = useRef<HTMLDivElement>(null);
     const whyChooseRef = useRef<HTMLDivElement>(null);
+    const achievementsRef = useRef<HTMLDivElement>(null);
     const teamRef = useRef<HTMLDivElement>(null);
     const alumniRef = useRef<HTMLDivElement>(null);
 
@@ -241,8 +243,22 @@ export default function HomeClient() {
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
             const cur = sectionRef.current;
+            const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
+
+            if (cur === "achievements") {
+                const atTop = achievementsScroller
+                    ? achievementsScroller.scrollLeft <= SECTION_BOUNDARY_EPSILON
+                    : true;
+                if (e.deltaY < 0) {
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("alumni");
+                }
+                return;
+            }
 
             // Team section: let it scroll natively, but intercept at the top to go back
             if (cur === "team") {
@@ -297,9 +313,12 @@ export default function HomeClient() {
                     return;
                 }
 
-                // Clamp at the end so page scroll never drifts out of the section stack.
+                // Move from Alumni into Achievements when user scrolls down at the end.
                 if (e.deltaY > 0 && atBottom) {
                     e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("achievements");
                 }
                 return;
             }
@@ -410,10 +429,12 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "alumni"
-            ? "-translate-y-[300%]"
-            : section === "team"
-              ? "-translate-y-[200%]"
+        section === "achievements"
+            ? "-translate-y-[400%]"
+            : section === "alumni"
+              ? "-translate-y-[300%]"
+              : section === "team"
+                ? "-translate-y-[200%]"
               : section === "whychoose"
                 ? "-translate-y-full"
                 : "translate-y-0";
@@ -688,6 +709,10 @@ export default function HomeClient() {
                     >
                         <AlumniSection />
                     </div>
+                    <AchievementSection
+                        isAchievementsOpen={section === "achievements"}
+                        achievementsRef={achievementsRef}
+                    />
                 </div>
 
                 <style
