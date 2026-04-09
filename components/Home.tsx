@@ -9,13 +9,21 @@ import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
+import GallerySection from "./GallerySection";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
 }
 
 // ── Section enum so we never have stale-closure issues ─────────────────────────
-type Section = "home" | "explore" | "whychoose" | "achievements" | "team" | "alumni";
+type Section =
+    | "home"
+    | "explore"
+    | "whychoose"
+    | "achievements"
+    | "team"
+    | "alumni"
+    | "gallery";
 
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
@@ -32,6 +40,7 @@ export default function HomeClient() {
     const achievementsRef = useRef<HTMLDivElement>(null);
     const teamRef = useRef<HTMLDivElement>(null);
     const alumniRef = useRef<HTMLDivElement>(null);
+    const galleryRef = useRef<HTMLDivElement>(null);
 
     // mic refs
     const micWrapperRef = useRef<HTMLDivElement>(null);
@@ -246,16 +255,50 @@ export default function HomeClient() {
             const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
+            const galleryScroller = galleryRef.current;
 
             if (cur === "achievements") {
                 const atTop = achievementsScroller
-                    ? achievementsScroller.scrollLeft <= SECTION_BOUNDARY_EPSILON
+                    ? achievementsScroller.scrollLeft <=
+                      SECTION_BOUNDARY_EPSILON
                     : true;
-                if (e.deltaY < 0) {
+                const maxScrollLeft = achievementsScroller
+                    ? achievementsScroller.scrollWidth -
+                      achievementsScroller.clientWidth
+                    : 0;
+                const atBottom = achievementsScroller
+                    ? achievementsScroller.scrollLeft >=
+                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
+                    : false;
+
+                if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
                     setSectionSynced("alumni");
+                    return;
+                }
+
+                if (e.deltaY > 0 && atBottom) {
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("gallery");
+                }
+                return;
+            }
+
+            if (cur === "gallery") {
+                const atTop = galleryScroller
+                    ? galleryScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
+                    : true;
+
+                if (e.deltaY < 0 && atTop) {
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("achievements");
+                    return;
                 }
                 return;
             }
@@ -429,22 +472,24 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "achievements"
-            ? "-translate-y-[400%]"
-            : section === "alumni"
-              ? "-translate-y-[300%]"
-              : section === "team"
-                ? "-translate-y-[200%]"
-              : section === "whychoose"
-                ? "-translate-y-full"
-                : "translate-y-0";
+        section === "gallery"
+            ? "-translate-y-[500%]"
+            : section === "achievements"
+              ? "-translate-y-[400%]"
+              : section === "alumni"
+                ? "-translate-y-[300%]"
+                : section === "team"
+                  ? "-translate-y-[200%]"
+                  : section === "whychoose"
+                    ? "-translate-y-full"
+                    : "translate-y-0";
 
     return (
         <>
             <div className="bg-[#000000] h-screen w-full overflow-hidden relative">
                 {/* Sliding container — shifts up to reveal sub-sections */}
                 <div
-                    className={`w-full h-full relative transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${containerTranslate}`}
+                    className={`w-full h-full relative transition-transform duration-1200 ease-[cubic-bezier(0.22,1,0.36,1)] ${containerTranslate}`}
                 >
                     {/* ══════════════ MAIN HERO ══════════════ */}
                     <div
@@ -499,7 +544,7 @@ export default function HomeClient() {
                             <div className="right-content-panel absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 z-0">
                                 <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
                                     {/* Mission card */}
-                                    <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-[220px]">
+                                    <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-55">
                                         <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
                                             Mission
                                         </p>
@@ -533,7 +578,7 @@ export default function HomeClient() {
                                                 .map((item, i) => (
                                                     <div
                                                         key={item.title}
-                                                        className="relative w-[145px] h-[100px] group flex-shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
+                                                        className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
                                                         onClick={openExplore}
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
@@ -599,7 +644,7 @@ export default function HomeClient() {
               React only controls pointer-events.
             */}
                             <div
-                                className={`absolute inset-0 z-[100] flex items-center justify-start ${
+                                className={`absolute inset-0 z-100 flex items-center justify-start ${
                                     section === "explore"
                                         ? "pointer-events-auto"
                                         : "pointer-events-none"
@@ -613,7 +658,7 @@ export default function HomeClient() {
                 This EXACTLY mirrors the mic-wrapper after GSAP centres it.
                 No positional jump when swapping between wrapper and halves.
               */}
-                                <div className="absolute inset-0 z-[1] pointer-events-none">
+                                <div className="absolute inset-0 z-1 pointer-events-none">
                                     {/* Top half (clips bottom 50% of image) */}
                                     <div
                                         ref={micTopRef}
@@ -645,14 +690,14 @@ export default function HomeClient() {
                                     {/* Crack / light flash — positioned at 50% height of an 80vh mic = 60vh from top */}
                                     <div
                                         ref={crackRef}
-                                        className="absolute w-full h-[3px] bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform"
+                                        className="absolute w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform"
                                         style={{bottom: "40vh"}} // midpoint of 80vh mic sitting at bottom
                                     />
                                 </div>
 
                                 {/* Close button */}
                                 <button
-                                    className="absolute top-8 right-8 md:right-12 text-white z-[110] p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90 duration-300"
+                                    className="absolute top-8 right-8 md:right-12 text-white z-110 p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90 duration-300"
                                     onClick={closeExplore}
                                 >
                                     <X size={36} strokeWidth={1} />
@@ -661,12 +706,12 @@ export default function HomeClient() {
                                 {/* Fullscreen card slider */}
                                 <div
                                     ref={sliderRef}
-                                    className="relative z-[105] flex gap-10 px-[8vw] overflow-x-auto w-full h-[65vh] md:h-[72vh] items-center hide-scrollbar"
+                                    className="relative z-105 flex gap-10 px-[8vw] overflow-x-auto w-full h-[65vh] md:h-[72vh] items-center hide-scrollbar"
                                 >
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
-                                            className="relative min-w-[300px] md:min-w-[420px] lg:min-w-[500px] h-full group flex-shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                            className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                             <img
@@ -706,13 +751,17 @@ export default function HomeClient() {
                     <div
                         ref={alumniRef}
                         className="absolute left-0 w-full h-screen overflow-y-auto hide-scrollbar bg-[#000000]"
-                        style={{ top: "300%" }}
+                        style={{top: "300%"}}
                     >
                         <AlumniSection />
                     </div>
                     <AchievementSection
                         isAchievementsOpen={section === "achievements"}
                         achievementsRef={achievementsRef}
+                    />
+                    <GallerySection
+                        isGalleryOpen={section === "gallery"}
+                        galleryRef={galleryRef}
                     />
                 </div>
 
