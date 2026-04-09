@@ -20,6 +20,7 @@ import {
     ChevronDown,
 } from "lucide-react";
 import {motionData, MotionItem} from "@/lib/motion";
+import {ElegantShape} from "@/components/ui/shape-landing-hero";
 
 const getRandomMotions = (count = 1) => {
     if (!motionData || motionData.length === 0) return [];
@@ -99,14 +100,50 @@ export default function Session() {
     return (
         <div
             ref={containerRef}
-            className="min-h-screen bg-[#050505] text-zinc-300 font-sans selection:bg-white selection:text-black overflow-x-hidden"
+            className="relative min-h-screen bg-[#030303] text-zinc-300 font-sans selection:bg-white selection:text-black overflow-x-hidden"
         >
             <Toaster position="bottom-right" />
             <Navbar />
 
             {/* BACKGROUND DECORATION */}
-            <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-transparent to-rose-500/10 blur-[220px]" />
+                <div className="absolute inset-0 bg-black/25 backdrop-blur-[80px]" />
+                <div className="absolute inset-0 overflow-hidden">
+                    <ElegantShape
+                        delay={0.3}
+                        width={600}
+                        height={140}
+                        rotate={12}
+                        gradient="from-indigo-500/[0.15]"
+                        className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
+                    />
+                    <ElegantShape
+                        delay={0.5}
+                        width={500}
+                        height={120}
+                        rotate={-15}
+                        gradient="from-rose-500/[0.15]"
+                        className="right-[-5%] top-[70%] md:top-[75%]"
+                    />
+                    <ElegantShape
+                        delay={0.4}
+                        width={300}
+                        height={80}
+                        rotate={-8}
+                        gradient="from-violet-500/[0.15]"
+                        className="left-[5%] md:left-[10%] bottom-[5%] md:bottom-[10%]"
+                    />
+                    <ElegantShape
+                        delay={0.6}
+                        width={200}
+                        height={60}
+                        rotate={20}
+                        gradient="from-amber-500/[0.15]"
+                        className="right-[15%] md:right-[20%] top-[10%] md:top-[15%]"
+                    />
+                </div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-black/10 blur-[120px]" />
                 <div className="absolute top-0 left-1/4 w-px h-full bg-white/5" />
                 <div className="absolute top-0 right-1/4 w-px h-full bg-white/5" />
             </div>
