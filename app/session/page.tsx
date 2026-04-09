@@ -705,7 +705,6 @@ export default function Session() {
                             ))}
                         </div>
                     </section>
-
                 </section>
             </main>
 
