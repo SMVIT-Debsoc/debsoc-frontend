@@ -638,7 +638,8 @@ export default function TeamSection({ isTeamOpen, teamRef }: TeamSectionProps) {
   return (
     <div
       ref={teamRef}
-      className={`absolute top-[200%] left-0 w-full h-screen overflow-y-auto bg-[#030303] flex flex-col z-50 text-white hide-scrollbar`}
+      className={`absolute left-0 w-full h-screen overflow-y-auto bg-[#030303] flex flex-col z-50 text-white hide-scrollbar`}
+      style={{ top: "200%" }}
     >
       {/* ─────────────────────────────────────────────
           SECTION 01 — THE ARCHITECT (President)

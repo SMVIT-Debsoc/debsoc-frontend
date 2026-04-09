@@ -705,7 +705,8 @@ export default function HomeClient() {
                     />
                     <div
                         ref={alumniRef}
-                        className="absolute top-[300%] left-0 w-full h-screen overflow-y-auto hide-scrollbar bg-[#000000]"
+                        className="absolute left-0 w-full h-screen overflow-y-auto hide-scrollbar bg-[#000000]"
+                        style={{ top: "300%" }}
                     >
                         <AlumniSection />
                     </div>
