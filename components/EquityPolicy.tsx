@@ -26,10 +26,28 @@ const fadeUpVariants = {
 };
 
 export default function EquityPolicy() {
+    const [navHeight, setNavHeight] = React.useState(100);
+
+    React.useEffect(() => {
+        const updateNavHeight = () => {
+            const nav = document.querySelector("nav");
+            if (nav) {
+                setNavHeight(nav.offsetHeight);
+            }
+        };
+
+        // Initial setup
+        updateNavHeight();
+
+        // Update on resize
+        window.addEventListener("resize", updateNavHeight);
+        return () => window.removeEventListener("resize", updateNavHeight);
+    }, []);
+
     return (
         <div className="relative min-h-screen w-full bg-[#030303] text-white overflow-hidden selection:bg-indigo-500/30">
             {/* Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent to-rose-500/5 blur-3xl pointer-events-none" />
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <ElegantShape
                     delay={0.3}
@@ -66,7 +84,10 @@ export default function EquityPolicy() {
             </div>
 
             {/* Main Content */}
-            <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 md:py-32">
+            <div
+                className="relative z-10 max-w-5xl mx-auto px-6 pb-20 md:pb-32"
+                style={{paddingTop: `${navHeight + 60}px`}}
+            >
                 {/* Header */}
                 <motion.div
                     custom={0}
@@ -75,14 +96,14 @@ export default function EquityPolicy() {
                     variants={fadeUpVariants}
                     className="text-center mb-20"
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] mb-8">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/3 border border-white/8 mb-8">
                         <Scale className="w-4 h-4 text-indigo-400" />
                         <span className="text-sm text-white/70 tracking-wide uppercase">
                             Official Guidelines
                         </span>
                     </div>
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
+                        <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-300 via-white/90 to-rose-300">
                             Equity Policy Document
                         </span>
                     </h1>
@@ -130,7 +151,7 @@ export default function EquityPolicy() {
                             <motion.div
                                 key={idx}
                                 whileHover={{y: -5}}
-                                className="p-8 rounded-2xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.05] transition-colors"
+                                className="p-8 rounded-2xl bg-white/3 border border-white/8 backdrop-blur-md hover:bg-white/5 transition-colors"
                             >
                                 <h3 className="text-xl font-bold text-white/90 mb-1">
                                     {contact.name}
@@ -170,9 +191,9 @@ export default function EquityPolicy() {
                 >
                     <a
                         href="#"
-                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.1] rounded-full text-white font-medium transition-all duration-300 backdrop-blur-md overflow-hidden"
+                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white font-medium transition-all duration-300 backdrop-blur-md overflow-hidden"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-linear-to-r from-indigo-500/20 to-rose-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         <ShieldAlert className="w-5 h-5 text-rose-400 group-hover:scale-110 transition-transform" />
                         <span className="relative">
                             Anonymous Complaint Form
@@ -189,8 +210,8 @@ export default function EquityPolicy() {
                     className="max-w-4xl mx-auto space-y-12"
                 >
                     {/* Section 1 */}
-                    <div className="p-8 md:p-10 rounded-3xl bg-white/[0.02] border border-white/[0.05] backdrop-blur-sm">
-                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+                    <div className="p-8 md:p-10 rounded-3xl bg-white/2 border border-white/[0.05] backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/8">
                             <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
                                 <span className="text-xl font-bold text-indigo-300">
                                     1
@@ -267,7 +288,7 @@ export default function EquityPolicy() {
                                     ].map((principle, i) => (
                                         <div
                                             key={i}
-                                            className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]"
+                                            className="flex items-start gap-4 p-4 rounded-xl bg-white/2 border border-white/[0.05]"
                                         >
                                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2.5 shrink-0" />
                                             <div>
@@ -286,8 +307,8 @@ export default function EquityPolicy() {
                     </div>
 
                     {/* Section 2 */}
-                    <div className="p-8 md:p-10 rounded-3xl bg-white/[0.02] border border-white/[0.05] backdrop-blur-sm">
-                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+                    <div className="p-8 md:p-10 rounded-3xl bg-white/2 border border-white/[0.05] backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/8">
                             <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
                                 <span className="text-xl font-bold text-rose-300">
                                     2
@@ -303,7 +324,7 @@ export default function EquityPolicy() {
                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                                 2.1 Applicability
                             </h3>
-                            <p className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                            <p className="p-5 rounded-xl bg-white/2 border border-white/[0.05]">
                                 This Policy applies to all persons involved with
                                 the SMVIT Debating Society, including members,
                                 adjudicators, trainers, guest speakers,
@@ -314,8 +335,8 @@ export default function EquityPolicy() {
                     </div>
 
                     {/* Section 3 */}
-                    <div className="p-8 md:p-10 rounded-3xl bg-white/[0.02] border border-white/[0.05] backdrop-blur-sm">
-                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/[0.08]">
+                    <div className="p-8 md:p-10 rounded-3xl bg-white/2 border border-white/[0.05] backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/8">
                             <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
                                 <span className="text-xl font-bold text-amber-300">
                                     3
@@ -348,7 +369,7 @@ export default function EquityPolicy() {
                                 ].map((item, i) => (
                                     <div
                                         key={i}
-                                        className="flex items-center gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-colors"
+                                        className="flex items-center gap-3 p-4 rounded-xl bg-white/2 border border-white/[0.05] hover:bg-white/4 transition-colors"
                                     >
                                         <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
                                         <span className="text-white/80">
