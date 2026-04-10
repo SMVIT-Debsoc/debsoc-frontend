@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {useEffect, useRef, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -10,13 +10,12 @@ import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
-import Footer from "./Footer";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
 }
 
-// ── Section enum so we never have stale-closure issues ─────────────────────────
+// ΓöÇΓöÇ Section enum so we never have stale-closure issues ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 type Section =
     | "home"
     | "explore"
@@ -35,7 +34,7 @@ type NavItem = {
 
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
-    const MOBILE_VERTICAL_SWIPE_THRESHOLD = 24;
+    const MOBILE_VERTICAL_SWIPE_THRESHOLD = 36;
     const HOME_SCRUB_SENSITIVITY = 0.0012;
     const HOME_SCRUB_TWEEN_DURATION = 0.75;
     const MIC_INTRO_DURATION = 1.9;
@@ -71,7 +70,7 @@ export default function HomeClient() {
         "alumni",
     ];
 
-    // ── Use a REF mirror of section to avoid stale closures in wheel handler ──
+    // ΓöÇΓöÇ Use a REF mirror of section to avoid stale closures in wheel handler ΓöÇΓöÇ
     const sectionRef = useRef<Section>("home");
     const setSectionSynced = (s: Section) => {
         sectionRef.current = s;
@@ -107,11 +106,11 @@ export default function HomeClient() {
 
     // Scrubbable timeline state
     const animTimelineRef = useRef<gsap.core.Timeline | null>(null);
-    const scrubProgressRef = useRef(0); // 0 → 1
+    const scrubProgressRef = useRef(0); // 0 ΓåÆ 1
     const touchStartXRef = useRef(0);
     const touchStartYRef = useRef(0);
 
-    // Transition lock — prevents cascading section jumps from one scroll gesture
+    // Transition lock ΓÇö prevents cascading section jumps from one scroll gesture
     const transitionLockRef = useRef(false);
     const lockTransition = (ms = 1300) => {
         transitionLockRef.current = true;
@@ -120,37 +119,13 @@ export default function HomeClient() {
         }, ms);
     };
 
+
     const navItems: NavItem[] = [
-        {
-            title: "Team",
-            sub1: "Current Roster",
-            sub2: "Board Members",
-            sectionTarget: "team",
-        },
-        {
-            title: "Achievements",
-            sub1: "Trophies",
-            sub2: "Milestones",
-            sectionTarget: "achievements",
-        },
-        {
-            title: "Alumni",
-            sub1: "Hall of Fame",
-            sub2: "Past Debaters",
-            sectionTarget: "alumni",
-        },
-        {
-            title: "Debate Timer",
-            sub1: "Launch App",
-            sub2: "Settings",
-            href: "/debate-timer",
-        },
-        {
-            title: "Session",
-            sub1: "Next Meet",
-            sub2: "Resources",
-            href: "/session",
-        },
+        {title: "Team", sub1: "Current Roster", sub2: "Board Members", sectionTarget: "team"},
+        {title: "Achievements", sub1: "Trophies", sub2: "Milestones", sectionTarget: "achievements"},
+        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters", sectionTarget: "alumni"},
+        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings", href: "/debate-timer"},
+        {title: "Session", sub1: "Next Meet", sub2: "Resources", href: "/session"},
         {title: "Equity", sub1: "Guidelines", sub2: "Report", href: "/equity"},
     ];
 
@@ -187,9 +162,9 @@ export default function HomeClient() {
         }
     };
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     //  Scrubbable GSAP timeline
-    // ══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     useGSAP(
         () => {
             const micWrapper = micWrapperRef.current;
@@ -219,11 +194,12 @@ export default function HomeClient() {
             const tl = gsap.timeline({paused: true});
             animTimelineRef.current = tl;
 
-            // ─── Phase 1 (0 → 0.35) : Mic is already centred; ensure position is exact ─────────────
+            // ΓöÇΓöÇΓöÇ Phase 1 (0 ΓåÆ 0.35) : Mic travels from left to centre ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             tl.to(
                 micWrapper,
                 {
                     left: "50%",
+                    xPercent: -50,
                     duration: 0.35,
                     ease: "power2.inOut",
                 },
@@ -237,20 +213,20 @@ export default function HomeClient() {
                 tl.to(heroText, {opacity: 0, y: 20, duration: 0.3}, 0);
             if (blurBg) tl.to(blurBg, {opacity: 1, duration: 0.35}, 0.05);
 
-            // ─── Phase 2 (0.35 → 0.52) : Mic vibrates / charges up ────────────────
+            // ΓöÇΓöÇΓöÇ Phase 2 (0.35 ΓåÆ 0.52) : Mic vibrates / charges up ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             tl.to(
                 micWrapper,
                 {
                     x: "+=10",
                     duration: 0.05,
                     yoyo: true,
-                    repeat: 9, // 10 bounces ≈ 0.5s total charge-up
+                    repeat: 9, // 10 bounces Γëê 0.5s total charge-up
                     ease: "power1.inOut",
                 },
                 0.35,
             );
 
-            // ─── Phase 3 (0.55) : Seamless swap — show halves, hide wrapper ────────
+            // ΓöÇΓöÇΓöÇ Phase 3 (0.55) : Seamless swap ΓÇö show halves, hide wrapper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             // Set split halves visible FIRST (same GSAP frame), THEN hide wrapper
             // This prevents the 1-frame flash of black.
             tl.set(micTop, {opacity: 1}, 0.55);
@@ -258,7 +234,7 @@ export default function HomeClient() {
             tl.set(micWrapper, {opacity: 0}, 0.55);
 
             // Flash crack line at the 50% height of mic (mic is 80vh, bottom-aligned
-            // the visual midpoint sits at ~50vh from bottom → 50vh from top ≈ top-[50vh])
+            // the visual midpoint sits at ~50vh from bottom ΓåÆ 50vh from top Γëê top-[50vh])
             tl.to(
                 crack,
                 {
@@ -270,7 +246,7 @@ export default function HomeClient() {
                 0.55,
             );
 
-            // ─── Phase 4 (0.63 → 1.3) : Slow cinematic split ──────────────────────
+            // ΓöÇΓöÇΓöÇ Phase 4 (0.63 ΓåÆ 1.3) : Slow cinematic split ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             tl.to(
                 micTop,
                 {
@@ -308,7 +284,7 @@ export default function HomeClient() {
                 0.68,
             );
 
-            // ─── Phase 5 (0.85 → 1.4) : Real cards scale in from centre ───────────
+            // ΓöÇΓöÇΓöÇ Phase 5 (0.85 ΓåÆ 1.4) : Real cards scale in from centre ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
             tl.set(slider, {autoAlpha: 1}, 0.85);
 
             cards.forEach((card, i) => {
@@ -327,9 +303,9 @@ export default function HomeClient() {
         {scope: containerRef},
     );
 
-    // ══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     //  On-mount: mic drop-in animation
-    // ══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     useGSAP(
         () => {
             if (!containerRef.current) return;
@@ -384,9 +360,9 @@ export default function HomeClient() {
         setSectionSynced(targetSection);
     }, [searchParams]);
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  Wheel handler — reads from sectionRef to avoid stale closures
-    // ══════════════════════════════════════════════════════════════════════
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
+    //  Wheel handler ΓÇö reads from sectionRef to avoid stale closures
+    // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
             const cur = sectionRef.current;
@@ -437,7 +413,7 @@ export default function HomeClient() {
                     : false;
 
                 if (e.deltaY < 0 && atTop) {
-                    // We are at the top and scrolling up — transition back to whychoose
+                    // We are at the top and scrolling up ΓÇö transition back to whychoose
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
@@ -458,14 +434,12 @@ export default function HomeClient() {
             if (cur === "alumni") {
                 if (!alumniScroller) return;
 
-                const atTop =
-                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
-                const atBottom =
-                    Math.abs(
-                        alumniScroller.scrollHeight -
-                            alumniScroller.clientHeight -
-                            alumniScroller.scrollTop,
-                    ) <= SECTION_BOUNDARY_EPSILON;
+                const atTop = alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom = Math.abs(
+                    alumniScroller.scrollHeight -
+                    alumniScroller.clientHeight -
+                    alumniScroller.scrollTop
+                ) <= SECTION_BOUNDARY_EPSILON;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
@@ -528,28 +502,9 @@ export default function HomeClient() {
             if (cur === "explore") {
                 const slider = sliderRef.current;
 
-                // Mobile: keep the flow vertical (swipe up -> whychoose, swipe down -> home)
-                // and avoid desktop-style horizontal wheel handling.
-                if (window.innerWidth < 768) {
-                    if (e.deltaY < 0) {
-                        lockTransition();
-                        scrubProgressRef.current = 0;
-                        gsap.to(animTimelineRef.current, {
-                            progress: 0,
-                            duration: 0.7,
-                            ease: "power2.inOut",
-                        });
-                        setSectionSynced("home");
-                    } else if (e.deltaY > 0) {
-                        lockTransition();
-                        setSectionSynced("whychoose");
-                    }
-                    return;
-                }
-
                 if (e.deltaY < 0) {
                     if (!slider || slider.scrollLeft <= 2) {
-                        // At the start — close explore and go back to home
+                        // At the start ΓÇö close explore and go back to home
                         lockTransition();
                         scrubProgressRef.current = 0;
                         gsap.to(animTimelineRef.current, {
@@ -567,7 +522,7 @@ export default function HomeClient() {
                         slider.scrollLeft + slider.clientWidth >=
                         slider.scrollWidth - 4;
                     if (atEnd) {
-                        // At the end of cards — go to Why Choose (with lock!)
+                        // At the end of cards ΓÇö go to Why Choose (with lock!)
                         lockTransition();
                         setSectionSynced("whychoose");
                     } else {
@@ -579,7 +534,7 @@ export default function HomeClient() {
 
         window.addEventListener("wheel", handleWheel, {passive: false});
         return () => window.removeEventListener("wheel", handleWheel);
-    }, []); // ← empty deps: we read section from sectionRef, never stale
+    }, []); // ΓåÉ empty deps: we read section from sectionRef, never stale
 
     // Mobile swipe fallback with boundary checks to mirror wheel behavior.
     useEffect(() => {
@@ -596,30 +551,6 @@ export default function HomeClient() {
 
             const deltaX = touch.clientX - touchStartXRef.current;
             const deltaY = touchStartYRef.current - touch.clientY;
-            const cur = sectionRef.current;
-
-            // Explore on mobile uses a full-screen card grid, so don't require strict
-            // vertical-dominance checks; otherwise swipes can feel "locked".
-            if (cur === "explore") {
-                if (Math.abs(deltaY) < 14) return;
-
-                if (deltaY < 0) {
-                    // Swipe down -> back to home intro
-                    lockTransition(900);
-                    scrubProgressRef.current = 0;
-                    gsap.to(animTimelineRef.current, {
-                        progress: 0,
-                        duration: CLOSE_EXPLORE_DURATION,
-                        ease: "power2.inOut",
-                    });
-                    setSectionSynced("home");
-                } else {
-                    // Swipe up -> Why Choose section
-                    lockTransition(900);
-                    setSectionSynced("whychoose");
-                }
-                return;
-            }
 
             // Keep horizontal card swipes intact by only handling clear vertical gestures.
             if (
@@ -629,6 +560,7 @@ export default function HomeClient() {
                 return;
             }
 
+            const cur = sectionRef.current;
             const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
@@ -704,7 +636,6 @@ export default function HomeClient() {
                     lockTransition();
                     setSectionSynced("team");
                 }
-                return;
             }
         };
 
@@ -754,11 +685,11 @@ export default function HomeClient() {
     return (
         <>
             <div className="bg-[#000000] h-screen w-full overflow-hidden relative">
-                {/* Sliding container — shifts up to reveal sub-sections */}
+                {/* Sliding container ΓÇö shifts up to reveal sub-sections */}
                 <div
                     className={`w-full h-full relative transition-transform duration-1200 ease-[cubic-bezier(0.22,1,0.36,1)] ${containerTranslate}`}
                 >
-                    {/* ══════════════ MAIN HERO ══════════════ */}
+                    {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ MAIN HERO ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
                     <div
                         className="bg-[#000000] text-zinc-100 font-sans h-screen w-full overflow-hidden selection:bg-white/20 selection:text-white"
                         ref={containerRef}
@@ -767,20 +698,21 @@ export default function HomeClient() {
                             ref={stickyRef}
                             className="sticky top-0 w-full h-screen overflow-hidden"
                         >
-                            {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
+                            {/* ΓöÇΓöÇ Main mic (GSAP moves this to centre) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
                             {/*
               FIX: positioned at bottom-0, left-[10%] to start.
-              GSAP animates left → 50% and xPercent → -50 so it centres perfectly.
+              GSAP animates left ΓåÆ 50% and xPercent ΓåÆ -50 so it centres perfectly.
               Split halves mirror this exact layout (bottom-0, left-1/2 -translate-x-1/2).
             */}
                             <div
                                 ref={micWrapperRef}
-                                className="mic-wrapper absolute bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
+                                className="mic-wrapper absolute bottom-0 z-10 pointer-events-none"
+                                style={{left: "10%"}}
                             >
                                 <img
                                     src="/mic-nobg.png"
                                     alt="Retro Microphone"
-                                    className="mic-element h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                                    className="mic-element h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
                                     style={{
                                         transformStyle: "preserve-3d",
                                         display: "block",
@@ -788,8 +720,8 @@ export default function HomeClient() {
                                 />
                             </div>
 
-                            {/* ── Right content panel ─────────────────────────────────── */}
-                            <div className="right-content-panel absolute inset-y-0 right-0 hidden md:flex md:w-[50%] h-full flex-col justify-center items-end p-8 md:pr-12 z-0">
+                            {/* ΓöÇΓöÇ Right content panel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+                            <div className="right-content-panel absolute top-0 right-0 w-full md:w-[50%] h-full flex flex-col justify-center items-end p-8 md:pr-12 z-0">
                                 <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
                                     {/* Mission card */}
                                     <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-55">
@@ -826,12 +758,8 @@ export default function HomeClient() {
                                                 .map((item, i) => (
                                                     <div
                                                         key={item.title}
-                                                        className="relative w-32 md:w-36.25 h-24 md:h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={() =>
-                                                            navigateFromCard(
-                                                                item,
-                                                            )
-                                                        }
+                                                        className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
+                                                        onClick={() => navigateFromCard(item)}
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -853,32 +781,23 @@ export default function HomeClient() {
                                 </div>
                             </div>
 
-                            {/* ── Hero text ───────────────────────────────────────────── */}
-                            {/* Mobile gradient behind text for readability over the centered mic */}
-                            <div className="md:hidden absolute inset-x-0 bottom-0 h-[48vh] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-[15]" />
-                            <div className="hero-text-container absolute left-4 right-4 bottom-6 sm:left-8 sm:right-auto sm:bottom-10 md:bottom-20 md:left-12 z-20 flex flex-col pointer-events-none w-auto max-w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(30rem,50vw)] md:max-w-4xl">
-                                <h1 className="hero-text text-[clamp(2.25rem,6vw,7rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 drop-shadow-lg">
+                            {/* ΓöÇΓöÇ Hero text ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+                            <div className="hero-text-container absolute bottom-12 md:bottom-20 left-8 md:left-12 z-20 flex flex-col pointer-events-none">
+                                <h1 className="hero-text text-[3rem] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 max-w-4xl drop-shadow-lg">
                                     DEBSOC:
                                     <br />
                                     <span className="text-zinc-300">
                                         THE ART OF ARGUMENT.
                                     </span>
                                 </h1>
-                                <p className="hero-text text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
+                                <p className="hero-text text-sm md:text-lg text-zinc-400 font-light max-w-md mt-2 tracking-wide leading-relaxed drop-shadow">
                                     A high-end production studio for <br />
                                     discourse and debate.
                                 </p>
-                                {/* Mobile explore CTA */}
-                                <button
-                                    onClick={openExplore}
-                                    className="md:hidden mt-5 self-start text-[11px] text-white/70 hover:text-white uppercase tracking-[0.24em] border border-white/15 hover:bg-white/10 px-4 py-2.5 rounded transition-all pointer-events-auto"
-                                >
-                                    Explore ↗
-                                </button>
                             </div>
 
-                            {/* ── Footer links ────────────────────────────────────────── */}
-                            <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-4 md:gap-6 text-xs text-zinc-400 font-light tracking-wider md:gap-6">
+                            {/* ΓöÇΓöÇ Footer links ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */}
+                            <div className="absolute bottom-8 right-8 md:right-12 z-20 flex gap-6 text-xs text-zinc-400 font-light tracking-wider">
                                 <button
                                     onClick={() => setSectionSynced("team")}
                                     className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
@@ -893,15 +812,15 @@ export default function HomeClient() {
                                 </a>
                                 <a
                                     href="#"
-                                    className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white hidden md:inline"
+                                    className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
                                 >
                                     Contact
                                 </a>
                             </div>
 
-                            {/* ══════════════════ EXPLORE OVERLAY ══════════════════════ */}
+                            {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ EXPLORE OVERLAY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
                             {/*
-              Always rendered — GSAP manages visibility,
+              Always rendered ΓÇö GSAP manages visibility,
               React only controls pointer-events.
             */}
                             <div
@@ -923,13 +842,13 @@ export default function HomeClient() {
                                     {/* Top half (clips bottom 50% of image) */}
                                     <div
                                         ref={micTopRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
                                         style={{clipPath: "inset(0 0 50% 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
@@ -937,36 +856,35 @@ export default function HomeClient() {
                                     {/* Bottom half (clips top 50% of image) */}
                                     <div
                                         ref={micBotRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
                                         style={{clipPath: "inset(50% 0 0 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-[80vh] md:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
 
-                                    {/* Crack / light flash — dynamically centered vertically on the mic */}
+                                    {/* Crack / light flash ΓÇö positioned at 50% height of an 80vh mic = 60vh from top */}
                                     <div
                                         ref={crackRef}
-                                        className="absolute bottom-[23vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
+                                        className="absolute w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform"
+                                        style={{bottom: "40vh"}} // midpoint of 80vh mic sitting at bottom
                                     />
                                 </div>
 
                                 {/* Fullscreen card slider */}
                                 <div
                                     ref={sliderRef}
-                                    className="relative z-105 w-full h-[72vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-hidden overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
+                                    className="relative z-105 flex gap-10 px-[8vw] overflow-x-auto w-full h-[65vh] md:h-[72vh] items-center hide-scrollbar"
                                 >
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
-                                            onClick={() =>
-                                                navigateFromCard(item)
-                                            }
-                                            className="relative w-full md:w-auto min-w-0 h-[calc((72vh-2rem)/3)] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                            onClick={() => navigateFromCard(item)}
+                                            className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                             <img
@@ -974,14 +892,14 @@ export default function HomeClient() {
                                                 alt={item.title}
                                                 className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
                                             />
-                                            <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 left-3 sm:left-4 md:left-8 z-20 pr-3 sm:pr-4 md:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
-                                                <h4 className="text-sm sm:text-base md:text-4xl text-white font-light uppercase tracking-wider md:tracking-widest leading-snug drop-shadow-lg">
+                                            <div className="absolute bottom-8 left-8 z-20 pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
+                                                <h4 className="text-2xl md:text-4xl text-white font-light uppercase tracking-widest leading-snug drop-shadow-lg">
                                                     {item.title}:<br />
-                                                    <span className="text-zinc-300 text-xs sm:text-sm md:text-2xl">
+                                                    <span className="text-zinc-300 text-lg md:text-2xl">
                                                         {item.sub1}
                                                     </span>
                                                     <br />
-                                                    <span className="text-zinc-400 text-[11px] sm:text-xs md:text-lg">
+                                                    <span className="text-zinc-400 text-base md:text-lg">
                                                         {item.sub2}
                                                     </span>
                                                 </h4>
@@ -990,10 +908,10 @@ export default function HomeClient() {
                                     ))}
                                 </div>
                             </div>
-                            {/* ══════════════ END EXPLORE OVERLAY ══════════════════════ */}
+                            {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ END EXPLORE OVERLAY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
                         </div>
                     </div>
-                    {/* ══════════════ END MAIN HERO ══════════════ */}
+                    {/* ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ END MAIN HERO ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ */}
 
                     <WhyChooseDebsoc
                         isWhyChooseOpen={section === "whychoose"}
@@ -1009,7 +927,6 @@ export default function HomeClient() {
                         style={{top: "400%"}}
                     >
                         <AlumniSection />
-                        <Footer />
                     </div>
                     <AchievementSection
                         isAchievementsOpen={section === "achievements"}
