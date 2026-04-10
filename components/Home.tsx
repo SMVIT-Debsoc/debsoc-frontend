@@ -957,7 +957,7 @@ export default function HomeClient() {
                                 {/* Fullscreen card slider */}
                                 <div
                                     ref={sliderRef}
-                                    className="relative z-105 w-full h-[68vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-4 sm:px-6 md:px-[8vw] py-3 sm:py-4 md:py-0 grid grid-cols-2 gap-3 sm:gap-4 overflow-y-auto overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden md:snap-x md:snap-mandatory"
+                                    className="relative z-105 w-full h-[72vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-hidden overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden md:snap-x md:snap-mandatory"
                                 >
                                     {navItems.map((item, i) => (
                                         <div
@@ -965,7 +965,7 @@ export default function HomeClient() {
                                             onClick={() =>
                                                 navigateFromCard(item)
                                             }
-                                            className="relative w-full min-w-0 h-[28vh] sm:h-[30vh] md:min-w-[420px] md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] md:snap-center"
+                                            className="relative w-full min-w-0 h-[calc((72vh-2rem)/3)] sm:h-[30vh] md:min-w-[420px] md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] md:snap-center"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                             <img
