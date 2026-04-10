@@ -10,6 +10,7 @@ import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
+import Footer from "./Footer";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -119,13 +120,37 @@ export default function HomeClient() {
         }, ms);
     };
 
-
     const navItems: NavItem[] = [
-        {title: "Team", sub1: "Current Roster", sub2: "Board Members", sectionTarget: "team"},
-        {title: "Achievements", sub1: "Trophies", sub2: "Milestones", sectionTarget: "achievements"},
-        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters", sectionTarget: "alumni"},
-        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings", href: "/debate-timer"},
-        {title: "Session", sub1: "Next Meet", sub2: "Resources", href: "/session"},
+        {
+            title: "Team",
+            sub1: "Current Roster",
+            sub2: "Board Members",
+            sectionTarget: "team",
+        },
+        {
+            title: "Achievements",
+            sub1: "Trophies",
+            sub2: "Milestones",
+            sectionTarget: "achievements",
+        },
+        {
+            title: "Alumni",
+            sub1: "Hall of Fame",
+            sub2: "Past Debaters",
+            sectionTarget: "alumni",
+        },
+        {
+            title: "Debate Timer",
+            sub1: "Launch App",
+            sub2: "Settings",
+            href: "/debate-timer",
+        },
+        {
+            title: "Session",
+            sub1: "Next Meet",
+            sub2: "Resources",
+            href: "/session",
+        },
         {title: "Equity", sub1: "Guidelines", sub2: "Report", href: "/equity"},
     ];
 
@@ -434,12 +459,14 @@ export default function HomeClient() {
             if (cur === "alumni") {
                 if (!alumniScroller) return;
 
-                const atTop = alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
-                const atBottom = Math.abs(
-                    alumniScroller.scrollHeight -
-                    alumniScroller.clientHeight -
-                    alumniScroller.scrollTop
-                ) <= SECTION_BOUNDARY_EPSILON;
+                const atTop =
+                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        alumniScroller.scrollHeight -
+                            alumniScroller.clientHeight -
+                            alumniScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
@@ -759,7 +786,11 @@ export default function HomeClient() {
                                                     <div
                                                         key={item.title}
                                                         className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={() => navigateFromCard(item)}
+                                                        onClick={() =>
+                                                            navigateFromCard(
+                                                                item,
+                                                            )
+                                                        }
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -883,7 +914,9 @@ export default function HomeClient() {
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
-                                            onClick={() => navigateFromCard(item)}
+                                            onClick={() =>
+                                                navigateFromCard(item)
+                                            }
                                             className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
@@ -927,6 +960,7 @@ export default function HomeClient() {
                         style={{top: "400%"}}
                     >
                         <AlumniSection />
+                        <Footer />
                     </div>
                     <AchievementSection
                         isAchievementsOpen={section === "achievements"}

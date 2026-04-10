@@ -3,6 +3,7 @@
 import React, {useState, useEffect, useRef} from "react";
 import {motion, AnimatePresence, useScroll, useTransform} from "framer-motion";
 import Navbar from "@/components/Navbar";
+import {Suspense} from "react";
 import toast, {Toaster} from "react-hot-toast";
 import {
     Sparkles,
@@ -103,7 +104,9 @@ export default function Session() {
             className="relative min-h-screen bg-[#030303] text-zinc-300 font-sans selection:bg-white selection:text-black overflow-x-hidden"
         >
             <Toaster position="bottom-right" />
-            <Navbar />
+            <Suspense fallback={null}>
+                <Navbar />
+            </Suspense>
 
             {/* BACKGROUND DECORATION */}
             <div className="absolute inset-0 pointer-events-none z-0">
@@ -294,22 +297,26 @@ export default function Session() {
                                 </span>
                             </h2>
                         </div>
- 
+
                         <div className="mt-8 md:mt-16 grid lg:grid-cols-2 gap-8 md:gap-12 bg-transparent overflow-hidden">
                             {/* BP FORMAT */}
                             <div className="group relative bg-[#0a0a0a] p-8 sm:p-16 md:p-24 space-y-10 md:space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
- 
+
                                 <div className="relative z-10 space-y-8 md:space-y-12 text-left">
                                     <div className="flex items-center justify-between">
                                         <div className="w-12 h-12 md:w-20 md:h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
-                                            <Timer size={24} className="md:w-9 md:h-9" strokeWidth={1} />
+                                            <Timer
+                                                size={24}
+                                                className="md:w-9 md:h-9"
+                                                strokeWidth={1}
+                                            />
                                         </div>
                                         <span className="text-[50px] md:text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
                                             BP
                                         </span>
                                     </div>
- 
+
                                     <div className="space-y-4 md:space-y-6">
                                         <h3 className="text-3xl sm:text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
                                             British <br />{" "}
@@ -386,17 +393,21 @@ export default function Session() {
                             {/* ASIAN FORMAT */}
                             <div className="group relative bg-[#0a0a0a] p-8 sm:p-16 md:p-24 space-y-10 md:space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
- 
+
                                 <div className="relative z-10 space-y-8 md:space-y-12 text-left">
                                     <div className="flex items-center justify-between">
                                         <div className="w-12 h-12 md:w-20 md:h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
-                                            <Users size={24} className="md:w-9 md:h-9" strokeWidth={1} />
+                                            <Users
+                                                size={24}
+                                                className="md:w-9 md:h-9"
+                                                strokeWidth={1}
+                                            />
                                         </div>
                                         <span className="text-[50px] md:text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
                                             AP
                                         </span>
                                     </div>
- 
+
                                     <div className="space-y-4 md:space-y-6">
                                         <h3 className="text-3xl sm:text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
                                             Asian <br />{" "}
@@ -477,7 +488,7 @@ export default function Session() {
                         <div className="absolute top-0 right-0 w-2/3 h-full overflow-hidden opacity-30 transform translate-x-10 pointer-events-none">
                             <div className="w-full h-full bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[length:40px_40px]" />
                         </div>
- 
+
                         <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-12 md:gap-24 relative z-10">
                             <div className="xl:w-1/3 space-y-6 md:space-y-10 text-left">
                                 <div className="space-y-4 md:space-y-6">
@@ -506,17 +517,32 @@ export default function Session() {
                             <div className="xl:w-2/3 grid md:grid-cols-1 gap-4">
                                 {[
                                     {
-                                        icon: <Zap size={28} className="md:w-8 md:h-8" />,
+                                        icon: (
+                                            <Zap
+                                                size={28}
+                                                className="md:w-8 md:h-8"
+                                            />
+                                        ),
                                         title: "POI Integration",
                                         desc: "Points of Information should not be random questions. They are strategic interventions meant to force a speaker into a logical binary or reveal a lack of structural nuance.",
                                     },
                                     {
-                                        icon: <Layers size={28} className="md:w-8 md:h-8" />,
+                                        icon: (
+                                            <Layers
+                                                size={28}
+                                                className="md:w-8 md:h-8"
+                                            />
+                                        ),
                                         title: "The Mechanism Layer",
                                         desc: "In 'THW' motions, your mechanism is your shield. Define the implementation detail to pre-empt 'Does not work' arguments and control the debate's environment.",
                                     },
                                     {
-                                        icon: <Target size={28} className="md:w-8 md:h-8" />,
+                                        icon: (
+                                            <Target
+                                                size={28}
+                                                className="md:w-8 md:h-8"
+                                            />
+                                        ),
                                         title: "Fiat Equilibrium",
                                         desc: "Both sides possess equal Fiat. If the Gov can claim they pass a law, the Opp can claim they implement an alternative policy with the same degree of executive power.",
                                     },
@@ -630,7 +656,8 @@ export default function Session() {
                                             whileHover={{x: 10}}
                                             className="pt-6 md:pt-8 flex items-center gap-4 text-[9px] md:text-[10px] text-white uppercase tracking-[0.3em] md:tracking-[0.5em] cursor-pointer font-black border-t border-white/5 mt-auto"
                                         >
-                                            Strategic Playbook <ChevronRight size={14} />
+                                            Strategic Playbook{" "}
+                                            <ChevronRight size={14} />
                                         </motion.div>
                                     </div>
                                 </div>

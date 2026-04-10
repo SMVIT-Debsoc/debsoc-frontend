@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, {Suspense} from "react";
 import Navbar from "@/components/Navbar";
 import DebateTimerPanel from "@/components/DebateTimerPanel";
 import {ElegantShape} from "@/components/ui/shape-landing-hero";
@@ -23,7 +23,9 @@ export default function DebateTimerPage() {
 
     return (
         <div className="relative min-h-screen bg-[#030303] text-white overflow-x-hidden selection:bg-indigo-500/30">
-            <Navbar />
+            <Suspense fallback={null}>
+                <Navbar />
+            </Suspense>
             <div className="absolute inset-0 bg-linear-to-br from-indigo-500/5 via-transparent to-rose-500/5 blur-3xl pointer-events-none" />
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <ElegantShape
@@ -65,7 +67,15 @@ export default function DebateTimerPage() {
                 style={{paddingTop: `${navHeight + 16}px`}}
             >
                 <div className="mx-auto w-full max-w-7xl h-full flex items-stretch">
-                    <DebateTimerPanel />
+                    <Suspense
+                        fallback={
+                            <div className="text-white text-sm">
+                                Loading Panel...
+                            </div>
+                        }
+                    >
+                        <DebateTimerPanel />
+                    </Suspense>
                 </div>
             </main>
         </div>
