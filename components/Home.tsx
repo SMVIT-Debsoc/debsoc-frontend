@@ -919,8 +919,10 @@ export default function HomeClient() {
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
-                                            onClick={() => navigateFromCard(item)}
-                                            className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                            onClick={() =>
+                                                navigateFromCard(item)
+                                            }
+                                            className="relative min-w-[75vw] sm:min-w-[55vw] md:min-w-[420px] lg:min-w-[500px] h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                             <img
