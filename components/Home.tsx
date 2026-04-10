@@ -36,6 +36,7 @@ type NavItem = {
 
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
+    const MOBILE_VERTICAL_SWIPE_THRESHOLD = 36;
     const HOME_SCRUB_SENSITIVITY = 0.0012;
     const HOME_SCRUB_TWEEN_DURATION = 0.75;
     const MIC_INTRO_DURATION = 1.9;
@@ -110,6 +111,8 @@ export default function HomeClient() {
     // Scrubbable timeline state
     const animTimelineRef = useRef<gsap.core.Timeline | null>(null);
     const scrubProgressRef = useRef(0); // 0 → 1
+    const touchStartXRef = useRef(0);
+    const touchStartYRef = useRef(0);
 
     // Transition lock — prevents cascading section jumps from one scroll gesture
     const transitionLockRef = useRef(false);
@@ -594,6 +597,150 @@ export default function HomeClient() {
         window.addEventListener("wheel", handleWheel, {passive: false});
         return () => window.removeEventListener("wheel", handleWheel);
     }, []); // ← empty deps: we read section from sectionRef, never stale
+
+    // Mobile swipe fallback with boundary checks to mirror wheel behavior.
+    useEffect(() => {
+        const handleTouchStart = (e: TouchEvent) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            touchStartXRef.current = touch.clientX;
+            touchStartYRef.current = touch.clientY;
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const touch = e.changedTouches[0];
+            if (!touch || transitionLockRef.current) return;
+
+            const deltaX = touch.clientX - touchStartXRef.current;
+            const deltaY = touchStartYRef.current - touch.clientY;
+
+            // Keep horizontal card swipes intact by only handling clear vertical gestures.
+            if (
+                Math.abs(deltaY) < MOBILE_VERTICAL_SWIPE_THRESHOLD ||
+                Math.abs(deltaY) <= Math.abs(deltaX)
+            ) {
+                return;
+            }
+
+            const cur = sectionRef.current;
+            const achievementsScroller = achievementsRef.current;
+            const teamScroller = teamRef.current;
+            const alumniScroller = alumniRef.current;
+            const galleryScroller = galleryRef.current;
+            const whyChooseScroller = whyChooseRef.current;
+
+            if (cur === "achievements") {
+                const maxScrollLeft = achievementsScroller
+                    ? achievementsScroller.scrollWidth -
+                      achievementsScroller.clientWidth
+                    : 0;
+                const atStart = achievementsScroller
+                    ? achievementsScroller.scrollLeft <=
+                      SECTION_BOUNDARY_EPSILON
+                    : true;
+                const atEnd = achievementsScroller
+                    ? achievementsScroller.scrollLeft >=
+                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
+                    : false;
+
+                if (deltaY < 0 && atStart) {
+                    // Swipe down at beginning -> Alumni
+                    lockTransition();
+                    setSectionSynced("alumni");
+                } else if (deltaY > 0 && atEnd) {
+                    // Swipe up at end -> Gallery
+                    lockTransition();
+                    setSectionSynced("gallery");
+                }
+                return;
+            }
+
+            if (cur === "gallery") {
+                const atTop = galleryScroller
+                    ? galleryScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
+                    : true;
+
+                if (deltaY < 0 && atTop) {
+                    // Swipe down at top -> Achievements
+                    lockTransition();
+                    setSectionSynced("achievements");
+                }
+                return;
+            }
+
+            if (cur === "alumni") {
+                if (!alumniScroller) return;
+                const atTop =
+                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        alumniScroller.scrollHeight -
+                            alumniScroller.clientHeight -
+                            alumniScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("team");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("achievements");
+                }
+                return;
+            }
+
+            if (cur === "team") {
+                if (!teamScroller) return;
+                const atTop =
+                    teamScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        teamScroller.scrollHeight -
+                            teamScroller.clientHeight -
+                            teamScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("whychoose");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("alumni");
+                }
+                return;
+            }
+
+            if (cur === "whychoose") {
+                if (!whyChooseScroller) return;
+                const atTop =
+                    whyChooseScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        whyChooseScroller.scrollHeight -
+                            whyChooseScroller.clientHeight -
+                            whyChooseScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("explore");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("team");
+                }
+            }
+        };
+
+        window.addEventListener("touchstart", handleTouchStart, {
+            passive: true,
+        });
+        window.addEventListener("touchend", handleTouchEnd, {passive: true});
+
+        return () => {
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchend", handleTouchEnd);
+        };
+    }, []);
 
     const openExplore = () => {
         scrubProgressRef.current = 1;
