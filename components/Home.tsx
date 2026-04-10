@@ -4,6 +4,7 @@ import {useEffect, useRef, useState} from "react";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
+import {useRouter, useSearchParams} from "next/navigation";
 import {Menu, Sparkles, X} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
@@ -25,6 +26,14 @@ type Section =
     | "alumni"
     | "gallery";
 
+type NavItem = {
+    title: string;
+    sub1: string;
+    sub2: string;
+    href?: string;
+    sectionTarget?: Section;
+};
+
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
     const HOME_SCRUB_SENSITIVITY = 0.0012;
@@ -42,6 +51,9 @@ export default function HomeClient() {
     const alumniRef = useRef<HTMLDivElement>(null);
     const galleryRef = useRef<HTMLDivElement>(null);
 
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
     // mic refs
     const micWrapperRef = useRef<HTMLDivElement>(null);
     const micTopRef = useRef<HTMLDivElement>(null);
@@ -50,6 +62,16 @@ export default function HomeClient() {
 
     // React state (drives CSS class on the sliding container)
     const [section, setSection] = useState<Section>("home");
+
+    const validSections: Section[] = [
+        "home",
+        "explore",
+        "whychoose",
+        "achievements",
+        "team",
+        "alumni",
+        "gallery",
+    ];
 
     // ── Use a REF mirror of section to avoid stale closures in wheel handler ──
     const sectionRef = useRef<Section>("home");
@@ -71,15 +93,78 @@ export default function HomeClient() {
         }, ms);
     };
 
-    const navItems = [
-        {title: "Team", sub1: "Current Roster", sub2: "Board Members"},
-        {title: "Achievements", sub1: "Trophies", sub2: "Milestones"},
-        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters"},
-        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings"},
-        {title: "Session", sub1: "Next Meet", sub2: "Resources"},
-        {title: "Equity", sub1: "Guidelines", sub2: "Report"},
-        {title: "Gallery", sub1: "Photos", sub2: "Videos"},
+    const navItems: NavItem[] = [
+        {
+            title: "Team",
+            sub1: "Current Roster",
+            sub2: "Board Members",
+            sectionTarget: "team",
+        },
+        {
+            title: "Achievements",
+            sub1: "Trophies",
+            sub2: "Milestones",
+            sectionTarget: "achievements",
+        },
+        {
+            title: "Alumni",
+            sub1: "Hall of Fame",
+            sub2: "Past Debaters",
+            sectionTarget: "alumni",
+        },
+        {
+            title: "Debate Timer",
+            sub1: "Launch App",
+            sub2: "Settings",
+            href: "/debate-timer",
+        },
+        {
+            title: "Session",
+            sub1: "Next Meet",
+            sub2: "Resources",
+            href: "/session",
+        },
+        {title: "Equity", sub1: "Guidelines", sub2: "Report", href: "/equity"},
+        {
+            title: "Gallery",
+            sub1: "Photos",
+            sub2: "Videos",
+            sectionTarget: "gallery",
+        },
     ];
+
+    const navigateFromCard = (item: NavItem) => {
+        if (item.sectionTarget) {
+            const target = item.sectionTarget;
+            if (target === "home") {
+                scrubProgressRef.current = 0;
+                if (animTimelineRef.current) {
+                    gsap.to(animTimelineRef.current, {
+                        progress: 0,
+                        duration: CLOSE_EXPLORE_DURATION,
+                        ease: "power2.inOut",
+                    });
+                }
+                setSectionSynced("home");
+                return;
+            }
+
+            scrubProgressRef.current = 1;
+            if (animTimelineRef.current) {
+                gsap.to(animTimelineRef.current, {
+                    progress: 1,
+                    duration: 0.45,
+                    ease: "power2.out",
+                });
+            }
+            setSectionSynced(target);
+            return;
+        }
+
+        if (item.href) {
+            router.push(item.href);
+        }
+    };
 
     // ══════════════════════════════════════════════════════════════════════
     //  Scrubbable GSAP timeline
@@ -245,6 +330,39 @@ export default function HomeClient() {
             window.scrollTo({top: 0, left: 0, behavior: "auto"});
         }
     }, [section]);
+
+    // Handle ?section=... navigation from navbar without hashes
+    useEffect(() => {
+        const sectionParam = searchParams.get("section");
+
+        if (!sectionParam) {
+            scrubProgressRef.current = 0;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(0);
+            }
+            setSectionSynced("home");
+            return;
+        }
+
+        if (!validSections.includes(sectionParam as Section)) {
+            return;
+        }
+
+        const targetSection = sectionParam as Section;
+        if (targetSection === "home") {
+            scrubProgressRef.current = 0;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(0);
+            }
+        } else {
+            scrubProgressRef.current = 1;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(1);
+            }
+        }
+
+        setSectionSynced(targetSection);
+    }, [searchParams]);
 
     // ══════════════════════════════════════════════════════════════════════
     //  Wheel handler — reads from sectionRef to avoid stale closures
@@ -500,24 +618,6 @@ export default function HomeClient() {
                             ref={stickyRef}
                             className="sticky top-0 w-full h-screen overflow-hidden"
                         >
-                            {/* ── Navbar ─────────────────────────────────────────────── */}
-                            <nav className="absolute top-0 w-full flex justify-between items-center p-8 md:px-12 z-50">
-                                <div className="flex items-center gap-1 font-light tracking-widest text-xl uppercase">
-                                    <Sparkles
-                                        size={18}
-                                        strokeWidth={1}
-                                        className="text-white"
-                                    />
-                                    DEBSOC
-                                </div>
-                                <button
-                                    className="text-white opacity-80 hover:opacity-100 transition-opacity"
-                                    onClick={openExplore}
-                                >
-                                    <Menu size={28} strokeWidth={1} />
-                                </button>
-                            </nav>
-
                             {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                             {/*
               FIX: positioned at bottom-0, left-[10%] to start.
@@ -579,7 +679,11 @@ export default function HomeClient() {
                                                     <div
                                                         key={item.title}
                                                         className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={openExplore}
+                                                        onClick={() =>
+                                                            navigateFromCard(
+                                                                item,
+                                                            )
+                                                        }
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -711,6 +815,9 @@ export default function HomeClient() {
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
+                                            onClick={() =>
+                                                navigateFromCard(item)
+                                            }
                                             className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
