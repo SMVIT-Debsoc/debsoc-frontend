@@ -380,29 +380,81 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
   return (
     <section
       id={id}
-      className="relative w-full h-screen py-6 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
+      className="relative w-full min-h-screen md:h-screen py-12 md:py-8 px-4 sm:px-6 md:px-12 overflow-visible md:overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
     >
       <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
         {dept.id}
       </div>
 
-      <div className="flex flex-col lg:flex-row justify-between items-stretch mb-3 sm:mb-4 md:mb-8 z-10 shrink-0 gap-3 sm:gap-4 lg:gap-16">
+      <div className="flex flex-col lg:flex-row justify-between items-stretch mb-6 md:mb-8 z-10 shrink-0 gap-4 lg:gap-16">
         <AnimatedSection className="shrink-0 flex flex-col justify-center">
-          <h2 className="text-[clamp(1.5rem,5vw,6rem)] font-black tracking-[-0.05em] uppercase text-white">
+          <h2 className="text-[clamp(2.5rem,10vw,6rem)] font-black tracking-[-0.05em] uppercase text-white leading-none">
             {dept.name}
           </h2>
-          <span className="text-[10px] md:text-xs tracking-[0.4em] uppercase text-zinc-600 font-bold block mt-1">
+          <span className="text-[10px] md:text-xs tracking-[0.4em] uppercase text-zinc-600 font-bold block mt-3">
             {dept.subtext}
           </span>
         </AnimatedSection>
 
+        {/* Desktop Header Mission Directive */}
         {!isEquity &&
           dept.name !== "Tech Monolith" &&
-          dept.name !== "Social Sphere" &&
-          missionDirective}
+          dept.name !== "Social Sphere" && (
+            <div className="hidden md:flex flex-1 justify-end max-w-3xl">
+              {missionDirective}
+            </div>
+          )}
       </div>
 
-      <div className="flex-1 min-h-0 z-10 pb-2 sm:pb-4">
+      {/* MOBILE SECONDS LAYOUT (hidden on desktop) */}
+      <div className="flex flex-col md:hidden z-10 pb-8 gap-6 w-full flex-1">
+        <div className="w-full">
+          {missionDirective}
+        </div>
+
+        {leads.length > 0 && (
+          <div className="flex flex-col gap-4 w-full">
+            {leads.map((m, i) => (
+              <div key={m.name} className="w-full h-[350px]">
+                <MemberCard
+                  member={m}
+                  size="lg"
+                  delay={200 + i * 50}
+                  objectPosition="center 10%"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(executives.length > 0 || regularMembers.length > 0) && (
+          <div className="grid grid-cols-2 gap-3 w-full">
+            {executives.map((m, i) => (
+              <div key={m.name} className="w-full h-[220px]">
+                <MemberCard
+                  member={m}
+                  size="md"
+                  delay={300 + i * 50}
+                  objectPosition={m.name.includes("Srejoni") ? "center 15%" : "center 10%"}
+                />
+              </div>
+            ))}
+            {regularMembers.map((m, i) => (
+              <div key={m.name} className="w-full h-[220px]">
+                <MemberCard
+                  member={m}
+                  size="sm"
+                  delay={400 + i * 50}
+                  objectPosition="center 10%"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* DESKTOP LAYOUT (hidden on mobile) */}
+      <div className="hidden md:block flex-1 min-h-0 z-10 pb-4 w-full h-full">
         {dept.name === "Social Sphere" ? (
           <div className="h-full flex gap-4 md:gap-6">
             <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
