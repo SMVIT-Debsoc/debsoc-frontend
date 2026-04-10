@@ -224,7 +224,6 @@ export default function HomeClient() {
                 micWrapper,
                 {
                     left: "50%",
-                    xPercent: -50,
                     duration: 0.35,
                     ease: "power2.inOut",
                 },
@@ -529,6 +528,25 @@ export default function HomeClient() {
             if (cur === "explore") {
                 const slider = sliderRef.current;
 
+                // Mobile: keep the flow vertical (swipe up -> whychoose, swipe down -> home)
+                // and avoid desktop-style horizontal wheel handling.
+                if (window.innerWidth < 768) {
+                    if (e.deltaY < 0) {
+                        lockTransition();
+                        scrubProgressRef.current = 0;
+                        gsap.to(animTimelineRef.current, {
+                            progress: 0,
+                            duration: 0.7,
+                            ease: "power2.inOut",
+                        });
+                        setSectionSynced("home");
+                    } else if (e.deltaY > 0) {
+                        lockTransition();
+                        setSectionSynced("whychoose");
+                    }
+                    return;
+                }
+
                 if (e.deltaY < 0) {
                     if (!slider || slider.scrollLeft <= 2) {
                         // At the start — close explore and go back to home
@@ -663,6 +681,25 @@ export default function HomeClient() {
                     lockTransition();
                     setSectionSynced("team");
                 }
+                return;
+            }
+
+            if (cur === "explore") {
+                if (deltaY < 0) {
+                    // Swipe down -> back to home intro
+                    lockTransition();
+                    scrubProgressRef.current = 0;
+                    gsap.to(animTimelineRef.current, {
+                        progress: 0,
+                        duration: CLOSE_EXPLORE_DURATION,
+                        ease: "power2.inOut",
+                    });
+                    setSectionSynced("home");
+                } else if (deltaY > 0) {
+                    // Swipe up -> Why Choose section
+                    lockTransition();
+                    setSectionSynced("whychoose");
+                }
             }
         };
 
@@ -734,7 +771,10 @@ export default function HomeClient() {
                             <div
                                 ref={micWrapperRef}
                                 className="mic-wrapper absolute bottom-0 z-10 pointer-events-none"
-                                style={{left: "50%", transform: "translateX(-50%)"}}
+                                style={{
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                }}
                             >
                                 <img
                                     src="/mic-nobg.png"
@@ -786,7 +826,11 @@ export default function HomeClient() {
                                                     <div
                                                         key={item.title}
                                                         className="relative w-32 md:w-36 h-24 md:h-28 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={() => navigateFromCard(item)}
+                                                        onClick={() =>
+                                                            navigateFromCard(
+                                                                item,
+                                                            )
+                                                        }
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -878,13 +922,13 @@ export default function HomeClient() {
                                     {/* Top half (clips bottom 50% of image) */}
                                     <div
                                         ref={micTopRef}
-                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
+                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-[100vw] opacity-0"
                                         style={{clipPath: "inset(0 0 50% 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-full w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
@@ -892,29 +936,28 @@ export default function HomeClient() {
                                     {/* Bottom half (clips top 50% of image) */}
                                     <div
                                         ref={micBotRef}
-                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 will-change-transform"
+                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-[100vw] opacity-0"
                                         style={{clipPath: "inset(50% 0 0 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-full w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
 
-                                    {/* Crack / light flash — positioned at 50% height of an 80vh mic = 60vh from top */}
+                                    {/* Crack / light flash — dynamically centered vertically on the mic */}
                                     <div
                                         ref={crackRef}
-                                        className="absolute w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform"
-                                        style={{bottom: "40vh"}} // midpoint of 80vh mic sitting at bottom
+                                        className="absolute bottom-[30vh] sm:bottom-[35vh] md:bottom-[40vh] lg:bottom-[45vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
                                     />
                                 </div>
 
                                 {/* Fullscreen card slider */}
                                 <div
                                     ref={sliderRef}
-                                    className="relative z-105 flex gap-5 sm:gap-8 md:gap-10 px-[6vw] sm:px-[8vw] overflow-x-auto w-full h-[70vh] sm:h-[68vh] md:h-[72vh] items-center hide-scrollbar"
+                                    className="relative z-105 w-full h-[68vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-4 sm:px-6 md:px-[8vw] py-3 sm:py-4 md:py-0 grid grid-cols-2 gap-3 sm:gap-4 overflow-y-auto overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden md:snap-x md:snap-mandatory"
                                 >
                                     {navItems.map((item, i) => (
                                         <div
@@ -922,7 +965,7 @@ export default function HomeClient() {
                                             onClick={() =>
                                                 navigateFromCard(item)
                                             }
-                                            className="relative min-w-[75vw] sm:min-w-[55vw] md:min-w-[420px] lg:min-w-[500px] h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                            className="relative w-full min-w-0 h-[28vh] sm:h-[30vh] md:min-w-[420px] md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)] md:snap-center"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                             <img
@@ -930,14 +973,14 @@ export default function HomeClient() {
                                                 alt={item.title}
                                                 className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
                                             />
-                                            <div className="absolute bottom-6 sm:bottom-8 left-5 sm:left-8 z-20 pr-6 sm:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
-                                                <h4 className="text-xl sm:text-2xl md:text-4xl text-white font-light uppercase tracking-widest leading-snug drop-shadow-lg">
+                                            <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 left-3 sm:left-4 md:left-8 z-20 pr-3 sm:pr-4 md:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
+                                                <h4 className="text-sm sm:text-base md:text-4xl text-white font-light uppercase tracking-wider md:tracking-widest leading-snug drop-shadow-lg">
                                                     {item.title}:<br />
-                                                    <span className="text-zinc-300 text-base sm:text-lg md:text-2xl">
+                                                    <span className="text-zinc-300 text-xs sm:text-sm md:text-2xl">
                                                         {item.sub1}
                                                     </span>
                                                     <br />
-                                                    <span className="text-zinc-400 text-sm sm:text-base md:text-lg">
+                                                    <span className="text-zinc-400 text-[11px] sm:text-xs md:text-lg">
                                                         {item.sub2}
                                                     </span>
                                                 </h4>
