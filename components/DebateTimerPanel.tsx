@@ -120,6 +120,11 @@ export default function DebateTimerPanel() {
     const controlButtonBase =
         "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3 rounded-xl font-semibold text-sm sm:text-base tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed";
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
         <>
             <div className="w-full max-w-6xl rounded-2xl sm:rounded-3xl border border-white/10 bg-black/25 backdrop-blur-2xl p-3 sm:p-5 md:p-8 lg:p-10 text-white shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
@@ -330,42 +335,44 @@ export default function DebateTimerPanel() {
                 </div>
             </div>
 
-            <Toaster
-                position="top-center"
-                toastOptions={{
-                    duration: 3000,
-                    style: {
-                        background: "#1f2937",
-                        color: "#fff",
-                        border: "1px solid #374151",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                    },
-                    success: {
+            {mounted && (
+                <Toaster
+                    position="top-center"
+                    toastOptions={{
+                        duration: 3000,
                         style: {
                             background: "#1f2937",
-                            color: "#10b981",
-                            border: "1px solid #10b981",
+                            color: "#fff",
+                            border: "1px solid #374151",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            fontWeight: "500",
                         },
-                        iconTheme: {
-                            primary: "#10b981",
-                            secondary: "#1f2937",
+                        success: {
+                            style: {
+                                background: "#1f2937",
+                                color: "#10b981",
+                                border: "1px solid #10b981",
+                            },
+                            iconTheme: {
+                                primary: "#10b981",
+                                secondary: "#1f2937",
+                            },
                         },
-                    },
-                    error: {
-                        style: {
-                            background: "#1f2937",
-                            color: "#ef4444",
-                            border: "1px solid #ef4444",
+                        error: {
+                            style: {
+                                background: "#1f2937",
+                                color: "#ef4444",
+                                border: "1px solid #ef4444",
+                            },
+                            iconTheme: {
+                                primary: "#ef4444",
+                                secondary: "#1f2937",
+                            },
                         },
-                        iconTheme: {
-                            primary: "#ef4444",
-                            secondary: "#1f2937",
-                        },
-                    },
-                }}
-            />
+                    }}
+                />
+            )}
         </>
     );
 }

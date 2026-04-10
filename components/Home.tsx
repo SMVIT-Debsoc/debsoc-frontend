@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect, useRef, useState} from "react";
+import {useRouter} from "next/navigation";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
@@ -71,14 +72,16 @@ export default function HomeClient() {
         }, ms);
     };
 
+    const router = useRouter();
+    
     const navItems = [
-        {title: "Team", sub1: "Current Roster", sub2: "Board Members"},
-        {title: "Achievements", sub1: "Trophies", sub2: "Milestones"},
-        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters"},
-        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings"},
-        {title: "Session", sub1: "Next Meet", sub2: "Resources"},
-        {title: "Equity", sub1: "Guidelines", sub2: "Report"},
-        {title: "Gallery", sub1: "Photos", sub2: "Videos"},
+        {title: "Team", sub1: "Current Roster", sub2: "Board Members", action: () => { closeExplore(); setTimeout(() => setSectionSynced("team"), 300); }},
+        {title: "Achievements", sub1: "Trophies", sub2: "Milestones", action: () => { closeExplore(); setTimeout(() => setSectionSynced("achievements"), 300); }},
+        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters", action: () => { closeExplore(); setTimeout(() => setSectionSynced("alumni"), 300); }},
+        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings", action: () => router.push("/debate-timer")},
+        {title: "Session", sub1: "Next Meet", sub2: "Resources", action: () => router.push("/session")},
+        {title: "Equity", sub1: "Guidelines", sub2: "Report", action: () => router.push("/equity")},
+        {title: "Gallery", sub1: "Photos", sub2: "Videos", action: () => { closeExplore(); setTimeout(() => setSectionSynced("gallery"), 300); }},
     ];
 
     // ══════════════════════════════════════════════════════════════════════
@@ -579,7 +582,7 @@ export default function HomeClient() {
                                                     <div
                                                         key={item.title}
                                                         className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={openExplore}
+                                                        onClick={item.action}
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -711,6 +714,7 @@ export default function HomeClient() {
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
+                                            onClick={item.action}
                                             className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
