@@ -380,13 +380,13 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
   return (
     <section
       id={id}
-      className="relative w-full min-h-screen py-6 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
+      className="relative w-full h-screen py-6 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
     >
       <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
         {dept.id}
       </div>
 
-      <div className="flex flex-col lg:flex-row justify-between items-stretch mb-4 sm:mb-6 md:mb-8 z-10 shrink-0 gap-4 sm:gap-6 lg:gap-16">
+      <div className="flex flex-col lg:flex-row justify-between items-stretch mb-3 sm:mb-4 md:mb-8 z-10 shrink-0 gap-3 sm:gap-4 lg:gap-16">
         <AnimatedSection className="shrink-0 flex flex-col justify-center">
           <h2 className="text-[clamp(1.5rem,5vw,6rem)] font-black tracking-[-0.05em] uppercase text-white">
             {dept.name}
@@ -404,8 +404,8 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
 
       <div className="flex-1 min-h-0 z-10 pb-2 sm:pb-4">
         {dept.name === "Social Sphere" ? (
-          <div className="h-full flex flex-col sm:flex-row gap-4 md:gap-6">
-            <div className="h-40 sm:h-full sm:w-[30%] md:w-[24%] lg:w-[20%] shrink-0">
+          <div className="h-full flex gap-4 md:gap-6">
+            <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
               {leads[0] && (
                 <MemberCard
                   member={leads[0]}
@@ -415,8 +415,8 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 />
               )}
             </div>
-            <div className="flex flex-row sm:flex-col gap-3 sm:gap-4 sm:w-[30%] md:w-[24%] lg:w-[20%] sm:h-full shrink-0">
-              <div className="flex-1 min-h-0 min-w-[100px]">
+            <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full flex flex-col gap-3 md:gap-4 shrink-0">
+              <div className="flex-1 min-h-0">
                 {regularMembers[0] && (
                   <MemberCard
                     member={regularMembers[0]}
@@ -426,7 +426,7 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                   />
                 )}
               </div>
-              <div className="flex-1 min-h-0 min-w-[100px]">
+              <div className="flex-1 min-h-0">
                 {regularMembers[1] && (
                   <MemberCard
                     member={regularMembers[1]}
@@ -437,15 +437,15 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 )}
               </div>
             </div>
-            <div className="flex-1 min-h-[120px] sm:h-full">
+            <div className="flex-1 h-full">
               {missionDirective}
             </div>
           </div>
         ) : isSpecialGrid ? (
-          <div className="h-full flex flex-col sm:flex-row gap-4 md:gap-6">
+          <div className="h-full flex gap-4 md:gap-6">
             {/* LEADS COLUMN (Vertical Stack) */}
-            <div className="flex sm:flex-col gap-3 sm:gap-4 h-40 sm:h-full sm:w-[35%] md:w-[30%] lg:w-[28%] sm:shrink-0">
-              <div className="flex-1 min-h-0 min-w-[120px]">
+            <div className="w-[28%] md:w-[25%] lg:w-[22%] flex flex-col gap-3 md:gap-4 shrink-0">
+              <div className="flex-1 min-h-0">
                 <MemberCard
                   member={
                     leads.find(
@@ -459,7 +459,7 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                   objectPosition="center 10%"
                 />
               </div>
-              <div className="flex-1 min-h-0 min-w-[120px]">
+              <div className="flex-1 min-h-0">
                 <MemberCard
                   member={
                     leads.find(
@@ -537,8 +537,8 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
             </div>
           </div>
         ) : dept.name === "Tech Monolith" ? (
-          <div className="h-full flex flex-col sm:flex-row gap-4 md:gap-6">
-            <div className="sm:w-[30%] md:w-[24%] lg:w-[20%] h-40 sm:h-full shrink-0">
+          <div className="h-full flex gap-4 md:gap-6">
+            <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
               {leads[0] && (
                 <MemberCard
                   member={leads[0]}
@@ -548,7 +548,7 @@ function DepartmentSection({ dept, id }: { dept: Department; id?: string }) {
                 />
               )}
             </div>
-            <div className="flex-1 min-h-0 h-40 sm:h-full">
+            <div className="flex-1 min-h-0 h-full">
               {missionDirective}
             </div>
           </div>
