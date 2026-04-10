@@ -1,26 +1,26 @@
 "use client";
 
 import React from "react";
-import {motion} from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
     Mail,
     Phone,
     ShieldAlert,
     Scale,
     Users,
-    AlertCircle,
+    CircleAlert,
 } from "lucide-react";
 import {ElegantShape} from "./ui/shape-landing-hero";
 
-const fadeUpVariants = {
-    hidden: {opacity: 0, y: 30},
+const fadeUpVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
         opacity: 1,
         y: 0,
         transition: {
             duration: 1,
             delay: 0.1 + i * 0.1,
-            ease: [0.25, 0.4, 0.25, 1],
+            ease: [0.25, 0.4, 0.25, 1] as [number, number, number, number],
         },
     }),
 };
@@ -371,7 +371,7 @@ export default function EquityPolicy() {
                                         key={i}
                                         className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05] hover:bg-white/4 transition-colors"
                                     >
-                                        <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
+                                        <CircleAlert className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
                                         <span className="text-sm sm:text-base text-white/80">
                                             {item}
                                         </span>
