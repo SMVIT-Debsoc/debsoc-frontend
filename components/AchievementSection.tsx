@@ -165,10 +165,10 @@ export default function AchievementSection({
             </div>
 
             {/* Main Content Area */}
-            <div className="w-full h-full px-8 md:px-12 pb-12 z-10 flex flex-col pt-24 md:pt-32">
+            <div className="w-full h-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 flex flex-col pt-20 sm:pt-24 md:pt-32">
                 {/* Header Section */}
-                <div className="achievements-header mb-8 md:mb-12 shrink-0 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                    <h1 className="text-[3rem] md:text-[5rem] lg:text-[6.5rem] font-black leading-none tracking-[-0.04em] uppercase text-white flex flex-wrap gap-x-4">
+                <div className="achievements-header mb-4 sm:mb-8 md:mb-12 shrink-0 flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
+                    <h1 className="text-[clamp(2.5rem,7vw,6.5rem)] font-black leading-none tracking-[-0.04em] uppercase text-white flex flex-wrap gap-x-4">
                         <span className="inline-block overflow-hidden">
                             <span className="inline-block">HALL</span>
                         </span>
@@ -191,7 +191,7 @@ export default function AchievementSection({
                 {/* Horizontal Scroll Cards Section */}
                 <div
                     ref={scrollContainerRef}
-                    className="flex-1 w-full flex gap-6 md:gap-10 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-8 items-center"
+                    className="flex-1 w-full flex gap-4 sm:gap-6 md:gap-10 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4 sm:pb-8 items-center"
                     style={{
                         maskImage:
                             "linear-gradient(to right, black 85%, transparent 100%)",
@@ -207,7 +207,7 @@ export default function AchievementSection({
                                 onClick={() =>
                                     setFlippedId(isFlipped ? null : item.id)
                                 }
-                                className="achievement-card relative group flex-shrink-0 w-[85vw] md:w-[600px] h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
+                                className="achievement-card relative group flex-shrink-0 w-[85vw] sm:w-[75vw] md:w-[600px] h-[45vh] sm:h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
                                 style={{perspective: "1500px"}}
                             >
                                 <div
