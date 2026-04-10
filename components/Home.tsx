@@ -770,7 +770,7 @@ export default function HomeClient() {
             */}
                             <div
                                 ref={micWrapperRef}
-                                className="mic-wrapper absolute bottom-0 z-10 pointer-events-none"
+                                className="mic-wrapper absolute bottom-0 z-10 pointer-events-none flex justify-center w-full"
                                 style={{
                                     left: "50%",
                                     transform: "translateX(-50%)",
@@ -779,7 +779,7 @@ export default function HomeClient() {
                                 <img
                                     src="/mic-nobg.png"
                                     alt="Retro Microphone"
-                                    className="mic-element h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-auto object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                                    className="mic-element h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[68vh] lg:h-[78vh] xl:h-[88vh] w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-[min(58vw,44rem)] lg:max-w-[min(48vw,46rem)] object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
                                     style={{
                                         transformStyle: "preserve-3d",
                                         display: "block",
@@ -788,10 +788,10 @@ export default function HomeClient() {
                             </div>
 
                             {/* ── Right content panel ─────────────────────────────────── */}
-                            <div className="right-content-panel absolute top-0 right-0 w-full md:w-[52%] h-full flex-col justify-center items-end p-6 md:pr-12 z-0 hidden md:flex">
-                                <div className="flex flex-col md:flex-row items-start justify-end gap-8 lg:gap-12 w-full mt-24">
+                            <div className="right-content-panel absolute inset-y-0 right-0 hidden md:flex w-[min(52%,46rem)] flex-col justify-center items-end px-6 lg:px-10 xl:px-12 py-12 z-0">
+                                <div className="flex flex-col md:flex-row items-start justify-end gap-6 lg:gap-10 w-full mt-12 lg:mt-20">
                                     {/* Mission card */}
-                                    <div className="hidden lg:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-5 max-w-52 xl:max-w-55">
+                                    <div className="hidden lg:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-5 max-w-52 xl:max-w-56">
                                         <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
                                             Mission
                                         </p>
@@ -854,23 +854,23 @@ export default function HomeClient() {
 
                             {/* ── Hero text ───────────────────────────────────────────── */}
                             {/* Mobile gradient behind text for readability over the centered mic */}
-                            <div className="md:hidden absolute bottom-0 left-0 w-full h-2/3 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none z-[15]" />
-                            <div className="hero-text-container absolute bottom-8 sm:bottom-12 md:bottom-20 left-4 sm:left-8 md:left-12 z-20 flex flex-col pointer-events-none max-w-[calc(100vw-2rem)] sm:max-w-none">
-                                <h1 className="hero-text text-[clamp(1.8rem,7vw,7rem)] font-light leading-[1.1] tracking-tight text-white mb-2 drop-shadow-lg">
+                            <div className="md:hidden absolute inset-x-0 bottom-0 h-[48vh] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-[15]" />
+                            <div className="hero-text-container absolute left-4 right-4 bottom-6 sm:left-8 sm:right-auto sm:bottom-10 md:left-10 md:bottom-16 lg:left-12 lg:bottom-20 z-20 flex flex-col pointer-events-none w-auto max-w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(30rem,50vw)] lg:max-w-[32rem]">
+                                <h1 className="hero-text text-[clamp(2.25rem,6vw,7rem)] font-light leading-[0.98] tracking-[-0.04em] text-white mb-3 drop-shadow-lg">
                                     DEBSOC:
                                     <br />
                                     <span className="text-zinc-300">
                                         THE ART OF ARGUMENT.
                                     </span>
                                 </h1>
-                                <p className="hero-text text-[clamp(0.75rem,2vw,1.125rem)] text-zinc-400 font-light max-w-xs sm:max-w-md mt-2 tracking-wide leading-relaxed drop-shadow">
+                                <p className="hero-text text-[clamp(0.95rem,1.65vw,1.125rem)] text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-1 tracking-[0.14em] uppercase leading-relaxed drop-shadow">
                                     A high-end production studio for <br />
                                     discourse and debate.
                                 </p>
                                 {/* Mobile explore CTA */}
                                 <button
                                     onClick={openExplore}
-                                    className="md:hidden mt-4 self-start text-[11px] text-white/60 hover:text-white uppercase tracking-widest border border-white/15 hover:bg-white/10 px-4 py-2 rounded transition-all pointer-events-auto"
+                                    className="md:hidden mt-5 self-start text-[11px] text-white/70 hover:text-white uppercase tracking-[0.24em] border border-white/15 hover:bg-white/10 px-4 py-2.5 rounded transition-all pointer-events-auto"
                                 >
                                     Explore ↗
                                 </button>
@@ -922,13 +922,13 @@ export default function HomeClient() {
                                     {/* Top half (clips bottom 50% of image) */}
                                     <div
                                         ref={micTopRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-[100vw] opacity-0"
+                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[68vh] lg:h-[78vh] xl:h-[88vh] w-full opacity-0"
                                         style={{clipPath: "inset(0 0 50% 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-full w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-[min(58vw,44rem)] lg:max-w-[min(48vw,46rem)] object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
@@ -936,13 +936,13 @@ export default function HomeClient() {
                                     {/* Bottom half (clips top 50% of image) */}
                                     <div
                                         ref={micBotRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] w-[100vw] opacity-0"
+                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[68vh] lg:h-[78vh] xl:h-[88vh] w-full opacity-0"
                                         style={{clipPath: "inset(50% 0 0 0)"}}
                                     >
                                         <img
                                             src="/mic-nobg.png"
                                             alt=""
-                                            className="h-full w-auto object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-[min(58vw,44rem)] lg:max-w-[min(48vw,46rem)] object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                             style={{display: "block"}}
                                         />
                                     </div>
@@ -950,7 +950,7 @@ export default function HomeClient() {
                                     {/* Crack / light flash — dynamically centered vertically on the mic */}
                                     <div
                                         ref={crackRef}
-                                        className="absolute bottom-[30vh] sm:bottom-[35vh] md:bottom-[40vh] lg:bottom-[45vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
+                                        className="absolute bottom-[23vh] sm:bottom-[27vh] md:bottom-[34vh] lg:bottom-[39vh] xl:bottom-[44vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
                                     />
                                 </div>
 
