@@ -10,7 +10,6 @@ import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
-import GallerySection from "./GallerySection";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -23,8 +22,7 @@ type Section =
     | "whychoose"
     | "achievements"
     | "team"
-    | "alumni"
-    | "gallery";
+    | "alumni";
 
 type NavItem = {
     title: string;
@@ -50,7 +48,6 @@ export default function HomeClient() {
     const achievementsRef = useRef<HTMLDivElement>(null);
     const teamRef = useRef<HTMLDivElement>(null);
     const alumniRef = useRef<HTMLDivElement>(null);
-    const galleryRef = useRef<HTMLDivElement>(null);
 
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -71,7 +68,6 @@ export default function HomeClient() {
         "achievements",
         "team",
         "alumni",
-        "gallery",
     ];
 
     // ── Use a REF mirror of section to avoid stale closures in wheel handler ──
@@ -159,7 +155,7 @@ export default function HomeClient() {
             title: "Gallery",
             sub1: "Photos",
             sub2: "Videos",
-            sectionTarget: "gallery",
+            href: "/gallery",
         },
     ];
 
@@ -403,49 +399,18 @@ export default function HomeClient() {
             const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
-            const galleryScroller = galleryRef.current;
 
             if (cur === "achievements") {
                 const atTop = achievementsScroller
                     ? achievementsScroller.scrollLeft <=
                       SECTION_BOUNDARY_EPSILON
                     : true;
-                const maxScrollLeft = achievementsScroller
-                    ? achievementsScroller.scrollWidth -
-                      achievementsScroller.clientWidth
-                    : 0;
-                const atBottom = achievementsScroller
-                    ? achievementsScroller.scrollLeft >=
-                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
-                    : false;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
                     setSectionSynced("alumni");
-                    return;
-                }
-
-                if (e.deltaY > 0 && atBottom) {
-                    e.preventDefault();
-                    if (transitionLockRef.current) return;
-                    lockTransition();
-                    setSectionSynced("gallery");
-                }
-                return;
-            }
-
-            if (cur === "gallery") {
-                const atTop = galleryScroller
-                    ? galleryScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
-                    : true;
-
-                if (e.deltaY < 0 && atTop) {
-                    e.preventDefault();
-                    if (transitionLockRef.current) return;
-                    lockTransition();
-                    setSectionSynced("achievements");
                     return;
                 }
                 return;
@@ -483,7 +448,6 @@ export default function HomeClient() {
                 return;
             }
 
-            // Alumni section: allow native internal scroll, but transition back to Team at the top.
             if (cur === "alumni") {
                 if (!alumniScroller) return;
 
@@ -626,7 +590,6 @@ export default function HomeClient() {
             const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
-            const galleryScroller = galleryRef.current;
             const whyChooseScroller = whyChooseRef.current;
 
             if (cur === "achievements") {
@@ -647,23 +610,6 @@ export default function HomeClient() {
                     // Swipe down at beginning -> Alumni
                     lockTransition();
                     setSectionSynced("alumni");
-                } else if (deltaY > 0 && atEnd) {
-                    // Swipe up at end -> Gallery
-                    lockTransition();
-                    setSectionSynced("gallery");
-                }
-                return;
-            }
-
-            if (cur === "gallery") {
-                const atTop = galleryScroller
-                    ? galleryScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
-                    : true;
-
-                if (deltaY < 0 && atTop) {
-                    // Swipe down at top -> Achievements
-                    lockTransition();
-                    setSectionSynced("achievements");
                 }
                 return;
             }
@@ -764,17 +710,15 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "gallery"
-            ? "-translate-y-[500%]"
-            : section === "achievements"
-              ? "-translate-y-[400%]"
-              : section === "alumni"
-                ? "-translate-y-[300%]"
-                : section === "team"
-                  ? "-translate-y-[200%]"
-                  : section === "whychoose"
-                    ? "-translate-y-full"
-                    : "translate-y-0";
+        section === "achievements"
+            ? "-translate-y-[400%]"
+            : section === "alumni"
+              ? "-translate-y-[300%]"
+              : section === "team"
+                ? "-translate-y-[200%]"
+                : section === "whychoose"
+                  ? "-translate-y-full"
+                  : "translate-y-0";
 
     return (
         <>
@@ -1031,10 +975,6 @@ export default function HomeClient() {
                     <AchievementSection
                         isAchievementsOpen={section === "achievements"}
                         achievementsRef={achievementsRef}
-                    />
-                    <GallerySection
-                        isGalleryOpen={section === "gallery"}
-                        galleryRef={galleryRef}
                     />
                 </div>
 

@@ -14,7 +14,7 @@ const navLinks = [
     {name: "Debate Timer", href: "/debate-timer"},
     {name: "Session", href: "/session"},
     {name: "Equity", href: "/equity"},
-    {name: "Gallery", href: "/?section=gallery"},
+    {name: "Gallery", href: "/gallery"},
 ];
 
 const Navbar = () => {

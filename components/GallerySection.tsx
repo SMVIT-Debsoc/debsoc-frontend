@@ -69,11 +69,13 @@ const GALLERY_ITEMS: GalleryItem[] = [
 interface GallerySectionProps {
     isGalleryOpen: boolean;
     galleryRef: React.RefObject<HTMLDivElement | null>;
+    standalone?: boolean;
 }
 
 export default function GallerySection({
     isGalleryOpen,
     galleryRef,
+    standalone = false,
 }: GallerySectionProps) {
     const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(
         null,
@@ -120,8 +122,8 @@ export default function GallerySection({
     return (
         <div
             ref={containerRef}
-            className={`absolute left-0 w-full h-screen overflow-hidden bg-[#000000] flex flex-col z-50 text-white transition-opacity duration-1000 ${isGalleryOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            style={{top: "500%"}}
+            className={`${standalone ? "relative" : "absolute left-0"} w-full h-screen overflow-hidden bg-[#000000] flex flex-col z-50 text-white transition-opacity duration-1000 ${isGalleryOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            style={{top: standalone ? 0 : "500%"}}
         >
             <div className="absolute top-1/4 -right-1/4 text-[10rem] md:text-[20rem] font-black text-white/2 leading-none pointer-events-none select-none whitespace-nowrap z-0 transform rotate-90 origin-right">
                 VISUALS
