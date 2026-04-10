@@ -5,7 +5,7 @@ import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
 import {useRouter, useSearchParams} from "next/navigation";
-import {Menu, Sparkles, X} from "lucide-react";
+import {Menu, Sparkles} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
@@ -79,6 +79,26 @@ export default function HomeClient() {
         sectionRef.current = s;
         setSection(s);
         if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            const currentSectionParam = url.searchParams.get("section");
+            const nextSectionParam = s === "home" || s === "explore" ? null : s;
+
+            if (nextSectionParam) {
+                url.searchParams.set("section", nextSectionParam);
+            } else {
+                url.searchParams.delete("section");
+            }
+
+            if (currentSectionParam !== nextSectionParam) {
+                window.history.replaceState(
+                    null,
+                    "",
+                    `${url.pathname}${url.search}`,
+                );
+            }
+
+            (window as Window & {__debsocSection?: Section}).__debsocSection =
+                s;
             window.dispatchEvent(
                 new CustomEvent("debsoc:section-change", {
                     detail: {section: s},
@@ -805,14 +825,6 @@ export default function HomeClient() {
                                         style={{bottom: "40vh"}} // midpoint of 80vh mic sitting at bottom
                                     />
                                 </div>
-
-                                {/* Close button */}
-                                <button
-                                    className="absolute top-8 right-8 md:right-12 text-white z-110 p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90 duration-300"
-                                    onClick={closeExplore}
-                                >
-                                    <X size={36} strokeWidth={1} />
-                                </button>
 
                                 {/* Fullscreen card slider */}
                                 <div
