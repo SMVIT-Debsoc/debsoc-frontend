@@ -92,29 +92,13 @@ export default function AchievementSection({ isAchievementsOpen, achievementsRef
         
     }, { dependencies: [isAchievementsOpen], scope: containerRef });
 
-    // Auto-scroll logic every 5 seconds
-    useEffect(() => {
-        if (!isAchievementsOpen || !scrollContainerRef.current || flippedId !== null) return;
-        
-        const scrollContainer = scrollContainerRef.current;
-        let playhead = setInterval(() => {
-            const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-            // Scroll to next card, if at end, snap back to start
-            if (scrollContainer.scrollLeft >= maxScroll - 50) {
-                scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
-            } else {
-                scrollContainer.scrollBy({ left: scrollContainer.clientWidth * 0.7, behavior: 'smooth' });
-            }
-        }, 5000);
-
-        return () => clearInterval(playhead);
-    }, [isAchievementsOpen, flippedId]);
+    // Auto-scroll logic removed for normal scrolling
 
     return (
         <div
             ref={containerRef}
             className={`absolute left-0 w-full h-screen overflow-hidden bg-[#020202] flex flex-col z-40 text-white transition-opacity duration-1000 ${isAchievementsOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            style={{ top: "400%" }}
+            style={{ top: "300%" }}
         >
             {/* Background Texture / Watermark */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-black text-white/[0.015] leading-none pointer-events-none select-none whitespace-nowrap z-0">
@@ -154,11 +138,11 @@ export default function AchievementSection({ isAchievementsOpen, achievementsRef
                     </div>
                 </div>
 
-                {/* Horizontal Scroll Cards Section */}
+                {/* Vertical Scroll Cards Section */}
                 <div 
                     ref={scrollContainerRef}
-                    className="flex-1 w-full flex gap-6 md:gap-10 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-8 items-center"
-                    style={{ maskImage: "linear-gradient(to right, black 85%, transparent 100%)", WebkitMaskImage: "linear-gradient(to right, black 85%, transparent 100%)" }}
+                    className="flex-1 w-full flex flex-col gap-6 md:gap-10 overflow-y-auto hide-scrollbar pb-8 items-center"
+                    style={{ maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 85%, transparent 100%)" }}
                 >
                     {ACHIEVEMENTS.map((item) => {
                         const isFlipped = flippedId === item.id;
@@ -166,7 +150,7 @@ export default function AchievementSection({ isAchievementsOpen, achievementsRef
                         <div 
                             key={item.id}
                             onClick={() => setFlippedId(isFlipped ? null : item.id)}
-                            className="achievement-card relative group flex-shrink-0 w-[85vw] md:w-[600px] h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
+                            className="achievement-card relative group flex-shrink-0 w-[85vw] md:w-[600px] h-[50vh] md:h-[60vh] max-h-[600px] cursor-pointer"
                             style={{ perspective: "1500px" }}
                         >
                             <div 

@@ -1,11 +1,10 @@
 "use client";
 
 import {useEffect, useRef, useState} from "react";
-import {useRouter} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
-import {useRouter, useSearchParams} from "next/navigation";
 import {Menu, Sparkles} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
@@ -120,16 +119,14 @@ export default function HomeClient() {
         }, ms);
     };
 
-    const router = useRouter();
-    
-    const navItems = [
-        {title: "Team", sub1: "Current Roster", sub2: "Board Members", action: () => { closeExplore(); setTimeout(() => setSectionSynced("team"), 300); }},
-        {title: "Achievements", sub1: "Trophies", sub2: "Milestones", action: () => { closeExplore(); setTimeout(() => setSectionSynced("achievements"), 300); }},
-        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters", action: () => { closeExplore(); setTimeout(() => setSectionSynced("alumni"), 300); }},
-        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings", action: () => router.push("/debate-timer")},
-        {title: "Session", sub1: "Next Meet", sub2: "Resources", action: () => router.push("/session")},
-        {title: "Equity", sub1: "Guidelines", sub2: "Report", action: () => router.push("/equity")},
-        {title: "Gallery", sub1: "Photos", sub2: "Videos", action: () => { closeExplore(); setTimeout(() => setSectionSynced("gallery"), 300); }},
+
+    const navItems: NavItem[] = [
+        {title: "Team", sub1: "Current Roster", sub2: "Board Members", sectionTarget: "team"},
+        {title: "Achievements", sub1: "Trophies", sub2: "Milestones", sectionTarget: "achievements"},
+        {title: "Alumni", sub1: "Hall of Fame", sub2: "Past Debaters", sectionTarget: "alumni"},
+        {title: "Debate Timer", sub1: "Launch App", sub2: "Settings", href: "/debate-timer"},
+        {title: "Session", sub1: "Next Meet", sub2: "Resources", href: "/session"},
+        {title: "Equity", sub1: "Guidelines", sub2: "Report", href: "/equity"},
     ];
 
     const navigateFromCard = (item: NavItem) => {
@@ -375,16 +372,29 @@ export default function HomeClient() {
 
             if (cur === "achievements") {
                 const atTop = achievementsScroller
-                    ? achievementsScroller.scrollLeft <=
-                      SECTION_BOUNDARY_EPSILON
+                    ? achievementsScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
                     : true;
+                const atBottom = achievementsScroller
+                    ? Math.abs(
+                          achievementsScroller.scrollHeight -
+                              achievementsScroller.clientHeight -
+                              achievementsScroller.scrollTop,
+                      ) <= SECTION_BOUNDARY_EPSILON
+                    : false;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
-                    setSectionSynced("alumni");
+                    setSectionSynced("team");
                     return;
+                }
+
+                if (e.deltaY > 0 && atBottom) {
+                    e.preventDefault();
+                    if (transitionLockRef.current) return;
+                    lockTransition();
+                    setSectionSynced("alumni");
                 }
                 return;
             }
@@ -412,11 +422,11 @@ export default function HomeClient() {
                 }
 
                 if (e.deltaY > 0 && atBottom) {
-                    // Move from Team into Alumni when user scrolls down at the end.
+                    // Move from Team into Achievements when user scrolls down at the end.
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
-                    setSectionSynced("alumni");
+                    setSectionSynced("achievements");
                 }
                 return;
             }
@@ -424,30 +434,21 @@ export default function HomeClient() {
             if (cur === "alumni") {
                 if (!alumniScroller) return;
 
-                const atTop =
-                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
-                const atBottom =
-                    Math.abs(
-                        alumniScroller.scrollHeight -
-                            alumniScroller.clientHeight -
-                            alumniScroller.scrollTop,
-                    ) <= SECTION_BOUNDARY_EPSILON;
+                const atTop = alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom = Math.abs(
+                    alumniScroller.scrollHeight -
+                    alumniScroller.clientHeight -
+                    alumniScroller.scrollTop
+                ) <= SECTION_BOUNDARY_EPSILON;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
-                    setSectionSynced("team");
+                    setSectionSynced("achievements");
                     return;
                 }
 
-                // Move from Alumni into Achievements when user scrolls down at the end.
-                if (e.deltaY > 0 && atBottom) {
-                    e.preventDefault();
-                    if (transitionLockRef.current) return;
-                    lockTransition();
-                    setSectionSynced("achievements");
-                }
                 return;
             }
 
@@ -566,21 +567,12 @@ export default function HomeClient() {
             const whyChooseScroller = whyChooseRef.current;
 
             if (cur === "achievements") {
-                const maxScrollLeft = achievementsScroller
-                    ? achievementsScroller.scrollWidth -
-                      achievementsScroller.clientWidth
-                    : 0;
-                const atStart = achievementsScroller
-                    ? achievementsScroller.scrollLeft <=
-                      SECTION_BOUNDARY_EPSILON
-                    : true;
-                const atEnd = achievementsScroller
-                    ? achievementsScroller.scrollLeft >=
-                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
-                    : false;
-
-                if (deltaY < 0 && atStart) {
-                    // Swipe down at beginning -> Alumni
+                if (deltaY < 0) {
+                    // Swipe down -> Team
+                    lockTransition();
+                    setSectionSynced("team");
+                } else if (deltaY > 0) {
+                    // Swipe up -> Alumni
                     lockTransition();
                     setSectionSynced("alumni");
                 }
@@ -599,9 +591,6 @@ export default function HomeClient() {
                     ) <= SECTION_BOUNDARY_EPSILON;
 
                 if (deltaY < 0 && atTop) {
-                    lockTransition();
-                    setSectionSynced("team");
-                } else if (deltaY > 0 && atBottom) {
                     lockTransition();
                     setSectionSynced("achievements");
                 }
@@ -624,7 +613,7 @@ export default function HomeClient() {
                     setSectionSynced("whychoose");
                 } else if (deltaY > 0 && atBottom) {
                     lockTransition();
-                    setSectionSynced("alumni");
+                    setSectionSynced("achievements");
                 }
                 return;
             }
@@ -683,9 +672,9 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "achievements"
+        section === "alumni"
             ? "-translate-y-[400%]"
-            : section === "alumni"
+            : section === "achievements"
               ? "-translate-y-[300%]"
               : section === "team"
                 ? "-translate-y-[200%]"
@@ -770,7 +759,7 @@ export default function HomeClient() {
                                                     <div
                                                         key={item.title}
                                                         className="relative w-36.25 h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={item.action}
+                                                        onClick={() => navigateFromCard(item)}
                                                     >
                                                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                                         <img
@@ -894,7 +883,7 @@ export default function HomeClient() {
                                     {navItems.map((item, i) => (
                                         <div
                                             key={item.title}
-                                            onClick={item.action}
+                                            onClick={() => navigateFromCard(item)}
                                             className="relative min-w-75 md:min-w-105 lg:min-w-125 h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
                                             <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
@@ -935,7 +924,7 @@ export default function HomeClient() {
                     <div
                         ref={alumniRef}
                         className="absolute left-0 w-full h-screen overflow-y-auto hide-scrollbar bg-[#000000]"
-                        style={{top: "300%"}}
+                        style={{top: "400%"}}
                     >
                         <AlumniSection />
                     </div>
