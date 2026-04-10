@@ -11,13 +11,15 @@ const Navbar = () => {
         <Sparkles size={18} strokeWidth={1} className="text-white" />
         DEBSOC
       </Link>
-      <div className="flex items-center gap-8">
-        <Link href="/" className="text-xs text-zinc-400 hover:text-white uppercase tracking-widest transition-colors font-light">
-          Home
-        </Link>
-        <Link href="/session" className="text-xs text-white uppercase tracking-widest font-light">
-          Session
-        </Link>
+      <div className="flex items-center gap-4 md:gap-8">
+        <div className="hidden md:flex items-center gap-8">
+          <Link href="/" className="text-xs text-zinc-400 hover:text-white uppercase tracking-widest transition-colors font-light">
+            Home
+          </Link>
+          <Link href="/session" className="text-xs text-white uppercase tracking-widest font-light">
+            Session
+          </Link>
+        </div>
         <button className="text-white opacity-80 hover:opacity-100 transition-opacity">
           <Menu size={24} strokeWidth={1} />
         </button>

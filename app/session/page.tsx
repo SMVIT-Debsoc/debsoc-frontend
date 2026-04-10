@@ -149,7 +149,7 @@ export default function Session() {
             </div>
 
             <main
-                className="relative z-10 max-w-7xl mx-auto px-6 md:px-12"
+                className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12"
                 style={{paddingTop: navHeight}}
             >
                 {/* HERO: ONE-FRAME MOTION LAB */}
@@ -157,8 +157,8 @@ export default function Session() {
                     className="flex flex-col items-center justify-center overflow-hidden relative"
                     style={{minHeight: `calc(100svh - ${navHeight}px)`}}
                 >
-                    <div className="absolute inset-0 flex items-center justify-center -z-10">
-                        <div className="w-[800px] h-[800px] bg-zinc-900/40 blur-[200px] rounded-full" />
+                    <div className="absolute inset-0 flex items-center justify-center -z-10 text-white/50">
+                        <div className="w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] bg-zinc-900/40 blur-[100px] md:blur-[200px] rounded-full" />
                     </div>
 
                     <div className="w-full flex flex-col items-center text-center space-y-12 max-h-[95vh] relative z-20">
@@ -174,7 +174,7 @@ export default function Session() {
                                 </span>
                                 <div className="h-px w-10 bg-zinc-700" />
                             </div>
-                            <h1 className="text-5xl md:text-8xl font-light tracking-tighter text-white uppercase italic leading-none relative">
+                            <h1 className="text-4xl sm:text-6xl md:text-8xl font-light tracking-tighter text-white uppercase italic leading-none relative">
                                 Motion{" "}
                                 <span className="text-zinc-500 not-italic">
                                     Engine
@@ -206,7 +206,7 @@ export default function Session() {
                                             duration: 0.6,
                                             ease: [0.16, 1, 0.3, 1],
                                         }}
-                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-10 md:p-14 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-6 sm:p-10 md:p-14 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden"
                                     >
                                         <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
                                             <div className="flex items-center gap-6">
@@ -230,7 +230,7 @@ export default function Session() {
                                             </div>
                                         </div>
 
-                                        <h3 className="text-3xl md:text-5xl font-light text-white leading-tight tracking-tight italic">
+                                        <h3 className="text-2xl sm:text-4xl md:text-5xl font-light text-white leading-tight tracking-tight italic">
                                             "{motions[0].motion}"
                                         </h3>
 
@@ -253,7 +253,7 @@ export default function Session() {
                                                 whileTap={{scale: 0.95}}
                                                 onClick={handleNewMotion}
                                                 disabled={isGenerating}
-                                                className="flex items-center gap-6 px-12 py-5 border border-white/20 text-white text-[11px] uppercase tracking-[0.5em] font-black transition-all disabled:opacity-50"
+                                                className="flex items-center gap-4 md:gap-6 px-8 py-4 md:px-12 md:py-5 border border-white/20 text-white text-[10px] md:text-[11px] uppercase tracking-[0.3em] md:tracking-[0.5em] font-black transition-all disabled:opacity-50"
                                             >
                                                 <RefreshCw
                                                     size={16}
@@ -280,38 +280,38 @@ export default function Session() {
                     </div>
                 </section>
 
-                <section className="space-y-64 py-40">
+                <section className="space-y-32 md:space-y-64 py-20 md:py-40">
                     {/* SECTION: THE PROTOCOLS (FORMATS) */}
-                    <section className="scroll-mt-32 pt-16 md:pt-24 space-y-32 max-w-screen-2xl mx-auto">
-                        <div className="flex flex-col items-center text-center space-y-8">
-                            <div className="px-6 py-2 bg-white/5 border border-white/10 text-[11px] text-zinc-400 uppercase tracking-[0.5em] font-bold">
+                    <section className="scroll-mt-32 pt-16 md:pt-24 space-y-16 md:space-y-32 max-w-screen-2xl mx-auto text-left">
+                        <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
+                            <div className="px-6 py-2 bg-white/5 border border-white/10 text-[10px] md:text-[11px] text-zinc-400 uppercase tracking-[0.3em] md:tracking-[0.5em] font-bold">
                                 The Protocols
                             </div>
-                            <h2 className="text-5xl md:text-8xl font-light text-white uppercase italic tracking-tighter">
+                            <h2 className="text-4xl sm:text-6xl md:text-8xl font-light text-white uppercase italic tracking-tighter">
                                 Debate{" "}
                                 <span className="text-zinc-600 not-italic">
                                     Mechanics
                                 </span>
                             </h2>
                         </div>
-
-                        <div className="mt-12 md:mt-16 grid lg:grid-cols-2 gap-12 bg-transparent overflow-hidden">
+ 
+                        <div className="mt-8 md:mt-16 grid lg:grid-cols-2 gap-8 md:gap-12 bg-transparent overflow-hidden">
                             {/* BP FORMAT */}
-                            <div className="group relative bg-[#0a0a0a] p-16 md:p-24 space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
+                            <div className="group relative bg-[#0a0a0a] p-8 sm:p-16 md:p-24 space-y-10 md:space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                <div className="relative z-10 space-y-12 text-left">
+ 
+                                <div className="relative z-10 space-y-8 md:space-y-12 text-left">
                                     <div className="flex items-center justify-between">
-                                        <div className="w-20 h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
-                                            <Timer size={36} strokeWidth={1} />
+                                        <div className="w-12 h-12 md:w-20 md:h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
+                                            <Timer size={24} className="md:w-9 md:h-9" strokeWidth={1} />
                                         </div>
-                                        <span className="text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
+                                        <span className="text-[50px] md:text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
                                             BP
                                         </span>
                                     </div>
-
-                                    <div className="space-y-6">
-                                        <h3 className="text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
+ 
+                                    <div className="space-y-4 md:space-y-6">
+                                        <h3 className="text-3xl sm:text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
                                             British <br />{" "}
                                             <span className="text-zinc-500 not-italic">
                                                 Parliamentary
@@ -325,36 +325,36 @@ export default function Session() {
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-12 py-12 border-y border-white/5">
-                                        <div className="space-y-3">
-                                            <p className="text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-black">
+                                    <div className="grid grid-cols-2 gap-6 md:gap-12 py-8 md:py-12 border-y border-white/5">
+                                        <div className="space-y-2 md:space-y-3">
+                                            <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.4em] font-black">
                                                 Preparation
                                             </p>
-                                            <p className="text-3xl text-white font-light tracking-tight italic">
-                                                15 Minutes{" "}
-                                                <span className="text-zinc-600 text-sm tracking-normal font-sans uppercase">
-                                                    Fixed
+                                            <p className="text-2xl md:text-3xl text-white font-light tracking-tight italic">
+                                                15{" "}
+                                                <span className="text-zinc-600 text-xs md:text-sm tracking-normal font-sans uppercase">
+                                                    Min
                                                 </span>
                                             </p>
                                         </div>
-                                        <div className="space-y-3">
-                                            <p className="text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-black">
-                                                Participant Load
+                                        <div className="space-y-2 md:space-y-3">
+                                            <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.4em] font-black">
+                                                Total
                                             </p>
-                                            <p className="text-3xl text-white font-light tracking-tight italic">
+                                            <p className="text-2xl md:text-3xl text-white font-light tracking-tight italic">
                                                 08{" "}
-                                                <span className="text-zinc-600 text-sm tracking-normal font-sans uppercase">
+                                                <span className="text-zinc-600 text-xs md:text-sm tracking-normal font-sans uppercase">
                                                     Speakers
                                                 </span>
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-8">
-                                        <p className="text-[11px] text-zinc-500 uppercase tracking-[0.5em] font-black underline underline-offset-8 decoration-white/10">
+                                    <div className="space-y-6 md:space-y-8">
+                                        <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.5em] font-black underline underline-offset-8 decoration-white/10">
                                             Dynamic Speaker Order
                                         </p>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="flex flex-wrap gap-2 md:gap-3">
                                             {[
                                                 "PM",
                                                 "LO",
@@ -367,9 +367,9 @@ export default function Session() {
                                             ].map((s, i) => (
                                                 <div
                                                     key={s}
-                                                    className="px-5 py-3 bg-white text-black border border-white/10 text-[12px] font-black shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+                                                    className="px-3 py-1.5 md:px-5 md:py-3 bg-white text-black border border-white/10 text-[10px] md:text-[12px] font-black shadow-[0_0_20px_rgba(255,255,255,0.05)]"
                                                 >
-                                                    <span className="text-black/40 mr-2">
+                                                    <span className="text-black/40 mr-1 md:mr-2">
                                                         {String(i + 1).padStart(
                                                             2,
                                                             "0",
@@ -384,21 +384,21 @@ export default function Session() {
                             </div>
 
                             {/* ASIAN FORMAT */}
-                            <div className="group relative bg-[#0a0a0a] p-16 md:p-24 space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
+                            <div className="group relative bg-[#0a0a0a] p-8 sm:p-16 md:p-24 space-y-10 md:space-y-16 border border-white/5 hover:border-white/20 transition-all duration-700 rounded-sm hover:-translate-y-2">
                                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                <div className="relative z-10 space-y-12 text-left">
+ 
+                                <div className="relative z-10 space-y-8 md:space-y-12 text-left">
                                     <div className="flex items-center justify-between">
-                                        <div className="w-20 h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
-                                            <Users size={36} strokeWidth={1} />
+                                        <div className="w-12 h-12 md:w-20 md:h-20 border border-white/10 flex items-center justify-center text-white ring-1 ring-white/5 group-hover:ring-white/20 transition-all">
+                                            <Users size={24} className="md:w-9 md:h-9" strokeWidth={1} />
                                         </div>
-                                        <span className="text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
+                                        <span className="text-[50px] md:text-[80px] font-black text-white/[0.05] group-hover:text-white/[0.08] transition-colors font-mono">
                                             AP
                                         </span>
                                     </div>
-
-                                    <div className="space-y-6">
-                                        <h3 className="text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
+ 
+                                    <div className="space-y-4 md:space-y-6">
+                                        <h3 className="text-3xl sm:text-4xl md:text-5xl text-white font-light uppercase tracking-widest italic leading-none">
                                             Asian <br />{" "}
                                             <span className="text-zinc-500 not-italic">
                                                 Parliamentary
@@ -412,36 +412,36 @@ export default function Session() {
                                         </p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-12 py-12 border-y border-white/5">
-                                        <div className="space-y-3">
-                                            <p className="text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-black">
+                                    <div className="grid grid-cols-2 gap-6 md:gap-12 py-8 md:py-12 border-y border-white/5">
+                                        <div className="space-y-2 md:space-y-3">
+                                            <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.4em] font-black">
                                                 Preparation
                                             </p>
-                                            <p className="text-3xl text-white font-light tracking-tight italic">
-                                                30 Minutes{" "}
-                                                <span className="text-zinc-600 text-sm tracking-normal font-sans uppercase">
-                                                    Total
+                                            <p className="text-2xl md:text-3xl text-white font-light tracking-tight italic">
+                                                30{" "}
+                                                <span className="text-zinc-600 text-xs md:text-sm tracking-normal font-sans uppercase">
+                                                    Min
                                                 </span>
                                             </p>
                                         </div>
-                                        <div className="space-y-3">
-                                            <p className="text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-black">
+                                        <div className="space-y-2 md:space-y-3">
+                                            <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.4em] font-black">
                                                 Reply Phase
                                             </p>
-                                            <p className="text-3xl text-white font-light tracking-tight italic">
+                                            <p className="text-2xl md:text-3xl text-white font-light tracking-tight italic">
                                                 04{" "}
-                                                <span className="text-zinc-600 text-sm tracking-normal font-sans uppercase">
-                                                    Minutes
+                                                <span className="text-zinc-600 text-xs md:text-sm tracking-normal font-sans uppercase">
+                                                    Min
                                                 </span>
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-8">
-                                        <p className="text-[11px] text-zinc-500 uppercase tracking-[0.5em] font-black underline underline-offset-8 decoration-white/10">
+                                    <div className="space-y-6 md:space-y-8">
+                                        <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.5em] font-black underline underline-offset-8 decoration-white/10">
                                             Standard Protocol
                                         </p>
-                                        <div className="flex flex-wrap gap-4 text-white text-[14px] items-center font-black">
+                                        <div className="flex flex-wrap gap-2 md:gap-4 text-white text-[12px] md:text-[14px] items-center font-black">
                                             {[
                                                 "PM",
                                                 "LO",
@@ -451,18 +451,18 @@ export default function Session() {
                                                 "OW",
                                             ].map((s, idx) => (
                                                 <React.Fragment key={s}>
-                                                    <span className="px-4 py-2 bg-white/10 border border-white/10 hover:bg-white hover:text-black transition-colors">
+                                                    <span className="px-3 py-1.5 md:px-4 md:py-2 bg-white/10 border border-white/10 hover:bg-white hover:text-black transition-colors">
                                                         {s}
                                                     </span>
                                                     {idx < 5 && (
                                                         <ChevronRight
-                                                            size={14}
+                                                            size={12}
                                                             className="text-zinc-600"
                                                         />
                                                     )}
                                                 </React.Fragment>
                                             ))}
-                                            <span className="text-white bg-zinc-800 px-4 py-2 italic font-light uppercase tracking-widest text-[11px]">
+                                            <span className="text-white bg-zinc-800 px-3 py-1.5 italic font-light uppercase tracking-widest text-[9px] md:text-[11px]">
                                                 Reply: Opp → Gov
                                             </span>
                                         </div>
@@ -473,32 +473,32 @@ export default function Session() {
                     </section>
 
                     {/* SECTION: STRATEGY NODES */}
-                    <section className="relative py-32 px-10 bg-zinc-900/10 border border-white/5 overflow-hidden rounded-sm">
+                    <section className="relative py-16 md:py-32 px-6 md:px-10 bg-zinc-900/10 border border-white/5 overflow-hidden rounded-sm">
                         <div className="absolute top-0 right-0 w-2/3 h-full overflow-hidden opacity-30 transform translate-x-10 pointer-events-none">
                             <div className="w-full h-full bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[length:40px_40px]" />
                         </div>
-
-                        <div className="flex flex-col xl:flex-row items-center justify-between gap-24 relative z-10">
-                            <div className="xl:w-1/3 space-y-10 text-left">
-                                <div className="space-y-6">
-                                    <p className="text-[11px] text-zinc-500 uppercase tracking-[0.6em] font-black border-l-4 border-white pl-6">
+ 
+                        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-12 md:gap-24 relative z-10">
+                            <div className="xl:w-1/3 space-y-6 md:space-y-10 text-left">
+                                <div className="space-y-4 md:space-y-6">
+                                    <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.4em] md:tracking-[0.6em] font-black border-l-4 border-white pl-4 md:pl-6">
                                         02 Core Theory
                                     </p>
-                                    <h2 className="text-6xl text-white font-light uppercase tracking-tighter leading-tight italic">
+                                    <h2 className="text-4xl sm:text-5xl md:text-6xl text-white font-light uppercase tracking-tighter leading-tight italic">
                                         Strategic <br />{" "}
                                         <span className="text-zinc-600 not-italic">
                                             Foundation
                                         </span>
                                     </h2>
                                 </div>
-                                <p className="text-xl text-zinc-200 leading-relaxed font-light">
+                                <p className="text-lg md:text-xl text-zinc-200 leading-relaxed font-light">
                                     Debate is won in the prep room.
                                     Understanding these three pillars ensures
                                     you are debating from a position of
                                     authority, not reaction.
                                 </p>
-                                <div className="pt-10 flex gap-4">
-                                    <div className="w-20 h-px bg-white" />
+                                <div className="pt-6 md:pt-10 flex gap-4">
+                                    <div className="w-12 md:w-20 h-px bg-white" />
                                     <div className="w-4 h-px bg-white/20" />
                                 </div>
                             </div>
@@ -506,33 +506,33 @@ export default function Session() {
                             <div className="xl:w-2/3 grid md:grid-cols-1 gap-4">
                                 {[
                                     {
-                                        icon: <Zap size={32} />,
+                                        icon: <Zap size={28} className="md:w-8 md:h-8" />,
                                         title: "POI Integration",
                                         desc: "Points of Information should not be random questions. They are strategic interventions meant to force a speaker into a logical binary or reveal a lack of structural nuance.",
                                     },
                                     {
-                                        icon: <Layers size={32} />,
+                                        icon: <Layers size={28} className="md:w-8 md:h-8" />,
                                         title: "The Mechanism Layer",
                                         desc: "In 'THW' motions, your mechanism is your shield. Define the implementation detail to pre-empt 'Does not work' arguments and control the debate's environment.",
                                     },
                                     {
-                                        icon: <Target size={32} />,
+                                        icon: <Target size={28} className="md:w-8 md:h-8" />,
                                         title: "Fiat Equilibrium",
                                         desc: "Both sides possess equal Fiat. If the Gov can claim they pass a law, the Opp can claim they implement an alternative policy with the same degree of executive power.",
                                     },
                                 ].map((item, i) => (
                                     <div
                                         key={i}
-                                        className="group bg-black/40 backdrop-blur-md p-10 flex flex-col md:flex-row gap-10 border border-white/5 hover:border-white/20 transition-all rounded-sm"
+                                        className="group bg-black/40 backdrop-blur-md p-6 md:p-10 flex flex-col md:flex-row gap-6 md:gap-10 border border-white/5 hover:border-white/20 transition-all rounded-sm"
                                     >
                                         <div className="text-white group-hover:scale-110 transition-transform pt-1">
                                             {item.icon}
                                         </div>
-                                        <div className="space-y-4 text-left">
-                                            <h4 className="text-2xl text-white font-medium uppercase tracking-[0.2em]">
+                                        <div className="space-y-3 md:space-y-4 text-left">
+                                            <h4 className="text-xl md:text-2xl text-white font-medium uppercase tracking-[0.1em] md:tracking-[0.2em]">
                                                 {item.title}
                                             </h4>
-                                            <p className="text-lg text-zinc-300 leading-relaxed font-light group-hover:text-white transition-colors">
+                                            <p className="text-base md:text-lg text-zinc-300 leading-relaxed font-light group-hover:text-white transition-colors">
                                                 {item.desc}
                                             </p>
                                         </div>
@@ -543,73 +543,73 @@ export default function Session() {
                     </section>
 
                     {/* SECTION: MOTION TAXONOMY */}
-                    <section className="space-y-24">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-white/20 pb-12">
-                            <div className="space-y-6">
-                                <p className="text-[11px] text-zinc-500 uppercase tracking-[0.6em] font-black">
+                    <section className="space-y-12 md:space-y-24">
+                        <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 md:gap-12 border-b border-white/20 pb-8 md:pb-12">
+                            <div className="space-y-4 md:space-y-6 text-left">
+                                <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.4em] md:tracking-[0.6em] font-black">
                                     03 Taxonomy
                                 </p>
-                                <h2 className="text-5xl md:text-8xl font-light text-white uppercase italic tracking-tighter">
+                                <h2 className="text-4xl sm:text-6xl md:text-8xl font-light text-white uppercase italic tracking-tighter">
                                     Motion{" "}
                                     <span className="text-zinc-600 not-italic">
                                         Classification
                                     </span>
                                 </h2>
                             </div>
-                            <p className="max-w-md text-[12px] text-zinc-400 uppercase tracking-[0.3em] font-bold leading-relaxed text-right">
+                            <p className="max-w-md text-[10px] md:text-[12px] text-zinc-400 uppercase tracking-[0.2em] md:tracking-[0.3em] font-bold leading-relaxed text-left md:text-right">
                                 Different burdens for different battlegrounds.
                                 Identify the motion type to win the clash
                                 instantly.
                             </p>
                         </div>
 
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                             {[
                                 {
                                     tag: "THBT",
                                     title: "Believes That",
-                                    desc: "Analysis of values, trends, or facts. No mechanism required. Focus on the internal logic and 'Truth' of the claim's premise.",
+                                    desc: "Analysis of values, trends, or facts. No mechanism required. Focus on the internal logic.",
                                 },
                                 {
                                     tag: "THW",
                                     title: "This House Would",
-                                    desc: "Action-oriented policy debating. Requires a clear model. Focus on consequences and the practical 'Should' of implementation.",
+                                    desc: "Action-oriented policy debating. Requires a clear model. Focus on consequences.",
                                 },
                                 {
                                     tag: "THR",
                                     title: "This House Regrets",
-                                    desc: "A world without X. Compare reality with a specific counterfactual alternative. Evaluate the historical and psychological impacts.",
+                                    desc: "A world without X. Compare reality with a specific counterfactual alternative.",
                                 },
                                 {
                                     tag: "THS",
                                     title: "This House Supports",
-                                    desc: "Moral or pragmatic alignment with a trend. You take the reputation of the side you support and defend its existence.",
+                                    desc: "Moral or pragmatic alignment with a trend. Defend its existence.",
                                 },
                                 {
                                     tag: "TH, as X",
                                     bgTag: "AP",
                                     title: "Actor Perspectives",
-                                    desc: "Incentive-based debate. Argue purely from the best interests of 'X', regardless of global morality or fairness.",
+                                    desc: "Incentive-based debate. Argue purely from the best interests of 'X', regardless of morality.",
                                 },
                                 {
                                     tag: "THO",
                                     title: "This House Opposes",
-                                    desc: "The antithesis of support. Often used to critique existing societal norms, virtue-signalling, or destructive cultural trends.",
+                                    desc: "Critique existing societal norms, virtue-signalling, or destructive cultural trends.",
                                 },
                             ].map((type) => (
                                 <div
                                     key={type.tag}
-                                    className="bg-[#080808] p-16 group hover:bg-[#0c0c0c] border border-white/5 hover:border-white/30 transition-all duration-500 relative overflow-hidden rounded-sm text-left"
+                                    className="bg-[#080808] p-8 md:p-16 group hover:bg-[#0c0c0c] border border-white/5 hover:border-white/30 transition-all duration-500 relative overflow-hidden rounded-sm text-left"
                                 >
-                                    <div className="absolute -right-8 -bottom-8 text-[120px] font-black text-white/[0.02] group-hover:text-white/[0.05] transition-all duration-700 pointer-events-none">
+                                    <div className="absolute -right-4 -bottom-4 md:-right-8 md:-bottom-8 text-[60px] md:text-[120px] font-black text-white/[0.02] group-hover:text-white/[0.05] transition-all duration-700 pointer-events-none">
                                         {type.bgTag ?? type.tag}
                                     </div>
-                                    <div className="relative z-10 space-y-8">
-                                        <div className="text-[11px] text-zinc-500 uppercase tracking-[0.5em] mb-4 group-hover:text-white transition-colors flex items-center gap-3 font-black">
-                                            <span className="w-2 h-2 rounded-full bg-zinc-800 group-hover:bg-white" />
+                                    <div className="relative z-10 space-y-6 md:space-y-8">
+                                        <div className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.3em] md:tracking-[0.5em] mb-2 md:mb-4 group-hover:text-white transition-colors flex items-center gap-3 font-black">
+                                            <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-zinc-800 group-hover:bg-white" />
                                             {type.tag}
                                         </div>
-                                        <h4 className="text-3xl text-white font-light group-hover:italic group-hover:pl-2 transition-all leading-tight">
+                                        <h4 className="text-2xl md:text-3xl text-white font-light group-hover:italic group-hover:pl-2 transition-all leading-tight">
                                             {type.tag === "THW" ? (
                                                 <>
                                                     <span className="block">
@@ -623,15 +623,14 @@ export default function Session() {
                                                 type.title
                                             )}
                                         </h4>
-                                        <p className="text-lg text-zinc-300 leading-relaxed font-light group-hover:text-white transition-colors">
+                                        <p className="text-base md:text-lg text-zinc-300 leading-relaxed font-light group-hover:text-white transition-colors">
                                             {type.desc}
                                         </p>
                                         <motion.div
                                             whileHover={{x: 10}}
-                                            className="pt-8 flex items-center gap-4 text-[10px] text-white uppercase tracking-[0.5em] cursor-pointer font-black border-t border-white/5 mt-auto"
+                                            className="pt-6 md:pt-8 flex items-center gap-4 text-[9px] md:text-[10px] text-white uppercase tracking-[0.3em] md:tracking-[0.5em] cursor-pointer font-black border-t border-white/5 mt-auto"
                                         >
-                                            View Strategic Playbook{" "}
-                                            <ChevronRight size={14} />
+                                            Strategic Playbook <ChevronRight size={14} />
                                         </motion.div>
                                     </div>
                                 </div>
@@ -640,64 +639,64 @@ export default function Session() {
                     </section>
 
                     {/* SECTION: PREP CHECKLIST */}
-                    <section className="grid lg:grid-cols-2 gap-24 p-20 bg-zinc-900/5 border border-white/10 rounded-sm relative overflow-hidden">
+                    <section className="grid lg:grid-cols-2 gap-12 md:gap-24 p-8 sm:p-20 bg-zinc-900/5 border border-white/10 rounded-sm relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-                        <div className="space-y-12 relative z-10 text-left">
-                            <div className="space-y-6">
-                                <p className="text-[11px] text-zinc-500 uppercase tracking-[0.6em] font-black">
+                        <div className="space-y-8 md:space-y-12 relative z-10 text-left">
+                            <div className="space-y-4 md:space-y-6">
+                                <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.4em] md:tracking-[0.6em] font-black">
                                     04 Preparation
                                 </p>
-                                <h2 className="text-5xl text-white font-light uppercase italic">
+                                <h2 className="text-4xl md:text-5xl text-white font-light uppercase italic">
                                     Strategic{" "}
                                     <span className="not-italic text-zinc-600">
                                         Checklist
                                     </span>
                                 </h2>
                             </div>
-                            <p className="text-xl text-zinc-200 leading-relaxed font-light">
+                            <p className="text-lg md:text-xl text-zinc-200 leading-relaxed font-light">
                                 Follow these protocols in the first 5 minutes of
                                 your preparation to ensure a robust structural
                                 case.
                             </p>
                             <div className="inline-flex items-center gap-4 px-6 py-3 bg-white/5 border border-white/10 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.02)]">
-                                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[10px] uppercase tracking-[0.4em] text-white font-black">
+                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[9px] md:text-[10px] uppercase tracking-[0.3em] md:tracking-[0.4em] text-white font-black">
                                     Recommended Workflow
                                 </span>
                             </div>
                         </div>
 
-                        <div className="space-y-10 relative z-10">
+                        <div className="space-y-8 md:space-y-10 relative z-10">
                             {[
                                 {
                                     label: "Define the Burden",
-                                    detail: "What exactly do we need to prove to win this specific round? What is the 'Tie-breaker' logic?",
+                                    detail: "What exactly do we need to prove to win this specific round?",
                                 },
                                 {
                                     label: "Actor Mapping",
-                                    detail: "Identify primary and secondary actors involved. Assess their power and incentives.",
+                                    detail: "Identify primary and secondary actors involved.",
                                 },
                                 {
                                     label: "Comparative Analysis",
-                                    detail: "What does the world look like on both sides? Be honest about the tradeoffs.",
+                                    detail: "What does the world look like on both sides?",
                                 },
                                 {
                                     label: "Characterization",
-                                    detail: "Set the environment. How do people feel? What are the pressures?",
+                                    detail: "Set the environment. How do people feel?",
                                 },
                             ].map((item, i) => (
                                 <div
                                     key={i}
-                                    className="flex gap-8 items-start group"
+                                    className="flex gap-4 md:gap-8 items-start group"
                                 >
-                                    <div className="text-[12px] font-mono text-zinc-600 group-hover:text-white transition-colors mt-2 font-bold">
+                                    <div className="text-[10px] md:text-[12px] font-mono text-zinc-600 group-hover:text-white transition-colors mt-2 font-bold">
                                         {String(i + 1).padStart(2, "0")}
                                     </div>
-                                    <div className="space-y-3 text-left">
-                                        <p className="text-xl text-white uppercase tracking-[0.2em] font-bold italic group-hover:pl-2 transition-all">
+                                    <div className="space-y-2 md:space-y-3 text-left">
+                                        <p className="text-lg md:text-xl text-white uppercase tracking-[0.1em] md:tracking-[0.2em] font-bold italic group-hover:pl-2 transition-all">
                                             {item.label}
                                         </p>
-                                        <p className="text-lg text-zinc-400 group-hover:text-zinc-200 transition-colors leading-relaxed">
+                                        <p className="text-base md:text-lg text-zinc-400 group-hover:text-zinc-200 transition-colors leading-relaxed">
                                             {item.detail}
                                         </p>
                                     </div>
