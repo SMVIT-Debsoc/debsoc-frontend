@@ -40,6 +40,8 @@ export default function AlumniSection({items}: AlumniSectionProps) {
             : reviews.length > 0
               ? reviews
               : fallbackData;
+    const marqueeData = [...data, ...data];
+    const marqueeDuration = Math.max(42, data.length * 8);
 
     return (
         <section
@@ -74,19 +76,27 @@ export default function AlumniSection({items}: AlumniSectionProps) {
                 </div>
             </div>
 
-            <div className="mx-auto w-full max-w-7xl px-4 sm:px-8 mt-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-12">
-                    {data.map((item, index) => (
-                        <div
-                            key={`${item.name}-${index}`}
-                            className="w-full"
-                        >
-                            <AlumniCard
-                                item={item}
-                                index={index}
-                            />
-                        </div>
-                    ))}
+            <div className="relative left-1/2 w-screen -translate-x-1/2">
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 sm:w-24 bg-linear-to-r from-[#000000] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 sm:w-24 bg-linear-to-l from-[#000000] to-transparent" />
+
+                <div className="overflow-hidden py-2">
+                    <div
+                        className="alumni-marquee-track flex w-max gap-5 sm:gap-6 px-2 sm:px-4"
+                        style={{animationDuration: `${marqueeDuration}s`}}
+                    >
+                        {marqueeData.map((item, index) => (
+                            <div
+                                key={`${item.name}-${index}`}
+                                className="w-80 sm:w-84 shrink-0"
+                            >
+                                <AlumniCard
+                                    item={item}
+                                    index={index % data.length}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -105,12 +115,31 @@ export default function AlumniSection({items}: AlumniSectionProps) {
             </div>
 
             <style jsx>{`
-                .hide-scrollbar::-webkit-scrollbar {
-                    display: none;
+                @keyframes alumni-marquee-left {
+                    0% {
+                        transform: translate3d(0, 0, 0);
+                    }
+                    100% {
+                        transform: translate3d(-50%, 0, 0);
+                    }
                 }
-                .hide-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
+
+                .alumni-marquee-track {
+                    animation-name: alumni-marquee-left;
+                    animation-timing-function: linear;
+                    animation-iteration-count: infinite;
+                    will-change: transform;
+                }
+
+                .alumni-marquee-track:hover,
+                .alumni-marquee-track:focus-within {
+                    animation-play-state: paused;
+                }
+
+                @media (prefers-reduced-motion: reduce) {
+                    .alumni-marquee-track {
+                        animation: none !important;
+                    }
                 }
             `}</style>
         </section>
