@@ -5,12 +5,12 @@ import {useRouter} from "next/navigation";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
-import {Menu, Sparkles, X} from "lucide-react";
+import {useRouter, useSearchParams} from "next/navigation";
+import {Menu, Sparkles} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
-import GallerySection from "./GallerySection";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -23,11 +23,19 @@ type Section =
     | "whychoose"
     | "achievements"
     | "team"
-    | "alumni"
-    | "gallery";
+    | "alumni";
+
+type NavItem = {
+    title: string;
+    sub1: string;
+    sub2: string;
+    href?: string;
+    sectionTarget?: Section;
+};
 
 export default function HomeClient() {
     const SECTION_BOUNDARY_EPSILON = 4;
+    const MOBILE_VERTICAL_SWIPE_THRESHOLD = 36;
     const HOME_SCRUB_SENSITIVITY = 0.0012;
     const HOME_SCRUB_TWEEN_DURATION = 0.75;
     const MIC_INTRO_DURATION = 1.9;
@@ -41,7 +49,9 @@ export default function HomeClient() {
     const achievementsRef = useRef<HTMLDivElement>(null);
     const teamRef = useRef<HTMLDivElement>(null);
     const alumniRef = useRef<HTMLDivElement>(null);
-    const galleryRef = useRef<HTMLDivElement>(null);
+
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
     // mic refs
     const micWrapperRef = useRef<HTMLDivElement>(null);
@@ -52,16 +62,54 @@ export default function HomeClient() {
     // React state (drives CSS class on the sliding container)
     const [section, setSection] = useState<Section>("home");
 
+    const validSections: Section[] = [
+        "home",
+        "explore",
+        "whychoose",
+        "achievements",
+        "team",
+        "alumni",
+    ];
+
     // ── Use a REF mirror of section to avoid stale closures in wheel handler ──
     const sectionRef = useRef<Section>("home");
     const setSectionSynced = (s: Section) => {
         sectionRef.current = s;
         setSection(s);
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            const currentSectionParam = url.searchParams.get("section");
+            const nextSectionParam = s === "home" || s === "explore" ? null : s;
+
+            if (nextSectionParam) {
+                url.searchParams.set("section", nextSectionParam);
+            } else {
+                url.searchParams.delete("section");
+            }
+
+            if (currentSectionParam !== nextSectionParam) {
+                window.history.replaceState(
+                    null,
+                    "",
+                    `${url.pathname}${url.search}`,
+                );
+            }
+
+            (window as Window & {__debsocSection?: Section}).__debsocSection =
+                s;
+            window.dispatchEvent(
+                new CustomEvent("debsoc:section-change", {
+                    detail: {section: s},
+                }),
+            );
+        }
     };
 
     // Scrubbable timeline state
     const animTimelineRef = useRef<gsap.core.Timeline | null>(null);
     const scrubProgressRef = useRef(0); // 0 → 1
+    const touchStartXRef = useRef(0);
+    const touchStartYRef = useRef(0);
 
     // Transition lock — prevents cascading section jumps from one scroll gesture
     const transitionLockRef = useRef(false);
@@ -83,6 +131,39 @@ export default function HomeClient() {
         {title: "Equity", sub1: "Guidelines", sub2: "Report", action: () => router.push("/equity")},
         {title: "Gallery", sub1: "Photos", sub2: "Videos", action: () => { closeExplore(); setTimeout(() => setSectionSynced("gallery"), 300); }},
     ];
+
+    const navigateFromCard = (item: NavItem) => {
+        if (item.sectionTarget) {
+            const target = item.sectionTarget;
+            if (target === "home") {
+                scrubProgressRef.current = 0;
+                if (animTimelineRef.current) {
+                    gsap.to(animTimelineRef.current, {
+                        progress: 0,
+                        duration: CLOSE_EXPLORE_DURATION,
+                        ease: "power2.inOut",
+                    });
+                }
+                setSectionSynced("home");
+                return;
+            }
+
+            scrubProgressRef.current = 1;
+            if (animTimelineRef.current) {
+                gsap.to(animTimelineRef.current, {
+                    progress: 1,
+                    duration: 0.45,
+                    ease: "power2.out",
+                });
+            }
+            setSectionSynced(target);
+            return;
+        }
+
+        if (item.href) {
+            router.push(item.href);
+        }
+    };
 
     // ══════════════════════════════════════════════════════════════════════
     //  Scrubbable GSAP timeline
@@ -249,6 +330,39 @@ export default function HomeClient() {
         }
     }, [section]);
 
+    // Handle ?section=... navigation from navbar without hashes
+    useEffect(() => {
+        const sectionParam = searchParams.get("section");
+
+        if (!sectionParam) {
+            scrubProgressRef.current = 0;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(0);
+            }
+            setSectionSynced("home");
+            return;
+        }
+
+        if (!validSections.includes(sectionParam as Section)) {
+            return;
+        }
+
+        const targetSection = sectionParam as Section;
+        if (targetSection === "home") {
+            scrubProgressRef.current = 0;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(0);
+            }
+        } else {
+            scrubProgressRef.current = 1;
+            if (animTimelineRef.current) {
+                animTimelineRef.current.progress(1);
+            }
+        }
+
+        setSectionSynced(targetSection);
+    }, [searchParams]);
+
     // ══════════════════════════════════════════════════════════════════════
     //  Wheel handler — reads from sectionRef to avoid stale closures
     // ══════════════════════════════════════════════════════════════════════
@@ -258,49 +372,18 @@ export default function HomeClient() {
             const achievementsScroller = achievementsRef.current;
             const teamScroller = teamRef.current;
             const alumniScroller = alumniRef.current;
-            const galleryScroller = galleryRef.current;
 
             if (cur === "achievements") {
                 const atTop = achievementsScroller
                     ? achievementsScroller.scrollLeft <=
                       SECTION_BOUNDARY_EPSILON
                     : true;
-                const maxScrollLeft = achievementsScroller
-                    ? achievementsScroller.scrollWidth -
-                      achievementsScroller.clientWidth
-                    : 0;
-                const atBottom = achievementsScroller
-                    ? achievementsScroller.scrollLeft >=
-                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
-                    : false;
 
                 if (e.deltaY < 0 && atTop) {
                     e.preventDefault();
                     if (transitionLockRef.current) return;
                     lockTransition();
                     setSectionSynced("alumni");
-                    return;
-                }
-
-                if (e.deltaY > 0 && atBottom) {
-                    e.preventDefault();
-                    if (transitionLockRef.current) return;
-                    lockTransition();
-                    setSectionSynced("gallery");
-                }
-                return;
-            }
-
-            if (cur === "gallery") {
-                const atTop = galleryScroller
-                    ? galleryScroller.scrollTop <= SECTION_BOUNDARY_EPSILON
-                    : true;
-
-                if (e.deltaY < 0 && atTop) {
-                    e.preventDefault();
-                    if (transitionLockRef.current) return;
-                    lockTransition();
-                    setSectionSynced("achievements");
                     return;
                 }
                 return;
@@ -338,7 +421,6 @@ export default function HomeClient() {
                 return;
             }
 
-            // Alumni section: allow native internal scroll, but transition back to Team at the top.
             if (cur === "alumni") {
                 if (!alumniScroller) return;
 
@@ -453,6 +535,132 @@ export default function HomeClient() {
         return () => window.removeEventListener("wheel", handleWheel);
     }, []); // ← empty deps: we read section from sectionRef, never stale
 
+    // Mobile swipe fallback with boundary checks to mirror wheel behavior.
+    useEffect(() => {
+        const handleTouchStart = (e: TouchEvent) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            touchStartXRef.current = touch.clientX;
+            touchStartYRef.current = touch.clientY;
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const touch = e.changedTouches[0];
+            if (!touch || transitionLockRef.current) return;
+
+            const deltaX = touch.clientX - touchStartXRef.current;
+            const deltaY = touchStartYRef.current - touch.clientY;
+
+            // Keep horizontal card swipes intact by only handling clear vertical gestures.
+            if (
+                Math.abs(deltaY) < MOBILE_VERTICAL_SWIPE_THRESHOLD ||
+                Math.abs(deltaY) <= Math.abs(deltaX)
+            ) {
+                return;
+            }
+
+            const cur = sectionRef.current;
+            const achievementsScroller = achievementsRef.current;
+            const teamScroller = teamRef.current;
+            const alumniScroller = alumniRef.current;
+            const whyChooseScroller = whyChooseRef.current;
+
+            if (cur === "achievements") {
+                const maxScrollLeft = achievementsScroller
+                    ? achievementsScroller.scrollWidth -
+                      achievementsScroller.clientWidth
+                    : 0;
+                const atStart = achievementsScroller
+                    ? achievementsScroller.scrollLeft <=
+                      SECTION_BOUNDARY_EPSILON
+                    : true;
+                const atEnd = achievementsScroller
+                    ? achievementsScroller.scrollLeft >=
+                      maxScrollLeft - SECTION_BOUNDARY_EPSILON
+                    : false;
+
+                if (deltaY < 0 && atStart) {
+                    // Swipe down at beginning -> Alumni
+                    lockTransition();
+                    setSectionSynced("alumni");
+                }
+                return;
+            }
+
+            if (cur === "alumni") {
+                if (!alumniScroller) return;
+                const atTop =
+                    alumniScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        alumniScroller.scrollHeight -
+                            alumniScroller.clientHeight -
+                            alumniScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("team");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("achievements");
+                }
+                return;
+            }
+
+            if (cur === "team") {
+                if (!teamScroller) return;
+                const atTop =
+                    teamScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        teamScroller.scrollHeight -
+                            teamScroller.clientHeight -
+                            teamScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("whychoose");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("alumni");
+                }
+                return;
+            }
+
+            if (cur === "whychoose") {
+                if (!whyChooseScroller) return;
+                const atTop =
+                    whyChooseScroller.scrollTop <= SECTION_BOUNDARY_EPSILON;
+                const atBottom =
+                    Math.abs(
+                        whyChooseScroller.scrollHeight -
+                            whyChooseScroller.clientHeight -
+                            whyChooseScroller.scrollTop,
+                    ) <= SECTION_BOUNDARY_EPSILON;
+
+                if (deltaY < 0 && atTop) {
+                    lockTransition();
+                    setSectionSynced("explore");
+                } else if (deltaY > 0 && atBottom) {
+                    lockTransition();
+                    setSectionSynced("team");
+                }
+            }
+        };
+
+        window.addEventListener("touchstart", handleTouchStart, {
+            passive: true,
+        });
+        window.addEventListener("touchend", handleTouchEnd, {passive: true});
+
+        return () => {
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchend", handleTouchEnd);
+        };
+    }, []);
+
     const openExplore = () => {
         scrubProgressRef.current = 1;
         gsap.to(animTimelineRef.current, {
@@ -475,17 +683,15 @@ export default function HomeClient() {
 
     // Derive CSS translate for the sliding container
     const containerTranslate =
-        section === "gallery"
-            ? "-translate-y-[500%]"
-            : section === "achievements"
-              ? "-translate-y-[400%]"
-              : section === "alumni"
-                ? "-translate-y-[300%]"
-                : section === "team"
-                  ? "-translate-y-[200%]"
-                  : section === "whychoose"
-                    ? "-translate-y-full"
-                    : "translate-y-0";
+        section === "achievements"
+            ? "-translate-y-[400%]"
+            : section === "alumni"
+              ? "-translate-y-[300%]"
+              : section === "team"
+                ? "-translate-y-[200%]"
+                : section === "whychoose"
+                  ? "-translate-y-full"
+                  : "translate-y-0";
 
     return (
         <>
@@ -503,24 +709,6 @@ export default function HomeClient() {
                             ref={stickyRef}
                             className="sticky top-0 w-full h-screen overflow-hidden"
                         >
-                            {/* ── Navbar ─────────────────────────────────────────────── */}
-                            <nav className="absolute top-0 w-full flex justify-between items-center p-8 md:px-12 z-50">
-                                <div className="flex items-center gap-1 font-light tracking-widest text-xl uppercase">
-                                    <Sparkles
-                                        size={18}
-                                        strokeWidth={1}
-                                        className="text-white"
-                                    />
-                                    DEBSOC
-                                </div>
-                                <button
-                                    className="text-white opacity-80 hover:opacity-100 transition-opacity"
-                                    onClick={openExplore}
-                                >
-                                    <Menu size={28} strokeWidth={1} />
-                                </button>
-                            </nav>
-
                             {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                             {/*
               FIX: positioned at bottom-0, left-[10%] to start.
@@ -698,14 +886,6 @@ export default function HomeClient() {
                                     />
                                 </div>
 
-                                {/* Close button */}
-                                <button
-                                    className="absolute top-8 right-8 md:right-12 text-white z-110 p-2 opacity-80 hover:opacity-100 transition-all hover:rotate-90 duration-300"
-                                    onClick={closeExplore}
-                                >
-                                    <X size={36} strokeWidth={1} />
-                                </button>
-
                                 {/* Fullscreen card slider */}
                                 <div
                                     ref={sliderRef}
@@ -762,10 +942,6 @@ export default function HomeClient() {
                     <AchievementSection
                         isAchievementsOpen={section === "achievements"}
                         achievementsRef={achievementsRef}
-                    />
-                    <GallerySection
-                        isGalleryOpen={section === "gallery"}
-                        galleryRef={galleryRef}
                     />
                 </div>
 
