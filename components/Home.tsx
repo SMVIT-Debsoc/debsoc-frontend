@@ -78,6 +78,13 @@ export default function HomeClient() {
     const setSectionSynced = (s: Section) => {
         sectionRef.current = s;
         setSection(s);
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(
+                new CustomEvent("debsoc:section-change", {
+                    detail: {section: s},
+                }),
+            );
+        }
     };
 
     // Scrubbable timeline state

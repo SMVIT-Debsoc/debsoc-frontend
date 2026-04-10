@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, {useEffect, useState} from "react";
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 import {Sparkles, Menu} from "lucide-react";
 
 const navLinks = [
@@ -17,8 +18,44 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+    const pathname = usePathname();
+    const [isVisible, setIsVisible] = useState(pathname !== "/");
+
+    useEffect(() => {
+        if (pathname !== "/") {
+            setIsVisible(true);
+            return;
+        }
+
+        // On home route, keep navbar hidden for hero/explore and reveal after section advances.
+        const handleSectionChange = (event: Event) => {
+            const customEvent = event as CustomEvent<{section?: string}>;
+            const currentSection = customEvent.detail?.section;
+            const shouldShow =
+                currentSection !== "home" && currentSection !== "explore";
+            setIsVisible(shouldShow);
+        };
+
+        // Default hidden on home until Home component emits the current section.
+        setIsVisible(false);
+        window.addEventListener("debsoc:section-change", handleSectionChange);
+
+        return () => {
+            window.removeEventListener(
+                "debsoc:section-change",
+                handleSectionChange,
+            );
+        };
+    }, [pathname]);
+
     return (
-        <nav className="fixed top-0 w-full flex justify-between items-center p-6 md:px-12 z-100 bg-black/50 backdrop-blur-md border-b border-white/5">
+        <nav
+            className={`fixed top-0 w-full flex justify-between items-center p-6 md:px-12 z-100 border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                isVisible
+                    ? "opacity-100 translate-y-0 bg-black/55 backdrop-blur-md pointer-events-auto"
+                    : "opacity-0 -translate-y-4 bg-black/0 backdrop-blur-none pointer-events-none"
+            }`}
+        >
             <Link
                 href="/"
                 className="flex items-center gap-1 font-light tracking-widest text-xl uppercase text-white"
