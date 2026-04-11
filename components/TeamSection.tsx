@@ -115,7 +115,7 @@ const DEPARTMENTS: Department[] = [
             {
                 name: "Nainika",
                 role: "Equity Executive",
-                photo: "/media/Nainika.jpg",
+                photo: "/media/NNainika.jpg",
             },
             {
                 name: "Advitiya Pandey",
@@ -131,7 +131,7 @@ const DEPARTMENTS: Department[] = [
     },
     {
         id: "04",
-        name: "Tech Monolith",
+        name: "Tech Team",
         subtext: "Code / Build / Deploy",
         intro: "Engineering the digital stage for modern debate. We build the interfaces that bridge the gap between tradition and technology.",
         icon: <Code size={16} className="text-zinc-400" />,
