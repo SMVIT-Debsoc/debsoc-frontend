@@ -11,11 +11,6 @@ if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
 }
 
-interface WhyChooseDebsocProps {
-    isWhyChooseOpen: boolean;
-    whyChooseRef: React.RefObject<HTMLDivElement | null>;
-}
-
 const timelineData = [
     {
         title: "WEEKLY SESSIONS",
@@ -39,134 +34,82 @@ const timelineData = [
     },
 ];
 
-export default function WhyChooseDebsoc({
-    isWhyChooseOpen,
-    whyChooseRef,
-}: WhyChooseDebsocProps) {
-    const WHEEL_DAMPING = 0.45;
-    const BOUNDARY_EPSILON = 5;
-
+export default function WhyChooseDebsoc() {
     const timelineRef = useRef<HTMLDivElement>(null);
     const lineRef = useRef<HTMLDivElement>(null);
     const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-    // Fix for scroll lock issue: Intercept wheel events to allow internal scrolling
-    // and only bubble up to Home.tsx when we hit the boundaries.
+    // Set up GSAP scroll animations
     useEffect(() => {
-        const scroller = whyChooseRef.current;
-        if (!scroller || !isWhyChooseOpen) return;
+        if (!timelineRef.current || !lineRef.current) return;
 
-        const handleWheel = (e: WheelEvent) => {
-            const {scrollTop, scrollHeight, clientHeight} = scroller;
-            const isAtTop = scrollTop <= 0;
-            const isAtBottom =
-                Math.abs(scrollHeight - clientHeight - scrollTop) <
-                BOUNDARY_EPSILON;
+        const triggers: ScrollTrigger[] = [];
 
-            const canScrollDown = e.deltaY > 0 && !isAtBottom;
-            const canScrollUp = e.deltaY < 0 && !isAtTop;
-
-            // If scrolling down and not yet at the bottom, or up and not yet at the top:
-            // Stop propagation so Home.tsx doesn't preventDefault() the native scroll.
-            if (canScrollDown || canScrollUp) {
-                // Dampen wheel speed so the section doesn't skip past timeline content too quickly.
-                e.preventDefault();
-                e.stopPropagation();
-                scroller.scrollTop += e.deltaY * WHEEL_DAMPING;
-            }
-        };
-
-        scroller.addEventListener("wheel", handleWheel, {passive: false});
-        return () => scroller.removeEventListener("wheel", handleWheel);
-    }, [isWhyChooseOpen, whyChooseRef]);
-
-    // Set up GSAP scroll animations when section becomes visible
-    useEffect(() => {
-        if (!isWhyChooseOpen) {
-            // Kill all existing scroll triggers when closed
-            ScrollTrigger.getAll().forEach((t) => t.kill());
-            return;
-        }
-
-        const scroller = whyChooseRef.current;
-        if (!scroller || !timelineRef.current || !lineRef.current) return;
-
-        // Small delay to ensure the DOM has settled after transition animation
-        const setupTimeout = setTimeout(() => {
-            ScrollTrigger.refresh();
-
-            // 1. Animate the timeline line drawing down
-            gsap.fromTo(
-                lineRef.current,
-                {scaleY: 0},
-                {
-                    scaleY: 1,
-                    ease: "none",
-                    transformOrigin: "top center",
-                    scrollTrigger: {
-                        trigger: timelineRef.current,
-                        scroller: scroller,
-                        start: "top 60%",
-                        end: "bottom 60%",
-                        scrub: 1,
-                    },
+        // 1. Animate the timeline line drawing down
+        const lineAnim = gsap.fromTo(
+            lineRef.current,
+            {scaleY: 0},
+            {
+                scaleY: 1,
+                ease: "none",
+                transformOrigin: "top center",
+                scrollTrigger: {
+                    trigger: timelineRef.current,
+                    start: "top 60%",
+                    end: "bottom 60%",
+                    scrub: 1,
                 },
-            );
+            },
+        );
+        if (lineAnim.scrollTrigger) triggers.push(lineAnim.scrollTrigger);
 
-            // 2. Animate each row card — initially hidden via gsap.set
-            rowRefs.current.forEach((row, i) => {
-                if (!row) return;
+        // 2. Animate each row card — initially hidden via gsap.set
+        rowRefs.current.forEach((row, i) => {
+            if (!row) return;
 
-                const card = row.querySelector<HTMLElement>(
-                    ".timeline-card-anim",
-                );
-                const dot = row.querySelector<HTMLElement>(".timeline-dot");
+            const card = row.querySelector<HTMLElement>(".timeline-card-anim");
+            const dot = row.querySelector<HTMLElement>(".timeline-dot");
 
-                if (!card || !dot) return;
+            if (!card || !dot) return;
 
-                const isLeft = i % 2 === 0;
+            const isLeft = i % 2 === 0;
 
-                // Set initial hidden state
-                gsap.set(card, {opacity: 0, y: 40, x: isLeft ? -40 : 40});
-                gsap.set(dot, {opacity: 0, scale: 0});
+            // Set initial hidden state
+            gsap.set(card, {opacity: 0, y: 40, x: isLeft ? -40 : 40});
+            gsap.set(dot, {opacity: 0, scale: 0});
 
-                // Create scroll trigger for this row
-                ScrollTrigger.create({
-                    trigger: row,
-                    scroller: scroller,
-                    start: "top 65%", // When top of card hits 65% down the viewport
-                    end: "bottom 20%",
-                    onEnter: () => {
-                        gsap.to(dot, {
-                            opacity: 1,
-                            scale: 1,
-                            duration: 0.3,
-                            ease: "back.out(2)",
-                        });
-                        gsap.to(card, {
-                            opacity: 1,
-                            y: 0,
-                            x: 0,
-                            duration: 0.7,
-                            ease: "power3.out",
-                            delay: 0.15,
-                        });
-                    },
-                });
+            // Create scroll trigger for this row
+            const st = ScrollTrigger.create({
+                trigger: row,
+                start: "top 75%", // When top of card hits 75% down the viewport
+                end: "bottom 20%",
+                onEnter: () => {
+                    gsap.to(dot, {
+                        opacity: 1,
+                        scale: 1,
+                        duration: 0.3,
+                        ease: "back.out(2)",
+                    });
+                    gsap.to(card, {
+                        opacity: 1,
+                        y: 0,
+                        x: 0,
+                        duration: 0.7,
+                        ease: "power3.out",
+                        delay: 0.15,
+                    });
+                },
             });
-        }, 800); // Wait for the slide-in transition to complete
+            triggers.push(st);
+        });
 
         return () => {
-            clearTimeout(setupTimeout);
-            ScrollTrigger.getAll().forEach((t) => t.kill());
+            triggers.forEach(t => t.kill());
         };
-    }, [isWhyChooseOpen, whyChooseRef]);
+    }, []);
 
     return (
-        <div
-            ref={whyChooseRef}
-            className="absolute top-full left-0 w-full h-screen overflow-y-auto overflow-x-hidden bg-[#030303] z-50 text-white hide-scrollbar"
-        >
+        <div id="whychoose" className="relative w-full overflow-hidden bg-[#030303] z-50 text-white min-h-screen">
             {/* ── Sticky Geometric Background (scoped to this container only) ── */}
             <div className="sticky top-0 w-full h-screen pointer-events-none overflow-hidden -mb-[100vh] z-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
@@ -220,7 +163,7 @@ export default function WhyChooseDebsoc({
                     <h2 className="text-[2.35rem] md:text-6xl lg:text-7xl font-bold uppercase tracking-tighter leading-[0.95]">
                         <TypewriterText
                             text="WHY CHOOSE"
-                            active={isWhyChooseOpen}
+                            active={true}
                         />
                         <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 via-white to-zinc-500 block mt-3">

@@ -670,12 +670,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
    Main Component
    ───────────────────────────────────────────── */
 
-interface TeamSectionProps {
-    isTeamOpen: boolean;
-    teamRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export default function TeamSection({isTeamOpen, teamRef}: TeamSectionProps) {
+export default function TeamSection() {
     const scrollTo = (id: string) => {
         const el = document.getElementById(id);
         if (el) {
@@ -684,11 +679,7 @@ export default function TeamSection({isTeamOpen, teamRef}: TeamSectionProps) {
     };
 
     return (
-        <div
-            ref={teamRef}
-            className={`absolute left-0 w-full h-screen overflow-y-auto bg-[#030303] flex flex-col z-50 text-white hide-scrollbar`}
-            style={{top: "200%"}}
-        >
+        <div id="team" className="relative w-full overflow-hidden bg-[#030303] flex flex-col z-50 text-white hide-scrollbar min-h-screen">
             {/* ─────────────────────────────────────────────
           SECTION 01 — THE ARCHITECT (President)
           ───────────────────────────────────────────── */}

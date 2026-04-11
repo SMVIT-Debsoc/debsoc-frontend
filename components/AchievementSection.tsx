@@ -64,26 +64,21 @@ const ACHIEVEMENTS: Achievement[] = [
     },
 ];
 
-interface AchievementSectionProps {
-    isAchievementsOpen: boolean;
-    achievementsRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export default function AchievementSection({
-    isAchievementsOpen,
-    achievementsRef,
-}: AchievementSectionProps) {
+export default function AchievementSection() {
     const [flippedId, setFlippedId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const internalScrollRef = useRef<HTMLDivElement>(null);
-    const scrollContainerRef = achievementsRef || internalScrollRef;
+    const scrollContainerRef = internalScrollRef;
 
-    // Initial entry animations when the section becomes open
+    // Initial entry animations
     useGSAP(
         () => {
-            if (!isAchievementsOpen) return;
-
-            const tl = gsap.timeline();
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: containerRef.current,
+                    start: "top 75%",
+                }
+            });
 
             // Header animation
             tl.fromTo(
@@ -113,17 +108,12 @@ export default function AchievementSection({
                 "-=0.6",
             );
         },
-        {dependencies: [isAchievementsOpen], scope: containerRef},
+        {scope: containerRef},
     );
 
     // Auto-scroll logic every 5 seconds
     useEffect(() => {
-        if (
-            !isAchievementsOpen ||
-            !scrollContainerRef.current ||
-            flippedId !== null
-        )
-            return;
+        if (!scrollContainerRef.current || flippedId !== null) return;
 
         const scrollContainer = scrollContainerRef.current;
         let playhead = setInterval(() => {
@@ -141,13 +131,13 @@ export default function AchievementSection({
         }, 5000);
 
         return () => clearInterval(playhead);
-    }, [isAchievementsOpen, flippedId]);
+    }, [flippedId]);
 
     return (
         <div
+            id="achievements"
             ref={containerRef}
-            className={`absolute left-0 w-full h-screen overflow-hidden bg-[#020202] flex flex-col z-40 text-white transition-opacity duration-1000 ${isAchievementsOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            style={{top: "300%"}}
+            className="relative w-full overflow-hidden bg-[#020202] flex flex-col z-40 text-white min-h-screen pt-12 pb-12"
         >
             {/* Background Texture / Watermark */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-black text-white/[0.015] leading-none pointer-events-none select-none whitespace-nowrap z-0">
