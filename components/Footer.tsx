@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import {useState, useRef, MouseEvent} from "react";
 
 const socialIcons = [
     {
@@ -89,6 +92,19 @@ const socialIcons = [
 ];
 
 export default function Footer() {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [mousePosition, setMousePosition] = useState({x: 0, y: 0});
+    const [isHovering, setIsHovering] = useState(false);
+
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        });
+    };
+
     return (
         <footer className="relative bg-black text-white pt-16 pb-8 overflow-hidden w-full h-auto">
             <div className="mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-14 relative z-10 flex flex-col md:flex-row justify-between items-start gap-10">
@@ -145,9 +161,16 @@ export default function Footer() {
             </div>
 
             {/* Bottom Giant Faded Text */}
-            <div className="w-full flex justify-center mt-12 md:mt-20 pointer-events-none select-none relative overflow-hidden">
+            <div
+                ref={containerRef}
+                onMouseMove={handleMouseMove}
+                onMouseEnter={() => setIsHovering(true)}
+                onMouseLeave={() => setIsHovering(false)}
+                className="w-full mt-12 md:mt-20 flex justify-center relative overflow-hidden group select-none py-4"
+            >
+                {/* Base text */}
                 <h1
-                    className="text-[12vw] sm:text-[13vw] md:text-[14vw] font-black leading-none tracking-tight select-none pointer-events-none whitespace-nowrap text-center"
+                    className="text-[12vw] sm:text-[13vw] md:text-[14vw] font-black leading-none tracking-tight select-none pointer-events-none whitespace-nowrap text-center transition-opacity duration-300"
                     style={{
                         backgroundImage:
                             "linear-gradient(to bottom, #27272a, #000000)",
@@ -158,6 +181,20 @@ export default function Footer() {
                 >
                     SMVIT DEBSOC
                 </h1>
+
+                {/* Hover overlay text */}
+                <div
+                    className="absolute inset-0 pointer-events-none transition-opacity duration-300 flex justify-center items-center"
+                    style={{
+                        opacity: isHovering ? 1 : 0,
+                        WebkitMaskImage: `radial-gradient(circle 200px at ${mousePosition.x}px ${mousePosition.y}px, black 0%, transparent 100%)`,
+                        maskImage: `radial-gradient(circle 200px at ${mousePosition.x}px ${mousePosition.y}px, black 0%, transparent 100%)`,
+                    }}
+                >
+                    <h1 className="text-[12vw] sm:text-[13vw] md:text-[14vw] font-black leading-none tracking-tight select-none whitespace-nowrap text-center text-white">
+                        SMVIT DEBSOC
+                    </h1>
+                </div>
             </div>
         </footer>
     );
