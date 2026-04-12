@@ -157,14 +157,14 @@ export default function Session() {
             >
                 {/* HERO: ONE-FRAME MOTION LAB */}
                 <section
-                    className="flex flex-col items-center justify-center overflow-hidden relative"
+                    className="flex flex-col items-center justify-center overflow-visible relative"
                     style={{minHeight: `calc(100svh - ${navHeight}px)`}}
                 >
                     <div className="absolute inset-0 flex items-center justify-center -z-10 text-white/50">
                         <div className="w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] md:w-[800px] md:h-[800px] bg-zinc-900/40 blur-[100px] md:blur-[200px] rounded-full" />
                     </div>
 
-                    <div className="w-full flex flex-col items-center text-center space-y-12 max-h-[95vh] relative z-20">
+                    <div className="w-full flex flex-col items-center text-center space-y-8 md:space-y-12 relative z-20">
                         <motion.div
                             initial={{opacity: 0, y: -20}}
                             animate={{opacity: 1, y: 0}}
@@ -209,9 +209,9 @@ export default function Session() {
                                             duration: 0.6,
                                             ease: [0.16, 1, 0.3, 1],
                                         }}
-                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-6 sm:p-10 md:p-14 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden"
+                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-6 sm:p-10 md:p-14 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[min(80svh,820px)]"
                                     >
-                                        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-8 mb-8">
+                                        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-6 md:pb-8 mb-6 md:mb-8 shrink-0">
                                             <div className="flex items-center gap-6">
                                                 <span className="px-5 py-2 bg-white text-black text-[11px] uppercase tracking-[0.2em] font-black rounded-full">
                                                     {
@@ -233,13 +233,15 @@ export default function Session() {
                                             </div>
                                         </div>
 
-                                        <h3 className="text-2xl sm:text-4xl md:text-5xl font-light text-white leading-tight tracking-tight italic">
-                                            "{motions[0].motion}"
-                                        </h3>
+                                        <div className="w-full max-h-[clamp(90px,22svh,240px)] overflow-y-auto custom-scrollbar pr-1 shrink-0">
+                                            <h3 className="text-2xl sm:text-4xl md:text-5xl font-light text-white leading-tight tracking-tight italic">
+                                                "{motions[0].motion}"
+                                            </h3>
+                                        </div>
 
-                                        <div className="mt-10 flex flex-col items-center gap-8">
-                                            <div className="w-full max-w-3xl space-y-4 text-center">
-                                                <p className="text-zinc-200 text-lg leading-relaxed font-light italic border-t border-white/5 pt-8">
+                                        <div className="mt-6 md:mt-10 flex flex-col items-center gap-6 md:gap-8 min-h-0">
+                                            <div className="w-full max-w-3xl text-center border-t border-white/5 pt-6 md:pt-8 max-h-[clamp(140px,26svh,300px)] md:max-h-[34vh] overflow-y-auto custom-scrollbar pr-1">
+                                                <p className="text-zinc-200 text-base md:text-lg leading-relaxed font-light italic">
                                                     {motions[0].InfoSlide ||
                                                         "Strategic information slide is currently undergoing synthesis."}
                                                 </p>
@@ -256,7 +258,7 @@ export default function Session() {
                                                 whileTap={{scale: 0.95}}
                                                 onClick={handleNewMotion}
                                                 disabled={isGenerating}
-                                                className="flex items-center gap-4 md:gap-6 px-8 py-4 md:px-12 md:py-5 border border-white/20 text-white text-[10px] md:text-[11px] uppercase tracking-[0.3em] md:tracking-[0.5em] font-black transition-all disabled:opacity-50"
+                                                className="shrink-0 flex items-center gap-4 md:gap-6 px-8 py-4 md:px-12 md:py-5 border border-white/20 text-white text-[10px] md:text-[11px] uppercase tracking-[0.3em] md:tracking-[0.5em] font-black transition-all disabled:opacity-50"
                                             >
                                                 <RefreshCw
                                                     size={16}
@@ -756,6 +758,21 @@ export default function Session() {
                 .hide-scrollbar {
                     -ms-overflow-style: none;
                     scrollbar-width: none;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.18);
+                    border-radius: 999px;
+                }
+                .custom-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
                 }
             `}</style>
         </div>
