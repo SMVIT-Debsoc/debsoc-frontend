@@ -399,9 +399,12 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 </AnimatedSection>
 
                 {!isEquity &&
-                    dept.name !== "Tech Monolith" &&
-                    dept.name !== "Social Sphere" &&
-                    missionDirective}
+                    dept.name !== "Tech Team" &&
+                    dept.name !== "Social Sphere" && (
+                        <div className="hidden md:flex flex-1">
+                            {missionDirective}
+                        </div>
+                    )}
             </div>
 
             <div className="z-10 md:hidden pb-4 space-y-4">
@@ -584,7 +587,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                             </div>
                         </div>
                     </div>
-                ) : dept.name === "Tech Monolith" ? (
+                ) : dept.name === "Tech Team" ? (
                     <div className="h-full flex gap-4 md:gap-6">
                         <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
                             {leads[0] && (
@@ -688,7 +691,7 @@ export default function TeamSection() {
           ───────────────────────────────────────────── */}
             <section
                 id="identity"
-                className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden border-b border-white/[0.05]"
+                className="relative w-full min-h-[72svh] md:min-h-[100svh] flex flex-col md:justify-end overflow-hidden border-b border-white/[0.05]"
             >
                 {/* Watermark Section Number */}
                 <div className="absolute top-12 right-8 md:right-12 text-[8rem] md:text-[14rem] font-black text-white/[0.02] leading-none pointer-events-none select-none">
@@ -717,7 +720,7 @@ export default function TeamSection() {
                 </div>
 
                 {/* Main Spread — responsive: desktop grid, mobile stacked */}
-                <div className="w-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 relative flex-1 flex flex-col min-h-0 pt-20 sm:pt-24 lg:pt-28">
+                <div className="w-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 relative md:flex-1 flex flex-col min-h-0 pt-20 sm:pt-24 lg:pt-28">
                     {/* LEADERSHIP heading */}
                     <AnimatedSection
                         delay={100}
@@ -812,7 +815,7 @@ export default function TeamSection() {
                     </div>
 
                     {/* Mobile: stacked president + VP cards */}
-                    <div className="flex-1 min-h-0 md:hidden overflow-x-auto hide-scrollbar">
+                    <div className="md:hidden overflow-x-auto hide-scrollbar mt-2">
                         <div className="flex gap-3 h-full snap-x snap-mandatory pb-1">
                             <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
                                 <AnimatedSection

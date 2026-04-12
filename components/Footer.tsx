@@ -124,19 +124,19 @@ export default function Footer() {
                         href="#"
                         className="hover:text-white transition-colors"
                     >
-                        Terms & Conditions
+                        Dummy Link
                     </Link>
                     <Link
                         href="#"
                         className="hover:text-white transition-colors"
                     >
-                        Privacy Policy
+                        Dummy Link
                     </Link>
                     <Link
                         href="#"
                         className="hover:text-white transition-colors"
                     >
-                        Refund & Cancellation
+                        Dummy Link
                     </Link>
                 </div>
 
