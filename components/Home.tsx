@@ -311,6 +311,16 @@ export default function HomeClient() {
                 ref={containerRef}
             >
                 <div className="w-full h-screen overflow-hidden">
+                    <div className="md:hidden absolute inset-0 z-[6] pointer-events-none bg-[radial-gradient(ellipse_at_50%_58%,rgba(74,104,182,0.28)_0%,rgba(28,48,112,0.14)_34%,rgba(0,0,0,0)_70%)]" />
+
+                    <div className="md:hidden absolute top-7 right-6 z-30 pointer-events-none">
+                        <Menu
+                            size={34}
+                            strokeWidth={1.5}
+                            className="text-white/90 drop-shadow-[0_0_10px_rgba(178,205,255,0.85)]"
+                        />
+                    </div>
+
                     {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                     {/*
               FIX: positioned at bottom-0, left-[10%] to start.
@@ -319,12 +329,12 @@ export default function HomeClient() {
             */}
                     <div
                         ref={micWrapperRef}
-                        className="mic-wrapper absolute bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
+                        className="mic-wrapper absolute bottom-[-1vh] md:bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
                     >
                         <img
                             src="/mic-nobg.png"
                             alt="Retro Microphone"
-                            className="mic-element h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                            className="mic-element h-[60vh] min-h-[380px] max-h-[90vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(96vw,30rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(190,208,255,0.26)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
                             style={{
                                 transformStyle: "preserve-3d",
                                 display: "block",
@@ -394,25 +404,38 @@ export default function HomeClient() {
 
                     {/* ── Hero text ───────────────────────────────────────────── */}
                     {/* Mobile gradient behind text for readability over the centered mic */}
-                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[48vh] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-[15]" />
-                    <div className="hero-text-container absolute left-4 right-4 bottom-6 sm:left-8 sm:right-auto sm:bottom-10 md:bottom-20 md:left-12 z-20 flex flex-col pointer-events-none w-auto max-w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(30rem,50vw)] md:max-w-4xl">
-                        <h1 className="hero-text text-[clamp(2.25rem,6vw,7rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 drop-shadow-lg">
+                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[60vh] bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none z-[9]" />
+                    <div className="hero-text-container absolute inset-x-0 top-[13%] md:left-12 md:right-auto md:top-auto md:bottom-20 z-20 flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
+                        <h1 className="hero-text text-[clamp(2.8rem,11.8vw,5rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[0.96] tracking-[-0.02em] text-zinc-200 mb-2 drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]">
                             DEBSOC:
-                            <br />
-                            <span className="text-zinc-300">
+                            <span className="block md:hidden text-zinc-400">
+                                THE ART OF
+                            </span>
+                            <span className="block md:hidden text-zinc-400">
+                                ARGUMENT
+                            </span>
+                            <span className="hidden md:inline text-zinc-300">
+                                <br />
                                 THE ART OF ARGUMENT.
                             </span>
                         </h1>
-                        <p className="hero-text text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
+                        <p className="hero-text hidden md:block text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
                             A high-end production studio for <br />
                             discourse and debate.
                         </p>
-                        {/* Mobile explore CTA */}
+                    </div>
+
+                    <div className="md:hidden absolute inset-x-0 bottom-[10%] z-20 flex flex-col items-center text-center px-8 pointer-events-none">
+                        <p className="hero-text text-[0.78rem] text-zinc-400 font-light max-w-[20rem] tracking-[0.035em] leading-[1.62] uppercase">
+                            A high-end production studio
+                            <br />
+                            for discourse and debate.
+                        </p>
                         <button
                             onClick={openExplore}
-                            className="md:hidden mt-5 self-start text-[11px] text-white/70 hover:text-white uppercase tracking-[0.24em] border border-white/15 hover:bg-white/10 px-4 py-2.5 rounded transition-all pointer-events-auto"
+                            className="mt-8 px-12 py-3.5 text-[11px] font-medium text-white/95 uppercase tracking-[0.2em] border border-white/60 rounded-xl bg-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_20px_rgba(184,210,255,0.28),0_0_46px_rgba(255,255,255,0.18)] backdrop-blur-md transition-all pointer-events-auto"
                         >
-                            Explore ↗
+                            Explore
                         </button>
                     </div>
 
@@ -462,13 +485,13 @@ export default function HomeClient() {
                             {/* Top half (clips bottom 50% of image) */}
                             <div
                                 ref={micTopRef}
-                                className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[-1vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] min-h-[380px] max-h-[90vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(0 0 50% 0)"}}
                             >
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(96vw,30rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(188,210,255,0.34)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                     style={{display: "block"}}
                                 />
                             </div>
@@ -476,13 +499,13 @@ export default function HomeClient() {
                             {/* Bottom half (clips top 50% of image) */}
                             <div
                                 ref={micBotRef}
-                                className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[-1vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[60vh] min-h-[380px] max-h-[90vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(50% 0 0 0)"}}
                             >
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(96vw,30rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(188,210,255,0.34)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                     style={{display: "block"}}
                                 />
                             </div>
@@ -490,7 +513,7 @@ export default function HomeClient() {
                             {/* Crack / light flash — dynamically centered vertically on the mic */}
                             <div
                                 ref={crackRef}
-                                className="absolute bottom-[23vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
+                                className="absolute bottom-[29vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
                             />
                         </div>
 
