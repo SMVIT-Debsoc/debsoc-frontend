@@ -2,15 +2,25 @@
 
 import React, {useEffect, useState} from "react";
 import Link from "next/link";
-import {usePathname, useSearchParams} from "next/navigation";
+import {usePathname, useSearchParams, useRouter} from "next/navigation";
 import {Sparkles, Menu, X} from "lucide-react";
 
-const navLinks = [
+type NavLink = {
+    name: string;
+    href: string;
+    sectionId?: string;
+};
+
+const navLinks: NavLink[] = [
     {name: "Home", href: "/"},
-    {name: "Why Choose Us", href: "/#whychoose"},
-    {name: "Team", href: "/#team"},
-    {name: "Achievements", href: "/#achievements"},
-    {name: "Alumni", href: "/#alumni"},
+    {name: "Why Choose Us", href: "/#whychoose", sectionId: "whychoose"},
+    {name: "Team", href: "/#team", sectionId: "team"},
+    {
+        name: "Achievements",
+        href: "/#achievements",
+        sectionId: "achievements",
+    },
+    {name: "Alumni", href: "/#alumni", sectionId: "alumni"},
     {name: "Debate Timer", href: "/debate-timer"},
     {name: "Session", href: "/session"},
     {name: "Equity", href: "/equity"},
@@ -18,6 +28,7 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+    const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isVisible, setIsVisible] = useState(pathname !== "/");
@@ -107,6 +118,47 @@ const Navbar = () => {
         };
     }, [isMenuOpen]);
 
+    const scrollToSection = (sectionId: string) => {
+        const el = document.getElementById(sectionId);
+        if (!el) return false;
+        el.scrollIntoView({behavior: "smooth", block: "start"});
+        return true;
+    };
+
+    const handleNavClick = (
+        event: React.MouseEvent<HTMLAnchorElement>,
+        link: NavLink,
+    ) => {
+        if (!link.sectionId) {
+            setIsMenuOpen(false);
+            return;
+        }
+
+        event.preventDefault();
+        setIsMenuOpen(false);
+
+        if (pathname === "/") {
+            let tries = 0;
+            const tryScroll = () => {
+                if (scrollToSection(link.sectionId as string) || tries > 24) {
+                    window.history.replaceState(
+                        null,
+                        "",
+                        `/#${link.sectionId}`,
+                    );
+                    return;
+                }
+                tries += 1;
+                window.requestAnimationFrame(tryScroll);
+            };
+
+            tryScroll();
+            return;
+        }
+
+        router.push(`/#${link.sectionId}`);
+    };
+
     return (
         <header
             className={`fixed top-0 w-full px-4 sm:px-6 py-3 md:px-12 md:py-4 [padding-top:max(0.75rem,env(safe-area-inset-top))] z-999 border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -137,6 +189,7 @@ const Navbar = () => {
                         <Link
                             key={link.name}
                             href={link.href}
+                            onClick={(event) => handleNavClick(event, link)}
                             className="text-[10px] md:text-xs text-zinc-400 hover:text-white uppercase tracking-widest transition-colors font-light"
                         >
                             {link.name}
@@ -172,7 +225,7 @@ const Navbar = () => {
                             <Link
                                 key={`mobile-${link.name}`}
                                 href={link.href}
-                                onClick={() => setIsMenuOpen(false)}
+                                onClick={(event) => handleNavClick(event, link)}
                                 className="block py-4 px-3 border-b border-white/10 last:border-b-0 text-sm text-zinc-100 hover:text-white uppercase tracking-widest transition-colors font-light"
                             >
                                 {link.name}
