@@ -318,12 +318,12 @@ export default function HomeClient() {
             */}
                     <div
                         ref={micWrapperRef}
-                        className="mic-wrapper absolute bottom-[12vh] md:bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
+                        className="mic-wrapper absolute bottom-[clamp(12vh,14svh,17vh)] md:bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
                     >
                         <img
                             src="/mic-nobg.png"
                             alt="Retro Microphone"
-                            className="mic-element h-[71vh] min-h-[440px] max-h-[94vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(112vw,37rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(255,255,255,0.22)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                            className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.7] md:scale-100 brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(255,255,255,0.22)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
                             style={{
                                 transformStyle: "preserve-3d",
                                 display: "block",
@@ -474,13 +474,13 @@ export default function HomeClient() {
                             {/* Top half (clips bottom 50% of image) */}
                             <div
                                 ref={micTopRef}
-                                className="absolute bottom-[12vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[71vh] min-h-[440px] max-h-[94vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[clamp(12vh,14svh,17vh)] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(0 0 50% 0)"}}
                             >
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(112vw,37rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.7] md:scale-100 brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                     style={{display: "block"}}
                                 />
                             </div>
@@ -488,13 +488,13 @@ export default function HomeClient() {
                             {/* Bottom half (clips top 50% of image) */}
                             <div
                                 ref={micBotRef}
-                                className="absolute bottom-[12vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[71vh] min-h-[440px] max-h-[94vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[clamp(12vh,14svh,17vh)] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(50% 0 0 0)"}}
                             >
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(112vw,37rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.7] md:scale-100 brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
                                     style={{display: "block"}}
                                 />
                             </div>
@@ -502,7 +502,7 @@ export default function HomeClient() {
                             {/* Crack / light flash — dynamically centered vertically on the mic */}
                             <div
                                 ref={crackRef}
-                                className="absolute bottom-[48vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
+                                className="absolute bottom-[50svh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
                             />
                         </div>
 
