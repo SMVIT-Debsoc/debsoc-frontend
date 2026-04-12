@@ -323,7 +323,7 @@ export default function HomeClient() {
                         <img
                             src="/mic-nobg.png"
                             alt="Retro Microphone"
-                            className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom [clip-path:inset(0_0_23%_0)] md:[clip-path:inset(0_0_0_0)] brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(255,255,255,0.22)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                            className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.65] md:scale-100 [clip-path:inset(0_0_23%_0)] md:[clip-path:inset(0_0_0_0)] brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(255,255,255,0.22)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
                             style={{
                                 transformStyle: "preserve-3d",
                                 display: "block",
