@@ -303,13 +303,13 @@ function MemberCard({
                     </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 w-full z-20 p-2 md:p-4">
+                <div className="absolute bottom-0 left-0 w-full z-20 p-2 md:p-4 bg-gradient-to-t from-black/92 via-black/45 to-transparent">
                     <h3
-                        className={`font-black uppercase tracking-tight leading-tight text-white ${sizes[size]}`}
+                        className={`font-black uppercase tracking-tight leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] ${sizes[size]}`}
                     >
                         {member.name}
                     </h3>
-                    <span className="text-[7px] md:text-[9px] tracking-[0.2em] uppercase text-zinc-500 block mt-0.5 font-bold">
+                    <span className="text-[7px] md:text-[9px] tracking-[0.2em] uppercase text-white/85 block mt-0.5 font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
                         {member.role}
                     </span>
                 </div>
