@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎤 SMVIT DebSoc  
+### Debating Society of Sir M. Visvesvaraya Institute of Technology
 
-## Getting Started
+Welcome to **SMVIT DebSoc**, the official debating society of SMVIT.  
+We are a community of thinkers, speakers, and leaders who believe in the power of dialogue, critical reasoning, and impactful communication.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 About Us
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+SMVIT DebSoc is dedicated to:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 🧠 Promoting critical thinking and analytical skills  
+- 🗣️ Enhancing public speaking and communication  
+- ⚖️ Encouraging healthy debates and discussions  
+- 🌍 Building awareness on social, political, and global issues  
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+We provide a platform for students to express ideas, challenge perspectives, and grow into confident speakers.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🎯 What We Do
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 🏛️ **Parliamentary Debates** (BP, Asian formats, etc.)
+- 🎙️ **Open Mic & Speaking Sessions**
+- 📚 **Workshops & Training Sessions**
+- 🏆 **Intra & Inter-college Competitions**
+- 🤝 **Collaborations with other clubs & institutions**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🌟 Why Join DebSoc?
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Improve **public speaking & confidence**
+- Learn **structured argumentation**
+- Develop **leadership & teamwork skills**
+- Participate in **competitive debating**
+- Be part of a **vibrant intellectual community**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🧩 Debate Formats We Explore
+
+- British Parliamentary (BP)
+- Asian Parliamentary
+- Turncoat Debates
+- Extempore Speaking
+- Group Discussions
+
+---
+
+## 🛠️ Tech & Media Presence
+
+We actively engage with our audience through:
+
+- 🌐 Website: https://www.smvitdebsoc.com  
+- 📸 Instagram: https://www.instagram.com/smvit_debsoc/  
+
+---
+
+## 📅 Events & Activities
+
+We regularly organize:
+
+- Weekly debate sessions  
+- Beginner-friendly training programs  
+- Flagship competitions  
+- Guest lectures & speaker sessions  
+
+Stay tuned for updates!
+
+---
+
+## 🤝 How to Join
+
+Interested in becoming a part of DebSoc?
+
+1. Follow us on Instagram  
+2. Attend our open sessions  
+3. Register during recruitment drives  
+
+---
+
+## 💡 Motto
+
+> *"Speak. Think. Influence."*
+
+---
+
+## 📬 Contact Us
+
+For collaborations, queries, or participation:
+
+- 🌐 Website: https://www.smvitdebsoc.com  
+- 📸 Instagram: https://www.instagram.com/smvit_debsoc/  
+
+---
+
+## 🏁 Contribution
+
+We welcome ideas, collaborations, and enthusiastic members who want to make a difference through dialogue and debate.
+
+---
+
+## ⭐ Acknowledgements
+
+Special thanks to all members, alumni, and organizers who have contributed to building SMVIT DebSoc into a thriving community.
+
+---

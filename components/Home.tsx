@@ -36,6 +36,40 @@ export default function HomeClient() {
 
     const router = useRouter();
 
+    useEffect(() => {
+        const root = document.documentElement;
+        let rafId: number | null = null;
+
+        const syncViewportAndTriggers = () => {
+            const viewportHeight =
+                window.visualViewport?.height ?? window.innerHeight;
+            root.style.setProperty("--hero-vh", `${viewportHeight * 0.01}px`);
+            ScrollTrigger.refresh();
+        };
+
+        const scheduleSync = () => {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+            }
+            rafId = requestAnimationFrame(syncViewportAndTriggers);
+        };
+
+        scheduleSync();
+
+        window.addEventListener("resize", scheduleSync);
+        window.addEventListener("orientationchange", scheduleSync);
+        window.visualViewport?.addEventListener("resize", scheduleSync);
+
+        return () => {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+            }
+            window.removeEventListener("resize", scheduleSync);
+            window.removeEventListener("orientationchange", scheduleSync);
+            window.visualViewport?.removeEventListener("resize", scheduleSync);
+        };
+    }, []);
+
     const navItems: NavItem[] = [
         {
             title: "Team",
@@ -123,24 +157,26 @@ export default function HomeClient() {
                 (context) => {
                     const {isDesktop} = context.conditions as any;
 
-                    let additionalScroll = 0;
-                    if (isDesktop && slider) {
-                        additionalScroll =
-                            slider.scrollWidth - window.innerWidth + 100;
-                        if (additionalScroll < 0) additionalScroll = 0;
-                    }
-
-                    const endVal = isDesktop
-                        ? `+=${150 + (additionalScroll / window.innerHeight) * 100}%`
-                        : "+=150%";
+                    const getAdditionalScroll = () => {
+                        if (!isDesktop || !slider) return 0;
+                        return Math.max(
+                            0,
+                            slider.scrollWidth - window.innerWidth + 100,
+                        );
+                    };
 
                     const tl = gsap.timeline({
                         scrollTrigger: {
                             trigger: containerRef.current,
                             start: "top top",
-                            end: endVal,
+                            end: () => {
+                                const extra = getAdditionalScroll();
+                                if (!isDesktop) return "+=150%";
+                                return `+=${150 + (extra / Math.max(window.innerHeight, 1)) * 100}%`;
+                            },
                             scrub: 1, // Smooth scrub
                             pin: true, // Pin the hero section while animating
+                            invalidateOnRefresh: true,
                         },
                     });
 
@@ -257,12 +293,12 @@ export default function HomeClient() {
                     });
 
                     // ─── Phase 6 (1.4 → 2.9) : Horizontal scrub (Desktop Only) ────────────
-                    if (isDesktop && additionalScroll > 0) {
+                    if (isDesktop) {
                         const scrollTarget = {val: 0};
                         tl.to(
                             scrollTarget,
                             {
-                                val: additionalScroll,
+                                val: () => getAdditionalScroll(),
                                 duration: 1.5,
                                 ease: "none",
                                 onUpdate: () => {
@@ -299,17 +335,35 @@ export default function HomeClient() {
     );
 
     const openExplore = () => {
-        window.scrollTo({top: window.innerHeight * 1.5, behavior: "smooth"});
+        const container = containerRef.current;
+        const trigger = ScrollTrigger.getAll().find(
+            (st) => st.vars.trigger === container,
+        );
+
+        if (trigger) {
+            const start = Number(trigger.start) || 0;
+            const end = Number(trigger.end) || start;
+            const target = start + (end - start) * 0.9;
+            window.scrollTo({top: target, behavior: "smooth"});
+            return;
+        }
+
+        const fallbackHeight =
+            container?.getBoundingClientRect().height ?? window.innerHeight;
+        window.scrollTo({
+            top: window.scrollY + fallbackHeight * 1.2,
+            behavior: "smooth",
+        });
     };
 
     return (
         <div className="bg-[#000000] w-full relative overflow-x-hidden">
             {/* ══════════════ MAIN HERO ══════════════ */}
             <div
-                className="bg-[#000000] text-zinc-100 font-sans min-h-screen h-[100svh] w-full overflow-hidden selection:bg-white/20 selection:text-white"
+                className="bg-[#000000] text-zinc-100 font-sans min-h-[calc(var(--hero-vh,1vh)*100)] h-[calc(var(--hero-vh,1vh)*100)] w-full overflow-hidden selection:bg-white/20 selection:text-white"
                 ref={containerRef}
             >
-                <div className="w-full h-[100svh] overflow-hidden">
+                <div className="w-full h-[calc(var(--hero-vh,1vh)*100)] overflow-hidden">
                     {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                     {/*
               FIX: positioned at bottom-0, left-[10%] to start.
