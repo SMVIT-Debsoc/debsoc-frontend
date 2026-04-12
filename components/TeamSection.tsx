@@ -382,7 +382,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
     return (
         <section
             id={id}
-            className="relative w-full min-h-[78svh] md:min-h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
+            className="relative w-full min-h-[78svh] md:h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
         >
             <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
                 {dept.id}
@@ -448,7 +448,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 </div>
             </div>
 
-            <div className="hidden md:block flex-1 min-h-0 z-10 pb-2 sm:pb-4">
+            <div className="hidden md:block flex-1 min-h-[320px] z-10 pb-2 sm:pb-4">
                 {dept.name === "Social Sphere" ? (
                     <div className="h-full flex gap-4 md:gap-6">
                         <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
