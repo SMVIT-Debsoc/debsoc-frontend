@@ -109,7 +109,7 @@ const Navbar = () => {
 
     return (
         <header
-            className={`fixed top-0 w-full px-6 py-4 md:px-12 z-999 border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`fixed top-0 w-full px-4 sm:px-6 py-3 md:px-12 md:py-4 [padding-top:max(0.75rem,env(safe-area-inset-top))] z-999 border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isVisible
                     ? "opacity-100 translate-y-0 pointer-events-auto"
                     : "opacity-0 -translate-y-4 pointer-events-none"

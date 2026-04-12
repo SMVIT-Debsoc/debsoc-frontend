@@ -104,14 +104,17 @@ export default function WhyChooseDebsoc() {
         });
 
         return () => {
-            triggers.forEach(t => t.kill());
+            triggers.forEach((t) => t.kill());
         };
     }, []);
 
     return (
-        <div id="whychoose" className="relative w-full overflow-hidden bg-[#030303] z-50 text-white min-h-screen">
+        <div
+            id="whychoose"
+            className="relative w-full overflow-hidden bg-[#030303] z-50 text-white min-h-[100svh]"
+        >
             {/* ── Sticky Geometric Background (scoped to this container only) ── */}
-            <div className="sticky top-0 w-full h-screen pointer-events-none overflow-hidden -mb-[100vh] z-0">
+            <div className="sticky top-0 w-full h-[100svh] pointer-events-none overflow-hidden -mb-[100svh] z-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-transparent to-rose-500/[0.05] blur-3xl" />
                 <ElegantShape
                     delay={0.3}
@@ -157,14 +160,11 @@ export default function WhyChooseDebsoc() {
             </div>
 
             {/* ── Scrollable Content ── */}
-            <div className="relative z-10 w-full max-w-6xl mx-auto px-4 md:px-8 pt-20 md:pt-28 pb-28 md:pb-48">
+            <div className="relative z-10 w-full max-w-6xl mx-auto px-4 md:px-8 pt-[clamp(88px,12svh,128px)] md:pt-28 pb-24 md:pb-48">
                 {/* Hero Title */}
                 <div className="text-center mb-14 md:mb-24">
                     <h2 className="text-[2.35rem] md:text-6xl lg:text-7xl font-bold uppercase tracking-tighter leading-[0.95]">
-                        <TypewriterText
-                            text="WHY CHOOSE"
-                            active={true}
-                        />
+                        <TypewriterText text="WHY CHOOSE" active={true} />
                         <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 via-white to-zinc-500 block mt-3">
                             DEBSOC

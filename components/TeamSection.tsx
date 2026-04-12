@@ -382,7 +382,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
     return (
         <section
             id={id}
-            className="relative w-full min-h-[72svh] md:h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
+            className="relative w-full min-h-[78svh] md:min-h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
         >
             <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
                 {dept.id}
@@ -425,7 +425,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         {allMembers.map((member, index) => (
                             <div
                                 key={`${dept.id}-${member.name}`}
-                                className="snap-start shrink-0 w-[68vw] min-w-[220px] max-w-[300px] h-[32vh] min-h-[210px]"
+                                className="snap-start shrink-0 w-[68vw] min-w-[220px] max-w-[300px] h-[clamp(220px,34svh,320px)]"
                             >
                                 <MemberCard
                                     member={member}
@@ -679,13 +679,16 @@ export default function TeamSection() {
     };
 
     return (
-        <div id="team" className="relative w-full overflow-hidden bg-[#030303] flex flex-col z-50 text-white hide-scrollbar min-h-screen">
+        <div
+            id="team"
+            className="relative w-full overflow-hidden bg-[#030303] flex flex-col z-50 text-white hide-scrollbar min-h-[100svh]"
+        >
             {/* ─────────────────────────────────────────────
           SECTION 01 — THE ARCHITECT (President)
           ───────────────────────────────────────────── */}
             <section
                 id="identity"
-                className="relative w-full min-h-screen flex flex-col justify-end overflow-hidden border-b border-white/[0.05]"
+                className="relative w-full min-h-[100svh] flex flex-col justify-end overflow-hidden border-b border-white/[0.05]"
             >
                 {/* Watermark Section Number */}
                 <div className="absolute top-12 right-8 md:right-12 text-[8rem] md:text-[14rem] font-black text-white/[0.02] leading-none pointer-events-none select-none">
@@ -693,7 +696,7 @@ export default function TeamSection() {
                 </div>
 
                 {/* Navigation header */}
-                <div className="absolute top-0 left-0 w-full flex justify-between items-center p-8 md:px-12 z-30">
+                <div className="absolute top-0 left-0 w-full flex justify-between items-center p-4 sm:p-6 md:px-12 md:py-8 z-30">
                     <span className="text-[9px] md:text-xs tracking-[0.4em] uppercase text-zinc-500 font-light">
                         Monolith / Roster / 2026
                     </span>
@@ -811,7 +814,7 @@ export default function TeamSection() {
                     {/* Mobile: stacked president + VP cards */}
                     <div className="flex-1 min-h-0 md:hidden overflow-x-auto hide-scrollbar">
                         <div className="flex gap-3 h-full snap-x snap-mandatory pb-1">
-                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] min-h-[220px]">
+                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
                                 <AnimatedSection
                                     className="group w-full h-full"
                                     delay={300}
@@ -840,7 +843,7 @@ export default function TeamSection() {
                                 </AnimatedSection>
                             </div>
 
-                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] min-h-[220px]">
+                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
                                 <AnimatedSection
                                     className="group w-full h-full"
                                     delay={400}

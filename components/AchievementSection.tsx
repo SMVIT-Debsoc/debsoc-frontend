@@ -77,7 +77,7 @@ export default function AchievementSection() {
                 scrollTrigger: {
                     trigger: containerRef.current,
                     start: "top 75%",
-                }
+                },
             });
 
             // Header animation
@@ -137,7 +137,7 @@ export default function AchievementSection() {
         <div
             id="achievements"
             ref={containerRef}
-            className="relative w-full overflow-hidden bg-[#020202] flex flex-col z-40 text-white min-h-screen pt-12 pb-12"
+            className="relative w-full overflow-hidden bg-[#020202] flex flex-col z-40 text-white min-h-[100svh] pt-12 pb-12"
         >
             {/* Background Texture / Watermark */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-black text-white/[0.015] leading-none pointer-events-none select-none whitespace-nowrap z-0">
@@ -145,7 +145,7 @@ export default function AchievementSection() {
             </div>
 
             {/* Navigation Header */}
-            <div className="absolute top-0 left-0 w-full flex justify-between items-center p-8 md:px-12 z-30">
+            <div className="absolute top-0 left-0 w-full flex justify-between items-center p-4 sm:p-6 md:px-12 md:py-8 z-30">
                 <span className="text-[9px] md:text-xs tracking-[0.4em] uppercase text-zinc-500 font-light mix-blend-difference">
                     Legacy / Milestones / 2026
                 </span>
@@ -155,7 +155,7 @@ export default function AchievementSection() {
             </div>
 
             {/* Main Content Area */}
-            <div className="w-full h-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 flex flex-col pt-20 sm:pt-24 md:pt-32">
+            <div className="w-full h-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 flex flex-col pt-[clamp(88px,12svh,140px)] sm:pt-24 md:pt-32">
                 {/* Header Section */}
                 <div className="achievements-header mb-4 sm:mb-8 md:mb-12 shrink-0 flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
                     <h1 className="text-[clamp(2.5rem,7vw,6.5rem)] font-black leading-none tracking-[-0.04em] uppercase text-white flex flex-wrap gap-x-4">
@@ -197,7 +197,7 @@ export default function AchievementSection() {
                                 onClick={() =>
                                     setFlippedId(isFlipped ? null : item.id)
                                 }
-                                className="achievement-card relative group flex-shrink-0 w-[85vw] sm:w-[75vw] md:w-[600px] h-[45vh] sm:h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
+                                className="achievement-card relative group flex-shrink-0 w-[88vw] max-w-[560px] sm:w-[75vw] md:w-[600px] h-[clamp(340px,48svh,540px)] sm:h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
                                 style={{perspective: "1500px"}}
                             >
                                 <div

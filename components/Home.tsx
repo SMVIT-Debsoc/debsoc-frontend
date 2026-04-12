@@ -303,13 +303,13 @@ export default function HomeClient() {
     };
 
     return (
-        <div className="bg-[#000000] w-full relative">
+        <div className="bg-[#000000] w-full relative overflow-x-hidden">
             {/* ══════════════ MAIN HERO ══════════════ */}
             <div
-                className="bg-[#000000] text-zinc-100 font-sans h-screen w-full overflow-hidden selection:bg-white/20 selection:text-white"
+                className="bg-[#000000] text-zinc-100 font-sans min-h-screen h-[100svh] w-full overflow-hidden selection:bg-white/20 selection:text-white"
                 ref={containerRef}
             >
-                <div className="w-full h-screen overflow-hidden">
+                <div className="w-full h-[100svh] overflow-hidden">
                     {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                     {/*
               FIX: positioned at bottom-0, left-[10%] to start.
@@ -393,8 +393,8 @@ export default function HomeClient() {
 
                     {/* ── Hero text ───────────────────────────────────────────── */}
                     {/* Mobile gradient behind text for readability over the centered mic */}
-                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[60vh] bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none z-[9]" />
-                    <div className="hero-text-container absolute inset-x-0 top-[11%] md:left-12 md:right-auto md:top-auto md:bottom-20 z-20 flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
+                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[58svh] bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none z-[9]" />
+                    <div className="hero-text-container absolute inset-x-0 top-[clamp(84px,12svh,118px)] md:left-12 md:right-auto md:top-auto md:bottom-20 z-20 flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
                         <h1 className="hero-text text-[clamp(2.8rem,11.8vw,5rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[0.96] tracking-[-0.02em] text-zinc-200 mb-2 drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]">
                             DEBSOC:
                             <span className="block md:hidden text-zinc-400">
@@ -414,7 +414,7 @@ export default function HomeClient() {
                         </p>
                     </div>
 
-                    <div className="md:hidden absolute inset-x-0 bottom-[15%] z-20 flex flex-col items-center text-center px-8 pointer-events-none">
+                    <div className="md:hidden absolute inset-x-0 bottom-[max(8svh,64px)] z-20 flex flex-col items-center text-center px-8 pointer-events-none">
                         <p className="hero-text text-[0.78rem] text-zinc-400 font-light max-w-[20rem] tracking-[0.035em] leading-[1.62] uppercase">
                             A high-end production studio
                             <br />
@@ -509,13 +509,13 @@ export default function HomeClient() {
                         {/* Fullscreen card slider */}
                         <div
                             ref={sliderRef}
-                            className="relative z-105 w-full h-[72vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-hidden overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
+                            className="relative z-105 w-full h-[clamp(460px,74svh,720px)] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-auto overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
                         >
                             {navItems.map((item, i) => (
                                 <div
                                     key={item.title}
                                     onClick={() => navigateFromCard(item)}
-                                    className="relative w-full md:w-auto min-w-0 h-[calc((72vh-2rem)/3)] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                    className="relative w-full md:w-auto min-w-0 h-[calc((clamp(460px,74svh,720px)-2rem)/3)] min-h-[130px] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                 >
                                     <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                     <img
