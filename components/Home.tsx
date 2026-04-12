@@ -75,7 +75,7 @@ export default function HomeClient() {
         if (item.sectionTarget) {
             const el = document.getElementById(item.sectionTarget);
             if (el) {
-                el.scrollIntoView({ behavior: "smooth" });
+                el.scrollIntoView({behavior: "smooth"});
             }
             return;
         }
@@ -114,122 +114,170 @@ export default function HomeClient() {
             const cards = Array.from(slider.children) as HTMLElement[];
             cards.forEach((c) => gsap.set(c, {scale: 0, opacity: 0}));
 
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: containerRef.current,
-                    start: "top top",
-                    end: "+=150%", // User scrolls 1.5 viewport heights to complete this timeline
-                    scrub: 1, // Smooth scrub
-                    pin: true, // Pin the hero section while animating
-                }
-            });
+            let mm = gsap.matchMedia();
 
-            // ─── Phase 1 (0 → 0.35) : Mic is already centred; ensure position is exact ─────────────
-            tl.to(
-                micWrapper,
+            mm.add(
                 {
-                    left: "50%",
-                    duration: 0.35,
-                    ease: "power2.inOut",
+                    isDesktop: "(min-width: 768px)",
+                    isMobile: "(max-width: 767px)",
                 },
-                0,
+                (context) => {
+                    const {isDesktop} = context.conditions as any;
+
+                    let additionalScroll = 0;
+                    if (isDesktop && slider) {
+                        additionalScroll =
+                            slider.scrollWidth - window.innerWidth + 100;
+                        if (additionalScroll < 0) additionalScroll = 0;
+                    }
+
+                    const endVal = isDesktop
+                        ? `+=${150 + (additionalScroll / window.innerHeight) * 100}%`
+                        : "+=150%";
+
+                    const tl = gsap.timeline({
+                        scrollTrigger: {
+                            trigger: containerRef.current,
+                            start: "top top",
+                            end: endVal,
+                            scrub: 1, // Smooth scrub
+                            pin: true, // Pin the hero section while animating
+                        },
+                    });
+
+                    // ─── Phase 1 (0 → 0.35) : Mic is already centred; ensure position is exact ─────────────
+                    tl.to(
+                        micWrapper,
+                        {
+                            left: "50%",
+                            duration: 0.35,
+                            ease: "power2.inOut",
+                        },
+                        0,
+                    );
+
+                    // Fade out right panel & hero text as mic moves
+                    if (rightPanel)
+                        tl.to(
+                            rightPanel,
+                            {opacity: 0, x: 30, duration: 0.3},
+                            0,
+                        );
+                    if (heroText)
+                        tl.to(heroText, {opacity: 0, y: 20, duration: 0.3}, 0);
+                    if (blurBg)
+                        tl.to(blurBg, {opacity: 1, duration: 0.35}, 0.05);
+
+                    // ─── Phase 2 (0.35 → 0.52) : Mic vibrates / charges up ────────────────
+                    tl.to(
+                        micWrapper,
+                        {
+                            x: "+=10",
+                            duration: 0.05,
+                            yoyo: true,
+                            repeat: 9, // 10 bounces ≈ 0.5s total charge-up
+                            ease: "power1.inOut",
+                        },
+                        0.35,
+                    );
+
+                    // ─── Phase 3 (0.55) : Seamless swap — show halves, hide wrapper ────────
+                    tl.set(micTop, {opacity: 1}, 0.55);
+                    tl.set(micBot, {opacity: 1}, 0.55);
+                    tl.set(micWrapper, {opacity: 0}, 0.55);
+
+                    // Flash crack line at the 50% height of mic
+                    tl.to(
+                        crack,
+                        {
+                            scaleX: 1,
+                            opacity: 1,
+                            duration: 0.12,
+                            ease: "power4.out",
+                        },
+                        0.55,
+                    );
+
+                    // ─── Phase 4 (0.63 → 1.3) : Slow cinematic split ──────────────────────
+                    tl.to(
+                        micTop,
+                        {
+                            y: "-38vh",
+                            rotationZ: -6,
+                            scale: 0.8,
+                            opacity: 0,
+                            duration: 0.85, // slow & cinematic
+                            ease: "power2.inOut",
+                        },
+                        0.63,
+                    );
+
+                    tl.to(
+                        micBot,
+                        {
+                            y: "38vh",
+                            rotationZ: 4,
+                            scale: 0.8,
+                            opacity: 0,
+                            duration: 0.85,
+                            ease: "power2.inOut",
+                        },
+                        0.63,
+                    );
+
+                    tl.to(
+                        crack,
+                        {
+                            scaleY: 30,
+                            opacity: 0,
+                            duration: 0.7,
+                            ease: "power2.in",
+                        },
+                        0.68,
+                    );
+
+                    // ─── Phase 5 (0.85 → 1.4) : Real cards scale in from centre ───────────
+                    tl.set(slider, {autoAlpha: 1}, 0.85);
+                    tl.set(
+                        exploreWrapperRef.current,
+                        {pointerEvents: "auto"},
+                        0.85,
+                    );
+
+                    cards.forEach((card, i) => {
+                        tl.to(
+                            card,
+                            {
+                                scale: 1,
+                                opacity: 1,
+                                duration: 0.4,
+                                ease: "back.out(1.3)",
+                            },
+                            0.87 + i * 0.03,
+                        );
+                    });
+
+                    // ─── Phase 6 (1.4 → 2.9) : Horizontal scrub (Desktop Only) ────────────
+                    if (isDesktop && additionalScroll > 0) {
+                        const scrollTarget = {val: 0};
+                        tl.to(
+                            scrollTarget,
+                            {
+                                val: additionalScroll,
+                                duration: 1.5,
+                                ease: "none",
+                                onUpdate: () => {
+                                    if (slider)
+                                        slider.scrollLeft = scrollTarget.val;
+                                },
+                            },
+                            1.4,
+                        );
+                    }
+                },
             );
 
-            // Fade out right panel & hero text as mic moves
-            if (rightPanel)
-                tl.to(rightPanel, {opacity: 0, x: 30, duration: 0.3}, 0);
-            if (heroText)
-                tl.to(heroText, {opacity: 0, y: 20, duration: 0.3}, 0);
-            if (blurBg) tl.to(blurBg, {opacity: 1, duration: 0.35}, 0.05);
-
-            // ─── Phase 2 (0.35 → 0.52) : Mic vibrates / charges up ────────────────
-            tl.to(
-                micWrapper,
-                {
-                    x: "+=10",
-                    duration: 0.05,
-                    yoyo: true,
-                    repeat: 9, // 10 bounces ≈ 0.5s total charge-up
-                    ease: "power1.inOut",
-                },
-                0.35,
-            );
-
-            // ─── Phase 3 (0.55) : Seamless swap — show halves, hide wrapper ────────
-            // Set split halves visible FIRST (same GSAP frame), THEN hide wrapper
-            // This prevents the 1-frame flash of black.
-            tl.set(micTop, {opacity: 1}, 0.55);
-            tl.set(micBot, {opacity: 1}, 0.55);
-            tl.set(micWrapper, {opacity: 0}, 0.55);
-
-            // Flash crack line at the 50% height of mic (mic is 80vh, bottom-aligned
-            // the visual midpoint sits at ~50vh from bottom → 50vh from top ≈ top-[50vh])
-            tl.to(
-                crack,
-                {
-                    scaleX: 1,
-                    opacity: 1,
-                    duration: 0.12,
-                    ease: "power4.out",
-                },
-                0.55,
-            );
-
-            // ─── Phase 4 (0.63 → 1.3) : Slow cinematic split ──────────────────────
-            tl.to(
-                micTop,
-                {
-                    y: "-38vh",
-                    rotationZ: -6,
-                    scale: 0.8,
-                    opacity: 0,
-                    duration: 0.85, // slow & cinematic
-                    ease: "power2.inOut",
-                },
-                0.63,
-            );
-
-            // ... phase 4 bot ...
-            tl.to(
-                micBot,
-                {
-                    y: "38vh",
-                    rotationZ: 4,
-                    scale: 0.8,
-                    opacity: 0,
-                    duration: 0.85,
-                    ease: "power2.inOut",
-                },
-                0.63,
-            );
-
-            tl.to(
-                crack,
-                {
-                    scaleY: 30,
-                    opacity: 0,
-                    duration: 0.7,
-                    ease: "power2.in",
-                },
-                0.68,
-            );
-
-            // ─── Phase 5 (0.85 → 1.4) : Real cards scale in from centre ───────────
-            tl.set(slider, {autoAlpha: 1}, 0.85);
-            tl.set(exploreWrapperRef.current, {pointerEvents: "auto"}, 0.85);
-
-            cards.forEach((card, i) => {
-                tl.to(
-                    card,
-                    {
-                        scale: 1,
-                        opacity: 1,
-                        duration: 0.4,
-                        ease: "back.out(1.3)",
-                    },
-                    0.87 + i * 0.03,
-                );
-            });
+            return () => mm.revert();
         },
         {scope: containerRef},
     );
@@ -252,7 +300,7 @@ export default function HomeClient() {
     );
 
     const openExplore = () => {
-        window.scrollTo({ top: window.innerHeight * 1.5, behavior: "smooth" });
+        window.scrollTo({top: window.innerHeight * 1.5, behavior: "smooth"});
     };
 
     return (
@@ -262,236 +310,227 @@ export default function HomeClient() {
                 className="bg-[#000000] text-zinc-100 font-sans h-screen w-full overflow-hidden selection:bg-white/20 selection:text-white"
                 ref={containerRef}
             >
-                <div
-                    className="w-full h-screen overflow-hidden"
-                >
-                            {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
-                            {/*
+                <div className="w-full h-screen overflow-hidden">
+                    {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
+                    {/*
               FIX: positioned at bottom-0, left-[10%] to start.
               GSAP animates left → 50% and xPercent → -50 so it centres perfectly.
               Split halves mirror this exact layout (bottom-0, left-1/2 -translate-x-1/2).
             */}
-                            <div
-                                ref={micWrapperRef}
-                                className="mic-wrapper absolute bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
-                            >
-                                <img
-                                    src="/mic-nobg.png"
-                                    alt="Retro Microphone"
-                                    className="mic-element h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
-                                    style={{
-                                        transformStyle: "preserve-3d",
-                                        display: "block",
-                                    }}
-                                />
-                            </div>
+                    <div
+                        ref={micWrapperRef}
+                        className="mic-wrapper absolute bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
+                    >
+                        <img
+                            src="/mic-nobg.png"
+                            alt="Retro Microphone"
+                            className="mic-element h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                            style={{
+                                transformStyle: "preserve-3d",
+                                display: "block",
+                            }}
+                        />
+                    </div>
 
-                            {/* ── Right content panel ─────────────────────────────────── */}
-                            <div className="right-content-panel absolute inset-y-0 right-0 hidden md:flex md:w-[50%] h-full flex-col justify-center items-end p-8 md:pr-12 z-0">
-                                <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
-                                    {/* Mission card */}
-                                    <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-55">
-                                        <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
-                                            Mission
-                                        </p>
-                                        <p className="text-sm text-zinc-200 font-light leading-relaxed">
-                                            We curate intellectual
-                                            battlegrounds. To amplify voices,
-                                            challenge perspectives, and elevate
-                                            the debate.
-                                        </p>
-                                        <p className="text-sm text-zinc-400 font-light mt-3">
-                                            We are DEBSOC.
-                                        </p>
-                                    </div>
-
-                                    {/* Explore teaser */}
-                                    <div className="flex flex-col gap-3 items-end">
-                                        <div className="flex items-center justify-between w-full max-w-[320px] mb-1">
-                                            <h3 className="text-xs text-zinc-400 uppercase tracking-[0.25em] font-light">
-                                                Explore
-                                            </h3>
-                                            <button
-                                                onClick={openExplore}
-                                                className="text-xs text-white/50 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/10 px-3 py-1 rounded transition-all"
-                                            >
-                                                View All
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-3">
-                                            {navItems
-                                                .slice(0, 2)
-                                                .map((item, i) => (
-                                                    <div
-                                                        key={item.title}
-                                                        className="relative w-32 md:w-36.25 h-24 md:h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
-                                                        onClick={() =>
-                                                            navigateFromCard(
-                                                                item,
-                                                            )
-                                                        }
-                                                    >
-                                                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
-                                                        <img
-                                                            src={`/event${(i % 2) + 1}.png`}
-                                                            alt={item.title}
-                                                            className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700"
-                                                        />
-                                                        <div className="absolute bottom-3 left-3 z-20">
-                                                            <h4 className="text-xs text-white font-light uppercase tracking-wider leading-snug">
-                                                                {item.title}:
-                                                                <br />
-                                                                {item.sub1}
-                                                            </h4>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* ── Hero text ───────────────────────────────────────────── */}
-                            {/* Mobile gradient behind text for readability over the centered mic */}
-                            <div className="md:hidden absolute inset-x-0 bottom-0 h-[48vh] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-[15]" />
-                            <div className="hero-text-container absolute left-4 right-4 bottom-6 sm:left-8 sm:right-auto sm:bottom-10 md:bottom-20 md:left-12 z-20 flex flex-col pointer-events-none w-auto max-w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(30rem,50vw)] md:max-w-4xl">
-                                <h1 className="hero-text text-[clamp(2.25rem,6vw,7rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 drop-shadow-lg">
-                                    DEBSOC:
-                                    <br />
-                                    <span className="text-zinc-300">
-                                        THE ART OF ARGUMENT.
-                                    </span>
-                                </h1>
-                                <p className="hero-text text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
-                                    A high-end production studio for <br />
-                                    discourse and debate.
+                    {/* ── Right content panel ─────────────────────────────────── */}
+                    <div className="right-content-panel absolute inset-y-0 right-0 hidden md:flex md:w-[50%] h-full flex-col justify-center items-end p-8 md:pr-12 z-0">
+                        <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
+                            {/* Mission card */}
+                            <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-55">
+                                <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
+                                    Mission
                                 </p>
-                                {/* Mobile explore CTA */}
-                                <button
-                                    onClick={openExplore}
-                                    className="md:hidden mt-5 self-start text-[11px] text-white/70 hover:text-white uppercase tracking-[0.24em] border border-white/15 hover:bg-white/10 px-4 py-2.5 rounded transition-all pointer-events-auto"
-                                >
-                                    Explore ↗
-                                </button>
+                                <p className="text-sm text-zinc-200 font-light leading-relaxed">
+                                    We curate intellectual battlegrounds. To
+                                    amplify voices, challenge perspectives, and
+                                    elevate the debate.
+                                </p>
+                                <p className="text-sm text-zinc-400 font-light mt-3">
+                                    We are DEBSOC.
+                                </p>
                             </div>
 
-                            {/* ── Footer links ────────────────────────────────────────── */}
-                            <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-4 md:gap-6 text-xs text-zinc-400 font-light tracking-wider md:gap-6">
-                                <button
-                                    onClick={() => {
-                                        const el = document.getElementById("team");
-                                        if (el) el.scrollIntoView({ behavior: "smooth" });
-                                    }}
-                                    className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
-                                >
-                                    Our Team
-                                </button>
-                                <a
-                                    href="#"
-                                    className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
-                                >
-                                    Upcoming Events
-                                </a>
-                                <a
-                                    href="#"
-                                    className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white hidden md:inline"
-                                >
-                                    Contact
-                                </a>
-                            </div>
-
-                            {/* ══════════════════ EXPLORE OVERLAY ══════════════════════ */}
-                            {/*
-              Always rendered — GSAP manages visibility,
-              React only controls pointer-events.
-            */}
-                            <div
-                                ref={exploreWrapperRef}
-                                className="absolute inset-0 z-100 flex items-center justify-start pointer-events-none"
-                            >
-                                {/* Blur backdrop */}
-                                <div className="blur-overlay-bg absolute inset-0 bg-black/80 backdrop-blur-3xl opacity-0 pointer-events-none" />
-
-                                {/*
-                FIX: Split halves are positioned bottom-0, left-1/2 -translate-x-1/2
-                This EXACTLY mirrors the mic-wrapper after GSAP centres it.
-                No positional jump when swapping between wrapper and halves.
-              */}
-                                <div className="absolute inset-0 z-1 pointer-events-none">
-                                    {/* Top half (clips bottom 50% of image) */}
-                                    <div
-                                        ref={micTopRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
-                                        style={{clipPath: "inset(0 0 50% 0)"}}
+                            {/* Explore teaser */}
+                            <div className="flex flex-col gap-3 items-end">
+                                <div className="flex items-center justify-between w-full max-w-[320px] mb-1">
+                                    <h3 className="text-xs text-zinc-400 uppercase tracking-[0.25em] font-light">
+                                        Explore
+                                    </h3>
+                                    <button
+                                        onClick={openExplore}
+                                        className="text-xs text-white/50 hover:text-white uppercase tracking-widest border border-white/10 hover:bg-white/10 px-3 py-1 rounded transition-all"
                                     >
-                                        <img
-                                            src="/mic-nobg.png"
-                                            alt=""
-                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
-                                            style={{display: "block"}}
-                                        />
-                                    </div>
-
-                                    {/* Bottom half (clips top 50% of image) */}
-                                    <div
-                                        ref={micBotRef}
-                                        className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
-                                        style={{clipPath: "inset(50% 0 0 0)"}}
-                                    >
-                                        <img
-                                            src="/mic-nobg.png"
-                                            alt=""
-                                            className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
-                                            style={{display: "block"}}
-                                        />
-                                    </div>
-
-                                    {/* Crack / light flash — dynamically centered vertically on the mic */}
-                                    <div
-                                        ref={crackRef}
-                                        className="absolute bottom-[23vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
-                                    />
+                                        View All
+                                    </button>
                                 </div>
-
-                                {/* Fullscreen card slider */}
-                                <div
-                                    ref={sliderRef}
-                                    className="relative z-105 w-full h-[72vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-hidden overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
-                                >
-                                    {navItems.map((item, i) => (
+                                <div className="flex gap-3">
+                                    {navItems.slice(0, 2).map((item, i) => (
                                         <div
                                             key={item.title}
+                                            className="relative w-32 md:w-36.25 h-24 md:h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
                                             onClick={() =>
                                                 navigateFromCard(item)
                                             }
-                                            className="relative w-full md:w-auto min-w-0 h-[calc((72vh-2rem)/3)] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                         >
-                                            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
+                                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                             <img
                                                 src={`/event${(i % 2) + 1}.png`}
                                                 alt={item.title}
-                                                className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
+                                                className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700"
                                             />
-                                            <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 left-3 sm:left-4 md:left-8 z-20 pr-3 sm:pr-4 md:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
-                                                <h4 className="text-sm sm:text-base md:text-4xl text-white font-light uppercase tracking-wider md:tracking-widest leading-snug drop-shadow-lg">
-                                                    {item.title}:<br />
-                                                    <span className="text-zinc-300 text-xs sm:text-sm md:text-2xl">
-                                                        {item.sub1}
-                                                    </span>
+                                            <div className="absolute bottom-3 left-3 z-20">
+                                                <h4 className="text-xs text-white font-light uppercase tracking-wider leading-snug">
+                                                    {item.title}:
                                                     <br />
-                                                    <span className="text-zinc-400 text-[11px] sm:text-xs md:text-lg">
-                                                        {item.sub2}
-                                                    </span>
+                                                    {item.sub1}
                                                 </h4>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            {/* ══════════════ END EXPLORE OVERLAY ══════════════════════ */}
                         </div>
                     </div>
-                    {/* ══════════════ END MAIN HERO ══════════════ */}
+
+                    {/* ── Hero text ───────────────────────────────────────────── */}
+                    {/* Mobile gradient behind text for readability over the centered mic */}
+                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[48vh] bg-gradient-to-t from-black via-black/75 to-transparent pointer-events-none z-[15]" />
+                    <div className="hero-text-container absolute left-4 right-4 bottom-6 sm:left-8 sm:right-auto sm:bottom-10 md:bottom-20 md:left-12 z-20 flex flex-col pointer-events-none w-auto max-w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(30rem,50vw)] md:max-w-4xl">
+                        <h1 className="hero-text text-[clamp(2.25rem,6vw,7rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[1.1] tracking-tight text-white mb-2 drop-shadow-lg">
+                            DEBSOC:
+                            <br />
+                            <span className="text-zinc-300">
+                                THE ART OF ARGUMENT.
+                            </span>
+                        </h1>
+                        <p className="hero-text text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
+                            A high-end production studio for <br />
+                            discourse and debate.
+                        </p>
+                        {/* Mobile explore CTA */}
+                        <button
+                            onClick={openExplore}
+                            className="md:hidden mt-5 self-start text-[11px] text-white/70 hover:text-white uppercase tracking-[0.24em] border border-white/15 hover:bg-white/10 px-4 py-2.5 rounded transition-all pointer-events-auto"
+                        >
+                            Explore ↗
+                        </button>
+                    </div>
+
+                    {/* ── Footer links ────────────────────────────────────────── */}
+                    <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-4 md:gap-6 text-xs text-zinc-400 font-light tracking-wider md:gap-6">
+                        <button
+                            onClick={() => {
+                                const el = document.getElementById("team");
+                                if (el) el.scrollIntoView({behavior: "smooth"});
+                            }}
+                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
+                        >
+                            Our Team
+                        </button>
+                        <a
+                            href="#"
+                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
+                        >
+                            Upcoming Events
+                        </a>
+                        <a
+                            href="#"
+                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white hidden md:inline"
+                        >
+                            Contact
+                        </a>
+                    </div>
+
+                    {/* ══════════════════ EXPLORE OVERLAY ══════════════════════ */}
+                    {/*
+              Always rendered — GSAP manages visibility,
+              React only controls pointer-events.
+            */}
+                    <div
+                        ref={exploreWrapperRef}
+                        className="absolute inset-0 z-100 flex items-center justify-start pointer-events-none"
+                    >
+                        {/* Blur backdrop */}
+                        <div className="blur-overlay-bg absolute inset-0 bg-black/80 backdrop-blur-3xl opacity-0 pointer-events-none" />
+
+                        {/*
+                FIX: Split halves are positioned bottom-0, left-1/2 -translate-x-1/2
+                This EXACTLY mirrors the mic-wrapper after GSAP centres it.
+                No positional jump when swapping between wrapper and halves.
+              */}
+                        <div className="absolute inset-0 z-1 pointer-events-none">
+                            {/* Top half (clips bottom 50% of image) */}
+                            <div
+                                ref={micTopRef}
+                                className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                style={{clipPath: "inset(0 0 50% 0)"}}
+                            >
+                                <img
+                                    src="/mic-nobg.png"
+                                    alt=""
+                                    className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    style={{display: "block"}}
+                                />
+                            </div>
+
+                            {/* Bottom half (clips top 50% of image) */}
+                            <div
+                                ref={micBotRef}
+                                className="absolute bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[46vh] min-h-[320px] max-h-[88vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                style={{clipPath: "inset(50% 0 0 0)"}}
+                            >
+                                <img
+                                    src="/mic-nobg.png"
+                                    alt=""
+                                    className="h-full w-auto max-w-[min(90vw,38rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    style={{display: "block"}}
+                                />
+                            </div>
+
+                            {/* Crack / light flash — dynamically centered vertically on the mic */}
+                            <div
+                                ref={crackRef}
+                                className="absolute bottom-[23vh] sm:bottom-[27vh] md:bottom-[40vh] lg:bottom-[40vh] xl:bottom-[40vh] w-full h-0.75 bg-white shadow-[0_0_100px_24px_rgba(255,255,255,0.95)] origin-center will-change-transform left-0 opacity-0"
+                            />
+                        </div>
+
+                        {/* Fullscreen card slider */}
+                        <div
+                            ref={sliderRef}
+                            className="relative z-105 w-full h-[72vh] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-hidden overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
+                        >
+                            {navItems.map((item, i) => (
+                                <div
+                                    key={item.title}
+                                    onClick={() => navigateFromCard(item)}
+                                    className="relative w-full md:w-auto min-w-0 h-[calc((72vh-2rem)/3)] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                                >
+                                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
+                                    <img
+                                        src={`/event${(i % 2) + 1}.png`}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
+                                    />
+                                    <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 left-3 sm:left-4 md:left-8 z-20 pr-3 sm:pr-4 md:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
+                                        <h4 className="text-sm sm:text-base md:text-4xl text-white font-light uppercase tracking-wider md:tracking-widest leading-snug drop-shadow-lg">
+                                            {item.title}:<br />
+                                            <span className="text-zinc-300 text-xs sm:text-sm md:text-2xl">
+                                                {item.sub1}
+                                            </span>
+                                            <br />
+                                            <span className="text-zinc-400 text-[11px] sm:text-xs md:text-lg">
+                                                {item.sub2}
+                                            </span>
+                                        </h4>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {/* ══════════════ END EXPLORE OVERLAY ══════════════════════ */}
+                </div>
+            </div>
+            {/* ══════════════ END MAIN HERO ══════════════ */}
 
             <WhyChooseDebsoc />
             <TeamSection />
