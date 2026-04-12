@@ -7,10 +7,10 @@ import {Sparkles, Menu, X} from "lucide-react";
 
 const navLinks = [
     {name: "Home", href: "/"},
-    {name: "Why Choose Us", href: "/?section=whychoose"},
-    {name: "Team", href: "/?section=team"},
-    {name: "Achievements", href: "/?section=achievements"},
-    {name: "Alumni", href: "/?section=alumni"},
+    {name: "Why Choose Us", href: "/#whychoose"},
+    {name: "Team", href: "/#team"},
+    {name: "Achievements", href: "/#achievements"},
+    {name: "Alumni", href: "/#alumni"},
     {name: "Debate Timer", href: "/debate-timer"},
     {name: "Session", href: "/session"},
     {name: "Equity", href: "/equity"},
