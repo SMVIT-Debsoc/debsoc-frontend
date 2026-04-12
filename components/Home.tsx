@@ -5,7 +5,6 @@ import {useRouter, useSearchParams} from "next/navigation";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
-import {Menu, Sparkles} from "lucide-react";
 import WhyChooseDebsoc from "./WhyChooseDebsoc";
 import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
@@ -311,14 +310,6 @@ export default function HomeClient() {
                 ref={containerRef}
             >
                 <div className="w-full h-screen overflow-hidden">
-                    <div className="md:hidden absolute top-7 right-6 z-30 pointer-events-none">
-                        <Menu
-                            size={34}
-                            strokeWidth={1.5}
-                            className="text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.45)]"
-                        />
-                    </div>
-
                     {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                     {/*
               FIX: positioned at bottom-0, left-[10%] to start.

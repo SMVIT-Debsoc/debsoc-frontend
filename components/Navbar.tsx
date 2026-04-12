@@ -36,31 +36,51 @@ const Navbar = () => {
             return;
         }
 
-        const lastKnownSection = (window as Window & {__debsocSection?: string})
-            .__debsocSection;
-        const shouldShowByMemory =
-            !!lastKnownSection &&
-            lastKnownSection !== "home" &&
-            lastKnownSection !== "explore";
+        const resolveVisibility = (currentSection?: string) => {
+            const isMobile = window.innerWidth < 768;
 
-        setIsVisible(shouldShowByUrl || shouldShowByMemory);
+            // Keep a sticky top navbar on mobile, including home hero.
+            if (isMobile) {
+                setIsVisible(true);
+                return;
+            }
 
-        // On home route, keep navbar hidden for hero/explore and reveal after section advances.
-        const handleSectionChange = (event: Event) => {
-            const customEvent = event as CustomEvent<{section?: string}>;
-            const currentSection = customEvent.detail?.section;
-            const shouldShow =
-                currentSection !== "home" && currentSection !== "explore";
-            setIsVisible(shouldShow);
+            if (currentSection) {
+                const shouldShow =
+                    currentSection !== "home" && currentSection !== "explore";
+                setIsVisible(shouldShow);
+                return;
+            }
+
+            const lastKnownSection = (
+                window as Window & {__debsocSection?: string}
+            ).__debsocSection;
+            const shouldShowByMemory =
+                !!lastKnownSection &&
+                lastKnownSection !== "home" &&
+                lastKnownSection !== "explore";
+
+            setIsVisible(shouldShowByUrl || shouldShowByMemory);
         };
 
+        resolveVisibility();
+
+        const handleSectionChange = (event: Event) => {
+            const customEvent = event as CustomEvent<{section?: string}>;
+            resolveVisibility(customEvent.detail?.section);
+        };
+
+        const handleResize = () => resolveVisibility();
+
         window.addEventListener("debsoc:section-change", handleSectionChange);
+        window.addEventListener("resize", handleResize);
 
         return () => {
             window.removeEventListener(
                 "debsoc:section-change",
                 handleSectionChange,
             );
+            window.removeEventListener("resize", handleResize);
         };
     }, [pathname, shouldShowByUrl]);
 
