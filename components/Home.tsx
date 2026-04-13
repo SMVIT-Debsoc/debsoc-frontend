@@ -367,7 +367,7 @@ export default function HomeClient() {
                         <img
                             src="/mic-nobg.png"
                             alt="Retro Microphone"
-                            className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.65] md:scale-100 [clip-path:inset(0_0_23%_0)] md:[clip-path:inset(0_0_0_0)] brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_120px_rgba(255,255,255,0.22)] md:drop-shadow-[0_0_80px_rgba(255,255,255,0.15)]"
+                            className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.65] md:scale-100 [clip-path:inset(0_0_23%_0)] md:[clip-path:inset(0_0_0_0)] brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                             style={{
                                 transformStyle: "preserve-3d",
                                 display: "block",
@@ -437,8 +437,8 @@ export default function HomeClient() {
 
                     {/* ── Hero text ───────────────────────────────────────────── */}
                     {/* Mobile gradient behind text for readability over the centered mic */}
-                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[58svh] bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none z-[9]" />
-                    <div className="hero-text-container absolute inset-x-0 top-[clamp(84px,12svh,118px)] md:left-12 md:right-auto md:top-auto md:bottom-20 z-20 flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
+                    <div className="md:hidden absolute inset-x-0 bottom-0 h-[58svh] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-[35]" />
+                    <div className="hero-text-container absolute inset-x-0 top-[clamp(84px,12svh,118px)] md:left-12 md:right-auto md:top-auto md:bottom-20 z-[40] flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
                         <h1 className="hero-text text-[clamp(2.8rem,11.8vw,5rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[0.96] tracking-[-0.02em] text-zinc-200 mb-2 drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]">
                             DEBSOC:
                             <span className="block md:hidden text-zinc-400">
@@ -458,7 +458,7 @@ export default function HomeClient() {
                         </p>
                     </div>
 
-                    <div className="md:hidden absolute inset-x-0 bottom-[max(8svh,64px)] z-20 flex flex-col items-center text-center px-8 pointer-events-none">
+                    <div className="md:hidden absolute inset-x-0 bottom-[max(8svh,64px)] z-[40] flex flex-col items-center text-center px-8 pointer-events-none">
                         <p className="hero-text text-[0.78rem] text-zinc-400 font-light max-w-[20rem] tracking-[0.035em] leading-[1.62] uppercase">
                             A high-end production studio
                             <br />
@@ -524,7 +524,7 @@ export default function HomeClient() {
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                                     style={{display: "block"}}
                                 />
                             </div>
@@ -538,7 +538,7 @@ export default function HomeClient() {
                                 <img
                                     src="/mic-nobg.png"
                                     alt=""
-                                    className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100 drop-shadow-[0_0_90px_rgba(255,255,255,0.26)] md:drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+                                    className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                                     style={{display: "block"}}
                                 />
                             </div>
