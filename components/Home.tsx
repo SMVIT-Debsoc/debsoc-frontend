@@ -143,6 +143,9 @@ export default function HomeClient() {
             gsap.set([micTop, micBot], {opacity: 0});
             gsap.set(crack, {scaleX: 0, opacity: 0});
             gsap.set(slider, {autoAlpha: 0});
+            
+            // Lock xPercent to -50 in GSAP so translation animations don't blow away the alignment
+            gsap.set([micWrapper, micTop, micBot], {xPercent: -50});
 
             const cards = Array.from(slider.children) as HTMLElement[];
             cards.forEach((c) => gsap.set(c, {scale: 0, opacity: 0}));
@@ -318,21 +321,8 @@ export default function HomeClient() {
     );
 
     // ══════════════════════════════════════════════════════════════════════
-    //  On-mount: mic drop-in animation
+    //  On-mount: mic drop-in animation removed as per request (animation only on scroll)
     // ══════════════════════════════════════════════════════════════════════
-    useGSAP(
-        () => {
-            if (!containerRef.current) return;
-            gsap.from(".mic-element", {
-                y: -150,
-                opacity: 0,
-                duration: MIC_INTRO_DURATION,
-                ease: "elastic.out(1, 0.55)",
-                delay: 0.1,
-            });
-        },
-        {scope: containerRef},
-    );
 
     const openExplore = () => {
         const container = containerRef.current;
@@ -372,7 +362,7 @@ export default function HomeClient() {
             */}
                     <div
                         ref={micWrapperRef}
-                        className="mic-wrapper absolute bottom-[clamp(13vh,15svh,18vh)] md:bottom-0 z-10 pointer-events-none left-1/2 -translate-x-1/2 md:left-[10%] md:translate-x-0"
+                        className="mic-wrapper absolute bottom-[clamp(13vh,15svh,18vh)] md:bottom-0 z-30 pointer-events-none left-1/2"
                     >
                         <img
                             src="/mic-nobg.png"
@@ -528,7 +518,7 @@ export default function HomeClient() {
                             {/* Top half (clips bottom 50% of image) */}
                             <div
                                 ref={micTopRef}
-                                className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(0 0 50% 0)"}}
                             >
                                 <img
@@ -542,7 +532,7 @@ export default function HomeClient() {
                             {/* Bottom half (clips top 50% of image) */}
                             <div
                                 ref={micBotRef}
-                                className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 -translate-x-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
+                                className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(50% 0 0 0)"}}
                             >
                                 <img
