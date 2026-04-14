@@ -288,14 +288,16 @@ function MemberCard({
                                 src={member.photo}
                                 alt=""
                                 fill
-                                className="object-cover blur-2xl opacity-30 scale-110"
+                                draggable={false}
+                                className="object-cover blur-2xl opacity-30 scale-110 pointer-events-none select-none"
                             />
                         )}
                         <Image
                             src={member.photo}
                             alt={member.name}
                             fill
-                            className={`${contain ? "object-contain p-8 md:p-12" : "object-cover"} ${scale} transition-transform duration-700`}
+                            draggable={false}
+                            className={`${contain ? "object-contain p-8 md:p-12" : "object-cover"} ${scale} transition-transform duration-700 pointer-events-none select-none`}
                             style={{objectPosition}}
                             sizes="30vw"
                         />
@@ -315,6 +317,37 @@ function MemberCard({
                 </div>
             </div>
         </AnimatedSection>
+    );
+}
+
+function SwipeHint({
+    label = "Swipe to view more",
+    className = "",
+}: {
+    label?: string;
+    className?: string;
+}) {
+    return (
+        <motion.div
+            aria-hidden="true"
+            className={`mt-3 flex items-center justify-center gap-3 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/45 pointer-events-none select-none ${className}`}
+            initial={{opacity: 0, y: 4}}
+            animate={{opacity: 1, y: 0}}
+            transition={{duration: 0.4, ease: "easeOut"}}
+        >
+            <span>{label}</span>
+            <div className="relative h-[2px] w-16 overflow-hidden rounded-full bg-white/15">
+                <motion.div
+                    className="absolute top-0 left-0 h-full w-6 rounded-full bg-white/70"
+                    animate={{x: [0, 40, 0]}}
+                    transition={{
+                        duration: 1.2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                />
+            </div>
+        </motion.div>
     );
 }
 
@@ -423,8 +456,10 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                     </p>
                 </AnimatedSection>
 
-                <div className="overflow-x-auto hide-scrollbar">
-                    <div className="flex gap-3 snap-x snap-mandatory pb-1">
+                <div
+                    className="overflow-x-auto overflow-y-hidden hide-scrollbar overscroll-x-contain overscroll-y-none [touch-action:pan-x]"
+                >
+                    <div className="flex gap-3 snap-x snap-mandatory pb-1 select-none">
                         {allMembers.map((member, index) => (
                             <div
                                 key={`${dept.id}-${member.name}`}
@@ -449,6 +484,9 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         ))}
                     </div>
                 </div>
+                {allMembers.length > 1 && (
+                    <SwipeHint label="Swipe to see all members" />
+                )}
             </div>
 
             <div className="hidden md:block flex-1 min-h-[320px] z-10 pb-2 sm:pb-4">
@@ -744,7 +782,8 @@ export default function TeamSection() {
                                         src="/media/KanishkChaudhary.jpg"
                                         alt="President"
                                         fill
-                                        className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out"
+                                        draggable={false}
+                                        className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out pointer-events-none select-none"
                                         priority
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
@@ -786,7 +825,8 @@ export default function TeamSection() {
                                         src="/media/AdityaKumarSingh.jpg"
                                         alt="Vice President"
                                         fill
-                                        className="object-cover"
+                                        draggable={false}
+                                        className="object-cover pointer-events-none select-none"
                                         sizes="600px"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95" />
@@ -815,8 +855,10 @@ export default function TeamSection() {
                     </div>
 
                     {/* Mobile: stacked president + VP cards */}
-                    <div className="md:hidden overflow-x-auto hide-scrollbar mt-2">
-                        <div className="flex gap-3 h-full snap-x snap-mandatory pb-1">
+                    <div
+                        className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar overscroll-x-contain overscroll-y-none [touch-action:pan-x] mt-2"
+                    >
+                        <div className="flex gap-3 h-full snap-x snap-mandatory pb-1 select-none">
                             <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
                                 <AnimatedSection
                                     className="group w-full h-full"
@@ -827,7 +869,8 @@ export default function TeamSection() {
                                             src="/media/KanishkChaudhary.jpg"
                                             alt="President"
                                             fill
-                                            className="object-cover object-top"
+                                            draggable={false}
+                                            className="object-cover object-top pointer-events-none select-none"
                                             priority
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
@@ -856,7 +899,8 @@ export default function TeamSection() {
                                             src="/media/AdityaKumarSingh.jpg"
                                             alt="Vice President"
                                             fill
-                                            className="object-cover"
+                                            draggable={false}
+                                            className="object-cover pointer-events-none select-none"
                                             sizes="100vw"
                                         />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95" />
@@ -876,6 +920,10 @@ export default function TeamSection() {
                             </div>
                         </div>
                     </div>
+                    <SwipeHint
+                        label="Swipe for leadership cards"
+                        className="mt-2"
+                    />
                 </div>
 
                 {/* Background Mic Mark */}
