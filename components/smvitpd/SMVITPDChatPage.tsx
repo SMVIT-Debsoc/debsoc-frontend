@@ -169,28 +169,145 @@ function TypingIndicator({ darkMode }: { darkMode: boolean }) {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
             <div
-                className={`rounded-[24px] rounded-bl-md px-5 py-4 ${
+                className={`flex items-center gap-4 rounded-[24px] rounded-bl-md px-4 py-3 ${
                     darkMode
                         ? "border border-white/10 bg-[#221c1a]"
                         : "border border-[#efe3d8] bg-[#fbf8f4]"
                 }`}
             >
-                <div className="flex items-center gap-2">
-                    {[0, 1, 2].map((index) => (
-                        <motion.span
-                            key={index}
-                            animate={{ y: [0, -5, 0], opacity: [0.45, 1, 0.45] }}
+                <motion.div
+                    animate={{ rotate: [0, -2, 2, 0], scale: [1, 1.02, 1] }}
+                    transition={{
+                        duration: 1.8,
+                        repeat: Number.POSITIVE_INFINITY,
+                        ease: "easeInOut",
+                    }}
+                    className="shrink-0"
+                >
+                    <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 48 48"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="24"
+                            cy="24"
+                            r="24"
+                            fill={darkMode ? "#2A201D" : "#F5E9E3"}
+                        />
+                        <circle
+                            cx="24"
+                            cy="21"
+                            r="11"
+                            fill={darkMode ? "#F0C9B4" : "#F2C7AE"}
+                        />
+                        <path
+                            d="M15 20C15 14.4 19.4 10 25 10C30.6 10 34 13.9 34 19.2V22H15V20Z"
+                            fill={darkMode ? "#6A1616" : "#7A1A1A"}
+                        />
+                        <motion.path
+                            d="M18 17.5C19.2 16.5 20.5 16 22 16"
+                            stroke={darkMode ? "#2A201D" : "#3A2A27"}
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            animate={{ y: [0, -0.6, 0] }}
                             transition={{
-                                duration: 0.9,
+                                duration: 1.4,
                                 repeat: Number.POSITIVE_INFINITY,
-                                delay: index * 0.14,
                                 ease: "easeInOut",
                             }}
-                            className={`h-2.5 w-2.5 rounded-full ${
-                                darkMode ? "bg-[#f1d7cb]/60" : "bg-[#4d0000]/55"
-                            }`}
                         />
-                    ))}
+                        <motion.path
+                            d="M26 16C27.5 16 28.8 16.5 30 17.5"
+                            stroke={darkMode ? "#2A201D" : "#3A2A27"}
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            animate={{ y: [0, -0.6, 0] }}
+                            transition={{
+                                duration: 1.4,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                                delay: 0.12,
+                            }}
+                        />
+                        <motion.ellipse
+                            cx="20.5"
+                            cy="22.5"
+                            rx="1.3"
+                            ry="1.9"
+                            fill={darkMode ? "#1C1412" : "#231917"}
+                            animate={{ ry: [1.9, 0.45, 1.9] }}
+                            transition={{
+                                duration: 2.2,
+                                repeat: Number.POSITIVE_INFINITY,
+                                times: [0, 0.08, 0.16],
+                                ease: "easeInOut",
+                            }}
+                        />
+                        <motion.ellipse
+                            cx="27.5"
+                            cy="22.5"
+                            rx="1.3"
+                            ry="1.9"
+                            fill={darkMode ? "#1C1412" : "#231917"}
+                            animate={{ ry: [1.9, 0.45, 1.9] }}
+                            transition={{
+                                duration: 2.2,
+                                repeat: Number.POSITIVE_INFINITY,
+                                times: [0, 0.08, 0.16],
+                                ease: "easeInOut",
+                                delay: 0.06,
+                            }}
+                        />
+                        <motion.path
+                            d="M21 29C22.6 30.2 25.4 30.2 27 29"
+                            stroke={darkMode ? "#8C4A48" : "#A05855"}
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            animate={{
+                                d: [
+                                    "M21 29C22.6 30.2 25.4 30.2 27 29",
+                                    "M20.6 29.5C22.8 27.6 25.2 27.6 27.4 29.5",
+                                    "M21 29C22.6 30.2 25.4 30.2 27 29",
+                                ],
+                            }}
+                            transition={{
+                                duration: 1.6,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                            }}
+                        />
+                        <path
+                            d="M14 41C15.8 34.8 19.2 32 24 32C28.8 32 32.2 34.8 34 41"
+                            fill={darkMode ? "#7A1A1A" : "#8A2020"}
+                        />
+                    </svg>
+                </motion.div>
+
+                <div className="min-w-0">
+                    <p className={`text-sm font-medium ${darkMode ? "text-[#fff1ea]" : "text-[#4d0000]"}`}>
+                        SMVIT PD is thinking
+                    </p>
+                    <div className="mt-2 flex items-center gap-2">
+                        {[0, 1, 2].map((index) => (
+                            <motion.span
+                                key={index}
+                                animate={{ y: [0, -5, 0], opacity: [0.45, 1, 0.45] }}
+                                transition={{
+                                    duration: 0.9,
+                                    repeat: Number.POSITIVE_INFINITY,
+                                    delay: index * 0.14,
+                                    ease: "easeInOut",
+                                }}
+                                className={`h-2.5 w-2.5 rounded-full ${
+                                    darkMode ? "bg-[#f1d7cb]/60" : "bg-[#4d0000]/55"
+                                }`}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
         </motion.div>

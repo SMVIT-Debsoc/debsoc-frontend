@@ -40,6 +40,7 @@ const Navbar = () => {
         (!!sectionParam &&
             sectionParam !== "home" &&
             sectionParam !== "explore");
+    const shouldHideNavbar = pathname?.startsWith("/smvitpd");
 
     useEffect(() => {
         if (pathname !== "/") {
@@ -158,6 +159,10 @@ const Navbar = () => {
 
         router.push(`/#${link.sectionId}`);
     };
+
+    if (shouldHideNavbar) {
+        return null;
+    }
 
     return (
         <header
