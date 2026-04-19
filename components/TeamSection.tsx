@@ -575,7 +575,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                     {executives.map((m, i) => (
                                         <div
                                             key={m.name}
-                                            className={`h-full min-h-0 ${m.name.includes("Srejoni") ? "flex-[0.7] max-w-[280px]" : "flex-1"}`}
+                                            className="h-full min-h-0 flex-1"
                                         >
                                             <MemberCard
                                                 member={m}
