@@ -85,7 +85,7 @@ const DEPARTMENTS: Department[] = [
             {
                 name: "Nandini Sharma",
                 role: "Executive Member",
-                photo: "/media/NandiniSharma.jpg",
+                photo: "/media/NNandini.png",
             },
             {
                 name: "Kripa Chhajer",
@@ -423,12 +423,9 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
 
             <div className="flex flex-col lg:flex-row justify-between items-stretch mb-3 sm:mb-4 md:mb-8 z-10 shrink-0 gap-3 sm:gap-4 lg:gap-16">
                 <AnimatedSection className="shrink-0 flex flex-col justify-center">
-                    <h2 className="text-[clamp(1.5rem,5vw,6rem)] font-black tracking-[-0.05em] uppercase text-white">
+                    <h2 className="text-[clamp(1.5rem,5vw,6rem)] font-black tracking-[-0.05em] uppercase text-white leading-none pb-2">
                         {dept.name}
                     </h2>
-                    <span className="text-[10px] md:text-xs tracking-[0.4em] uppercase text-zinc-600 font-bold block mt-1">
-                        {dept.subtext}
-                    </span>
                 </AnimatedSection>
 
                 {!isEquity &&
@@ -463,7 +460,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         {allMembers.map((member, index) => (
                             <div
                                 key={`${dept.id}-${member.name}`}
-                                className="snap-start shrink-0 w-[68vw] min-w-[220px] max-w-[300px] h-[clamp(220px,34svh,320px)]"
+                                className="snap-start shrink-0 w-[68vw] min-w-[250px] max-w-[340px] h-[clamp(280px,45svh,400px)]"
                             >
                                 <MemberCard
                                     member={member}
@@ -489,7 +486,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 )}
             </div>
 
-            <div className="hidden md:block flex-1 min-h-[320px] z-10 pb-2 sm:pb-4">
+            <div className="hidden md:block flex-1 min-h-[400px] z-10 pb-0 sm:pb-2">
                 {dept.name === "Social Sphere" ? (
                     <div className="h-full flex gap-4 md:gap-6">
                         <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
@@ -627,7 +624,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                     </div>
                 ) : dept.name === "Tech Team" ? (
                     <div className="h-full flex gap-4 md:gap-6">
-                        <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
+                        <div className="w-[70%] sm:w-[60%] md:w-[45%] lg:w-[35%] h-full shrink-0">
                             {leads[0] && (
                                 <MemberCard
                                     member={leads[0]}
@@ -639,6 +636,69 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         </div>
                         <div className="flex-1 min-h-0 h-full">
                             {missionDirective}
+                        </div>
+                    </div>
+                ) : dept.name === "Content Engine" ? (
+                    <div className="h-full flex gap-4 md:gap-6">
+                        {/* Left Column: Rishikesh (leads[1]) */}
+                        <div className="w-[30%] md:w-[35%] lg:w-[28%] h-full shrink-0">
+                            {leads[1] && (
+                                <MemberCard
+                                    member={leads[1]}
+                                    size="lg"
+                                    delay={200}
+                                    objectPosition="center"
+                                />
+                            )}
+                        </div>
+
+                        {/* Right Column Group */}
+                        <div className="flex-1 h-full flex flex-col gap-4 md:gap-6">
+                            {/* Top Row: Anika (leads[0]) */}
+                            <div className="flex-[1.3] min-h-0">
+                                {leads[0] && (
+                                    <MemberCard
+                                        member={leads[0]}
+                                        size="lg"
+                                        delay={250}
+                                        objectPosition="center 25%"
+                                    />
+                                )}
+                            </div>
+
+                            {/* Bottom Row: Tanmay, Rayyan, Pranati */}
+                            <div className="flex-1 min-h-0 flex gap-4 md:gap-6">
+                                {regularMembers[0] && (
+                                    <div className="flex-1 h-full">
+                                        <MemberCard
+                                            member={regularMembers[0]}
+                                            size="sm"
+                                            delay={300}
+                                            objectPosition="center 10%"
+                                        />
+                                    </div>
+                                )}
+                                {regularMembers[2] && (
+                                    <div className="flex-1 h-full">
+                                        <MemberCard
+                                            member={regularMembers[2]}
+                                            size="sm"
+                                            delay={350}
+                                            objectPosition="center 40%"
+                                        />
+                                    </div>
+                                )}
+                                {regularMembers[1] && (
+                                    <div className="flex-1 h-full">
+                                        <MemberCard
+                                            member={regularMembers[1]}
+                                            size="sm"
+                                            delay={400}
+                                            objectPosition="center 10%"
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -698,11 +758,6 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 )}
             </div>
 
-            <div className="mt-3 pt-3 border-t border-white/5 opacity-20 hidden md:block">
-                <span className="text-[10px] tracking-[0.5em] uppercase text-white font-black">
-                    FRAME_ID_{dept.id} // DEBSOC_MONOLITH
-                </span>
-            </div>
         </section>
     );
 }
@@ -736,29 +791,8 @@ export default function TeamSection() {
                     01
                 </div>
 
-                {/* Navigation header */}
-                <div className="absolute top-0 left-0 w-full flex justify-between items-center p-4 sm:p-6 md:px-12 md:py-8 z-30">
-                    <span className="text-[9px] md:text-xs tracking-[0.4em] uppercase text-zinc-500 font-light">
-                        Monolith / Roster / 2026
-                    </span>
-                    <div className="flex gap-8 text-[9px] md:text-xs tracking-[0.2em] uppercase text-zinc-600 font-light">
-                        <button
-                            onClick={() => scrollTo("identity")}
-                            className="text-white hover:text-white transition-colors cursor-pointer"
-                        >
-                            Identity
-                        </button>
-                        <button
-                            onClick={() => scrollTo("ranks")}
-                            className="hover:text-white transition-colors cursor-pointer"
-                        >
-                            Ranks
-                        </button>
-                    </div>
-                </div>
-
                 {/* Main Spread — responsive: desktop grid, mobile stacked */}
-                <div className="w-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 relative md:flex-1 flex flex-col min-h-0 pt-20 sm:pt-24 lg:pt-28">
+                <div className="w-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 relative md:flex-1 flex flex-col min-h-0 pt-8 sm:pt-10 lg:pt-12">
                     {/* LEADERSHIP heading */}
                     <AnimatedSection
                         delay={100}
@@ -772,7 +806,7 @@ export default function TeamSection() {
                     {/* Desktop grid (hidden on mobile) */}
                     <div className="flex-1 min-h-0 hidden md:grid md:grid-cols-[30%_1fr_35%] md:grid-rows-[auto_1fr_auto] gap-x-6 lg:gap-x-10 gap-y-0">
                         {/* Kanishk photo — spans all 3 rows on the left */}
-                        <div className="row-span-3 col-start-1 min-h-[300px]">
+                        <div className="row-span-3 col-start-1 min-h-[400px] lg:min-h-[500px]">
                             <AnimatedSection
                                 className="group w-full h-full"
                                 delay={300}
@@ -815,7 +849,7 @@ export default function TeamSection() {
                         <div className="col-start-3 row-start-1" />
 
                         {/* Aditya photo — rows 2-3 on the right, pushed down */}
-                        <div className="row-span-2 col-start-3 row-start-2 min-h-[250px]">
+                        <div className="row-span-2 col-start-3 row-start-2 min-h-[350px] lg:min-h-[450px]">
                             <AnimatedSection
                                 className="group w-full h-full"
                                 delay={400}
@@ -859,7 +893,7 @@ export default function TeamSection() {
                         className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar overscroll-x-contain overscroll-y-none [touch-action:pan-x] mt-2"
                     >
                         <div className="flex gap-3 h-full snap-x snap-mandatory pb-1 select-none">
-                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
+                            <div className="snap-start shrink-0 w-[85vw] max-w-[460px] h-[clamp(300px,50svh,500px)]">
                                 <AnimatedSection
                                     className="group w-full h-full"
                                     delay={300}
@@ -889,7 +923,7 @@ export default function TeamSection() {
                                 </AnimatedSection>
                             </div>
 
-                            <div className="snap-start shrink-0 w-[82vw] max-w-[420px] h-[clamp(250px,44svh,430px)]">
+                            <div className="snap-start shrink-0 w-[85vw] max-w-[460px] h-[clamp(300px,50svh,500px)]">
                                 <AnimatedSection
                                     className="group w-full h-full"
                                     delay={400}

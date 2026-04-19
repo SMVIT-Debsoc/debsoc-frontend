@@ -144,18 +144,8 @@ export default function AchievementSection() {
                 GLORY
             </div>
 
-            {/* Navigation Header */}
-            <div className="absolute top-0 left-0 w-full flex justify-between items-center p-4 sm:p-6 md:px-12 md:py-8 z-30">
-                <span className="text-[9px] md:text-xs tracking-[0.4em] uppercase text-zinc-500 font-light mix-blend-difference">
-                    Legacy / Milestones / 2026
-                </span>
-                <span className="text-[9px] md:text-xs tracking-[0.2em] uppercase text-zinc-600 font-light mix-blend-difference">
-                    Hall of Trophies
-                </span>
-            </div>
-
             {/* Main Content Area */}
-            <div className="w-full h-full px-4 sm:px-8 md:px-12 pb-8 sm:pb-12 z-10 flex flex-col pt-[clamp(88px,12svh,140px)] sm:pt-24 md:pt-32">
+            <div className="w-full h-full px-4 sm:px-8 md:px-12 pb-4 sm:pb-8 z-10 flex flex-col pt-12 sm:pt-16 md:pt-20">
                 {/* Header Section */}
                 <div className="achievements-header mb-4 sm:mb-8 md:mb-12 shrink-0 flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
                     <h1 className="text-[clamp(2.5rem,7vw,6.5rem)] font-black leading-none tracking-[-0.04em] uppercase text-white flex flex-wrap gap-x-4">
@@ -197,7 +187,7 @@ export default function AchievementSection() {
                                 onClick={() =>
                                     setFlippedId(isFlipped ? null : item.id)
                                 }
-                                className="achievement-card relative group flex-shrink-0 w-[88vw] max-w-[560px] sm:w-[75vw] md:w-[600px] h-[clamp(340px,48svh,540px)] sm:h-[50vh] md:h-[60vh] max-h-[600px] snap-center cursor-pointer"
+                                className="achievement-card relative group flex-shrink-0 w-[90vw] max-w-[650px] sm:w-[80vw] md:w-[700px] h-[clamp(380px,55svh,600px)] sm:h-[60vh] md:h-[70vh] max-h-[750px] snap-center cursor-pointer"
                                 style={{perspective: "1500px"}}
                             >
                                 <div
