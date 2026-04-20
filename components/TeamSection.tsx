@@ -402,7 +402,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
             </div>
             <div className="overflow-y-auto custom-scrollbar pr-2 min-h-0">
                 <p
-                    className={`text-zinc-400 leading-relaxed font-light italic group-hover:text-white transition-colors ${isEquity ? "text-[9px] md:text-[10px] lg:text-[11px]" : "text-[11px] md:text-[13px]"}`}
+                    className="text-zinc-400 leading-relaxed font-light italic group-hover:text-white transition-colors text-[9px] md:text-[10px] lg:text-[11px]"
                 >
                     "{dept.intro}"
                 </p>
