@@ -219,6 +219,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Tanmay Shankar",
                 role: "Content Member",
                 photo: "/media/TanmayShankar.jpg",
+                linkedin: "https://www.linkedin.com/in/tanmay-shankar2911",
             },
             {
                 name: "Pranathi N P",
