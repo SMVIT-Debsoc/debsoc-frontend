@@ -965,11 +965,11 @@ export default function TeamSection() {
                                 </AnimatedSection>
                             </div>
                         </div>
+                        <SwipeHint
+                            label="Swipe for leadership cards"
+                            className="mt-2"
+                        />
                     </div>
-                    <SwipeHint
-                        label="Swipe for leadership cards"
-                        className="mt-2"
-                    />
                 </div>
 
                 {/* Background Mic Mark */}
