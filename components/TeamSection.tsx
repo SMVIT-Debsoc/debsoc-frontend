@@ -167,7 +167,13 @@ const DEPARTMENTS: Department[] = [
             photo: "/media/Mobii.jpg",
             isLead: true,
         },
-        members: [],
+        members: [
+            {
+                name: "Ishan",
+                role: "Tech Member",
+                photo: "/media/Ishan.png",
+            }
+        ],
     },
     {
         id: "05",
@@ -679,7 +685,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                     </div>
                 ) : dept.name === "Tech Team" ? (
                     <div className="h-full flex gap-4 md:gap-6">
-                        <div className="w-[70%] sm:w-[60%] md:w-[45%] lg:w-[35%] h-full shrink-0">
+                        <div className="w-[45%] lg:w-[32%] h-full shrink-0">
                             {leads[0] && (
                                 <MemberCard
                                     member={leads[0]}
@@ -689,8 +695,23 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                 />
                             )}
                         </div>
-                        <div className="flex-1 min-h-0 h-full">
-                            {missionDirective}
+                        
+                        <div className="flex-1 h-full hidden md:flex flex-col gap-4 md:gap-6">
+                            <div className="flex-[0.8] min-h-0 w-full">
+                                {missionDirective}
+                            </div>
+                            {regularMembers.length > 0 && (
+                                <div className="h-[65%] w-[50%] lg:w-[40%] min-h-0">
+                                    {regularMembers[0] && (
+                                        <MemberCard
+                                            member={regularMembers[0]}
+                                            size="md"
+                                            delay={300}
+                                            objectPosition="center 10%"
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ) : dept.name === "Content Engine" ? (
