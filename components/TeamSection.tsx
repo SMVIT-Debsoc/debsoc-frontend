@@ -75,16 +75,19 @@ const DEPARTMENTS: Department[] = [
                 name: "Rohan Singh",
                 role: "Operational Lead",
                 photo: "/media/RohanSingh.jpg",
+                linkedin: "https://www.linkedin.com/in/rohan-singh-10bb401a4",
             },
             {
                 name: "Srejoni Sarkar",
                 role: "Operational Executive",
                 photo: "/media/SSerojiniSarkar.jpg",
+                linkedin: "https://www.linkedin.com/in/srejoni-sarkar-663722286/",
             },
             {
                 name: "Prachi Kumari",
                 role: "Operational Executive",
                 photo: "/media/PrachiKumari.jpg",
+                linkedin: "https://www.linkedin.com/in/pra-chi",
             },
             {
                 name: "Piyush Ratn",
@@ -95,11 +98,13 @@ const DEPARTMENTS: Department[] = [
                 name: "Vishal",
                 role: "Executive Member",
                 photo: "/media/Vishal.jpg",
+                linkedin: "https://www.linkedin.com/in/vishal-ravichandran-48524b363",
             },
             {
                 name: "Srujan Rai",
                 role: "Executive Member",
                 photo: "/media/SrujanRai.jpg",
+                linkedin: "https://www.linkedin.com/in/nramsrujanraj",
             },
             {
                 name: "Nandini Sharma",
@@ -140,6 +145,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Advitiya Pandey",
                 role: "Equity Member",
                 photo: "/media/AdvitiyaPandey.jpg",
+                linkedin: "https://www.linkedin.com/in/advitiya-pandey-58194623b",
             },
             {
                 name: "Stuti Padhi",
@@ -173,6 +179,7 @@ const DEPARTMENTS: Department[] = [
             role: "Social Media Lead",
             photo: "/media/AnanyaSingh.jpg",
             isLead: true,
+            linkedin: "https://www.linkedin.com/in/ananya-singh-437054238/",
         },
         members: [
             {
@@ -198,12 +205,14 @@ const DEPARTMENTS: Department[] = [
             role: "Content Head",
             photo: "/media/AnikaGupta.jpg",
             isLead: true,
+            linkedin: "https://www.linkedin.com/in/anika-gupta-592010361",
         },
         members: [
             {
                 name: "Rishikesh Chandra",
                 role: "Content Head",
                 photo: "/media/RishikeshChandra.jpg",
+                linkedin: "https://www.linkedin.com/in/rishikesh-chandra-3a6486334",
             },
             {
                 name: "Tanmay Shankar",
@@ -907,7 +916,7 @@ export default function TeamSection() {
                                 delay={400}
                             >
                                 <a
-                                    href="https://linkedin.com"
+                                    href="https://www.linkedin.com/in/aditya707"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block cursor-pointer relative w-full h-full overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl"
@@ -997,7 +1006,7 @@ export default function TeamSection() {
                                     delay={400}
                                 >
                                     <a
-                                        href="https://linkedin.com"
+                                        href="https://www.linkedin.com/in/aditya707"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000"
