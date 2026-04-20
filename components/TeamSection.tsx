@@ -151,6 +151,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Stuti Padhi",
                 role: "Equity Member",
                 photo: "/media/StutiPadhi.jpg",
+                linkedin: "https://www.linkedin.com/in/stuti-padhi-5a9880360",
             },
         ],
     },
