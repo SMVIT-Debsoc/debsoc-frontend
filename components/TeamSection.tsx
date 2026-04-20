@@ -93,6 +93,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Piyush Ratn",
                 role: "Operational Executive",
                 photo: "/media/PiyushRatn.jpg",
+                linkedin: "https://www.linkedin.com/in/piyush-ratn/",
             },
             {
                 name: "Vishal",
@@ -140,6 +141,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Nainika",
                 role: "Equity Executive",
                 photo: "/media/NNainika.jpg",
+                linkedin: "https://www.linkedin.com/in/nainika-53b226390?utm_source=share_via&utm_content=profile&utm_medium=member_android",
             },
             {
                 name: "Advitiya Pandey",
@@ -166,6 +168,7 @@ const DEPARTMENTS: Department[] = [
             role: "Tech Lead",
             photo: "/media/Mobii.jpg",
             isLead: true,
+            linkedin: "https://www.linkedin.com/in/md-mobasshir-shakil-khan-8ba835326/",
         },
         members: [
             {
@@ -193,6 +196,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Pankhuri Singh",
                 role: "Social Media Member",
                 photo: "/media/PankhuriSingh.jpg",
+                linkedin: "https://www.linkedin.com/in/pankhuri-singh-19b43a318?utm_source=share_via&utm_content=profile&utm_medium=member_android",
             },
             {
                 name: "Kanani Utsav",
