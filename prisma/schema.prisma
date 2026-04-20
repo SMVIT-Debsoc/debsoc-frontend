@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TechHead {
+  id                 String      @id @default(uuid())
+  name               String
+  email              String      @unique
+  password           String
+  verifiedPresidents President[] @relation("TechHeadVerifiesPresident")
+  verifiedCabinets   cabinet[]   @relation("TechHeadVerifiesCabinet")
+  verifiedMembers    Member[]    @relation("TechHeadVerifiesMember")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+}
+
+model President {
+  id                   String              @id @default(uuid())
+  name                 String
+  email                String              @unique
+  password             String
+  isVerified           Boolean             @default(false)
+  verifiedByTechHeadId String?
+  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesPresident", fields: [verifiedByTechHeadId], references: [id])
+  anonymousMessages    AnonymousMessage[]  @relation("messageToPresident")
+  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackFromPresident")
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+model DebateSession {
+  id          String       @id @default(uuid())
+  sessionDate DateTime
+  motiontype  String
+  Chair       String
+  attendance  Attendance[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("Session")
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  sessionId    String
+  session      DebateSession  @relation(fields: [sessionId], references: [id])
+  memberId     String?
+  member       Member?  @relation(fields: [memberId], references: [id])
+  status       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  cabinet      cabinet? @relation(fields: [cabinetId], references: [id])
+  cabinetId    String?
+  speakerScore Float?
+}
+
+model cabinet {
+  id                   String              @id @default(uuid())
+  name                 String
+  position             String
+  email                String              @unique
+  password             String
+  isVerified           Boolean             @default(false)
+  verifiedByTechHeadId String?
+  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesCabinet", fields: [verifiedByTechHeadId], references: [id])
+  tasks                task[]              @relation("assignedTo")
+  anonymousMessages    AnonymousMessage[]  @relation("messageToPresidentFromCabinet")
+  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackFromCabinet")
+  attendance           Attendance[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+model task {
+  id                 String   @id @default(uuid())
+  name               String
+  description        String
+  deadline           DateTime
+  assignedToId       String?
+  assignedTo         cabinet? @relation("assignedTo", fields: [assignedToId], references: [id])
+  assignedToMemberId String?
+  assignedToMember   Member?  @relation("assignedToMember", fields: [assignedToMemberId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Member {
+  id                   String              @id @default(uuid())
+  name                 String
+  email                String              @unique
+  password             String
+  isVerified           Boolean             @default(false)
+  verifiedByTechHeadId String?
+  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesMember", fields: [verifiedByTechHeadId], references: [id])
+  tasks                task[]              @relation("assignedToMember")
+  anonymousMessages    AnonymousMessage[]  @relation("messageFromMember")
+  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackToMember")
+  attendance           Attendance[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+}
+
+model AnonymousMessage {
+  id              String    @id @default(uuid())
+  message         String
+  presidentId     String
+  president       President @relation("messageToPresident", fields: [presidentId], references: [id])
+  senderType      String
+  senderMemberId  String?
+  senderMember    Member?   @relation("messageFromMember", fields: [senderMemberId], references: [id])
+  senderCabinetId String?
+  senderCabinet   cabinet?  @relation("messageToPresidentFromCabinet", fields: [senderCabinetId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model AnonymousFeedback {
+  id                String     @id @default(uuid())
+  feedback          String
+  memberId          String
+  member            Member     @relation("feedbackToMember", fields: [memberId], references: [id])
+  senderType        String
+  senderCabinetId   String?
+  senderCabinet     cabinet?   @relation("feedbackFromCabinet", fields: [senderCabinetId], references: [id])
+  senderPresidentId String?
+  senderPresident   President? @relation("feedbackFromPresident", fields: [senderPresidentId], references: [id])
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("auth_users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("auth_verification_tokens")
+}
