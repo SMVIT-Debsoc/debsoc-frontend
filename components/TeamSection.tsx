@@ -175,6 +175,7 @@ const DEPARTMENTS: Department[] = [
                 name: "Ishan",
                 role: "Tech Member",
                 photo: "/media/Ishan.png",
+                linkedin: "https://www.linkedin.com/in/ishantrive?utm_source=share_via&utm_content=profile&utm_medium=member_android",
             }
         ],
     },
