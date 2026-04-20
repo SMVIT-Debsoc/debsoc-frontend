@@ -34,15 +34,14 @@ const Navbar = () => {
     const shouldHideNavbar = pathname?.startsWith("/smvitpd");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    // Close mobile menu when route changes
     useEffect(() => {
-        // Close mobile menu when route changes.
         setIsMenuOpen(false);
     }, [pathname]);
 
+    // Prevent background scroll when mobile menu is open
     useEffect(() => {
         if (!isMenuOpen) return;
-
-        // Prevent background scroll while full-screen mobile menu is open.
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
