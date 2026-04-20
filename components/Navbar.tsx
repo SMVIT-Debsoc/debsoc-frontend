@@ -31,81 +31,13 @@ const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [isVisible, setIsVisible] = useState(pathname !== "/");
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const sectionParam = searchParams.get("section");
-    const shouldShowByUrl =
-        pathname !== "/" ||
-        (!!sectionParam &&
-            sectionParam !== "home" &&
-            sectionParam !== "explore");
     const shouldHideNavbar = pathname?.startsWith("/smvitpd");
-
-    useEffect(() => {
-        if (pathname !== "/") {
-            setIsVisible(true);
-            return;
-        }
-
-        const resolveVisibility = (currentSection?: string) => {
-            const isMobile = window.innerWidth < 768;
-
-            // Keep a sticky top navbar on mobile, including home hero.
-            if (isMobile) {
-                setIsVisible(true);
-                return;
-            }
-
-            if (currentSection) {
-                const shouldShow =
-                    currentSection !== "home" && currentSection !== "explore";
-                setIsVisible(shouldShow);
-                return;
-            }
-
-            const lastKnownSection = (
-                window as Window & {__debsocSection?: string}
-            ).__debsocSection;
-            const shouldShowByMemory =
-                !!lastKnownSection &&
-                lastKnownSection !== "home" &&
-                lastKnownSection !== "explore";
-
-            setIsVisible(shouldShowByUrl || shouldShowByMemory);
-        };
-
-        resolveVisibility();
-
-        const handleSectionChange = (event: Event) => {
-            const customEvent = event as CustomEvent<{section?: string}>;
-            resolveVisibility(customEvent.detail?.section);
-        };
-
-        const handleResize = () => resolveVisibility();
-
-        window.addEventListener("debsoc:section-change", handleSectionChange);
-        window.addEventListener("resize", handleResize);
-
-        return () => {
-            window.removeEventListener(
-                "debsoc:section-change",
-                handleSectionChange,
-            );
-            window.removeEventListener("resize", handleResize);
-        };
-    }, [pathname, shouldShowByUrl]);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     useEffect(() => {
         // Close mobile menu when route changes.
         setIsMenuOpen(false);
     }, [pathname]);
-
-    useEffect(() => {
-        if (!isVisible) {
-            setIsMenuOpen(false);
-        }
-    }, [isVisible]);
 
     useEffect(() => {
         if (!isMenuOpen) return;
@@ -166,11 +98,7 @@ const Navbar = () => {
 
     return (
         <header
-            className={`fixed top-0 w-full px-4 sm:px-6 py-3 md:px-12 md:py-4 [padding-top:max(0.75rem,env(safe-area-inset-top))] z-999 border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                isVisible
-                    ? "opacity-100 translate-y-0 pointer-events-auto"
-                    : "opacity-0 -translate-y-4 pointer-events-none"
-            } ${
+            className={`fixed top-0 w-full px-4 sm:px-6 py-3 md:px-12 md:py-4 [padding-top:max(0.75rem,env(safe-area-inset-top))] z-[999] border-b border-white/5 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 isMenuOpen
                     ? "h-screen bg-black/90 backdrop-blur-2xl"
                     : "bg-black/55 backdrop-blur-md"
