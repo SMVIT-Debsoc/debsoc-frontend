@@ -17,6 +17,23 @@ import {
     ArrowUpRight,
 } from "lucide-react";
 
+const Linkedin = (props: any) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        {...props}
+    >
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+        <rect x="2" y="9" width="4" height="12" />
+        <circle cx="4" cy="4" r="2" />
+    </svg>
+);
+
 /* ─────────────────────────────────────────────
    Team data — randomly assigned to departments
    ───────────────────────────────────────────── */
@@ -26,6 +43,7 @@ interface Member {
     role: string;
     photo: string;
     isLead?: boolean;
+    linkedin?: string;
 }
 
 interface Department {
@@ -50,6 +68,7 @@ const DEPARTMENTS: Department[] = [
             role: "Operational Lead",
             photo: "/media/DhruveKumar.jpg",
             isLead: true,
+            linkedin: "https://linkedin.com",
         },
         members: [
             {
@@ -278,9 +297,17 @@ function MemberCard({
         sm: "text-[10px] md:text-sm",
     };
 
+    const CardContainer: any = "a";
+    const containerProps = {
+        href: member.linkedin || "#",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        className: `relative w-full h-full overflow-hidden bg-zinc-900 border border-white/5 transition-all duration-700 block cursor-pointer`,
+    };
+
     return (
         <AnimatedSection delay={delay} className="group h-full min-h-0">
-            <div className="relative w-full h-full overflow-hidden bg-zinc-900 border border-white/5 transition-all duration-700">
+            <CardContainer {...containerProps}>
                 <div className="absolute inset-0 z-10">
                     <div className="relative w-full h-full md:grayscale md:group-hover:grayscale-0 transition-all duration-1000">
                         {contain && (
@@ -301,21 +328,26 @@ function MemberCard({
                             style={{objectPosition}}
                             sizes="30vw"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 flex flex-col justify-end" />
                     </div>
                 </div>
 
-                <div className="absolute bottom-0 left-0 w-full z-20 p-2 md:p-4 bg-gradient-to-t from-black/92 via-black/45 to-transparent">
-                    <h3
-                        className={`font-black uppercase tracking-tight leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] ${sizes[size]}`}
-                    >
-                        {member.name}
-                    </h3>
-                    <span className="text-[7px] md:text-[9px] tracking-[0.2em] uppercase text-white/85 block mt-0.5 font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
-                        {member.role}
-                    </span>
+                <div className="absolute bottom-0 left-0 w-full z-20 p-2 md:p-4 bg-gradient-to-t from-black/92 via-black/45 to-transparent flex justify-between items-end">
+                    <div>
+                        <h3
+                            className={`font-black uppercase tracking-tight leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] ${sizes[size]}`}
+                        >
+                            {member.name}
+                        </h3>
+                        <span className="text-[7px] md:text-[9px] tracking-[0.2em] uppercase text-white/85 block mt-0.5 font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                            {member.role}
+                        </span>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Linkedin className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-md" />
+                    </div>
                 </div>
-            </div>
+            </CardContainer>
         </AnimatedSection>
     );
 }
@@ -823,7 +855,12 @@ export default function TeamSection() {
                                 className="group w-full h-full"
                                 delay={300}
                             >
-                                <div className="relative w-full h-full overflow-hidden grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
+                                <a
+                                    href="https://linkedin.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block cursor-pointer relative w-full h-full overflow-hidden grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl"
+                                >
                                     <Image
                                         src="/media/KanishkChaudhary.jpg"
                                         alt="President"
@@ -832,15 +869,18 @@ export default function TeamSection() {
                                         className="object-cover scale-105 group-hover:scale-100 transition-transform duration-[2000ms] ease-out pointer-events-none select-none"
                                         priority
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
-                                    <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 text-left z-30">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80 flex flex-col justify-end" />
+                                    <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 right-6 md:right-8 text-left z-30 flex justify-between items-end">
                                         <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[-0.03em] leading-none text-white">
                                             Kanishk
                                             <br />
                                             Chaudhary
                                         </h2>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <Linkedin className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md mb-2" />
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             </AnimatedSection>
                         </div>
 
@@ -866,7 +906,12 @@ export default function TeamSection() {
                                 className="group w-full h-full"
                                 delay={400}
                             >
-                                <div className="relative w-full h-full overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl">
+                                <a
+                                    href="https://linkedin.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block cursor-pointer relative w-full h-full overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl"
+                                >
                                     <Image
                                         src="/media/AdityaKumarSingh.jpg"
                                         alt="Vice President"
@@ -875,15 +920,18 @@ export default function TeamSection() {
                                         className="object-cover pointer-events-none select-none"
                                         sizes="600px"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95" />
-                                    <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 text-left z-30">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 flex flex-col justify-end" />
+                                    <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 right-6 md:right-8 text-left z-30 flex justify-between items-end">
                                         <h3 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-white leading-tight">
                                             Aditya Kumar
                                             <br />
                                             Singh
                                         </h3>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <Linkedin className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md mb-2" />
+                                        </div>
                                     </div>
-                                </div>
+                                </a>
                             </AnimatedSection>
                         </div>
 
@@ -910,7 +958,12 @@ export default function TeamSection() {
                                     className="group w-full h-full"
                                     delay={300}
                                 >
-                                    <div className="relative w-full h-full overflow-hidden border border-white/5 shadow-2xl">
+                                    <a
+                                        href="https://linkedin.com"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000"
+                                    >
                                         <Image
                                             src="/media/KanishkChaudhary.jpg"
                                             alt="President"
@@ -919,19 +972,22 @@ export default function TeamSection() {
                                             className="object-cover object-top pointer-events-none select-none"
                                             priority
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80" />
-                                        <div className="absolute top-4 left-4 z-30">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80 flex flex-col justify-end" />
+                                        <div className="absolute top-4 left-4 z-30 pointer-events-none">
                                             <span className="text-lg font-black uppercase tracking-tight text-white drop-shadow-lg">
                                                 PRESIDENT
                                             </span>
                                             <div className="w-10 h-[2px] bg-white/30 mt-2" />
                                         </div>
-                                        <div className="absolute bottom-5 left-5 z-30">
+                                        <div className="absolute bottom-5 left-5 right-5 z-30 flex justify-between items-end">
                                             <h2 className="text-xl font-black uppercase tracking-tight text-white">
                                                 Kanishk Chaudhary
                                             </h2>
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <Linkedin className="w-6 h-6 text-white drop-shadow-md" />
+                                            </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 </AnimatedSection>
                             </div>
 
@@ -940,7 +996,12 @@ export default function TeamSection() {
                                     className="group w-full h-full"
                                     delay={400}
                                 >
-                                    <div className="relative w-full h-full overflow-hidden border border-white/5 shadow-2xl">
+                                    <a
+                                        href="https://linkedin.com"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000"
+                                    >
                                         <Image
                                             src="/media/AdityaKumarSingh.jpg"
                                             alt="Vice President"
@@ -949,19 +1010,22 @@ export default function TeamSection() {
                                             className="object-cover pointer-events-none select-none"
                                             sizes="100vw"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95" />
-                                        <div className="absolute top-4 left-4 z-30">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 flex flex-col justify-end" />
+                                        <div className="absolute top-4 left-4 z-30 pointer-events-none">
                                             <span className="text-base font-black uppercase tracking-tight text-white drop-shadow-lg">
                                                 VICE PRESIDENT
                                             </span>
                                             <div className="w-10 h-[2px] bg-white/60 mt-2" />
                                         </div>
-                                        <div className="absolute bottom-5 left-5 z-30">
+                                        <div className="absolute bottom-5 left-5 right-5 z-30 flex justify-between items-end">
                                             <h3 className="text-lg font-black uppercase tracking-tight text-white">
                                                 Aditya Kumar Singh
                                             </h3>
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <Linkedin className="w-6 h-6 text-white drop-shadow-md" />
+                                            </div>
                                         </div>
-                                    </div>
+                                    </a>
                                 </AnimatedSection>
                             </div>
                         </div>

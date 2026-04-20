@@ -6,7 +6,7 @@ import {useState, useRef, MouseEvent} from "react";
 const socialIcons = [
     {
         name: "Youtube",
-        href: "#",
+        href: "https://www.youtube.com/@smvitdebsoc738",
         icon: (props: any) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -26,28 +26,8 @@ const socialIcons = [
         ),
     },
     {
-        name: "Twitter",
-        href: "#",
-        icon: (props: any) => (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                {...props}
-            >
-                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-            </svg>
-        ),
-    },
-    {
         name: "Instagram",
-        href: "#",
+        href: "https://www.instagram.com/smvit_debsoc/",
         icon: (props: any) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +49,7 @@ const socialIcons = [
     },
     {
         name: "Linkedin",
-        href: "#",
+        href: "https://www.linkedin.com/company/smvitdebsoc/",
         icon: (props: any) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -121,22 +101,25 @@ export default function Footer() {
                 {/* Center: Links */}
                 <div className="flex flex-col gap-3 text-sm text-zinc-400">
                     <Link
-                        href="#"
+                        href="https://www.youtube.com/@smvitdebsoc738"
+                        target="_blank"
                         className="hover:text-white transition-colors"
                     >
-                        Dummy Link
+                        YouTube
                     </Link>
                     <Link
-                        href="#"
+                        href="https://www.instagram.com/smvit_debsoc/"
+                        target="_blank"
                         className="hover:text-white transition-colors"
                     >
-                        Dummy Link
+                        Instagram
                     </Link>
                     <Link
-                        href="#"
+                        href="https://www.linkedin.com/company/smvitdebsoc/"
+                        target="_blank"
                         className="hover:text-white transition-colors"
                     >
-                        Dummy Link
+                        LinkedIn
                     </Link>
                 </div>
 
@@ -147,6 +130,8 @@ export default function Footer() {
                             <a
                                 key={idx}
                                 href={social.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 aria-label={`Link to ${social.name}`}
                                 className="w-10 h-10 flex items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-900 transition-all duration-300"
                             >
