@@ -297,7 +297,7 @@ function MemberCard({
                             alt={member.name}
                             fill
                             draggable={false}
-                            className={`${contain ? "object-contain p-8 md:p-12" : "object-cover"} ${scale} transition-transform duration-700 pointer-events-none select-none`}
+                            className={`${contain ? "object-contain p-2 md:p-4" : "object-cover"} ${scale} transition-transform duration-700 pointer-events-none select-none`}
                             style={{objectPosition}}
                             sizes="30vw"
                         />
@@ -415,13 +415,13 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
     return (
         <section
             id={id}
-            className="relative w-full min-h-[78svh] md:h-screen py-5 sm:py-8 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
+            className="relative w-full min-h-[78svh] md:h-screen pt-4 pb-2 sm:pt-6 sm:pb-4 px-4 sm:px-6 md:px-12 overflow-hidden border-b border-white/[0.03] bg-[#050505] flex flex-col"
         >
             <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[10rem] md:text-[20rem] font-black text-white/[0.01] pointer-events-none select-none z-0">
                 {dept.id}
             </div>
 
-            <div className="flex flex-col lg:flex-row justify-between items-stretch mb-3 sm:mb-4 md:mb-8 z-10 shrink-0 gap-3 sm:gap-4 lg:gap-16">
+            <div className="flex flex-col lg:flex-row justify-between items-stretch mb-3 sm:mb-4 md:mb-4 z-10 shrink-0 gap-3 sm:gap-4 lg:gap-16">
                 <AnimatedSection className="shrink-0 flex flex-col justify-center">
                     <h2 className="text-[clamp(1.5rem,5vw,6rem)] font-black tracking-[-0.05em] uppercase text-white leading-none pb-2">
                         {dept.name}
@@ -460,7 +460,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         {allMembers.map((member, index) => (
                             <div
                                 key={`${dept.id}-${member.name}`}
-                                className="snap-start shrink-0 w-[68vw] min-w-[250px] max-w-[340px] h-[clamp(280px,45svh,400px)]"
+                                className={`snap-start shrink-0 h-[clamp(280px,45svh,400px)] ${
+                                    member.name.includes("Srejoni")
+                                        ? "w-[55vw] min-w-[220px] max-w-[280px]"
+                                        : "w-[68vw] min-w-[250px] max-w-[340px]"
+                                }`}
                             >
                                 <MemberCard
                                     member={member}
@@ -475,7 +479,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                             : "sm"
                                     }
                                     delay={220 + index * 60}
-                                    objectPosition="center 15%"
+                                    objectPosition={
+                                        member.name.includes("Srejoni")
+                                            ? "center 20%"
+                                            : "center 15%"
+                                    }
                                 />
                             </div>
                         ))}
@@ -575,7 +583,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                     {executives.map((m, i) => (
                                         <div
                                             key={m.name}
-                                            className="h-full min-h-0 flex-1"
+                                            className={`h-full min-h-0 ${
+                                                m.name.includes("Srejoni")
+                                                    ? "flex-[0.75]"
+                                                    : "flex-1"
+                                            }`}
                                         >
                                             <MemberCard
                                                 member={m}
@@ -583,7 +595,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                                 delay={300 + i * 50}
                                                 objectPosition={
                                                     m.name.includes("Srejoni")
-                                                        ? "center 15%"
+                                                        ? "center 20%"
                                                         : "center 10%"
                                                 }
                                                 scale="scale-100"
