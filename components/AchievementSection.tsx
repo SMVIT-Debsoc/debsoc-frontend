@@ -21,6 +21,54 @@ interface Achievement {
     icon: React.ReactNode;
 }
 
+// accent: mobile-neutral then md: vibrant — keeps mobile clean (image only) while desktop is colorful
+const CARD_ACCENTS = [
+    {
+        overlay: "from-black/80 via-black/30 to-transparent md:from-amber-950/80 md:via-amber-900/30 md:to-transparent",
+        glow: "bg-transparent md:bg-amber-500/20",
+        line: "bg-white/30 md:bg-gradient-to-r md:from-amber-400 md:to-yellow-300",
+        icon: "text-zinc-300 md:text-amber-400",
+        border: "border-white/5 md:border-amber-400/30",
+        backGlow: "bg-transparent md:bg-amber-500/10",
+        backLine: "bg-white/20 md:bg-amber-400/40",
+        idColor: "text-white/10 group-hover:text-white/30 md:text-amber-400/20 md:group-hover:text-amber-400/50",
+        dateColor: "text-zinc-300 md:text-amber-400",
+    },
+    {
+        overlay: "from-black/80 via-black/30 to-transparent md:from-violet-950/80 md:via-violet-900/30 md:to-transparent",
+        glow: "bg-transparent md:bg-violet-500/20",
+        line: "bg-white/30 md:bg-gradient-to-r md:from-violet-400 md:to-fuchsia-400",
+        icon: "text-zinc-300 md:text-violet-400",
+        border: "border-white/5 md:border-violet-400/30",
+        backGlow: "bg-transparent md:bg-violet-500/10",
+        backLine: "bg-white/20 md:bg-violet-400/40",
+        idColor: "text-white/10 group-hover:text-white/30 md:text-violet-400/20 md:group-hover:text-violet-400/50",
+        dateColor: "text-zinc-300 md:text-violet-400",
+    },
+    {
+        overlay: "from-black/80 via-black/30 to-transparent md:from-cyan-950/80 md:via-cyan-900/30 md:to-transparent",
+        glow: "bg-transparent md:bg-cyan-500/20",
+        line: "bg-white/30 md:bg-gradient-to-r md:from-cyan-400 md:to-sky-400",
+        icon: "text-zinc-300 md:text-cyan-400",
+        border: "border-white/5 md:border-cyan-400/30",
+        backGlow: "bg-transparent md:bg-cyan-500/10",
+        backLine: "bg-white/20 md:bg-cyan-400/40",
+        idColor: "text-white/10 group-hover:text-white/30 md:text-cyan-400/20 md:group-hover:text-cyan-400/50",
+        dateColor: "text-zinc-300 md:text-cyan-400",
+    },
+    {
+        overlay: "from-black/80 via-black/30 to-transparent md:from-rose-950/80 md:via-rose-900/30 md:to-transparent",
+        glow: "bg-transparent md:bg-rose-500/20",
+        line: "bg-white/30 md:bg-gradient-to-r md:from-rose-400 md:to-pink-400",
+        icon: "text-zinc-300 md:text-rose-400",
+        border: "border-white/5 md:border-rose-400/30",
+        backGlow: "bg-transparent md:bg-rose-500/10",
+        backLine: "bg-white/20 md:bg-rose-400/40",
+        idColor: "text-white/10 group-hover:text-white/30 md:text-rose-400/20 md:group-hover:text-rose-400/50",
+        dateColor: "text-zinc-300 md:text-rose-400",
+    },
+];
+
 const ACHIEVEMENTS: Achievement[] = [
     {
         id: "01",
@@ -30,7 +78,7 @@ const ACHIEVEMENTS: Achievement[] = [
         description:
             "Massive congratulations to Srejoni and Dhruv for an outstanding performance at NUALS Kochi PD '26. Emerging as the Novice Champions, they navigated a competitive field of 41 teams to claim the top spot",
         image: "/achievement/ach1.jpeg",
-        icon: <Trophy size={16} className="text-zinc-400" />,
+        icon: <Trophy size={16} />,
     },
     {
         id: "02",
@@ -40,7 +88,7 @@ const ACHIEVEMENTS: Achievement[] = [
         description:
             "A huge shoutout to Dhruv, Prachi, and Rishikesh for their stellar performance at NLSD XXIII, hosted by NLSIU. In a tough field of 41 teams, the trio secured the Reserve Novice Break, demonstrating exceptional skill and composure. While they missed the Novice Semifinals by a mere two speaker points, their clinical execution and teamwork stood out. We are immensely proud of this high-level consistency!",
         image: "/achievement/ach2.jpeg",
-        icon: <Award size={16} className="text-zinc-400" />,
+        icon: <Award size={16} />,
     },
     {
         id: "03",
@@ -48,9 +96,9 @@ const ACHIEVEMENTS: Achievement[] = [
         date: "December 2025",
         location: "Ghana (Online)",
         description:
-            "Congratulations to Aditya Kumar Singh for an exceptional performance at Vacation Spar 2025, an international tournament hosted online from Ghana. Aditya’s analytical precision earned him an Adjudicator Break, culminating in a prestigious appointment as a Novice Finals Panelist. His ability to dissect complex arguments with clarity and provide nuanced feedback stood out on the global stage. We are thrilled to celebrate his growing reputation as a top-tier adjudicator!",
+            "Congratulations to Aditya Kumar Singh for an exceptional performance at Vacation Spar 2025, an international tournament hosted online from Ghana. Aditya's analytical precision earned him an Adjudicator Break, culminating in a prestigious appointment as a Novice Finals Panelist. His ability to dissect complex arguments with clarity and provide nuanced feedback stood out on the global stage. We are thrilled to celebrate his growing reputation as a top-tier adjudicator!",
         image: "/achievement/ach3.png",
-        icon: <Star size={16} className="text-zinc-400" />,
+        icon: <Star size={16} />,
     },
     {
         id: "04",
@@ -58,9 +106,9 @@ const ACHIEVEMENTS: Achievement[] = [
         date: "November, 2024",
         location: "Goa, India",
         description:
-            "A massive round of applause for Srejoni and Rohan for their historic run at BITS Goa Contention PD '24. Breaking into the Open Category, the duo displayed relentless grit and tactical brilliance to advance all the way to the Open Semifinals. Competing against some of the circuit's most seasoned debaters, their achievement marks a significant milestone for our society. We are incredibly proud of this high-level finish and the standard they’ve set",
+            "A massive round of applause for Srejoni and Rohan for their historic run at BITS Goa Contention PD '24. Breaking into the Open Category, the duo displayed relentless grit and tactical brilliance to advance all the way to the Open Semifinals. Competing against some of the circuit's most seasoned debaters, their achievement marks a significant milestone for our society. We are incredibly proud of this high-level finish and the standard they've set",
         image: "/achievement/ach4.jpg",
-        icon: <Trophy size={16} className="text-zinc-400" />,
+        icon: <Trophy size={16} />,
     },
 ];
 
@@ -137,7 +185,11 @@ export default function AchievementSection() {
         <div
             id="achievements"
             ref={containerRef}
-            className="relative w-full overflow-hidden bg-[#020202] flex flex-col z-40 text-white min-h-[100svh] pt-12 pb-12"
+            className="relative w-full overflow-hidden flex flex-col z-40 text-white min-h-[100svh] pt-12 pb-12"
+            style={{
+                background:
+                    "radial-gradient(ellipse 80% 60% at 50% 0%, #0f0a1e 0%, #07030f 50%, #020202 100%)",
+            }}
         >
             {/* Background Texture / Watermark */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[15rem] md:text-[25rem] font-black text-white/[0.015] leading-none pointer-events-none select-none whitespace-nowrap z-0">
@@ -177,8 +229,9 @@ export default function AchievementSection() {
                             "linear-gradient(to right, black 85%, transparent 100%)",
                     }}
                 >
-                    {ACHIEVEMENTS.map((item) => {
+                    {ACHIEVEMENTS.map((item, idx) => {
                         const isFlipped = flippedId === item.id;
+                        const accent = CARD_ACCENTS[idx % CARD_ACCENTS.length];
                         return (
                             <div
                                 key={item.id}
@@ -199,7 +252,7 @@ export default function AchievementSection() {
                                 >
                                     {/* ────── FRONT FACE ────── */}
                                     <div
-                                        className="absolute inset-0 w-full h-full overflow-hidden border border-white/5 bg-zinc-900/50"
+                                        className={`absolute inset-0 w-full h-full overflow-hidden border ${accent.border} bg-zinc-900/60`}
                                         style={{backfaceVisibility: "hidden"}}
                                     >
                                         {/* Front Image Layer */}
@@ -208,29 +261,32 @@ export default function AchievementSection() {
                                                 src={item.image}
                                                 alt={item.title}
                                                 fill
-                                                className="object-cover grayscale brightness-50 contrast-125 group-hover:grayscale-0 group-hover:brightness-90 transition-all duration-[1200ms] ease-out scale-105"
+                                                className="object-cover brightness-90 md:brightness-60 group-hover:brightness-100 md:group-hover:brightness-90 transition-all duration-[1200ms] ease-out scale-105"
                                                 sizes="(max-width: 768px) 100vw, 600px"
                                             />
-                                            <div className="absolute inset-0 bg-black/60 group-hover:bg-black/20 transition-colors duration-700" />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[#020202] via-[#020202]/40 to-transparent opacity-90 group-hover:opacity-70 transition-opacity duration-700" />
+                                            <div className="absolute inset-0 bg-black/20 md:bg-black/50 group-hover:bg-black/5 md:group-hover:bg-black/10 transition-colors duration-700" />
+                                            <div className={`absolute inset-0 bg-gradient-to-t ${accent.overlay} opacity-90 group-hover:opacity-80 transition-opacity duration-700`} />
                                         </div>
+
+                                        {/* Ambient glow blob */}
+                                        <div className={`absolute -bottom-10 -left-10 w-64 h-64 ${accent.glow} blur-[80px] rounded-full pointer-events-none transition-opacity duration-700 opacity-60 group-hover:opacity-100`} />
 
                                         {/* Front Content Layer */}
                                         <div className="absolute inset-0 z-10 flex flex-col justify-between p-6 md:p-10">
                                             {/* Top metadata */}
                                             <div className="flex justify-between items-start">
                                                 <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2">
+                                                    <div className={`flex items-center gap-2 ${accent.icon}`}>
                                                         {item.icon}
-                                                        <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-zinc-400 group-hover:text-white transition-colors duration-500">
+                                                        <span className={`text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] ${accent.dateColor} transition-colors duration-500`}>
                                                             {item.date}
                                                         </span>
                                                     </div>
-                                                    <span className="text-[10px] md:text-xs font-light uppercase tracking-widest text-zinc-500">
+                                                    <span className="text-[10px] md:text-xs font-light uppercase tracking-widest text-zinc-400">
                                                         {item.location}
                                                     </span>
                                                 </div>
-                                                <div className="text-[2rem] md:text-[3rem] font-black text-white/10 group-hover:text-white/30 transition-colors duration-500 leading-none">
+                                                <div className={`text-[2rem] md:text-[3rem] font-black leading-none transition-colors duration-500 ${accent.idColor}`}>
                                                     {item.id}
                                                 </div>
                                             </div>
@@ -241,7 +297,7 @@ export default function AchievementSection() {
                                                     {item.title}
                                                 </h3>
                                                 <div className="flex flex-col gap-4 overflow-hidden">
-                                                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/50 group-hover:text-white group/btn self-start mt-2 transition-colors duration-500">
+                                                    <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${accent.icon} opacity-60 group-hover:opacity-100 group/btn self-start mt-2 transition-all duration-500`}>
                                                         <span>
                                                             Click to view more!
                                                         </span>
@@ -254,41 +310,42 @@ export default function AchievementSection() {
                                             </div>
                                         </div>
                                         {/* Accent Line */}
-                                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white scale-x-0 group-hover:scale-x-100 transition-transform duration-1000 origin-left ease-[cubic-bezier(0.22,1,0.36,1)] z-20" />
+                                        <div className={`absolute bottom-0 left-0 w-full h-[2px] ${accent.line} scale-x-0 group-hover:scale-x-100 transition-transform duration-1000 origin-left ease-[cubic-bezier(0.22,1,0.36,1)] z-20`} />
                                     </div>
 
                                     {/* ────── BACK FACE ────── */}
                                     <div
-                                        className="absolute inset-0 w-full h-full overflow-hidden border border-white/10 bg-[#050505] flex flex-col z-20 group/back hover:border-white/20 transition-colors duration-500"
+                                        className={`absolute inset-0 w-full h-full overflow-hidden border ${accent.border} bg-[#07030f] flex flex-col z-20 group/back transition-colors duration-500`}
                                         style={{
                                             backfaceVisibility: "hidden",
                                             transform: "rotateY(180deg)",
                                         }}
                                     >
-                                        {/* Back Face Glow styling */}
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 blur-[100px] rounded-full pointer-events-none" />
+                                        {/* Back Face Glow */}
+                                        <div className={`absolute top-0 right-0 w-64 h-64 ${accent.backGlow} blur-[100px] rounded-full pointer-events-none`} />
+                                        <div className={`absolute bottom-0 left-0 w-48 h-48 ${accent.backGlow} blur-[80px] rounded-full pointer-events-none`} />
 
                                         <div className="flex-1 p-6 md:p-10 flex flex-col justify-center">
-                                            <div className="flex items-center gap-3 mb-6 opacity-60">
+                                            <div className={`flex items-center gap-3 mb-6 ${accent.icon}`}>
                                                 {item.icon}
-                                                <span className="text-[10px] md:text-xs font-light uppercase tracking-widest text-zinc-400">
+                                                <span className="text-[10px] md:text-xs font-light uppercase tracking-widest opacity-70">
                                                     Match Overview
                                                 </span>
                                             </div>
                                             <h4 className="text-xl md:text-3xl font-black uppercase tracking-tight text-white mb-6 leading-tight">
                                                 {item.title}
                                             </h4>
-                                            <p className="text-base md:text-lg text-zinc-400 font-light leading-relaxed group-hover/back:text-zinc-300 transition-colors duration-500">
+                                            <p className="text-base md:text-lg text-zinc-300 font-light leading-relaxed">
                                                 {item.description}
                                             </p>
                                             <div className="mt-auto pt-6 flex items-center justify-between opacity-50 hover:opacity-100 transition-opacity">
-                                                <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-white">
+                                                <span className={`text-[10px] md:text-xs font-bold uppercase tracking-widest ${accent.icon}`}>
                                                     Turn Back
                                                 </span>
                                             </div>
                                         </div>
-                                        {/* Always visible solid line for the back face */}
-                                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/20 z-20" />
+                                        {/* Colored line for the back face */}
+                                        <div className={`absolute bottom-0 left-0 w-full h-[2px] ${accent.backLine} z-20`} />
                                     </div>
                                 </div>
                             </div>
