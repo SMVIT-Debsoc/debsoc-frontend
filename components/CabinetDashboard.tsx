@@ -22,6 +22,7 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import {useSession, signOut} from "next-auth/react";
@@ -974,6 +975,125 @@ export default function CabinetDashboard() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        ) : activeTab === 'Tasks' ? (
+          <div className="max-w-6xl mx-auto">
+            <header className="mb-8 border-b border-slate-200 pb-6 flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 mb-1">My Task List</h1>
+                <p className="text-slate-500 text-sm">Tasks assigned to you by the President</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{myTasks.length} Total</span>
+                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">{completedTasks} Done</span>
+              </div>
+            </header>
+            
+            <div className="grid grid-cols-1 gap-6">
+              {myTasks.length === 0 ? (
+                <div className="py-20 text-center bg-white rounded-xl border border-dashed border-slate-300">
+                  <ListTodo size={48} className="mx-auto text-slate-300 mb-4" />
+                  <p className="text-slate-500 font-medium">No tasks found in your log.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myTasks.slice().sort((a,b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime()).map((task) => {
+                    const overdue = !task.completed && isOverdue(task.deadline);
+                    return (
+                      <div key={task.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start gap-4">
+                        <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center ${task.completed ? 'bg-emerald-100 text-emerald-600' : overdue ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                          {task.completed ? <CheckCircle2 size={20} /> : <Clock size={20} />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className={`font-bold text-slate-900 ${task.completed ? 'line-through text-slate-400' : ''}`}>{task.name}</h3>
+                            <span className="text-xs font-medium text-slate-400">{fmtDeadline(task.deadline)}</span>
+                          </div>
+                          {task.description && <p className="text-sm text-slate-600 mb-3">{task.description}</p>}
+                          <div className="flex gap-2">
+                            {task.completed ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded uppercase tracking-wider">Completed</span>
+                            ) : overdue ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded uppercase tracking-wider">Overdue</span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-600 rounded uppercase tracking-wider">Pending</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeTab === 'Analytics' ? (
+          <div className="max-w-6xl mx-auto">
+            <header className="mb-8 border-b border-slate-200 pb-6">
+              <h1 className="text-2xl font-bold text-slate-900 mb-1">Performance Analytics</h1>
+              <p className="text-slate-500 text-sm">Deep dive into your session and task metrics</p>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              {/* Attendance Breakdown */}
+              <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Attendance Breakdown</h3>
+                <div className="flex items-end gap-3 h-40 mb-6">
+                  {['Present', 'Absent', 'Excused'].map((status) => {
+                    const count = myAttendance.filter(a => a.status === status).length;
+                    const total = myAttendance.length || 1;
+                    const pct = Math.round((count / total) * 100);
+                    const color = status === 'Present' ? 'bg-blue-500' : status === 'Absent' ? 'bg-red-500' : 'bg-slate-400';
+                    return (
+                      <div key={status} className="flex-1 flex flex-col items-center gap-2 group">
+                        <div className="text-[10px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">{pct}%</div>
+                        <div className={`w-full ${color} rounded-t-lg transition-all duration-500`} style={{ height: `${Math.max(pct, 5)}%` }}></div>
+                        <div className="text-xs font-semibold text-slate-600 mt-2">{status}</div>
+                        <div className="text-xs text-slate-400">{count} sessions</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-slate-500 text-center italic">Calculated from your {myAttendance.length} most recent sessions.</p>
+              </div>
+
+              {/* Task Completion Progress */}
+              <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Task Progress</h3>
+                <div className="flex flex-col items-center justify-center h-40 mb-6 relative">
+                  <div className="w-32 h-32 rounded-full border-8 border-slate-100 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-slate-900">{Math.round((completedTasks / (myTasks.length || 1)) * 100)}%</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase">Complete</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-bold text-emerald-600">{completedTasks}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Done</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-blue-600">{pendingTasksCount}</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Pending</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-blue-600 rounded-2xl p-8 text-white flex flex-col md:flex-row items-center gap-8 shadow-xl shadow-blue-200">
+                <div className="w-20 h-20 bg-blue-500/30 rounded-2xl flex items-center justify-center shrink-0">
+                  <Medal size={40} />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-xl font-bold mb-2">Speaker Performance Leader</h3>
+                  <p className="text-blue-100 text-sm leading-relaxed">Your average score is in the top 15% of active cabinet members this term. Keep refining your arguments and structure!</p>
+                </div>
+                <div className="bg-white/10 px-6 py-4 rounded-xl text-center backdrop-blur-sm border border-white/20">
+                  <div className="text-3xl font-bold">{avgSpeakerScore}/100</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-blue-100">Avg Score</div>
+                </div>
             </div>
           </div>
         ) : (
