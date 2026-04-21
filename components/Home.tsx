@@ -19,6 +19,7 @@ type NavItem = {
     title: string;
     sub1: string;
     sub2: string;
+    image?: string;
     href?: string;
     sectionTarget?: string;
 };
@@ -75,18 +76,21 @@ export default function HomeClient() {
             title: "Team",
             sub1: "Current Roster",
             sub2: "Board Members",
+            image: "/cards/teamCard.jpeg",
             sectionTarget: "team",
         },
         {
             title: "Achievements",
             sub1: "Trophies",
             sub2: "Milestones",
+            image: "/cards/achievementCard.jpeg",
             sectionTarget: "achievements",
         },
         {
             title: "Alumni",
             sub1: "Hall of Fame",
             sub2: "Past Debaters",
+            image: "/cards/aluminiCard.jpeg",
             sectionTarget: "alumni",
         },
         {
@@ -99,9 +103,15 @@ export default function HomeClient() {
             title: "Session",
             sub1: "Next Meet",
             sub2: "Resources",
+            image: "/cards/sessionCard.jpeg",
             href: "/session",
         },
-        {title: "Equity", sub1: "Guidelines", sub2: "Report", href: "/equity"},
+        {
+            title: "Equity",
+            sub1: "Guidelines",
+            sub2: "Report",
+            href: "/equity",
+        },
     ];
 
     const navigateFromCard = (item: NavItem) => {
@@ -414,11 +424,13 @@ export default function HomeClient() {
                                             }
                                         >
                                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
-                                            <img
-                                                src={`/event${(i % 2) + 1}.png`}
-                                                alt={item.title}
-                                                className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700"
-                                            />
+                                            {item.image && (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.title}
+                                                    className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700"
+                                                />
+                                            )}
                                             <div className="absolute bottom-3 left-3 z-20">
                                                 <h4 className="text-xs text-white font-light uppercase tracking-wider leading-snug">
                                                     {item.title}:
@@ -562,11 +574,13 @@ export default function HomeClient() {
                                     className="relative w-full md:w-auto min-w-0 h-[calc((clamp(460px,74svh,720px)-2rem)/3)] min-h-[130px] sm:h-[30vh] md:min-w-75 lg:min-w-105 xl:min-w-125 md:h-full group shrink-0 cursor-pointer overflow-hidden rounded border border-white/10 bg-zinc-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                                 >
                                     <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
-                                    <img
-                                        src={`/event${(i % 2) + 1}.png`}
-                                        alt={item.title}
-                                        className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
-                                    />
+                                    {item.image && (
+                                        <img
+                                            src={item.image}
+                                            alt={item.title}
+                                            className="w-full h-full object-cover brightness-90 md:grayscale md:brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
+                                        />
+                                    )}
                                     <div className="absolute bottom-3 sm:bottom-4 md:bottom-8 left-3 sm:left-4 md:left-8 z-20 pr-3 sm:pr-4 md:pr-8 transform group-hover:-translate-y-2 transition-transform duration-500">
                                         <h4 className="text-sm sm:text-base md:text-4xl text-white font-light uppercase tracking-wider md:tracking-widest leading-snug drop-shadow-lg">
                                             {item.title}:<br />
