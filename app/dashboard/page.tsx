@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     redirect("/dashboard/techhead");
   }
 
-  if (session.user.role === "Cabinet") {
+  if (session.user.role === "cabinet") {
     redirect("/dashboard/cabinet");
   }
 
