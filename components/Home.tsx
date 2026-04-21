@@ -83,7 +83,7 @@ export default function HomeClient() {
             title: "Achievements",
             sub1: "Trophies",
             sub2: "Milestones",
-            image: "/cards/achievementCard.jpeg",
+            image: "/cards/achievementCard.png",
             sectionTarget: "achievements",
         },
         {
