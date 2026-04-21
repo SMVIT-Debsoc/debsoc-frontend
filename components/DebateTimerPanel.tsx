@@ -119,11 +119,21 @@ export default function DebateTimerPanel() {
     const [debateStyle, setDebateStyle] = useState("");
     const [clockType, setClockType] = useState<ClockType>("");
     const [running, setRunning] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const [timeMs, setTimeMs] = useState(TIMER_START_MS);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+
+    useEffect(() => {
         setRunning(false);
+        setHasStarted(false);
         setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
     }, [clockType]);
 
@@ -161,6 +171,7 @@ export default function DebateTimerPanel() {
     const handleStart = () => {
         if (!clockType) return;
         setRunning(true);
+        setHasStarted(true);
         toast.success("Time started!");
     };
 
@@ -173,6 +184,7 @@ export default function DebateTimerPanel() {
     const handleReset = () => {
         if (!clockType) return;
         setRunning(false);
+        setHasStarted(false);
         setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
         toast("Timer reset!", {
             icon: "🔄",
@@ -241,37 +253,55 @@ export default function DebateTimerPanel() {
                             </p>
                         </div>
 
-                        <div className="grid gap-5">
-                            <CustomDropdown
-                                label="Debate Style"
-                                value={debateStyle}
-                                options={["Asian", "British"]}
-                                onChange={setDebateStyle}
-                                placeholder="Choose here"
-                            />
+                        <AnimatePresence initial={false}>
+                            {(!isMobile || !hasStarted) && (
+                                <motion.div
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                    transition={{
+                                        duration: 0.4,
+                                        ease: [0.33, 1, 0.68, 1],
+                                    }}
+                                    className="space-y-4 sm:space-y-6 overflow-hidden"
+                                >
+                                    <div className="grid gap-5">
+                                        <CustomDropdown
+                                            label="Debate Style"
+                                            value={debateStyle}
+                                            options={["Asian", "British"]}
+                                            onChange={setDebateStyle}
+                                            placeholder="Choose here"
+                                        />
 
-                            <CustomDropdown
-                                label="Clock Type"
-                                value={clockType}
-                                options={["Stopwatch", "Timer"]}
-                                onChange={(val) => setClockType(val as ClockType)}
-                                placeholder="Choose here"
-                            />
-                        </div>
+                                        <CustomDropdown
+                                            label="Clock Type"
+                                            value={clockType}
+                                            options={["Stopwatch", "Timer"]}
+                                            onChange={(val) =>
+                                                setClockType(val as ClockType)
+                                            }
+                                            placeholder="Choose here"
+                                        />
+                                    </div>
 
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-                            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                                Current Setup
-                            </p>
-                            <p className="text-zinc-100 font-medium">
-                                {debateStyle
-                                    ? `${debateStyle} parliamentary debate`
-                                    : "Select a debate style"}
-                            </p>
-                            <p className="text-zinc-400 text-sm">
-                                {clockType || "Clock type not selected"}
-                            </p>
-                        </div>
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+                                        <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                                            Current Setup
+                                        </p>
+                                        <p className="text-zinc-100 font-medium">
+                                            {debateStyle
+                                                ? `${debateStyle} parliamentary debate`
+                                                : "Select a debate style"}
+                                        </p>
+                                        <p className="text-zinc-400 text-sm">
+                                            {clockType ||
+                                                "Clock type not selected"}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             <button
