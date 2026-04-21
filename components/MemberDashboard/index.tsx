@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import styles from "./index.module.css";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   LayoutDashboard,
   Calendar,
@@ -21,15 +21,11 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
-import Image from 'next/image';
-import { signOut } from 'next-auth/react';
-
   Loader2,
   AlertCircle,
   RefreshCw,
   Inbox,
-} from "lucide-react";
+} from 'lucide-react';
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 
@@ -61,12 +57,12 @@ const fmtDeadline = (dl: string) =>
 const isOverdue = (dl: string) => !new Date(dl).valueOf() || new Date(dl) < new Date();
 
 // ── Animation variants ─────────────────────────────────────────────────────
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.07, ease: [0.25, 0.46, 0.45, 0.94] } }),
+  visible: (i: number = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.07, ease: [0.25, 0.46, 0.45, 0.94] } }),
   exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
 };
-const scaleIn = { hidden: { scale: 0.96, opacity: 0 }, visible: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: "easeOut" } }, exit: { scale: 0.96, opacity: 0, transition: { duration: 0.15 } } };
+const scaleIn: Variants = { hidden: { scale: 0.96, opacity: 0 }, visible: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: "easeOut" } }, exit: { scale: 0.96, opacity: 0, transition: { duration: 0.15 } } };
 
 // ── Custom Dropdown ────────────────────────────────────────────────────────
 function CustomSelect({
@@ -393,7 +389,6 @@ export default function MemberDashboard() {
             <span className={styles.profileName}>{userName}</span>
             <span className={styles.profileRole}>{userRole}</span>
           </div>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className={styles.logoutBtn} title="Log out">
           <motion.button
             className={styles.logoutBtn}
             title="Log out"
@@ -623,8 +618,8 @@ export default function MemberDashboard() {
                           lineHeight: 1.6,
                           boxSizing: "border-box",
                         }}
-                        onFocus={(e) => { e.target.style.borderColor = "#6366f1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
-                        onBlur={(e) => { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "none"; }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "none"; }}
                       />
 
                       <AnimatePresence>
