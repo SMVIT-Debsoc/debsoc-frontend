@@ -2,8 +2,9 @@
 
 import React, {useEffect, useState} from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {usePathname, useSearchParams, useRouter} from "next/navigation";
-import {Sparkles, Menu, X} from "lucide-react";
+import {Menu, X} from "lucide-react";
 
 type NavLink = {
     name: string;
@@ -107,12 +108,21 @@ const Navbar = () => {
             <nav className="w-full flex items-center justify-between">
                 <Link
                     href="/"
-                    className="flex items-center gap-1 font-light tracking-widest text-xl uppercase text-white"
+                    onClick={(e) => {
+                        if (pathname === "/") {
+                            e.preventDefault();
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        }
+                        setIsMenuOpen(false);
+                    }}
+                    className="flex items-center gap-2 font-light tracking-widest text-xl uppercase text-white"
                 >
-                    <Sparkles
-                        size={18}
-                        strokeWidth={1}
-                        className="text-white"
+                    <Image
+                        src="/logo.png"
+                        alt="Debsoc Logo"
+                        width={28}
+                        height={28}
+                        className="object-contain"
                     />
                     DEBSOC
                 </Link>
