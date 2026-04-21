@@ -14,6 +14,14 @@ export default async function DashboardPage() {
     redirect("/dashboard/techhead");
   }
 
+  if (session.user.role === "Cabinet") {
+    redirect("/dashboard/cabinet");
+  }
+
+  if (session.user.role === "President") {
+    redirect("/dashboard/president");
+  }
+
   // Currently defaults to MemberDashboard for others
   return <MemberDashboard />;
 }
