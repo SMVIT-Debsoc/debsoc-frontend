@@ -1,0 +1,799 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f9fafa;
+  font-family: inherit;
+  color: #1a1b1e;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 40px;
+  color: #1a1b1e;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  background-color: #ea580c;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.navItem:hover {
+  background-color: #f8fafc;
+}
+
+.navItem.active {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.navItemIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.badgeOrange {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.badgeGrey {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.profileArea {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.profileImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.profileName {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profileRole {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.logoutBtn {
+  color: #94a3b8;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoutBtn:hover {
+  color: #1a1b1e;
+}
+
+/* MAIN CONTENT */
+.main {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.greeting {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #64748b;
+  font-size: 15px;
+}
+
+.rankBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fef3c7;
+  color: #b45309;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rankLabel {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 400;
+  margin-right: -4px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.statCard {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.statCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.statIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statIconBlue {
+  background-color: #eff6ff;
+  color: #3b82f6;
+}
+
+.statIconGreen {
+  background-color: #f0fdf4;
+  color: #22c55e;
+}
+
+.statIconRed {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+.statIconOrange {
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.statValueContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.statSubtext {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.statSubtextGreen {
+  font-size: 13px;
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.statSubtextOrange {
+  font-size: 13px;
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.progressBarContainer {
+  height: 6px;
+  background-color: #f1f5f9;
+  border-radius: 3px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #ea580c;
+  border-radius: 3px;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.columnLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.columnRight {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cardLink {
+  color: #ea580c;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.cardAction {
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Recent Sessions */
+.sessionList {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionItem {
+  display: flex;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sessionItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.sessionItem:first-child {
+  padding-top: 0;
+}
+
+.sessionDate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 40px;
+}
+
+.sessionMonth {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.sessionDay {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.sessionContent {
+  flex: 1;
+}
+
+.sessionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.sessionTitle {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.sessionStatus {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.statusPresent {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.statusAbsent {
+  background-color: #fee2e2;
+  color: #e11d48;
+}
+
+.sessionDesc {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.sessionDetails {
+  display: flex;
+  gap: 12px;
+}
+
+.detailBox {
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  flex: 1;
+}
+
+.detailBoxOrange {
+  background-color: #fff7ed;
+  padding: 12px 16px;
+  border-radius: 8px;
+  flex: 1;
+  border: 1px solid #ffedd5;
+}
+
+.detailBoxLabel {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.detailBoxValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.detailBoxValueOrange {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ea580c;
+}
+
+/* My Tasks */
+.taskList {
+  display: flex;
+  flex-direction: column;
+}
+
+.taskItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.taskItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.taskItem:first-child {
+  padding-top: 0;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.checkboxChecked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.taskContent {
+  flex: 1;
+}
+
+.taskTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.taskTitleCompleted {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.taskMeta {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.taskMetaWarning {
+  font-size: 13px;
+  color: #ef4444;
+}
+
+/* Suggestion Box */
+.suggestionCard {
+  background-color: #ea580c;
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+}
+
+.suggestionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.suggestionHeaderIcon {
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.suggestionText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffedd5;
+  margin-bottom: 24px;
+}
+
+.suggestionForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestionSelectWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestionSelect {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.suggestionSelect option {
+  color: #1e293b;
+}
+
+.suggestionSelectIcon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: white;
+}
+
+.suggestionTextarea {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+  min-height: 100px;
+}
+
+.suggestionTextarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.submitBtn {
+  background-color: white;
+  color: #ea580c;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: opacity 0.2s;
+}
+
+.submitBtn:hover {
+  opacity: 0.9;
+}
+
+/* Feedback Inbox */
+.feedbackCard {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.feedbackListWrapper {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  height: 250px;
+}
+
+.feedbackList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.scrollTrack {
+  width: 6px;
+  background-color: #f1f5f9;
+  border-radius: 3px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scrollThumb {
+  width: 6px;
+  height: 40px;
+  background-color: #94a3b8;
+  border-radius: 3px;
+  position: absolute;
+  top: 20%;
+}
+
+.scrollArrowVertical {
+  color: #94a3b8;
+  background: white;
+  position: relative;
+  z-index: 2;
+  margin: -4px 0;
+}
+
+.feedbackItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedbackItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.feedbackFrom {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.feedbackFromPresident {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.feedbackFromCabinet {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.feedbackTime {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.feedbackTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.feedbackDesc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.feedbackFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.scrollArrows {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.scrollArrow {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+.scrollArrow:hover {
+  color: #1e293b;
+}
+
+.scrollDots {
+  flex: 1;
+  height: 6px;
+  background-color: #f1f5f9;
+  margin: 0 8px;
+  border-radius: 3px;
+  position: relative;
+}
+
+.scrollDotActive {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 40%;
+  background-color: #94a3b8;
+  border-radius: 3px;
+}
+
+.feedbackAllLink {
+  font-size: 13px;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+}
+
+.feedbackAllLink:hover {
+  color: #1e293b;
+}
