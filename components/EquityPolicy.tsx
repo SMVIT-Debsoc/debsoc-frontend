@@ -9,6 +9,7 @@ import {
     Scale,
     Users,
     CircleAlert,
+    FileText,
 } from "lucide-react";
 import {ElegantShape} from "./ui/shape-landing-hero";
 
@@ -187,7 +188,7 @@ export default function EquityPolicy() {
                     initial="hidden"
                     animate="visible"
                     variants={fadeUpVariants}
-                    className="flex justify-center mb-12 sm:mb-16 md:mb-24"
+                    className="flex flex-col items-center gap-4 mb-12 sm:mb-16 md:mb-24"
                 >
                     <a
                         href="#"
@@ -198,6 +199,17 @@ export default function EquityPolicy() {
                         <span className="relative">
                             Anonymous Complaint Form
                         </span>
+                    </a>
+
+                    <a
+                        href="https://docs.google.com/document/d/1dSAYm60cV5HC3hx6qdpUuNFtzxrOdtmJI5Qpc63jVnY/edit?tab=t.0"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative inline-flex items-center gap-2 sm:gap-3 px-4 py-2 sm:px-6 sm:py-3 bg-white/3 hover:bg-white/8 border border-white/5 rounded-full text-xs sm:text-sm text-white/70 hover:text-white font-medium transition-all duration-300 backdrop-blur-md overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-linear-to-r from-indigo-500/10 to-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <FileText className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <span className="relative">Read Full Doc</span>
                     </a>
                 </motion.div>
 
