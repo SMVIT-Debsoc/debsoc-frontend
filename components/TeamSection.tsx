@@ -59,9 +59,9 @@ interface Department {
 const DEPARTMENTS: Department[] = [
     {
         id: "02",
-        name: "Operational Core",
+        name: "Operations Team",
         subtext: "Logistics / Control / Deploy",
-        intro: "Orchestrating the rhythm of discourse. Operational Core manages weekly sessions and flagship events like Axiom, DPL, and Literary Lane—successfully hosting landmark sessions for the community.",
+        intro: "The operations team is there to drive the pulse of engagement through debating. It is responsible for planning and executing each and every event conducted by SMVIT Debsoc, with key events like Axiom, Debsoc Premier League (DPL), Literary Lane and the SMVIT PD, creating enriching experiences.",
         icon: <Zap size={16} className="text-zinc-400" />,
         lead: {
             name: "Dhruv Kumar",
@@ -123,7 +123,7 @@ const DEPARTMENTS: Department[] = [
         id: "03",
         name: "Equity Alliance",
         subtext: "Guideline / Report / Resolve",
-        intro: "This Equity Policy is instituted by the SMVIT Debating Society to ensure a respectful, inclusive, and safe environment. It operates as a foundational instrument of governance, predicated on the principle that debating, as an intellectual pursuit, must remain free from discrimination, harassment, or intimidation. Recognizing that inter-personal dynamics are shaped by pre-existing social structures, our core principles include Dignity and Equality, Accessibility, and Restorative Objectives. This policy applies uniformly to all members, adjudicators, and guests. Prohibited conduct includes bullying, vilification, sexual harassment, and the use of triggering language—focusing always on the impact of the conduct, regardless of intent.",
+        intro: "The SMVIT Debating Society’s Equity Policy ensures a safe, inclusive, and respectful environment for all.It is grounded in dignity, equality, and accessibility, applying to members, judges, and guests alike.Bullying, harassment, and harmful language are prohibited, with focus on impact over intent.",
         icon: <Shield size={16} className="text-zinc-400" />,
         lead: {
             name: "Vittala Chaithanya",
@@ -161,7 +161,7 @@ const DEPARTMENTS: Department[] = [
         id: "04",
         name: "Tech Team",
         subtext: "Code / Build / Deploy",
-        intro: "Engineering the digital stage for modern debate. We build the interfaces that bridge the gap between tradition and technology.",
+        intro: "Modern day debating is incomplete without technical support. The tech team fosters this mission by creating  platforms that seamlessly connect tradition with innovation.",
         icon: <Code size={16} className="text-zinc-400" />,
         lead: {
             name: "Md Mobasshir Shakil Khan",
@@ -183,7 +183,7 @@ const DEPARTMENTS: Department[] = [
         id: "05",
         name: "Social Sphere",
         subtext: "Aesthetic / Reach / Impact",
-        intro: "Curating the global signal of DEBSOC. Our media team crafts the visual identity and narrative that defines our presence in the digital age.",
+        intro: "The Social Media Team is the voice of our Debating Society, it designs and promotes the stories , events and achievements made by Debsoc, which amplifies our presence in the digital space by shaping a distinct visual identity.",
         icon: <Share2 size={16} className="text-zinc-400" />,
         lead: {
             name: "Ananya Singh",
@@ -210,7 +210,7 @@ const DEPARTMENTS: Department[] = [
         id: "06",
         name: "Content Engine",
         subtext: "Research / Write / Refine",
-        intro: "Generating the raw fuel for argument. We distill complex global narratives into structured battlegrounds for intellectual combat.",
+        intro: "The content team is responsible for simplifying real world issues and multiple topics into structured topics which enriches the viewers through the knowledge delivered, sharpening their intellectual discourse.",
         icon: <FileText size={16} className="text-zinc-400" />,
         lead: {
             name: "Anika Gupta",
@@ -406,7 +406,7 @@ function SwipeHint({
 }
 
 function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
-    const isOpCore = dept.name === "Operational Core";
+    const isOpCore = dept.name === "Operations Team";
     const isEquity = dept.name === "Equity Alliance";
     const isSpecialGrid = isOpCore || isEquity;
 

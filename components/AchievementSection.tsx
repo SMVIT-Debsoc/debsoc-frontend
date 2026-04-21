@@ -161,9 +161,7 @@ export default function AchievementSection() {
                     </h1>
                     <div className="max-w-md lg:pb-3">
                         <p className="text-zinc-400 text-sm md:text-base font-light leading-relaxed tracking-wide">
-                            Forged in the fires of intellectual combat. A ledger
-                            of our most definitive victories and milestones
-                            across the global debate circuit.
+                            Built through rigorous debate and competition, The Hall of Fame is the record of our most significant achievements and milestones in the debating circuit by our fellow members.
                         </p>
                     </div>
                 </div>

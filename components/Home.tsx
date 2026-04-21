@@ -384,9 +384,7 @@ export default function HomeClient() {
                                     Mission
                                 </p>
                                 <p className="text-sm text-zinc-200 font-light leading-relaxed">
-                                    We curate intellectual battlegrounds. To
-                                    amplify voices, challenge perspectives, and
-                                    elevate the debate.
+                                    We aim to boost curiosity ,speaking & critical thinking skills. We discuss and debate EVERYTHING.
                                 </p>
                                 <p className="text-sm text-zinc-400 font-light mt-3">
                                     We are DEBSOC.
@@ -439,30 +437,32 @@ export default function HomeClient() {
                     {/* Mobile gradient behind text for readability over the centered mic */}
                     <div className="md:hidden absolute inset-x-0 bottom-0 h-[58svh] bg-gradient-to-t from-black via-black/80 to-transparent pointer-events-none z-[35]" />
                     <div className="hero-text-container absolute inset-x-0 top-[clamp(84px,12svh,118px)] md:left-12 md:right-auto md:top-auto md:bottom-20 z-[40] flex flex-col items-center text-center md:items-start md:text-left pointer-events-none w-full md:w-auto px-6 md:px-0 md:max-w-4xl">
-                        <h1 className="hero-text text-[clamp(2.8rem,11.8vw,5rem)] md:text-[5.5rem] lg:text-[7rem] font-light leading-[0.96] tracking-[-0.02em] text-zinc-200 mb-2 drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]">
-                            DEBSOC:
+                        <h1 className="hero-text text-[clamp(2.2rem,10vw,4.5rem)] md:text-[4.5rem] lg:text-[5.5rem] font-light leading-[0.96] tracking-[-0.02em] text-zinc-200 mb-2 drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]">
+                            SMVIT DEBSOC:
                             <span className="block md:hidden text-zinc-400">
-                                THE ART OF
+                                THINK, SPEAK,
                             </span>
                             <span className="block md:hidden text-zinc-400">
-                                ARGUMENT
+                                LISTEN
                             </span>
                             <span className="hidden md:inline text-zinc-300">
                                 <br />
-                                THE ART OF ARGUMENT.
+                                THINK, SPEAK,
+                                <br />
+                                LISTEN.
                             </span>
                         </h1>
-                        <p className="hero-text hidden md:block text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase md:uppercase">
-                            A high-end production studio for <br />
-                            discourse and debate.
+                        <p className="hero-text hidden md:block text-[clamp(0.95rem,1.65vw,1.125rem)] md:text-lg text-zinc-400 font-light max-w-[20rem] sm:max-w-md mt-2 tracking-wide md:tracking-wide leading-relaxed drop-shadow md:normal-case uppercase">
+                            A HIGH END INTELLECTUAL SOCIETY FOR <br />
+                            DISCOURSE AND DEBATE.
                         </p>
                     </div>
 
                     <div className="md:hidden absolute inset-x-0 bottom-[max(8svh,64px)] z-[40] flex flex-col items-center text-center px-8 pointer-events-none">
                         <p className="hero-text text-[0.78rem] text-zinc-400 font-light max-w-[20rem] tracking-[0.035em] leading-[1.62] uppercase">
-                            A high-end production studio
+                            A HIGH END INTELLECTUAL SOCIETY
                             <br />
-                            for discourse and debate.
+                            FOR DISCOURSE AND DEBATE.
                         </p>
                         <button
                             onClick={openExplore}
