@@ -11,7 +11,7 @@ export default async function CabinetDashboardPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== "Cabinet") {
+  if (session.user.role !== "cabinet") {
     redirect("/dashboard");
   }
 
