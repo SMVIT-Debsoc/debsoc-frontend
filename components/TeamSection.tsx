@@ -508,7 +508,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 </AnimatedSection>
 
                 <div
-                    className="overflow-x-auto overflow-y-hidden hide-scrollbar overscroll-x-contain overscroll-y-none [touch-action:pan-x]"
+                    className="overflow-x-auto overflow-y-hidden hide-scrollbar"
                 >
                     <div className="flex gap-3 snap-x snap-mandatory pb-1 select-none">
                         {allMembers.map((member, index) => (
@@ -896,7 +896,7 @@ export default function TeamSection() {
                                     href="https://linkedin.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block cursor-pointer relative w-full h-full overflow-hidden grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl"
+                                    className="block cursor-pointer relative w-full h-full overflow-hidden contrast-125 brightness-90 transition-all duration-1000 border border-white/5 shadow-2xl"
                                 >
                                     <Image
                                         src="/media/KanishkChaudhary.jpg"
@@ -947,7 +947,7 @@ export default function TeamSection() {
                                     href="https://www.linkedin.com/in/aditya707"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block cursor-pointer relative w-full h-full overflow-hidden grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000 border border-white/5 shadow-2xl"
+                                    className="block cursor-pointer relative w-full h-full overflow-hidden contrast-125 brightness-75 transition-all duration-1000 border border-white/5 shadow-2xl"
                                 >
                                     <Image
                                         src="/media/AdityaKumarSingh.jpg"
@@ -987,7 +987,7 @@ export default function TeamSection() {
 
                     {/* Mobile: stacked president + VP cards */}
                     <div
-                        className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar overscroll-x-contain overscroll-y-none [touch-action:pan-x] mt-2"
+                        className="md:hidden overflow-x-auto overflow-y-hidden hide-scrollbar mt-2"
                     >
                         <div className="flex gap-3 h-full snap-x snap-mandatory pb-1 select-none">
                             <div className="snap-start shrink-0 w-[85vw] max-w-[460px] h-[clamp(300px,50svh,500px)]">
@@ -999,7 +999,7 @@ export default function TeamSection() {
                                         href="https://linkedin.com"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl grayscale contrast-125 brightness-90 group-hover:grayscale-0 transition-all duration-1000"
+                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl contrast-125 brightness-90 transition-all duration-1000"
                                     >
                                         <Image
                                             src="/media/KanishkChaudhary.jpg"
@@ -1037,7 +1037,7 @@ export default function TeamSection() {
                                         href="https://www.linkedin.com/in/aditya707"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl grayscale contrast-125 brightness-75 group-hover:grayscale-0 transition-all duration-1000"
+                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl contrast-125 brightness-75 transition-all duration-1000"
                                     >
                                         <Image
                                             src="/media/AdityaKumarSingh.jpg"
