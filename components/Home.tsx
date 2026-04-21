@@ -97,6 +97,7 @@ export default function HomeClient() {
             title: "Debate Timer",
             sub1: "Launch App",
             sub2: "Settings",
+            image: "/cards/debateTimerCard.jpeg",
             href: "/debate-timer",
         },
         {
@@ -110,6 +111,7 @@ export default function HomeClient() {
             title: "Equity",
             sub1: "Guidelines",
             sub2: "Report",
+            image: "/cards/equityCard.jpeg",
             href: "/equity",
         },
     ];
