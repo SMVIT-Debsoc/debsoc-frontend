@@ -26,6 +26,8 @@ const navLinks: NavLink[] = [
     {name: "Session", href: "/session"},
     {name: "Equity", href: "/equity"},
     {name: "Gallery", href: "/gallery"},
+    {name: "Login", href: "/login"},
+    {name: "Sign Up", href: "/signup"},
 ];
 
 const Navbar = () => {

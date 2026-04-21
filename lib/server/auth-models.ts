@@ -160,6 +160,8 @@ export async function findRoleUserById(role: DebsocRole, id: string): Promise<Se
 export async function ensureRoleUserByEmail(
   email: string,
   fallbackName?: string | null,
+  requestedRole: DebsocRole = "Member",
+  requestedPosition?: string
 ): Promise<SessionUser | null> {
   const normalizedEmail = normalizeEmail(email);
   const existingRoleUser = await findRoleUserByEmail(normalizedEmail);
@@ -172,21 +174,31 @@ export async function ensureRoleUserByEmail(
   const impossiblePassword = await bcrypt.hash(randomUUID(), 10);
 
   try {
-    const member = await prisma.member.create({
-      data: {
-        name: memberName,
-        email: normalizedEmail,
-        password: impossiblePassword,
-      },
-    });
+    let createdUser;
 
-    return {
-      id: member.id,
-      name: member.name,
-      email: member.email,
-      role: "Member",
-      isVerified: member.isVerified,
-    };
+    switch (requestedRole) {
+      case "President":
+        const president = await prisma.president.create({
+          data: { name: memberName, email: normalizedEmail, password: impossiblePassword },
+        });
+        createdUser = { id: president.id, name: president.name, email: president.email, role: "President" as DebsocRole, isVerified: president.isVerified };
+        break;
+      case "cabinet":
+        const cabinet = await prisma.cabinet.create({
+          data: { name: memberName, email: normalizedEmail, password: impossiblePassword, position: requestedPosition || "Member" },
+        });
+        createdUser = { id: cabinet.id, name: cabinet.name, email: cabinet.email, role: "cabinet" as DebsocRole, isVerified: cabinet.isVerified };
+        break;
+      case "Member":
+      default:
+        const member = await prisma.member.create({
+          data: { name: memberName, email: normalizedEmail, password: impossiblePassword },
+        });
+        createdUser = { id: member.id, name: member.name, email: member.email, role: "Member" as DebsocRole, isVerified: member.isVerified };
+        break;
+    }
+
+    return createdUser;
   } catch (error) {
     // If another request created the same member concurrently, reuse it.
     const roleUserAfterFailure = await findRoleUserByEmail(normalizedEmail);
@@ -196,4 +208,40 @@ export async function ensureRoleUserByEmail(
 
     throw error;
   }
+}
+
+export async function createOrPromoteToTechHead(
+  email: string,
+  name: string,
+): Promise<SessionUser | null> {
+  const normalizedEmail = normalizeEmail(email);
+  const existing = await findRoleUserByEmail(normalizedEmail);
+
+  if (existing?.role === "TechHead") return existing;
+
+  // Move from other role tables to TechHead if necessary
+  if (existing) {
+    if (existing.role === "Member")
+      await prisma.member.delete({ where: { id: existing.id } });
+    if (existing.role === "President")
+      await prisma.president.delete({ where: { id: existing.id } });
+    if (existing.role === "cabinet")
+      await prisma.cabinet.delete({ where: { id: existing.id } });
+  }
+
+  const techHead = await prisma.techHead.create({
+    data: {
+      name,
+      email: normalizedEmail,
+      password: await bcrypt.hash(randomUUID(), 10),
+    },
+  });
+
+  return {
+    id: techHead.id,
+    name: techHead.name,
+    email: techHead.email,
+    role: "TechHead",
+    isVerified: true,
+  };
 }
