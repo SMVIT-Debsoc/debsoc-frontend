@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { ensureRoleUserByEmail, findRoleUserById, createOrPromoteToTechHead } from "@/lib/server/auth-models";
+import { ensureRoleUserByEmail, findRoleUserById, createOrPromoteToTechHead, findRoleUserByEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
 import { cookies } from "next/headers";
 
