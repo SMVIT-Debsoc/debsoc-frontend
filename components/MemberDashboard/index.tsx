@@ -25,6 +25,222 @@ import {
 import Image from 'next/image';
 import { signOut } from 'next-auth/react';
 
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  Inbox,
+} from "lucide-react";
+import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
+
+// ── Types ──────────────────────────────────────────────────────────────────
+type AttendanceRecord = {
+  id: string;
+  status: "Present" | "Absent" | "Excused";
+  speakerScore?: number | null;
+  session: { id: string; sessionDate: string; motiontype: string; Chair: string };
+};
+type Task = { id: string; name: string; description?: string; deadline: string; completed?: boolean };
+type Feedback = { id: string; feedback: string; senderType: string; createdAt: string };
+type President = { id: string; name: string; email: string };
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const fmtDate = (iso: string) => {
+  const d = new Date(iso);
+  return { month: d.toLocaleString("en-US", { month: "short" }).toUpperCase(), day: d.getDate() };
+};
+const timeAgo = (iso: string) => {
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000);
+  if (h < 1) return "Just now";
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "Yesterday" : `${d}d ago`;
+};
+const fmtDeadline = (dl: string) =>
+  new Date(dl).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const isOverdue = (dl: string) => !new Date(dl).valueOf() || new Date(dl) < new Date();
+
+// ── Animation variants ─────────────────────────────────────────────────────
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.4, delay: i * 0.07, ease: [0.25, 0.46, 0.45, 0.94] } }),
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+};
+const scaleIn = { hidden: { scale: 0.96, opacity: 0 }, visible: { scale: 1, opacity: 1, transition: { duration: 0.25, ease: "easeOut" } }, exit: { scale: 0.96, opacity: 0, transition: { duration: 0.15 } } };
+
+// ── Custom Dropdown ────────────────────────────────────────────────────────
+function CustomSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "Select…",
+}: {
+  options: { id: string; label: string }[];
+  value: string;
+  onChange: (id: string) => void;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.id === value);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative", userSelect: "none" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "11px 16px",
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: 10,
+          fontSize: 14,
+          color: selected ? "#1e293b" : "#94a3b8",
+          cursor: "pointer",
+          transition: "border-color 0.2s, box-shadow 0.2s",
+          boxShadow: open ? "0 0 0 3px rgba(99,102,241,0.15)" : "none",
+          borderColor: open ? "#6366f1" : "#e2e8f0",
+        }}
+      >
+        <span>{selected ? selected.label : placeholder}</span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown size={16} color="#94a3b8" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            variants={scaleIn}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              right: 0,
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+              zIndex: 50,
+              overflow: "hidden",
+              transformOrigin: "top center",
+            }}
+          >
+            {options.length === 0 ? (
+              <div style={{ padding: "12px 16px", fontSize: 14, color: "#94a3b8", textAlign: "center" }}>
+                No options available
+              </div>
+            ) : (
+              options.map((opt, i) => (
+                <motion.button
+                  key={opt.id}
+                  type="button"
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: i * 0.04 } }}
+                  onClick={() => { onChange(opt.id); setOpen(false); }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    padding: "11px 16px",
+                    fontSize: 14,
+                    cursor: "pointer",
+                    border: "none",
+                    borderBottom: i < options.length - 1 ? "1px solid #f1f5f9" : "none",
+                    background: value === opt.id ? "#f0f4ff" : "#ffffff",
+                    color: value === opt.id ? "#4f46e5" : "#1e293b",
+                    fontWeight: value === opt.id ? 600 : 400,
+                    transition: "background 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                  whileHover={{ backgroundColor: "#f8fafc" }}
+                >
+                  {value === opt.id && <Check size={14} color="#4f46e5" />}
+                  {opt.label}
+                </motion.button>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Stat Card ──────────────────────────────────────────────────────────────
+function StatCard({
+  icon: Icon,
+  iconClass,
+  label,
+  value,
+  sub,
+  subClass,
+  progress,
+  index,
+}: {
+  icon: React.ElementType;
+  iconClass: string;
+  label: string;
+  value: string | number;
+  sub: string;
+  subClass?: string;
+  progress?: number;
+  index: number;
+}) {
+  return (
+    <motion.div
+      variants={fadeUp}
+      custom={index}
+      className={styles.statCard}
+      whileHover={{ y: -3, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className={styles.statCardHeader}>
+        <div className={`${styles.statIcon} ${iconClass}`}><Icon size={18} /></div>
+        <span className={styles.statLabel}>{label}</span>
+      </div>
+      <div className={styles.statValueContainer}>
+        <motion.span
+          className={styles.statValue}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 + index * 0.07 }}
+        >
+          {value}
+        </motion.span>
+        <span className={subClass || styles.statSubtext}>{sub}</span>
+      </div>
+      {progress !== undefined && (
+        <div className={styles.progressBarContainer}>
+          <motion.div
+            className={styles.progressBarFill}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1, delay: 0.5 + index * 0.07, ease: "easeOut" }}
+          />
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────
 export default function MemberDashboard() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -177,7 +393,14 @@ export default function MemberDashboard() {
             <span className={styles.profileName}>{userName}</span>
             <span className={styles.profileRole}>{userRole}</span>
           </div>
-          <button className={styles.logoutBtn} title="Log out">
+          <button onClick={() => signOut({ callbackUrl: "/login" })} className={styles.logoutBtn} title="Log out">
+          <motion.button
+            className={styles.logoutBtn}
+            title="Log out"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            whileHover={{ scale: 1.1, color: "#ef4444" }}
+            whileTap={{ scale: 0.9 }}
+          >
             <LogOut size={18} />
           </motion.button>
         </motion.div>
