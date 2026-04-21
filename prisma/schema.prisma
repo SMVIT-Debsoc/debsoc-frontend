@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Connection string is read from DATABASE_URL env var
 }
 
 model TechHead {

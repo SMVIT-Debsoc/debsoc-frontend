@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
-import { authenticateRole } from "@/lib/server/auth-models";
+import { authenticateRole, normalizeEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
 
 export async function registerRole(
@@ -8,6 +8,7 @@ export async function registerRole(
   input: { name?: string; email?: string; password?: string; position?: string },
 ) {
   const { name, email, password, position } = input;
+  const normalizedEmail = email ? normalizeEmail(email) : "";
 
   if (!name || !email || !password) {
     throw new Error("Please provide all fields");
@@ -20,11 +21,11 @@ export async function registerRole(
   const hashedPassword = await bcrypt.hash(password, 10);
 
   if (role === "President") {
-    const existing = await prisma.president.findUnique({ where: { email } });
+    const existing = await prisma.president.findUnique({ where: { email: normalizedEmail } });
     if (existing) throw new Error("President already exists");
 
     const president = await prisma.president.create({
-      data: { name, email, password: hashedPassword },
+      data: { name, email: normalizedEmail, password: hashedPassword },
     });
 
     return {
@@ -40,11 +41,11 @@ export async function registerRole(
   }
 
   if (role === "cabinet") {
-    const existing = await prisma.cabinet.findUnique({ where: { email } });
+    const existing = await prisma.cabinet.findUnique({ where: { email: normalizedEmail } });
     if (existing) throw new Error("Cabinet member already exists");
 
     const cabinet = await prisma.cabinet.create({
-      data: { name, email, password: hashedPassword, position: position! },
+      data: { name, email: normalizedEmail, password: hashedPassword, position: position! },
     });
 
     return {
@@ -59,11 +60,11 @@ export async function registerRole(
     };
   }
 
-  const existing = await prisma.member.findUnique({ where: { email } });
+  const existing = await prisma.member.findUnique({ where: { email: normalizedEmail } });
   if (existing) throw new Error("Member already exists");
 
   const member = await prisma.member.create({
-    data: { name, email, password: hashedPassword },
+    data: { name, email: normalizedEmail, password: hashedPassword },
   });
 
   return {
@@ -85,7 +86,7 @@ export async function loginRole(role: DebsocRole, input: { email?: string; passw
     throw new Error("Please provide email and password");
   }
 
-  const user = await authenticateRole(role, email, password);
+  const user = await authenticateRole(role, normalizeEmail(email), password);
   if (!user) {
     throw new Error("Invalid credentials");
   }
