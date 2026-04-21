@@ -31,12 +31,11 @@
 .logoIcon {
   width: 32px;
   height: 32px;
-  background-color: #ea580c;
+  background-color: transparent;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
 }
 
 .nav {
@@ -535,11 +534,11 @@
 
 /* Suggestion Box */
 .suggestionCard {
-  background-color: #ea580c;
+  background-color: #ffffff;
   border-radius: 16px;
   padding: 24px;
-  color: white;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);
+  border: 1px solid #eaeaea;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
 
 .suggestionHeader {
@@ -564,7 +563,7 @@
 .suggestionText {
   font-size: 14px;
   line-height: 1.5;
-  color: #ffedd5;
+  color: #64748b;
   margin-bottom: 24px;
 }
 
@@ -581,9 +580,9 @@
 
 .suggestionSelect {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background-color: #f8fafc;
+  border: 1px solid #eaeaea;
+  color: #1e293b;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -602,29 +601,30 @@
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: white;
+  color: #64748b;
 }
 
 .suggestionTextarea {
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background-color: #f8fafc;
+  border: 1px solid #eaeaea;
+  color: #1e293b;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
   outline: none;
   resize: none;
   min-height: 100px;
+  font-family: inherit;
 }
 
 .suggestionTextarea::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
 }
 
 .submitBtn {
-  background-color: white;
-  color: #ea580c;
-  font-weight: 700;
+  background-color: #1e293b;
+  color: white;
+  font-weight: 600;
   font-size: 14px;
   padding: 12px;
   border-radius: 8px;
@@ -635,7 +635,12 @@
 }
 
 .submitBtn:hover {
-  opacity: 0.9;
+  opacity: 0.85;
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Feedback Inbox */

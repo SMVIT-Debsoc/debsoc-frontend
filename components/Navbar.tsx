@@ -35,7 +35,7 @@ const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const shouldHideNavbar = pathname?.startsWith("/smvitpd");
+    const shouldHideNavbar = pathname?.startsWith("/smvitpd") || pathname?.startsWith("/dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Close mobile menu when route changes
