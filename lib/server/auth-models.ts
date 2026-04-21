@@ -104,6 +104,59 @@ export async function findRoleUserByEmail(email: string): Promise<SessionUser | 
   return null;
 }
 
+export async function findRoleUserById(role: DebsocRole, id: string): Promise<SessionUser | null> {
+  switch (role) {
+    case "TechHead": {
+      const techHead = await prisma.techHead.findUnique({ where: { id } });
+      return techHead
+        ? {
+            id: techHead.id,
+            name: techHead.name,
+            email: techHead.email,
+            role,
+            isVerified: true,
+          }
+        : null;
+    }
+    case "President": {
+      const president = await prisma.president.findUnique({ where: { id } });
+      return president
+        ? {
+            id: president.id,
+            name: president.name,
+            email: president.email,
+            role,
+            isVerified: president.isVerified,
+          }
+        : null;
+    }
+    case "cabinet": {
+      const cabinet = await prisma.cabinet.findUnique({ where: { id } });
+      return cabinet
+        ? {
+            id: cabinet.id,
+            name: cabinet.name,
+            email: cabinet.email,
+            role,
+            isVerified: cabinet.isVerified,
+          }
+        : null;
+    }
+    case "Member": {
+      const member = await prisma.member.findUnique({ where: { id } });
+      return member
+        ? {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role,
+            isVerified: member.isVerified,
+          }
+        : null;
+    }
+  }
+}
+
 export async function ensureRoleUserByEmail(
   email: string,
   fallbackName?: string | null,

@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { ensureRoleUserByEmail } from "@/lib/server/auth-models";
+import { ensureRoleUserByEmail, findRoleUserById } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -67,6 +67,13 @@ export const authOptions: NextAuthOptions = {
 
       if (token.role && token.id) {
         token.role = token.role as DebsocRole;
+
+        const roleUser = await findRoleUserById(token.role, token.id);
+        if (roleUser) {
+          token.name = roleUser.name;
+          token.email = roleUser.email;
+          token.isVerified = roleUser.isVerified;
+        }
       }
 
       return token;

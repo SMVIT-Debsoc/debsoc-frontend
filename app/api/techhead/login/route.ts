@@ -1,10 +1,5 @@
-import { error, ok, parseJson } from "@/lib/server/http";
-import { loginRole } from "@/lib/server/debsoc-service";
+import { error } from "@/lib/server/http";
 
-export async function POST(request: Request) {
-  try {
-    return ok(await loginRole("TechHead", await parseJson<{ email?: string; password?: string }>(request)));
-  } catch (err) {
-    return error(err instanceof Error ? err.message : "Internal server error", 401);
-  }
+export async function POST() {
+  return error("Password login is disabled. Use Google OAuth with NextAuth.", 410);
 }
