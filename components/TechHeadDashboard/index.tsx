@@ -13,10 +13,11 @@ import {
   Loader2,
   RefreshCw,
   CheckCircle2,
-  XCircle,
-  Clock
+  Clock,
+  LogOut
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { signOut } from "next-auth/react";
 
 interface UserRecord {
   id: string;
@@ -200,9 +201,16 @@ export default function TechHeadDashboard() {
             </div>
             <button
               onClick={fetchData}
-              className="p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95"
+              className="p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white"
             >
               <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95"
+              title="Log Out"
+            >
+              <LogOut size={18} />
             </button>
           </div>
         </header>

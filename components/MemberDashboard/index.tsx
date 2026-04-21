@@ -22,6 +22,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Image from 'next/image';
+import { signOut } from 'next-auth/react';
 
 export default function MemberDashboard() {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -74,7 +75,7 @@ export default function MemberDashboard() {
             <span className={styles.profileName}>Alex Morgan</span>
             <span className={styles.profileRole}>Active Member</span>
           </div>
-          <button className={styles.logoutBtn} title="Log out">
+          <button onClick={() => signOut({ callbackUrl: "/login" })} className={styles.logoutBtn} title="Log out">
             <LogOut size={18} />
           </button>
         </div>
