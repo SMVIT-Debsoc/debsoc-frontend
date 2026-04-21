@@ -1,9 +1,9 @@
 "use client";
 
 import React, {useEffect, useRef, useState} from "react";
-import {motion} from "framer-motion";
+import {motion, AnimatePresence} from "framer-motion";
 import toast, {Toaster} from "react-hot-toast";
-import {Clock3, Sparkles, ShieldAlert, Timer, Gauge} from "lucide-react";
+import {Clock3, Sparkles, ShieldAlert, Timer, Gauge, ChevronDown} from "lucide-react";
 
 type ClockType = "" | "Timer" | "Stopwatch";
 
@@ -16,22 +16,124 @@ function formatClock(ms: number) {
     const seconds = Math.floor((ms % 60000) / 1000)
         .toString()
         .padStart(2, "0");
-    const centiseconds = Math.floor((ms % 1000) / 10)
+    const msDigits = Math.floor((ms % 1000) / 10)
         .toString()
         .padStart(2, "0");
 
-    return `${minutes}:${seconds}:${centiseconds}`;
+    return `${minutes}:${seconds}:${msDigits}`;
+}
+
+
+function CustomDropdown({
+    label,
+    value,
+    options,
+    onChange,
+    placeholder,
+}: {
+    label: string;
+    value: string;
+    options: string[];
+    onChange: (val: string) => void;
+    placeholder: string;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () =>
+            document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative space-y-2" ref={dropdownRef}>
+            <label className="text-[10px] sm:text-xs uppercase tracking-[0.22em] text-zinc-400">
+                {label}
+            </label>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full flex items-center justify-between rounded-xl border border-white/10 bg-zinc-900/40 px-4 py-3.5 text-white backdrop-blur-md transition-all hover:bg-white/5 active:scale-[0.98] outline-none group ${
+                    isOpen ? "ring-2 ring-white/20 border-white/20" : ""
+                }`}
+            >
+                <span
+                    className={`text-sm sm:text-base font-medium transition-colors ${
+                        value ? "text-white" : "text-zinc-500"
+                    }`}
+                >
+                    {value || placeholder}
+                </span>
+                <ChevronDown
+                    className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${
+                        isOpen ? "rotate-180" : ""
+                    }`}
+                />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{opacity: 0, y: 10, scale: 0.95}}
+                        animate={{opacity: 1, y: 0, scale: 1}}
+                        exit={{opacity: 0, y: 10, scale: 0.95}}
+                        transition={{duration: 0.2, ease: "easeOut"}}
+                        className="absolute z-50 w-full mt-2 rounded-xl border border-white/10 bg-zinc-900/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    >
+                        <div className="py-1">
+                            {options.map((opt) => (
+                                <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={() => {
+                                        onChange(opt);
+                                        setIsOpen(false);
+                                    }}
+                                    className={`w-full text-left px-4 py-3 text-sm sm:text-base transition-all hover:bg-white/10 ${
+                                        value === opt
+                                            ? "text-emerald-400 bg-white/5"
+                                            : "text-zinc-300"
+                                    }`}
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
 }
 
 export default function DebateTimerPanel() {
     const [debateStyle, setDebateStyle] = useState("");
     const [clockType, setClockType] = useState<ClockType>("");
     const [running, setRunning] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const [timeMs, setTimeMs] = useState(TIMER_START_MS);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+
+    useEffect(() => {
         setRunning(false);
+        setHasStarted(false);
         setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
     }, [clockType]);
 
@@ -69,6 +171,7 @@ export default function DebateTimerPanel() {
     const handleStart = () => {
         if (!clockType) return;
         setRunning(true);
+        setHasStarted(true);
         toast.success("Time started!");
     };
 
@@ -81,6 +184,7 @@ export default function DebateTimerPanel() {
     const handleReset = () => {
         if (!clockType) return;
         setRunning(false);
+        setHasStarted(false);
         setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
         toast("Timer reset!", {
             icon: "🔄",
@@ -127,7 +231,7 @@ export default function DebateTimerPanel() {
 
     return (
         <>
-            <div className="w-full max-w-6xl rounded-2xl sm:rounded-3xl border border-white/10 bg-black/25 backdrop-blur-2xl p-3 sm:p-5 md:p-8 lg:p-10 text-white shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
+            <div className="w-full max-w-6xl mx-auto rounded-2xl sm:rounded-3xl border border-white/10 bg-black/25 backdrop-blur-2xl p-3 sm:p-5 md:p-8 lg:p-10 text-white shadow-[0_30px_100px_rgba(0,0,0,0.55)]">
                 <div className="grid gap-4 sm:gap-6 md:grid-cols-[minmax(260px,360px)_minmax(0,1fr)] lg:grid-cols-[400px_minmax(0,1fr)]">
                     <motion.aside
                         initial={{opacity: 0, x: -20}}
@@ -149,61 +253,55 @@ export default function DebateTimerPanel() {
                             </p>
                         </div>
 
-                        <div className="grid gap-4">
-                            <div className="space-y-2">
-                                <label className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-                                    Debate Style
-                                </label>
-                                <select
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900/85 px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
-                                    value={debateStyle}
-                                    onChange={(e) =>
-                                        setDebateStyle(e.target.value)
-                                    }
+                        <AnimatePresence initial={false}>
+                            {(!isMobile || !hasStarted) && (
+                                <motion.div
+                                    initial={{opacity: 0, height: 0}}
+                                    animate={{opacity: 1, height: "auto"}}
+                                    exit={{opacity: 0, height: 0}}
+                                    transition={{
+                                        duration: 0.4,
+                                        ease: [0.33, 1, 0.68, 1],
+                                    }}
+                                    className="space-y-4 sm:space-y-6 overflow-hidden"
                                 >
-                                    <option value="" disabled>
-                                        Choose here
-                                    </option>
-                                    <option value="Asian">Asian</option>
-                                    <option value="British">British</option>
-                                </select>
-                            </div>
+                                    <div className="grid gap-5">
+                                        <CustomDropdown
+                                            label="Debate Style"
+                                            value={debateStyle}
+                                            options={["Asian", "British"]}
+                                            onChange={setDebateStyle}
+                                            placeholder="Choose here"
+                                        />
 
-                            <div className="space-y-2">
-                                <label className="text-xs uppercase tracking-[0.22em] text-zinc-400">
-                                    Clock Type
-                                </label>
-                                <select
-                                    className="w-full rounded-xl border border-white/10 bg-zinc-900/85 px-3 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/20"
-                                    value={clockType}
-                                    onChange={(e) =>
-                                        setClockType(
-                                            e.target.value as ClockType,
-                                        )
-                                    }
-                                >
-                                    <option value="" disabled>
-                                        Choose here
-                                    </option>
-                                    <option value="Stopwatch">Stopwatch</option>
-                                    <option value="Timer">Timer</option>
-                                </select>
-                            </div>
-                        </div>
+                                        <CustomDropdown
+                                            label="Clock Type"
+                                            value={clockType}
+                                            options={["Stopwatch", "Timer"]}
+                                            onChange={(val) =>
+                                                setClockType(val as ClockType)
+                                            }
+                                            placeholder="Choose here"
+                                        />
+                                    </div>
 
-                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
-                            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                                Current Setup
-                            </p>
-                            <p className="text-zinc-100 font-medium">
-                                {debateStyle
-                                    ? `${debateStyle} parliamentary debate`
-                                    : "Select a debate style"}
-                            </p>
-                            <p className="text-zinc-400 text-sm">
-                                {clockType || "Clock type not selected"}
-                            </p>
-                        </div>
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-2">
+                                        <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                                            Current Setup
+                                        </p>
+                                        <p className="text-zinc-100 font-medium">
+                                            {debateStyle
+                                                ? `${debateStyle} parliamentary debate`
+                                                : "Select a debate style"}
+                                        </p>
+                                        <p className="text-zinc-400 text-sm">
+                                            {clockType ||
+                                                "Clock type not selected"}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         <div className="grid grid-cols-3 gap-2 sm:gap-3">
                             <button
@@ -265,24 +363,24 @@ export default function DebateTimerPanel() {
                             </div>
                         </div>
 
-                        <div className="rounded-xl sm:rounded-2xl border border-white/10 bg-black/40 p-4 sm:p-6 md:p-8 text-center">
+                        <div className="flex-1 flex flex-col justify-center rounded-xl sm:rounded-3xl border border-white/5 bg-black/40 p-6 sm:p-10 md:p-12 lg:p-16 text-center min-h-[300px] sm:min-h-[400px]">
                             <motion.div
                                 key={
                                     clockType === "Timer" && timeMs === 0
                                         ? "up"
                                         : "clock"
                                 }
-                                initial={{opacity: 0, y: 6}}
-                                animate={{opacity: 1, y: 0}}
-                                transition={{duration: 0.25}}
-                                className="font-mono text-3xl sm:text-4xl md:text-5xl lg:text-7xl tracking-[0.08em] text-white"
+                                initial={{opacity: 0, scale: 0.9}}
+                                animate={{opacity: 1, scale: 1}}
+                                transition={{duration: 0.4, ease: "easeOut"}}
+                                className="font-mono text-5xl sm:text-7xl md:text-8xl lg:text-8xl font-light tracking-tighter text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]"
                             >
                                 {clockType === "Timer" && timeMs === 0
                                     ? "Time's Up!"
                                     : formatClock(timeMs)}
                             </motion.div>
-                            <p className="mt-2 sm:mt-4 text-[10px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.24em] text-zinc-500">
-                                Minutes : Seconds : Centiseconds
+                            <p className="mt-6 sm:mt-10 text-[10px] sm:text-xs uppercase tracking-[0.3em] font-medium text-zinc-500 opacity-60">
+                                Minutes : Seconds : Milliseconds
                             </p>
                         </div>
 
