@@ -331,18 +331,38 @@ export default function EquityPolicy() {
                             </h2>
                         </div>
 
-                        <div className="text-white/70 leading-relaxed text-base sm:text-lg">
-                            <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                                2.1 Applicability
-                            </h3>
-                            <p className="p-3 sm:p-5 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05]">
-                                This Policy applies to all persons involved with
-                                the SMVIT Debating Society, including members,
-                                adjudicators, trainers, guest speakers,
-                                committee members, volunteers, and external
-                                participants.
-                            </p>
+                        <div className="text-white/70 leading-relaxed text-base sm:text-lg space-y-6 sm:space-y-10">
+                            <div>
+                                <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                    2.1 Applicability
+                                </h3>
+                                <p className="p-3 sm:p-5 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05]">
+                                    This Policy applies to all persons involved with
+                                    the SMVIT Debating Society, including members,
+                                    adjudicators, trainers, guest speakers,
+                                    committee members, volunteers, and external
+                                    participants.
+                                </p>
+                            </div>
+
+                            <div>
+                                <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                    2.2 Temporal and Situational scope
+                                </h3>
+                                <p className="mb-4">
+                                    The provisions of this Policy shall be deemed to apply to any and all situations, occurrences,
+                                    events, and communications where:
+                                </p>
+                                <ul className="list-disc list-inside space-y-2 text-white/60 text-sm sm:text-base ml-2">
+                                    <li>The activity is conducted, facilitated, or endorsed by the Society;</li>
+                                    <li>The individual is participating in an event, meeting, or initiative organised by the Society, whether in-person or virtual;</li>
+                                    <li>The context pertains to the Society’s internal operations;</li>
+                                    <li>Communication between members or with third parties occurs within Society-related platforms;</li>
+                                    <li>The nature of the interaction is reasonably construed to fall under the purview of SMVIT DebSoc, even where not conducted within formal timeframes or venues.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
@@ -359,36 +379,139 @@ export default function EquityPolicy() {
                             </h2>
                         </div>
 
-                        <div className="text-white/70 leading-relaxed text-base sm:text-lg">
-                            <p className="mb-4 sm:mb-8">
-                                All individuals subject to this Policy shall
-                                refrain from engaging in any form of conduct
-                                that constitutes a breach of equity principles.
-                                Prohibited behaviors include, but are not
-                                limited to:
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                                {[
-                                    "Harassment",
-                                    "Bullying",
-                                    "Discrimination",
-                                    "Intimidation",
-                                    "Sexual Harassment",
-                                    "Vilification",
-                                    "Victimisation",
-                                    "Use of Inflammatory Language",
-                                    "Technology Misuse (e.g. unconsented recording)",
-                                ].map((item, i) => (
-                                    <div
-                                        key={i}
-                                        className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05] hover:bg-white/4 transition-colors"
-                                    >
-                                        <CircleAlert className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
-                                        <span className="text-sm sm:text-base text-white/80">
-                                            {item}
-                                        </span>
-                                    </div>
-                                ))}
+                        <div className="text-white/70 leading-relaxed text-base sm:text-lg space-y-6 sm:space-y-10">
+                            <div>
+                                <p className="mb-4 sm:mb-8">
+                                    All individuals subject to this Policy shall refrain from engaging in any form of conduct that constitutes a breach of equity principles. Prohibited behaviors include, but are not limited to:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                                    {[
+                                        "Harassment",
+                                        "Bullying",
+                                        "Discrimination",
+                                        "Intimidation",
+                                        "Sexual Harassment",
+                                        "Vilification",
+                                        "Victimisation",
+                                        "Use of Inflammatory Language",
+                                        "Technology Misuse (e.g. unconsented recording)",
+                                    ].map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05] hover:bg-white/4 transition-colors"
+                                        >
+                                            <CircleAlert className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400 shrink-0" />
+                                            <span className="text-sm sm:text-base text-white/80">
+                                                {item}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                    3.2 Protected Attributes
+                                </h3>
+                                <p className="mb-4">
+                                    For the purposes of this Policy, “protected attributes” shall include, but not be limited to, the following:
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                                    {[
+                                        "Race, caste, ethnicity, or descent",
+                                        "Gender identity and expression",
+                                        "Sexual orientation",
+                                        "Disability (visible or invisible, temporary or permanent)",
+                                        "Religion or religious practice",
+                                        "Age",
+                                        "Language status or proficiency",
+                                        "Marital or relationship status",
+                                        "Socio-economic status",
+                                        "Institutional affiliation or debating experience",
+                                        "Any other personal characteristic that undermines human dignity"
+                                    ].map((item, i) => (
+                                        <div key={i} className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05] hover:bg-white/4 transition-colors">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-white/40 shrink-0" />
+                                            <span className="text-sm sm:text-base text-white/80">{item}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section 4 */}
+                    <div className="p-4 sm:p-6 md:p-10 rounded-2xl sm:rounded-3xl bg-white/2 border border-white/[0.05] backdrop-blur-sm">
+                        <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-8 pb-4 sm:pb-6 border-b border-white/8">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shrink-0">
+                                <span className="text-lg sm:text-xl font-bold text-emerald-300">
+                                    4
+                                </span>
+                            </div>
+                            <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-white/90">
+                                Complaint Procedures
+                            </h2>
+                        </div>
+
+                        <div className="space-y-6 sm:space-y-10 text-white/70 leading-relaxed text-base sm:text-lg">
+                            <div>
+                                <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                    4.1 Informal Resolution Mechanism
+                                </h3>
+                                <p className="mb-4">
+                                    The informal resolution mechanism is designed to address concerns that may not require a full investigative process but nonetheless merit attention to prevent escalation or repetition. It is a voluntary, non-adversarial, and educationally-oriented process aimed at achieving mutual understanding, accountability, and closure.
+                                </p>
+                                <p className="mb-3 font-medium text-white/80">
+                                    Upon receiving a concern informally—verbally or in writing—any Equity Officer may initiate the following steps:
+                                </p>
+                                <ul className="space-y-2 text-white/60 text-sm sm:text-base ml-2">
+                                    {[
+                                        "Initial Confidential Discussion",
+                                        "Consultation with Respondent",
+                                        "Restorative Dialogue",
+                                        "Educational Measures",
+                                        "Private Resolution with Monitoring"
+                                    ].map((step, idx) => (
+                                        <li key={idx} className="flex items-center gap-3">
+                                            <div className="w-1 h-1 rounded-full bg-emerald-400/50" />
+                                            {step}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-base sm:text-lg md:text-xl font-bold text-white/90 mb-3 sm:mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                                    4.2 Formal Complaint Procedures
+                                </h3>
+                                <p className="mb-4">
+                                    Where the conduct in question involves serious harm, repetition, power imbalance, or where informal resolution is inappropriate, the Equity Committee shall invoke the formal complaint procedure, consisting of the following stages:
+                                </p>
+                                <ol className="list-decimal list-inside space-y-2 text-white/60 text-sm sm:text-base ml-2 mb-6">
+                                    <li>Submission and Receipt</li>
+                                    <li>Preliminary Assessment</li>
+                                    <li>Investigation</li>
+                                    <li>Deliberation and findings</li>
+                                    <li>Resolution Measures</li>
+                                </ol>
+                                <div className="p-4 sm:p-5 rounded-lg sm:rounded-xl bg-white/2 border border-white/[0.05]">
+                                    <p className="mb-3 font-medium text-white/80">
+                                        If a breach is found, the resolution may include one or more of the following:
+                                    </p>
+                                    <ul className="flex gap-4 text-white/60 text-sm sm:text-base">
+                                        <li className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                            Restorative Measures
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                            Sanctions
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -124,7 +124,7 @@ export default function Footer() {
                 </div>
 
                 {/* Right: Social & Copyright */}
-                <div className="flex flex-col gap-4 items-start md:items-end">
+                <div className="flex flex-col gap-4 items-start md:items-end w-full md:w-auto">
                     <div className="flex gap-3">
                         {socialIcons.map((social, idx) => (
                             <a

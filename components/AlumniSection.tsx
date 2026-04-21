@@ -100,19 +100,7 @@ export default function AlumniSection({items}: AlumniSectionProps) {
                 </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-14">
-                <div className="mt-14 flex items-center justify-between border-t border-white/10 pt-6">
-                    <p className="text-[10px] uppercase tracking-[0.34em] text-zinc-600">
-                        Archive Count {String(data.length).padStart(2, "0")}
-                    </p>
-                    <div className="inline-flex items-center gap-2 text-zinc-500">
-                        <Sparkles className="h-4 w-4" strokeWidth={1.4} />
-                        <span className="text-[10px] uppercase tracking-[0.24em]">
-                            SMVIT Debsoc
-                        </span>
-                    </div>
-                </div>
-            </div>
+
 
             <style jsx>{`
                 @keyframes alumni-marquee-left {
