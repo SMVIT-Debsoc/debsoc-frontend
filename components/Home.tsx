@@ -484,28 +484,48 @@ export default function HomeClient() {
                         </button>
                     </div>
 
-                    {/* ── Footer links ────────────────────────────────────────── */}
-                    <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-4 md:gap-6 text-xs text-zinc-400 font-light tracking-wider md:gap-6">
-                        <button
-                            onClick={() => {
-                                const el = document.getElementById("team");
-                                if (el) el.scrollIntoView({behavior: "smooth"});
-                            }}
-                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
-                        >
-                            Our Team
-                        </button>
+                    {/* ── Social links ────────────────────────────────────── */}
+                    <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-5 md:gap-6 items-center">
+                        {/* Instagram */}
                         <a
-                            href="#"
-                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white"
+                            href="https://www.instagram.com/smvitdebsoc"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group"
                         >
-                            Upcoming Events
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                                <circle cx="12" cy="12" r="4"/>
+                                <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+                            </svg>
+                            <span className="text-[11px] font-light tracking-wider uppercase underline underline-offset-4 decoration-zinc-600 group-hover:decoration-white transition-colors">Instagram</span>
                         </a>
+                        {/* YouTube */}
                         <a
-                            href="#"
-                            className="hover:text-white transition-colors underline underline-offset-4 decoration-zinc-600 hover:decoration-white hidden md:inline"
+                            href="https://youtube.com/@smvitdebsoc"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group"
                         >
-                            Contact
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+                                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/>
+                            </svg>
+                            <span className="text-[11px] font-light tracking-wider uppercase underline underline-offset-4 decoration-zinc-600 group-hover:decoration-white transition-colors">YouTube</span>
+                        </a>
+                        {/* LinkedIn */}
+                        <a
+                            href="https://linkedin.com/company/smvit-debsoc"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group hidden md:flex"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                                <rect x="2" y="9" width="4" height="12"/>
+                                <circle cx="4" cy="4" r="2"/>
+                            </svg>
+                            <span className="text-[11px] font-light tracking-wider uppercase underline underline-offset-4 decoration-zinc-600 group-hover:decoration-white transition-colors">LinkedIn</span>
                         </a>
                     </div>
 
