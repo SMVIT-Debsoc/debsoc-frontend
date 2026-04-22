@@ -678,17 +678,6 @@ export default function PresidentDashboard() {
                                     <Bell size={24} />
                                     <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
                                 </button>
-                                <button
-                                    onClick={() =>
-                                        document
-                                            .getElementById("log-session-card")
-                                            ?.scrollIntoView({
-                                                behavior: "smooth",
-                                            })
-                                    }
-                                    className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-colors shadow-sm shadow-blue-200"
-                                >
-                                </button>
                             </div>
                         </header>
 
