@@ -4,10 +4,20 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import {motion} from "framer-motion";
 import {Menu, Moon, PenSquare, Search, Send, Sun, X} from "lucide-react";
 
-type LocationPayload = {
-    lat: number;
-    lng: number;
-    label: string;
+export type PlaceRecommendation = {
+  id: string;
+  name: string;
+  address: string;
+  rating: number | null;
+  review_count: number | null;
+  distance_km: number;
+  maps_url: string;
+  image_url: string | null;
+  place_uri: string | null;
+  directions_uri: string | null;
+  reviews_uri: string | null;
+  photos_uri: string | null;
+  why_recommended: string;
 };
 
 type ChatMessage = {
@@ -15,7 +25,8 @@ type ChatMessage = {
     role: "user" | "ai";
     text: string;
     timestamp: string;
-    location?: LocationPayload;
+    places?: PlaceRecommendation[];
+    access_state?: ChatResponse["access_state"];
 };
 
 type Conversation = {
@@ -24,102 +35,72 @@ type Conversation = {
     title: string;
 };
 
+type ChatResponse = {
+    reply: string;
+    places: PlaceRecommendation[];
+    session_expires_in_seconds: number;
+    session_warning: string | null;
+    cooldown_seconds_remaining: number | null;
+    access_state: "active_window" | "cooldown" | "blocked_scope" | null;
+};
+
+type ChatErrorResponse = {
+    error?: string;
+    request_id?: string;
+};
+
+const INITIAL_CONVERSATION_ID = "pending-session";
+const SESSION_STORAGE_KEY = "pd_virtual_assistant_session_id";
+
 const initialConversations: Conversation[] = [
     {
-        id: "c1",
-        preview: "Map-enabled summary with inline location card",
-        title: "Paris landmarks",
-    },
-    {
-        id: "c2",
-        preview: "Regional serviceability overview",
-        title: "Delivery radius analysis",
-    },
-    {
-        id: "c3",
-        preview: "Luxury hospitality recommendations",
-        title: "Client concierge notes",
-    },
+        id: INITIAL_CONVERSATION_ID,
+        preview: "New conversation",
+        title: "Current Session",
+    }
 ];
 
 const initialMessages: Record<string, ChatMessage[]> = {
-    c1: [
-        {
-            id: "m1",
-            role: "ai",
-            text: "Welcome back. I can help with travel planning, city intelligence, and place-based answers with live location cards.",
-            timestamp: "09:41",
-        },
-        {
-            id: "m2",
-            role: "user",
-            text: "Show me where the Eiffel Tower is and give me a quick summary.",
-            timestamp: "09:42",
-        },
-        {
-            id: "m3",
-            role: "ai",
-            text: "The Eiffel Tower is located on the Champ de Mars in Paris. I've attached its exact position below so the location sits directly in the conversation flow.",
-            timestamp: "09:42",
-            location: {
-                lat: 48.8584,
-                lng: 2.2945,
-                label: "Eiffel Tower",
-            },
-        },
-    ],
-    c2: [
-        {
-            id: "m4",
-            role: "ai",
-            text: "I can help analyze delivery coverage, travel times, and handoff density for your service zones.",
-            timestamp: "11:08",
-        },
-        {
-            id: "m5",
-            role: "user",
-            text: "Which Manhattan area looks best for a premium 30-minute delivery pilot?",
-            timestamp: "11:09",
-        },
-        {
-            id: "m6",
-            role: "ai",
-            text: "Midtown is the strongest pilot zone because it gives you dense demand, predictable routing, and strong landmark visibility for launch operations.",
-            timestamp: "11:10",
-            location: {
-                lat: 40.7549,
-                lng: -73.984,
-                label: "Midtown Manhattan",
-            },
-        },
-    ],
-    c3: [
-        {
-            id: "m7",
-            role: "ai",
-            text: "This conversation is focused on white-glove hospitality recommendations and guest-ready neighborhood notes.",
-            timestamp: "14:16",
-        },
-        {
-            id: "m8",
-            role: "user",
-            text: "Prepare a refined shortlist for a client staying near Mayfair.",
-            timestamp: "14:17",
-        },
-        {
-            id: "m9",
-            role: "ai",
-            text: "I would start with Claridge's for classic discretion, Mount St. Restaurant for a polished dinner setting, and Connaught Bar for a strong late-evening close.",
-            timestamp: "14:18",
-        },
-    ],
+    [INITIAL_CONVERSATION_ID]: [],
 };
 
-const cannedLocation: LocationPayload = {
-    lat: 40.7484,
-    lng: -73.9857,
-    label: "Empire State Building",
-};
+function createSessionId() {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+        return crypto.randomUUID();
+    }
+
+    return `smvitpd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function sendChat(sessionId: string, message: string): Promise<ChatResponse> {
+    const response = await fetch("/api/smvitpd/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, message }),
+    });
+
+    const data = (await response.json()) as ChatResponse | ChatErrorResponse;
+
+    if (!response.ok) {
+        const retryAfter = response.headers.get("Retry-After");
+        const suffix = retryAfter ? ` Try again in ${retryAfter} seconds.` : "";
+        throw new Error(`${"error" in data && data.error ? data.error : `HTTP ${response.status}`}${suffix}`);
+    }
+
+    return data as ChatResponse;
+}
+
+async function resetChatSession(sessionId: string) {
+    try {
+        await fetch("/api/smvitpd/session-reset", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId }),
+        });
+    } catch {
+        // The local conversation can still be removed if backend reset is unavailable.
+    }
+}
 
 function timeStamp() {
     return new Date().toLocaleTimeString([], {
@@ -238,7 +219,8 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
                             rx="1.3"
                             ry="1.9"
                             fill={darkMode ? "#1C1412" : "#231917"}
-                            animate={{ry: [1.9, 0.45, 1.9]}}
+                            style={{ transformOrigin: "20.5px 22.5px" }}
+                            animate={{scaleY: [1, 0.25, 1]}}
                             transition={{
                                 duration: 2.2,
                                 repeat: Number.POSITIVE_INFINITY,
@@ -252,7 +234,8 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
                             rx="1.3"
                             ry="1.9"
                             fill={darkMode ? "#1C1412" : "#231917"}
-                            animate={{ry: [1.9, 0.45, 1.9]}}
+                            style={{ transformOrigin: "27.5px 22.5px" }}
+                            animate={{scaleY: [1, 0.25, 1]}}
                             transition={{
                                 duration: 2.2,
                                 repeat: Number.POSITIVE_INFINITY,
@@ -266,13 +249,8 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
                             stroke={darkMode ? "#8C4A48" : "#A05855"}
                             strokeWidth="1.8"
                             strokeLinecap="round"
-                            animate={{
-                                d: [
-                                    "M21 29C22.6 30.2 25.4 30.2 27 29",
-                                    "M20.6 29.5C22.8 27.6 25.2 27.6 27.4 29.5",
-                                    "M21 29C22.6 30.2 25.4 30.2 27 29",
-                                ],
-                            }}
+                            style={{ transformOrigin: "24px 29px" }}
+                            animate={{ scaleY: [1, 0.6, 1], scaleX: [1, 1.08, 1] }}
                             transition={{
                                 duration: 1.6,
                                 repeat: Number.POSITIVE_INFINITY,
@@ -320,60 +298,32 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
     );
 }
 
-function MapPreview({
-    darkMode,
-    location,
-}: {
-    darkMode: boolean;
-    location: LocationPayload;
-}) {
-    return (
-        <div
-            className={`mt-3 overflow-hidden rounded-[24px] border ${
-                darkMode
-                    ? "border-white/10 bg-[#1c1715]"
-                    : "border-[#efe3d8] bg-white"
-            }`}
-        >
-            <div
-                className={`flex items-center gap-3 px-4 py-3 ${
-                    darkMode
-                        ? "border-b border-white/8"
-                        : "border-b border-black/5"
-                }`}
-            >
-                <div className="rounded-2xl bg-[#7a1111] p-2 text-white">
-                    <Search size={16} />
-                </div>
-                <div>
-                    <p
-                        className={`text-sm font-semibold ${darkMode ? "text-[#fff1ea]" : "text-[#171717]"}`}
-                    >
-                        {location.label}
-                    </p>
-                    <p
-                        className={`text-xs uppercase tracking-[0.18em] ${darkMode ? "text-[#f1d7cb]/48" : "text-[#171717]/45"}`}
-                    >
-                        {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                    </p>
-                </div>
-            </div>
-            <div
-                className={`relative h-56 w-full overflow-hidden ${darkMode ? "bg-[#231c1a]" : "bg-[#f5efe8]"}`}
-            >
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.07)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)] bg-[size:32px_32px]" />
-                <div className="absolute inset-0 opacity-70">
-                    <div className="absolute left-[8%] top-[18%] h-2 w-[84%] rotate-[18deg] rounded-full bg-[#d2b26d]/80" />
-                    <div className="absolute left-[10%] top-[54%] h-2 w-[72%] rotate-[-12deg] rounded-full bg-[#86a9d8]/80" />
-                    <div className="absolute left-[24%] top-[36%] h-2 w-[52%] rotate-[2deg] rounded-full bg-[#d8d089]/80" />
-                    <div className="absolute left-[18%] top-[68%] h-2 w-[58%] rotate-[24deg] rounded-full bg-[#87c98c]/80" />
-                </div>
-                <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#7a1111] ring-8 ring-[#7a1111]/20">
-                    <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
-                </div>
-            </div>
-        </div>
-    );
+function PlaceCard({ place, darkMode }: { place: PlaceRecommendation; darkMode: boolean }) {
+  return (
+    <article className={`mt-3 overflow-hidden rounded-[24px] border ${darkMode ? "border-white/10 bg-[#1c1715]" : "border-[#efe3d8] bg-white"}`}>
+      {place.image_url ? (
+        <img src={place.image_url} alt={place.name} loading="lazy" className="h-48 w-full object-cover" />
+      ) : (
+        <div aria-label="No place photo available" className={`h-48 w-full ${darkMode ? "bg-[#231c1a]" : "bg-[#f5efe8]"}`} />
+      )}
+      <div className={`p-4 ${darkMode ? "text-[#fff1ea]" : "text-[#171717]"}`}>
+         <h3 className="text-lg font-semibold">{place.name}</h3>
+         <p className="mt-1 text-sm opacity-80">{place.address}</p>
+         <p className="mt-2 text-sm opacity-70">
+            {place.rating !== null ? `${place.rating.toFixed(1)} rating` : "Rating unavailable"}
+            {place.review_count !== null ? ` | ${place.review_count} reviews` : ""}
+            {` | ${place.distance_km.toFixed(1)} km`}
+         </p>
+         <p className="mt-2 text-sm italic opacity-90">{place.why_recommended}</p>
+         <div className="mt-4 flex flex-wrap gap-2 text-sm">
+            <a href={place.maps_url} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Open in Maps</a>
+            {place.directions_uri ? <a href={place.directions_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Directions</a> : null}
+            {place.reviews_uri ? <a href={place.reviews_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Reviews</a> : null}
+            {place.photos_uri ? <a href={place.photos_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Photos</a> : null}
+         </div>
+      </div>
+    </article>
+  );
 }
 
 function MessageBubble({
@@ -409,14 +359,11 @@ function MessageBubble({
                         {message.text}
                     </p>
                 </div>
-                {message.location ? (
-                    <MapPreview
-                        darkMode={darkMode}
-                        location={message.location}
-                    />
-                ) : null}
+                {message.places?.map(place => (
+                    <PlaceCard key={place.id} darkMode={darkMode} place={place} />
+                ))}
                 <div
-                    className={`mt-2 px-1 text-xs uppercase tracking-[0.2em] ${
+                    className={`mt-2 flex items-center justify-between px-1 text-xs uppercase tracking-[0.2em] ${
                         isUser
                             ? darkMode
                                 ? "text-[#f1d7cb]/56"
@@ -426,7 +373,12 @@ function MessageBubble({
                               : "text-[#171717]/35"
                     }`}
                 >
-                    {message.timestamp}
+                    <span>{message.timestamp}</span>
+                    {message.access_state === "blocked_scope" ? (
+                        <span className="text-red-500 font-semibold ml-2">Blocked</span>
+                    ) : message.access_state === "cooldown" ? (
+                        <span className="text-orange-500 font-semibold ml-2">Cooldown</span>
+                    ) : null}
                 </div>
             </div>
         </motion.div>
@@ -615,6 +567,37 @@ export default function SMVITPDChatPage() {
         if (savedTheme === "dark") {
             setDarkMode(true);
         }
+
+        const savedSessionId =
+            window.localStorage.getItem(SESSION_STORAGE_KEY) ?? createSessionId();
+        window.localStorage.setItem(SESSION_STORAGE_KEY, savedSessionId);
+
+        setConversations((current) =>
+            current.map((conversation) =>
+                conversation.id === INITIAL_CONVERSATION_ID
+                    ? {...conversation, id: savedSessionId}
+                    : conversation,
+            ),
+        );
+        setConversationState((current) => {
+            if (!current[INITIAL_CONVERSATION_ID]) return current;
+
+            const next = {
+                ...current,
+                [savedSessionId]: current[INITIAL_CONVERSATION_ID],
+            };
+            delete next[INITIAL_CONVERSATION_ID];
+            return next;
+        });
+        setIsTyping((current) => {
+            const next = {
+                ...current,
+                [savedSessionId]: current[INITIAL_CONVERSATION_ID] ?? false,
+            };
+            delete next[INITIAL_CONVERSATION_ID];
+            return next;
+        });
+        setActiveConversationId(savedSessionId);
         setIsThemeHydrated(true);
     }, []);
 
@@ -670,7 +653,7 @@ export default function SMVITPDChatPage() {
     );
 
     const createConversationRecord = (count: number) => {
-        const id = `c${Date.now()}`;
+        const id = createSessionId();
         return {
             conversation: {
                 id,
@@ -685,6 +668,7 @@ export default function SMVITPDChatPage() {
         const {conversation, id} = createConversationRecord(
             conversations.length + 1,
         );
+        window.localStorage.setItem(SESSION_STORAGE_KEY, id);
         setConversations((current) => [conversation, ...current]);
         setConversationState((current) => ({
             ...current,
@@ -698,7 +682,13 @@ export default function SMVITPDChatPage() {
         setSidebarOpen(false);
     };
 
+    const handleConversationSelect = (conversationId: string) => {
+        window.localStorage.setItem(SESSION_STORAGE_KEY, conversationId);
+        setActiveConversationId(conversationId);
+    };
+
     const handleDeleteConversation = (conversationId: string) => {
+        void resetChatSession(conversationId);
         const remaining = conversations.filter(
             (conversation) => conversation.id !== conversationId,
         );
@@ -709,6 +699,7 @@ export default function SMVITPDChatPage() {
 
         if (remaining.length === 0) {
             const {conversation, id} = createConversationRecord(1);
+            window.localStorage.setItem(SESSION_STORAGE_KEY, id);
             setConversations([conversation]);
             setConversationState({[id]: []});
             setIsTyping({[id]: false});
@@ -729,15 +720,17 @@ export default function SMVITPDChatPage() {
         });
 
         if (activeConversationId === conversationId) {
+            window.localStorage.setItem(SESSION_STORAGE_KEY, remaining[0].id);
             setActiveConversationId(remaining[0].id);
         }
     };
 
-    const handleSend = () => {
+    const handleSend = async () => {
         const trimmed = value.trim();
         if (!trimmed) return;
 
         const conversationId = activeConversationId;
+        window.localStorage.setItem(SESSION_STORAGE_KEY, conversationId);
         const userMessage: ChatMessage = {
             id: crypto.randomUUID(),
             role: "user",
@@ -773,18 +766,18 @@ export default function SMVITPDChatPage() {
             textareaRef.current.style.height = "54px";
         }
 
-        typingTimer.current = window.setTimeout(() => {
-            const mentionsMap = /where|map|locat|coordinate|near/i.test(
-                trimmed,
-            );
+        try {
+            const data = await sendChat(conversationId, trimmed);
+
             const aiMessage: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: "ai",
-                text: mentionsMap
-                    ? "I found a relevant place and embedded it directly in the thread so you can inspect it without leaving the conversation."
-                    : "Here's a polished assistant reply. You can wire this handler to your backend or model endpoint and keep the exact same UI structure.",
+                text: data.session_warning
+                    ? `${data.reply}\n\nSession note: ${data.session_warning}`
+                    : data.reply,
                 timestamp: timeStamp(),
-                location: mentionsMap ? cannedLocation : undefined,
+                places: data.places ?? [],
+                access_state: data.access_state,
             };
 
             setConversationState((current) => ({
@@ -794,11 +787,26 @@ export default function SMVITPDChatPage() {
                     aiMessage,
                 ],
             }));
+        } catch (error) {
+            const errorMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: "ai",
+                text: error instanceof Error ? `Error: ${error.message}` : "An unexpected error occurred.",
+                timestamp: timeStamp(),
+            };
+            setConversationState((current) => ({
+                ...current,
+                [conversationId]: [
+                    ...(current[conversationId] ?? []),
+                    errorMessage,
+                ],
+            }));
+        } finally {
             setIsTyping((current) => ({
                 ...current,
                 [conversationId]: false,
             }));
-        }, 1400);
+        }
     };
 
     return (
@@ -837,7 +845,7 @@ export default function SMVITPDChatPage() {
                         darkMode={darkMode}
                         mobile
                         onClose={() => setSidebarOpen(false)}
-                        onConversationSelect={setActiveConversationId}
+                        onConversationSelect={handleConversationSelect}
                         onDeleteConversation={handleDeleteConversation}
                         onNewConversation={handleNewConversation}
                     />
@@ -850,7 +858,7 @@ export default function SMVITPDChatPage() {
                         activeConversationId={activeConversationId}
                         conversations={conversations}
                         darkMode={darkMode}
-                        onConversationSelect={setActiveConversationId}
+                        onConversationSelect={handleConversationSelect}
                         onDeleteConversation={handleDeleteConversation}
                         onNewConversation={handleNewConversation}
                     />
