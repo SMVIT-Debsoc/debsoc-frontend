@@ -95,12 +95,12 @@ export default function WelcomePopup() {
                   SMVIT PD
                 </h2>
                 <h3 className="text-3xl font-light text-white mb-1 tracking-tight">
-                  Fultung
+                  FULTUNG
                 </h3>
                 <div className="h-[1px] w-8 bg-white/20 mx-auto mb-4" />
                 
                 <p className="text-zinc-400 text-sm font-light mb-8 max-w-[200px] mx-auto leading-relaxed">
-                  Meet your <span className="text-white/80">PD Assistant</span> for optimized society management.
+                  Meet your virtual <span className="text-white/80">PD OC</span> for your queries.
                 </p>
 
                 {/* Action Button */}

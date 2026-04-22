@@ -115,7 +115,7 @@ function timeStamp() {
 }
 
 function EmptyState({darkMode}: {darkMode: boolean}) {
-  const fullText = "Hi! I am Fultung, your virtual PD Assistant.";
+  const fullText = "Hi! I am FULTUNG, your virtual PD Assistant.";
   const [displayText, setDisplayText] = useState("");
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
@@ -299,7 +299,7 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
           <p
             className={`text-sm font-medium ${darkMode ? "text-[#fff1ea]" : "text-[#4d0000]"}`}
           >
-            Fultung is thinking
+            FULTUNG is thinking
           </p>
           <div className="mt-2 flex items-center gap-2">
             {[0, 1, 2].map((index) => (
