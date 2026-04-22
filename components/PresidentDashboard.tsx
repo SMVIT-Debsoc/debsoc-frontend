@@ -55,6 +55,15 @@ type Session = {
     motiontype: string;
     Chair: string;
 };
+type LeaderboardEntry = {
+    id: string;
+    name: string;
+    type: "Member" | "Cabinet";
+    score: number;
+    sessions: number;
+    rank: number;
+};
+type LeaderboardScope = "overall" | "bi-monthly";
 
 const fmtDate = (iso: string) => {
     const d = new Date(iso);
@@ -117,7 +126,13 @@ export default function PresidentDashboard() {
     const [selectedSession, setSelectedSession] = useState<Session | null>(
         null,
     );
-    const [analyticsNotice, setAnalyticsNotice] = useState("");
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [leaderboardScope, setLeaderboardScope] =
+        useState<LeaderboardScope>("overall");
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [leaderboardError, setLeaderboardError] = useState<string | null>(
+        null,
+    );
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isDesktopSidebar, setIsDesktopSidebar] = useState(true);
@@ -240,6 +255,31 @@ export default function PresidentDashboard() {
             setError(err.message || "Connection error.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadLeaderboard = async (scope: LeaderboardScope) => {
+        setLeaderboardLoading(true);
+        setLeaderboardError(null);
+        try {
+            const response = await fetch(
+                `/api/leaderboard${scope === "bi-monthly" ? "?type=bi-monthly" : ""}`,
+            );
+            if (!response.ok) {
+                throw new Error(
+                    await readApiError(response, "Failed to load leaderboard."),
+                );
+            }
+            const data: {leaderboard?: LeaderboardEntry[]} =
+                await response.json();
+            setLeaderboard(data.leaderboard ?? []);
+        } catch (err) {
+            setLeaderboard([]);
+            setLeaderboardError(
+                err instanceof Error ? err.message : "Failed to load leaderboard.",
+            );
+        } finally {
+            setLeaderboardLoading(false);
         }
     };
 
@@ -405,11 +445,6 @@ export default function PresidentDashboard() {
         setSessionModalOpen(true);
     };
 
-    const handleAnalyticsRequest = () => {
-        setAnalyticsNotice("Request received. We will email you a report.");
-        setTimeout(() => setAnalyticsNotice(""), 4000);
-    };
-
     const scrollToMessages = () => {
         document.getElementById("president-messages")?.scrollIntoView({
             behavior: "smooth",
@@ -518,6 +553,7 @@ export default function PresidentDashboard() {
                         onClick={(e) => {
                             e.preventDefault();
                             setActiveTab("Analytics");
+                            loadLeaderboard(leaderboardScope);
                             setIsSidebarOpen(false);
                         }}
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Analytics" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
@@ -1552,30 +1588,145 @@ export default function PresidentDashboard() {
                         )}
                     </div>
                 ) : activeTab === "Analytics" ? (
-                    <div className="max-w-6xl mx-auto space-y-8 text-center py-20">
-                        <BarChart2
-                            className="mx-auto text-slate-200 mb-4"
-                            size={64}
-                        />
-                        <h2 className="text-2xl font-bold text-slate-900">
-                            Advanced Analytics Hub
-                        </h2>
-                        <p className="text-slate-500 max-w-md mx-auto">
-                            This section will include comprehensive data
-                            visualizations of speaker score trends,
-                            participation heatmaps, and competitive rankings.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={handleAnalyticsRequest}
-                            className="mt-8 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-100"
-                        >
-                            Request Custom Report
-                        </button>
-                        {analyticsNotice && (
-                            <p className="text-sm text-emerald-600 font-medium">
-                                {analyticsNotice}
-                            </p>
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">
+                                    Speaker Leaderboard
+                                </h2>
+                                <p className="text-slate-500 text-sm mt-1">
+                                    Rankings based on cumulative speaker scores
+                                    from attendance records.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 p-1 rounded-full border border-slate-200 bg-white w-fit">
+                                {(
+                                    [
+                                        ["overall", "Overall"],
+                                        ["bi-monthly", "Last 60 days"],
+                                    ] as const
+                                ).map(([scope, label]) => (
+                                    <button
+                                        key={scope}
+                                        type="button"
+                                        onClick={() => {
+                                            setLeaderboardScope(scope);
+                                            loadLeaderboard(scope);
+                                        }}
+                                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${leaderboardScope === scope ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </header>
+
+                        {leaderboardLoading ? (
+                            <div className="bg-white rounded-xl border border-slate-200 p-10 flex flex-col items-center gap-3 text-slate-500">
+                                <Loader2
+                                    size={28}
+                                    className="animate-spin text-blue-600"
+                                />
+                                <p className="text-sm font-medium">
+                                    Loading leaderboard...
+                                </p>
+                            </div>
+                        ) : leaderboardError ? (
+                            <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 flex items-center gap-3">
+                                <AlertCircle size={18} />
+                                <p className="text-sm font-medium">
+                                    {leaderboardError}
+                                </p>
+                            </div>
+                        ) : leaderboard.length === 0 ? (
+                            <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-500">
+                                <BarChart2
+                                    size={38}
+                                    className="mx-auto mb-3 text-slate-300"
+                                />
+                                <p className="font-medium">
+                                    No leaderboard data available yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Ranked Debaters
+                                        </p>
+                                        <p className="text-2xl font-bold text-slate-900 mt-2">
+                                            {leaderboard.length}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Top Score
+                                        </p>
+                                        <p className="text-2xl font-bold text-slate-900 mt-2">
+                                            {leaderboard[0]?.score ?? 0}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Top Speaker
+                                        </p>
+                                        <p className="text-lg font-bold text-slate-900 mt-2 truncate">
+                                            {leaderboard[0]?.name ?? "-"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-200">
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Rank
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Name
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Role
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Sessions
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase text-right">
+                                                        Score
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {leaderboard.map((entry) => (
+                                                    <tr
+                                                        key={`${entry.type}-${entry.id}`}
+                                                        className="hover:bg-slate-50"
+                                                    >
+                                                        <td className="py-3 px-4 font-semibold text-slate-700">
+                                                            #{entry.rank}
+                                                        </td>
+                                                        <td className="py-3 px-4 font-medium text-slate-900">
+                                                            {entry.name}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-600">
+                                                            {entry.type}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-600">
+                                                            {entry.sessions}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right font-bold text-slate-900">
+                                                            {entry.score}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 ) : (
