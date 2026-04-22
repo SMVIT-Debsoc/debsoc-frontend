@@ -1,7 +1,6 @@
 import { error, ok, parseJson } from "@/lib/server/http";
 import { requireSessionUser } from "@/lib/server/guards";
 import { prisma } from "@/lib/server/prisma";
-import type { task as TaskModel } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -17,7 +16,8 @@ export async function GET() {
         const tasks = await prisma.task.findMany();
         return ok({
           tasks: tasks.filter(
-            (task: TaskModel) => task.assignedToMemberId === guard.user.id,
+            (task: { assignedToMemberId: string | null }) =>
+              task.assignedToMemberId === guard.user.id,
           ),
         });
       } catch (fallbackError) {
