@@ -213,18 +213,18 @@ const DEPARTMENTS: Department[] = [
         intro: "The content team is responsible for simplifying real world issues and multiple topics into structured topics which enriches the viewers through the knowledge delivered, sharpening their intellectual discourse.",
         icon: <FileText size={16} className="text-zinc-400" />,
         lead: {
-            name: "Anika Gupta",
+            name: "Rishikesh Chandra",
             role: "Content Head",
-            photo: "/media/AnikaGupta.jpg",
+            photo: "/media/RishikeshChandra.jpg",
             isLead: true,
-            linkedin: "https://www.linkedin.com/in/anika-gupta-592010361",
+            linkedin: "https://www.linkedin.com/in/rishikesh-chandra-3a6486334",
         },
         members: [
             {
-                name: "Rishikesh Chandra",
+                name: "Anika Gupta",
                 role: "Content Head",
-                photo: "/media/RishikeshChandra.jpg",
-                linkedin: "https://www.linkedin.com/in/rishikesh-chandra-3a6486334",
+                photo: "/media/AnikaGupta.jpg",
+                linkedin: "https://www.linkedin.com/in/anika-gupta-592010361",
             },
             {
                 name: "Tanmay Shankar",
@@ -721,11 +721,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                     </div>
                 ) : dept.name === "Content Engine" ? (
                     <div className="h-full flex gap-4 md:gap-6">
-                        {/* Left Column: Rishikesh (leads[1]) */}
+                        {/* Left Column: Rishikesh (leads[0]) */}
                         <div className="w-[30%] md:w-[35%] lg:w-[28%] h-full shrink-0">
-                            {leads[1] && (
+                            {leads[0] && (
                                 <MemberCard
-                                    member={leads[1]}
+                                    member={leads[0]}
                                     size="lg"
                                     delay={200}
                                     objectPosition="center"
@@ -735,11 +735,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
 
                         {/* Right Column Group */}
                         <div className="flex-1 h-full flex flex-col gap-4 md:gap-6">
-                            {/* Top Row: Anika (leads[0]) */}
+                            {/* Top Row: Anika (leads[1]) */}
                             <div className="flex-[1.3] min-h-0">
-                                {leads[0] && (
+                                {leads[1] && (
                                     <MemberCard
-                                        member={leads[0]}
+                                        member={leads[1]}
                                         size="lg"
                                         delay={250}
                                         objectPosition="center 25%"

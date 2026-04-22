@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { X } from "lucide-react";
 
 export default function WelcomePopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -64,6 +65,15 @@ export default function WelcomePopup() {
               
               {/* Top Accent Line */}
               <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+              {/* Close Button */}
+              <button
+                onClick={handleDismiss}
+                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white transition-colors"
+                aria-label="Close popup"
+              >
+                <X size={16} />
+              </button>
 
               <div className="p-8 pt-10 text-center relative z-10">
                 {/* Assistant Icon / Orb */}
