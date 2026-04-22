@@ -50,7 +50,9 @@ export default function RootLayout({
                     <Suspense fallback={null}>
                         <Navbar />
                     </Suspense>
-                    <WelcomePopup />
+                    <Suspense fallback={null}>
+                        <WelcomePopup />
+                    </Suspense>
                     {children}
                 </Providers>
             </body>

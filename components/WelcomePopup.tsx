@@ -1,19 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function WelcomePopup() {
   const [isVisible, setIsVisible] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Only show on home page
+    if (pathname !== "/") return;
     // Show popup after a short delay
     const timer = setTimeout(() => setIsVisible(true), 1200);
     return () => clearTimeout(timer);
-  }, []);
+  }, [pathname]);
 
   const handleNavigate = () => {
     setIsVisible(false);

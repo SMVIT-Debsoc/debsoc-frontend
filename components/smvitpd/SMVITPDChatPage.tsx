@@ -110,6 +110,23 @@ function timeStamp() {
 }
 
 function EmptyState({darkMode}: {darkMode: boolean}) {
+    const fullText = "Welcome to SMVIT PD";
+    const [displayText, setDisplayText] = useState("");
+    const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+    useEffect(() => {
+        let i = 0;
+        const interval = setInterval(() => {
+            setDisplayText(fullText.slice(0, i + 1));
+            i++;
+            if (i >= fullText.length) {
+                clearInterval(interval);
+                setIsTypingComplete(true);
+            }
+        }, 70);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <motion.div
             initial={{opacity: 0, y: 16}}
@@ -127,15 +144,25 @@ function EmptyState({darkMode}: {darkMode: boolean}) {
                             '"Diostellary Strong", var(--font-geist-sans)',
                     }}
                 >
-                    Welcome to SMVIT PD
+                    {displayText}
+                    {!isTypingComplete && (
+                        <motion.span
+                            animate={{ opacity: [1, 0, 1] }}
+                            transition={{ duration: 0.8, repeat: Infinity }}
+                            className="inline-block w-[2px] h-[1em] ml-1 bg-current align-middle"
+                        />
+                    )}
                 </p>
-                <p
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: isTypingComplete ? 1 : 0 }}
+                    transition={{ duration: 0.5 }}
                     className={`mt-3 text-base leading-7 ${
                         darkMode ? "text-[#f1d7cb]/62" : "text-[#171717]/55"
                     }`}
                 >
                     Feel free to drop your questions!
-                </p>
+                </motion.p>
             </div>
         </motion.div>
     );
