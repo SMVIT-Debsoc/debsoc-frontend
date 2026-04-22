@@ -15,5 +15,9 @@ export default async function PresidentDashboardPage() {
     redirect("/dashboard");
   }
 
+  if (!session.user.isVerified) {
+    redirect("/unverified");
+  }
+
   return <PresidentDashboard />;
 }

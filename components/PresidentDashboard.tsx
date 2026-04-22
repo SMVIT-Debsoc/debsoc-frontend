@@ -145,6 +145,21 @@ export default function PresidentDashboard() {
         };
     }, []);
 
+    const readApiError = async (
+        response: Response,
+        fallback: string,
+    ): Promise<string> => {
+        try {
+            const data = await response.json();
+            if (data && typeof data.message === "string" && data.message.trim()) {
+                return data.message;
+            }
+        } catch {
+            // Ignore parse errors and fallback to default message.
+        }
+        return fallback;
+    };
+
     const loadDashboardData = async () => {
         setLoading(true);
         setError(null);
@@ -158,8 +173,26 @@ export default function PresidentDashboard() {
                     fetch("/api/president/feedback/sent"),
                 ]);
 
-            if (!dashRes.ok || !sessionsRes.ok || !tasksRes.ok) {
-                throw new Error("Failed to synchronize dashboard data.");
+            if (!dashRes.ok) {
+                throw new Error(
+                    await readApiError(
+                        dashRes,
+                        "Failed to load President dashboard roster.",
+                    ),
+                );
+            }
+            if (!sessionsRes.ok) {
+                throw new Error(
+                    await readApiError(
+                        sessionsRes,
+                        "Failed to load President sessions.",
+                    ),
+                );
+            }
+            if (!tasksRes.ok) {
+                throw new Error(
+                    await readApiError(tasksRes, "Failed to load President tasks."),
+                );
             }
 
             const dashData = await dashRes.json();
