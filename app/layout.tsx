@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import {Suspense} from "react";
 import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
+import WelcomePopup from "@/components/WelcomePopup";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -49,6 +50,7 @@ export default function RootLayout({
                     <Suspense fallback={null}>
                         <Navbar />
                     </Suspense>
+                    <WelcomePopup />
                     {children}
                 </Providers>
             </body>
