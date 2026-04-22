@@ -81,6 +81,7 @@ model task {
   name               String
   description        String
   deadline           DateTime
+  completed          Boolean  @default(false)
   assignedToId       String?
   assignedTo         cabinet? @relation("assignedTo", fields: [assignedToId], references: [id])
   assignedToMemberId String?

@@ -508,9 +508,19 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  background: #ffffff;
   margin-top: 2px;
   flex-shrink: 0;
   transition: all 0.2s;
+}
+
+.checkbox:hover {
+  border-color: #3b82f6;
+}
+
+.checkbox:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .checkboxChecked {

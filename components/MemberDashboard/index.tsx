@@ -30,7 +30,7 @@ import {
 import Image from "next/image";
 import {useSession, signOut} from "next-auth/react";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// Types
 type AttendanceRecord = {
     id: string;
     status: "Present" | "Absent" | "Excused";
@@ -56,8 +56,17 @@ type Feedback = {
     createdAt: string;
 };
 type President = {id: string; name: string; email: string};
+type LeaderboardEntry = {
+    id: string;
+    name: string;
+    type: "Member" | "Cabinet";
+    score: number;
+    sessions: number;
+    rank: number;
+};
+type LeaderboardScope = "overall" | "bi-monthly";
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// Helpers
 const fmtDate = (iso: string) => {
     const d = new Date(iso);
     return {
@@ -77,7 +86,7 @@ const fmtDeadline = (dl: string) =>
 const isOverdue = (dl: string) =>
     !new Date(dl).valueOf() || new Date(dl) < new Date();
 
-// ── Animation variants ─────────────────────────────────────────────────────
+// Animation variants
 const fadeUp: Variants = {
     hidden: {opacity: 0, y: 16},
     visible: (i: number = 0) => ({
@@ -101,12 +110,12 @@ const scaleIn: Variants = {
     exit: {scale: 0.96, opacity: 0, transition: {duration: 0.15}},
 };
 
-// ── Custom Dropdown ────────────────────────────────────────────────────────
+// Custom Dropdown
 function CustomSelect({
     options,
     value,
     onChange,
-    placeholder = "Select…",
+    placeholder = "Select...",
 }: {
     options: {id: string; label: string}[];
     value: string;
@@ -248,7 +257,7 @@ function CustomSelect({
     );
 }
 
-// ── Stat Card ──────────────────────────────────────────────────────────────
+// Stat Card
 function StatCard({
     icon: Icon,
     iconClass,
@@ -311,7 +320,7 @@ function StatCard({
     );
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
+// Main Component
 export default function MemberDashboard() {
     const {data: session} = useSession();
     const [activeTab, setActiveTab] = useState("Dashboard");
@@ -320,6 +329,13 @@ export default function MemberDashboard() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [presidents, setPresidents] = useState<President[]>([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [leaderboardScope, setLeaderboardScope] =
+        useState<LeaderboardScope>("overall");
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [leaderboardError, setLeaderboardError] = useState<string | null>(
+        null,
+    );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -329,6 +345,7 @@ export default function MemberDashboard() {
     const [sending, setSending] = useState(false);
     const [messageSent, setMessageSent] = useState(false);
     const [messageError, setMessageError] = useState<string | null>(null);
+    const [updatingTaskIds, setUpdatingTaskIds] = useState<string[]>([]);
     const [isMobile, setIsMobile] = useState(false);
     const [clientNow, setClientNow] = useState<number | null>(null);
 
@@ -349,7 +366,12 @@ export default function MemberDashboard() {
                 fetch("/api/member/feedback"),
                 fetch("/api/member/presidents"),
             ]);
-            if (!attRes.ok || !taskRes.ok || !fbRes.ok || !presRes.ok)
+            if (
+                !attRes.ok ||
+                !taskRes.ok ||
+                !fbRes.ok ||
+                !presRes.ok
+            )
                 throw new Error("Failed to load dashboard data");
             const [attData, taskData, fbData, presData] = await Promise.all([
                 attRes.json(),
@@ -370,9 +392,33 @@ export default function MemberDashboard() {
         }
     }
 
+    async function loadLeaderboard(scope: LeaderboardScope) {
+        setLeaderboardLoading(true);
+        setLeaderboardError(null);
+        try {
+            const response = await fetch(
+                `/api/leaderboard${scope === "bi-monthly" ? "?type=bi-monthly" : ""}`,
+            );
+            if (!response.ok) throw new Error("Failed to load leaderboard");
+            const data = await response.json();
+            setLeaderboard(data.leaderboard ?? []);
+        } catch (e: unknown) {
+            setLeaderboard([]);
+            setLeaderboardError(
+                e instanceof Error ? e.message : "Failed to load leaderboard",
+            );
+        } finally {
+            setLeaderboardLoading(false);
+        }
+    }
+
     useEffect(() => {
         loadAll();
     }, []);
+
+    useEffect(() => {
+        loadLeaderboard(leaderboardScope);
+    }, [leaderboardScope]);
 
     useEffect(() => {
         const updateIsMobile = () => setIsMobile(window.innerWidth < 768);
@@ -407,6 +453,11 @@ export default function MemberDashboard() {
         .slice(0, 5);
 
     const pendingTasks = tasks.filter((t) => !t.completed);
+    const topLeaderboard = leaderboard.slice(0, 10);
+    const currentUserRank = leaderboard.find(
+        (entry) => entry.id === session?.user?.id && entry.type === "Member",
+    );
+    const topScore = leaderboard[0]?.score ?? 0;
 
     async function handleSend(e: React.FormEvent) {
         e.preventDefault();
@@ -436,10 +487,40 @@ export default function MemberDashboard() {
         }
     }
 
+    async function handleTaskToggle(taskId: string, completed: boolean) {
+        const previousTasks = tasks;
+        setUpdatingTaskIds((current) => [...current, taskId]);
+        setTasks((current) =>
+            current.map((task) =>
+                task.id === taskId ? {...task, completed} : task,
+            ),
+        );
+
+        try {
+            const response = await fetch("/api/member/tasks", {
+                method: "PATCH",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({taskId, completed}),
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data?.message || "Failed to update task");
+            }
+        } catch (e) {
+            setTasks(previousTasks);
+            setError(e instanceof Error ? e.message : "Failed to update task");
+        } finally {
+            setUpdatingTaskIds((current) =>
+                current.filter((id) => id !== taskId),
+            );
+        }
+    }
+
     const navItems = [
         {label: "Dashboard", icon: LayoutDashboard},
-        {label: "Schedule", icon: Calendar},
+        {label: "Sessions", icon: Calendar},
         {label: "Tasks", icon: CheckSquare, count: pendingTasks.length},
+        {label: "Leaderboard", icon: Trophy},
         {label: "Feedback", icon: MessageSquare},
         {label: "Suggestions", icon: MessageSquarePlus},
     ];
@@ -466,7 +547,7 @@ export default function MemberDashboard() {
                 )}
             </AnimatePresence>
 
-            {/* ── SIDEBAR ────────────────────────────────────────────────────── */}
+            {/* Sidebar */}
             <motion.aside
                 className={styles.sidebar}
                 initial={false}
@@ -574,13 +655,12 @@ export default function MemberDashboard() {
                 </motion.div>
             </motion.aside>
 
-            {/* ── MAIN ───────────────────────────────────────────────────────── */}
+            {/* Main */}
             <main className={styles.main}>
                 {/* MOBILE TOP BAR */}
                 <div
                     className={styles.mobileTopBar}
                     style={{
-                        display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
                         marginBottom: 20,
@@ -643,7 +723,7 @@ export default function MemberDashboard() {
                                 <Loader2 size={32} color="#6366f1" />
                             </motion.div>
                             <span style={{fontSize: 15}}>
-                                Loading your dashboard…
+                                Loading your dashboard...
                             </span>
                         </motion.div>
                     )}
@@ -701,7 +781,7 @@ export default function MemberDashboard() {
 
                 {/* Dashboard content */}
                 <AnimatePresence mode="wait">
-                    {!loading && !error && activeTab === "Dashboard" && (
+                    {!loading && !error && (activeTab === "Dashboard" || activeTab === "Sessions" || activeTab === "Tasks" || activeTab === "Suggestions" || activeTab === "Feedback") && (
                         <motion.div
                             key="dashboard"
                             initial="hidden"
@@ -713,13 +793,14 @@ export default function MemberDashboard() {
                             }}
                         >
                             {/* Header */}
+                            {activeTab === "Dashboard" && (
                             <motion.header
                                 variants={fadeUp}
                                 className={styles.header}
                             >
                                 <div>
                                     <h1 className={styles.greeting}>
-                                        Welcome back, {firstName}! 👋
+                                        Welcome back, {firstName}!
                                     </h1>
                                     <p className={styles.subtitle}>
                                         Here's your attendance overview for this
@@ -743,13 +824,15 @@ export default function MemberDashboard() {
                                         </span>
                                         <Trophy size={15} />
                                         <span>
-                                            {rate}% — {rateLabel}
+                                            {rate}% - {rateLabel}
                                         </span>
                                     </motion.div>
                                 )}
                             </motion.header>
+                            )}
 
                             {/* Stats */}
+                            {activeTab === "Dashboard" && (
                             <motion.div
                                 variants={fadeUp}
                                 className={styles.statsGrid}
@@ -790,15 +873,26 @@ export default function MemberDashboard() {
                                     progress={rate}
                                 />
                             </motion.div>
+                            )}
 
                             {/* Content grid */}
                             <motion.div
                                 variants={fadeUp}
                                 className={styles.contentGrid}
+                                style={{
+                                    gridTemplateColumns:
+                                        activeTab === "Dashboard"
+                                            ? undefined
+                                            : "1fr",
+                                }}
                             >
                                 {/* Left */}
+                                {(activeTab === "Dashboard" ||
+                                    activeTab === "Sessions" ||
+                                    activeTab === "Tasks") && (
                                 <div className={styles.columnLeft}>
                                     {/* Recent Sessions */}
+                                    {(activeTab === "Dashboard" || activeTab === "Sessions") && (
                                     <motion.div
                                         className={styles.card}
                                         variants={fadeUp}
@@ -943,8 +1037,10 @@ export default function MemberDashboard() {
                                             )}
                                         </div>
                                     </motion.div>
+                                    )}
 
                                     {/* Tasks */}
+                                    {(activeTab === "Dashboard" || activeTab === "Tasks") && (
                                     <motion.div
                                         className={styles.card}
                                         variants={fadeUp}
@@ -996,15 +1092,40 @@ export default function MemberDashboard() {
                                                                 0.1 + i * 0.07,
                                                         }}
                                                     >
-                                                        <div
+                                                        <button
+                                                            type="button"
                                                             className={`${styles.checkbox} ${task.completed ? styles.checkboxChecked : ""}`}
+                                                            onClick={() =>
+                                                                handleTaskToggle(
+                                                                    task.id,
+                                                                    !task.completed,
+                                                                )
+                                                            }
+                                                            disabled={updatingTaskIds.includes(
+                                                                task.id,
+                                                            )}
+                                                            aria-label={
+                                                                task.completed
+                                                                    ? `Mark ${task.name} incomplete`
+                                                                    : `Mark ${task.name} complete`
+                                                            }
+                                                            aria-pressed={
+                                                                task.completed
+                                                            }
                                                         >
-                                                            {task.completed && (
+                                                            {updatingTaskIds.includes(
+                                                                task.id,
+                                                            ) ? (
+                                                                <Loader2
+                                                                    size={12}
+                                                                    className="animate-spin"
+                                                                />
+                                                            ) : task.completed ? (
                                                                 <Check
                                                                     size={12}
                                                                 />
-                                                            )}
-                                                        </div>
+                                                            ) : null}
+                                                        </button>
                                                         <div
                                                             className={
                                                                 styles.taskContent
@@ -1054,11 +1175,30 @@ export default function MemberDashboard() {
                                             )}
                                         </div>
                                     </motion.div>
+                                    )}
                                 </div>
+                                )}
 
                                 {/* Right */}
-                                <div className={styles.columnRight}>
+                                {(activeTab === "Dashboard" || activeTab === "Suggestions" || activeTab === "Feedback") && (
+                                <div
+                                    className={
+                                        activeTab === "Dashboard"
+                                            ? styles.columnRight
+                                            : ""
+                                    }
+                                    style={
+                                        activeTab !== "Dashboard"
+                                            ? {
+                                                  display: "flex",
+                                                  flexDirection: "column",
+                                                  gap: 24,
+                                              }
+                                            : {}
+                                    }
+                                >
                                     {/* Suggestion Box */}
+                                    {(activeTab === "Dashboard" || activeTab === "Suggestions") && (
                                     <motion.div
                                         className={styles.card}
                                         variants={fadeUp}
@@ -1125,11 +1265,11 @@ export default function MemberDashboard() {
                                                 onChange={
                                                     setSelectedPresidentId
                                                 }
-                                                placeholder="Select recipient…"
+                                                placeholder="Select recipient..."
                                             />
                                             <textarea
                                                 rows={4}
-                                                placeholder="Type your suggestion here…"
+                                                placeholder="Type your suggestion here..."
                                                 value={messageText}
                                                 onChange={(e) =>
                                                     setMessageText(
@@ -1283,7 +1423,7 @@ export default function MemberDashboard() {
                                                                 size={14}
                                                             />
                                                         </motion.span>{" "}
-                                                        Sending…
+                                                        Sending...
                                                     </>
                                                 ) : (
                                                     <>
@@ -1294,8 +1434,10 @@ export default function MemberDashboard() {
                                             </motion.button>
                                         </form>
                                     </motion.div>
+                                    )}
 
                                     {/* Feedback Inbox */}
+                                    {(activeTab === "Dashboard" || activeTab === "Feedback") && (
                                     <motion.div
                                         className={styles.feedbackCard}
                                         variants={fadeUp}
@@ -1429,25 +1571,459 @@ export default function MemberDashboard() {
                                             )}
                                         </div>
                                     </motion.div>
+                                    )}
                                 </div>
+                                )}
+                            </motion.div>
+                        </motion.div>
+                    )}
+
+                    {!loading && !error && activeTab === "Leaderboard" && (
+                        <motion.div
+                            key="leaderboard"
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            variants={{
+                                hidden: {},
+                                visible: {transition: {staggerChildren: 0.06}},
+                            }}
+                        >
+                            <motion.header
+                                variants={fadeUp}
+                                className={styles.header}
+                            >
+                                <div>
+                                    <h1 className={styles.greeting}>
+                                        Speaker Leaderboard
+                                    </h1>
+                                    <p className={styles.subtitle}>
+                                        Rankings are based on total speaker
+                                        scores from attended sessions.
+                                    </p>
+                                </div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        gap: 8,
+                                        padding: 4,
+                                        borderRadius: 999,
+                                        background: "#ffffff",
+                                        border: "1px solid #eaeaea",
+                                    }}
+                                >
+                                    {(
+                                        [
+                                            ["overall", "Overall"],
+                                            ["bi-monthly", "Last 60 days"],
+                                        ] as const
+                                    ).map(([scope, label]) => (
+                                        <button
+                                            key={scope}
+                                            type="button"
+                                            onClick={() =>
+                                                setLeaderboardScope(scope)
+                                            }
+                                            style={{
+                                                border: "none",
+                                                borderRadius: 999,
+                                                padding: "8px 14px",
+                                                fontSize: 13,
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                                background:
+                                                    leaderboardScope === scope
+                                                        ? "#fff7ed"
+                                                        : "transparent",
+                                                color:
+                                                    leaderboardScope === scope
+                                                        ? "#ea580c"
+                                                        : "#64748b",
+                                            }}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.header>
+
+                            <motion.div
+                                variants={fadeUp}
+                                className={styles.contentGrid}
+                            >
+                                <motion.div
+                                    className={styles.card}
+                                    variants={fadeUp}
+                                    custom={1}
+                                >
+                                    <div className={styles.cardHeader}>
+                                        <h2 className={styles.cardTitle}>
+                                            Top Speakers
+                                        </h2>
+                                        <span
+                                            className={`${styles.badge} ${styles.badgeOrange}`}
+                                            style={{marginLeft: 0}}
+                                        >
+                                            {leaderboard.length} ranked
+                                        </span>
+                                    </div>
+
+                                    {leaderboardLoading ? (
+                                        <EmptyState
+                                            icon={Loader2}
+                                            text="Loading leaderboard..."
+                                        />
+                                    ) : leaderboardError ? (
+                                        <motion.div
+                                            initial={{opacity: 0}}
+                                            animate={{opacity: 1}}
+                                            style={{
+                                                padding: 16,
+                                                borderRadius: 12,
+                                                border: "1px solid #fecdd3",
+                                                background: "#fef2f2",
+                                                color: "#e11d48",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 10,
+                                                fontSize: 14,
+                                            }}
+                                        >
+                                            <AlertCircle size={16} />
+                                            {leaderboardError}
+                                        </motion.div>
+                                    ) : topLeaderboard.length === 0 ? (
+                                        <EmptyState
+                                            icon={Trophy}
+                                            text="No speaker scores recorded yet."
+                                        />
+                                    ) : (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: 10,
+                                            }}
+                                        >
+                                            {topLeaderboard.map((entry, i) => {
+                                                const isCurrentUser =
+                                                    entry.id ===
+                                                        session?.user?.id &&
+                                                    entry.type === "Member";
+                                                const scorePct =
+                                                    topScore > 0
+                                                        ? Math.round(
+                                                              (entry.score /
+                                                                  topScore) *
+                                                                  100,
+                                                          )
+                                                        : 0;
+
+                                                return (
+                                                    <motion.div
+                                                        key={`${entry.type}-${entry.id}`}
+                                                        initial={{
+                                                            opacity: 0,
+                                                            y: 8,
+                                                        }}
+                                                        animate={{
+                                                            opacity: 1,
+                                                            y: 0,
+                                                        }}
+                                                        transition={{
+                                                            delay:
+                                                                0.08 + i * 0.05,
+                                                        }}
+                                                        style={{
+                                                            display: "grid",
+                                                            gridTemplateColumns:
+                                                                "48px 1fr auto",
+                                                            alignItems: "center",
+                                                            gap: 14,
+                                                            padding: 14,
+                                                            borderRadius: 14,
+                                                            border: isCurrentUser
+                                                                ? "1px solid #fed7aa"
+                                                                : "1px solid #f1f5f9",
+                                                            background:
+                                                                entry.rank <= 3
+                                                                    ? "#fff7ed"
+                                                                    : isCurrentUser
+                                                                      ? "#fffbeb"
+                                                                      : "#ffffff",
+                                                        }}
+                                                    >
+                                                        <div
+                                                            style={{
+                                                                width: 40,
+                                                                height: 40,
+                                                                borderRadius: 12,
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                                fontWeight: 800,
+                                                                color:
+                                                                    entry.rank <=
+                                                                    3
+                                                                        ? "#ea580c"
+                                                                        : "#475569",
+                                                                background:
+                                                                    entry.rank <=
+                                                                    3
+                                                                        ? "#ffedd5"
+                                                                        : "#f8fafc",
+                                                            }}
+                                                        >
+                                                            #{entry.rank}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                minWidth: 0,
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    gap: 8,
+                                                                    marginBottom: 6,
+                                                                }}
+                                                            >
+                                                                <span
+                                                                    style={{
+                                                                        fontWeight: 800,
+                                                                        color: "#1e293b",
+                                                                        overflow:
+                                                                            "hidden",
+                                                                        textOverflow:
+                                                                            "ellipsis",
+                                                                        whiteSpace:
+                                                                            "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {entry.name}
+                                                                </span>
+                                                                <span
+                                                                    style={{
+                                                                        fontSize: 11,
+                                                                        fontWeight: 700,
+                                                                        color:
+                                                                            entry.type ===
+                                                                            "Cabinet"
+                                                                                ? "#4f46e5"
+                                                                                : "#059669",
+                                                                        background:
+                                                                            entry.type ===
+                                                                            "Cabinet"
+                                                                                ? "#eef2ff"
+                                                                                : "#f0fdf4",
+                                                                        padding:
+                                                                            "2px 8px",
+                                                                        borderRadius: 999,
+                                                                    }}
+                                                                >
+                                                                    {entry.type}
+                                                                </span>
+                                                            </div>
+                                                            <div
+                                                                style={{
+                                                                    height: 6,
+                                                                    borderRadius: 999,
+                                                                    background:
+                                                                        "#f1f5f9",
+                                                                    overflow:
+                                                                        "hidden",
+                                                                }}
+                                                            >
+                                                                <motion.div
+                                                                    initial={{
+                                                                        width: 0,
+                                                                    }}
+                                                                    animate={{
+                                                                        width: `${scorePct}%`,
+                                                                    }}
+                                                                    transition={{
+                                                                        duration: 0.6,
+                                                                        delay:
+                                                                            0.12 +
+                                                                            i *
+                                                                                0.04,
+                                                                    }}
+                                                                    style={{
+                                                                        height: "100%",
+                                                                        borderRadius: 999,
+                                                                        background:
+                                                                            "#ea580c",
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                textAlign:
+                                                                    "right",
+                                                            }}
+                                                        >
+                                                            <div
+                                                                style={{
+                                                                    fontWeight: 800,
+                                                                    color: "#1e293b",
+                                                                }}
+                                                            >
+                                                                {entry.score.toFixed(
+                                                                    1,
+                                                                )}
+                                                            </div>
+                                                            <div
+                                                                style={{
+                                                                    fontSize: 12,
+                                                                    color: "#94a3b8",
+                                                                }}
+                                                            >
+                                                                {entry.sessions}{" "}
+                                                                sessions
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </motion.div>
+
+                                <motion.div
+                                    className={styles.feedbackCard}
+                                    variants={fadeUp}
+                                    custom={2}
+                                >
+                                    <div
+                                        style={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 16,
+                                            background: "#fff7ed",
+                                            color: "#ea580c",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            marginBottom: 16,
+                                        }}
+                                    >
+                                        <Trophy size={24} />
+                                    </div>
+                                    <h2
+                                        className={styles.cardTitle}
+                                        style={{marginBottom: 8}}
+                                    >
+                                        Your Rank
+                                    </h2>
+                                    {currentUserRank ? (
+                                        <>
+                                            <div
+                                                style={{
+                                                    fontSize: 44,
+                                                    lineHeight: 1,
+                                                    fontWeight: 900,
+                                                    color: "#1e293b",
+                                                    marginBottom: 8,
+                                                }}
+                                            >
+                                                #{currentUserRank.rank}
+                                            </div>
+                                            <p
+                                                className={styles.subtitle}
+                                                style={{marginBottom: 18}}
+                                            >
+                                                {currentUserRank.score.toFixed(
+                                                    1,
+                                                )}{" "}
+                                                total speaker points across{" "}
+                                                {currentUserRank.sessions}{" "}
+                                                attended sessions.
+                                            </p>
+                                            <div
+                                                style={{
+                                                    display: "grid",
+                                                    gridTemplateColumns:
+                                                        "1fr 1fr",
+                                                    gap: 10,
+                                                }}
+                                            >
+                                                <div
+                                                    className={
+                                                        styles.detailBoxOrange
+                                                    }
+                                                >
+                                                    <div
+                                                        className={
+                                                            styles.detailBoxLabel
+                                                        }
+                                                    >
+                                                        Scope
+                                                    </div>
+                                                    <div
+                                                        className={
+                                                            styles.detailBoxValueOrange
+                                                        }
+                                                    >
+                                                        {leaderboardScope ===
+                                                        "overall"
+                                                            ? "Overall"
+                                                            : "60 days"}
+                                                    </div>
+                                                </div>
+                                                <div className={styles.detailBox}>
+                                                    <div
+                                                        className={
+                                                            styles.detailBoxLabel
+                                                        }
+                                                    >
+                                                        Field
+                                                    </div>
+                                                    <div
+                                                        className={
+                                                            styles.detailBoxValue
+                                                        }
+                                                    >
+                                                        {leaderboard.length}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <EmptyState
+                                            icon={Trophy}
+                                            text="Attend a scored session to enter the leaderboard."
+                                        />
+                                    )}
+                                </motion.div>
                             </motion.div>
                         </motion.div>
                     )}
 
                     {/* Other tabs */}
-                    {!loading && !error && activeTab !== "Dashboard" && (
+                    {!loading &&
+                        !error &&
+                        activeTab !== "Dashboard" &&
+                        activeTab !== "Leaderboard" &&
+                        activeTab !== "Sessions" &&
+                        activeTab !== "Tasks" &&
+                        activeTab !== "Suggestions" &&
+                        activeTab !== "Feedback" && (
                         <motion.div
                             key={activeTab}
                             variants={fadeUp}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                height: "60vh",
+                                minHeight: 300,
+                                textAlign: "center",
                                 gap: 12,
                                 color: "#64748b",
                             }}
@@ -1469,7 +2045,7 @@ export default function MemberDashboard() {
     );
 }
 
-// ── Empty state helper ──────────────────────────────────────────────────────
+// Empty state helper
 function EmptyState({
     icon: Icon,
     text,
