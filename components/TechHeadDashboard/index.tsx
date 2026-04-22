@@ -132,7 +132,7 @@ export default function TechHeadDashboard() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 {isUnverified ? (
                   <button
                     onClick={() => handleAction(role, user.id, "verify")}
@@ -159,7 +159,7 @@ export default function TechHeadDashboard() {
                 </button>
               </div>
 
-              <div className="text-right group-hover:opacity-0 transition-opacity pr-2">
+              <div className="text-right group-hover:opacity-0 transition-opacity pr-2 hidden sm:block">
                 <p className="text-[10px] text-zinc-600 font-mono">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </p>
@@ -174,7 +174,7 @@ export default function TechHeadDashboard() {
   return (
     <div className="min-h-screen bg-[#030303] text-zinc-100 p-6 md:p-12 lg:p-20 font-sans">
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-8">
           <div>
             <motion.div 
               initial={{ x: -20, opacity: 0 }}
@@ -184,34 +184,36 @@ export default function TechHeadDashboard() {
               <ShieldCheck size={14} className="text-white opacity-50" />
               Technical Administration
             </motion.div>
-            <h1 className="text-4xl font-extralight tracking-tight text-white mb-2 italic">Tech Head <span className="font-bold not-italic">Dashboard</span></h1>
+            <h1 className="text-3xl md:text-4xl font-extralight tracking-tight text-white mb-2 italic">Tech Head <span className="font-bold not-italic">Dashboard</span></h1>
             <p className="text-zinc-500 text-sm font-light">Verify and manage all society members and executives.</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={16} />
               <input
                 type="text"
                 placeholder="Search users..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 transition-all w-full md:w-64"
+                className="bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 transition-all w-full sm:w-64"
               />
             </div>
-            <button
-              onClick={fetchData}
-              className="p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white"
-            >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            </button>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95"
-              title="Log Out"
-            >
-              <LogOut size={18} />
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchData}
+                className="flex-1 sm:flex-none p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center"
+              >
+                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="flex-1 sm:flex-none p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
+                title="Log Out"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
           </div>
         </header>
 

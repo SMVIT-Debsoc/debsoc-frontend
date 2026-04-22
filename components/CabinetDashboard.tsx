@@ -1,6 +1,7 @@
 "use client";
 
 import React, {useState, useEffect} from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Calendar,
@@ -23,6 +24,7 @@ import {
   AlertCircle,
   RefreshCw,
   Clock,
+  Menu,
 } from "lucide-react";
 import Image from "next/image";
 import {useSession, signOut} from "next-auth/react";
@@ -91,7 +93,7 @@ export default function CabinetDashboard() {
     new Date().toISOString().slice(0, 16),
   );
   const [chairName, setChairName] = useState(session?.user?.name || "");
-  const [motion, setMotion] = useState("");
+  const [sessionMotion, setSessionMotion] = useState("");
   const [memberAttendance, setMemberAttendance] = useState<
     Record<string, {status: string; score: string}>
   >({});
@@ -104,6 +106,8 @@ export default function CabinetDashboard() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageSent, setMessageSent] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const userName = session?.user?.name || "Cabinet Member";
   const userRole = (session?.user as any)?.position || "Cabinet";
@@ -182,7 +186,7 @@ export default function CabinetDashboard() {
 
   async function handleSaveSession(e: React.FormEvent) {
     e.preventDefault();
-    if (!motion || !chairName || !sessionDate) return;
+    if (!sessionMotion || !chairName || !sessionDate) return;
 
     setSavingSession(true);
     try {
@@ -192,7 +196,7 @@ export default function CabinetDashboard() {
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
           sessionDate,
-          motiontype: motion,
+          motiontype: sessionMotion,
           Chair: chairName,
         }),
       });
@@ -219,7 +223,7 @@ export default function CabinetDashboard() {
       if (!markRes.ok) throw new Error("Failed to mark attendance");
 
       setSessionSuccess(true);
-      setMotion("");
+      setSessionMotion("");
       setTimeout(() => setSessionSuccess(false), 5000);
       loadDashboardData(); // Refresh data
     } catch (err: any) {
@@ -281,13 +285,43 @@ export default function CabinetDashboard() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
+      {/* SIDEBAR OVERLAY */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden backdrop-blur-sm"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* SIDEBAR */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col p-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 font-bold text-xl mb-10 text-white">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-            <Gavel size={20} />
+      <motion.aside 
+        initial={false}
+        animate={{ 
+          x: typeof window !== 'undefined' && window.innerWidth < 1024 
+            ? (isSidebarOpen ? 0 : -256) 
+            : 0 
+        }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col p-6 lg:translate-x-0 lg:sticky lg:h-screen"
+      >
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-3 font-bold text-xl text-white">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+              <Gavel size={20} />
+            </div>
+            <span>DebateCab</span>
           </div>
-          <span>DebateCab</span>
+          <button 
+            className="lg:hidden text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <Plus size={24} className="rotate-45" />
+          </button>
         </div>
 
         <nav className="flex flex-col gap-2 flex-1">
@@ -296,6 +330,7 @@ export default function CabinetDashboard() {
             onClick={(e) => {
               e.preventDefault();
               setActiveTab("Dashboard");
+              setIsSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Dashboard" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
           >
@@ -307,6 +342,7 @@ export default function CabinetDashboard() {
             onClick={(e) => {
               e.preventDefault();
               setActiveTab("Sessions");
+              setIsSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Sessions" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
           >
@@ -318,6 +354,7 @@ export default function CabinetDashboard() {
             onClick={(e) => {
               e.preventDefault();
               setActiveTab("Tasks");
+              setIsSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Tasks" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
           >
@@ -334,6 +371,7 @@ export default function CabinetDashboard() {
             onClick={(e) => {
               e.preventDefault();
               setActiveTab("Analytics");
+              setIsSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Analytics" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
           >
@@ -345,6 +383,7 @@ export default function CabinetDashboard() {
             onClick={(e) => {
               e.preventDefault();
               setActiveTab("Members");
+              setIsSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Members" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
           >
@@ -353,7 +392,7 @@ export default function CabinetDashboard() {
           </a>
         </nav>
 
-        <div className="flex items-center gap-3 mt-auto pt-6">
+        <div className="flex items-center gap-3 mt-auto pt-6 border-t border-slate-800">
           <img
             src={userImage}
             alt={userName}
@@ -373,10 +412,10 @@ export default function CabinetDashboard() {
             <LogOut size={18} />
           </button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-8 lg:p-12 overflow-y-auto relative">
+      <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto relative">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4">
             <Loader2 className="animate-spin text-blue-600" size={40} />
@@ -397,21 +436,30 @@ export default function CabinetDashboard() {
           <div className="max-w-6xl mx-auto">
             {/* HEADER */}
             <header className="flex justify-between items-center mb-8 border-b border-slate-200 pb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">
-                  Operational Dashboard
-                </h1>
-                <p className="text-slate-500 text-sm">
-                  Manage sessions, tasks, and reporting
-                </p>
+              <div className="flex items-center gap-4">
+                <button 
+                  className="lg:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <Menu size={24} />
+                </button>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
+                    Operational Dashboard
+                  </h1>
+                  <p className="text-slate-500 text-xs md:text-sm">
+                    Manage sessions, tasks, and reporting
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center gap-6">
-                <button className="text-slate-400 hover:text-slate-600 relative">
+              <div className="flex items-center gap-3 md:gap-6">
+                <button className="text-slate-400 hover:text-slate-600 relative p-1">
                   <Bell size={24} />
-                  <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
                 </button>
               </div>
             </header>
+
 
             {/* STATS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -539,8 +587,8 @@ export default function CabinetDashboard() {
                           type="text"
                           className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-400"
                           placeholder="e.g. THW ban all zoos"
-                          value={motion}
-                          onChange={(e) => setMotion(e.target.value)}
+                          value={sessionMotion}
+                          onChange={(e) => setSessionMotion(e.target.value)}
                           required
                         />
                       </div>
@@ -555,8 +603,8 @@ export default function CabinetDashboard() {
                       </span>
                     </div>
 
-                    <div className="border border-slate-200 rounded-lg overflow-hidden mb-8 max-h-[400px] overflow-y-auto">
-                      <table className="w-full text-left border-collapse">
+                    <div className="border border-slate-200 rounded-lg overflow-x-auto mb-8 max-h-[400px] overflow-y-auto">
+                      <table className="w-full text-left border-collapse min-w-[500px]">
                         <thead className="sticky top-0 z-10">
                           <tr className="bg-slate-50 border-b border-slate-200">
                             <th className="py-3 px-4 text-xs font-semibold text-slate-500">
@@ -578,14 +626,14 @@ export default function CabinetDashboard() {
                             >
                               <td className="py-3 px-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                                     {member.name
                                       .split(" ")
                                       .map((n) => n[0])
                                       .join("")
                                       .toUpperCase()}
                                   </div>
-                                  <span className="font-medium text-slate-700 text-sm truncate max-w-[150px]">
+                                  <span className="font-medium text-slate-700 text-sm truncate max-w-[120px] md:max-w-[200px]">
                                     {member.name}
                                   </span>
                                 </div>
@@ -614,7 +662,7 @@ export default function CabinetDashboard() {
                                 <input
                                   type="number"
                                   placeholder="0"
-                                  className="w-20 mx-auto block bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                  className="w-16 md:w-20 mx-auto block bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
                                   value={
                                     memberAttendance[member.id]?.score || ""
                                   }
@@ -653,7 +701,7 @@ export default function CabinetDashboard() {
                       <button
                         type="button"
                         onClick={() => {
-                          setMotion("");
+                          setSessionMotion("");
                           const initial: any = {};
                           members.forEach(
                             (m) =>
