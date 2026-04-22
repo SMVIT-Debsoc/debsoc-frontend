@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import {Suspense} from "react";
 import LoginClient from "./LoginClient";
 
 export default function Page() {
@@ -8,4 +8,3 @@ export default function Page() {
     </Suspense>
   );
 }
-

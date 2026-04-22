@@ -115,7 +115,7 @@ const Navbar = () => {
                         }
                         setIsMenuOpen(false);
                     }}
-                    className="flex items-center gap-2 font-light tracking-widest text-xl uppercase text-white"
+                    className="flex items-center gap-2 font-light tracking-widest text-xl uppercase text-white whitespace-nowrap"
                 >
                     <Image
                         src="/logo.png"
