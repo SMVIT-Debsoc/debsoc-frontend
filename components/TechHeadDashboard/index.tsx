@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { signOut } from "next-auth/react";
+import Image from "next/image";
 
 interface UserRecord {
   id: string;
@@ -184,7 +185,10 @@ export default function TechHeadDashboard() {
               <ShieldCheck size={14} className="text-white opacity-50" />
               Technical Administration
             </motion.div>
-            <h1 className="text-3xl md:text-4xl font-extralight tracking-tight text-white mb-2 italic">Tech Head <span className="font-bold not-italic">Dashboard</span></h1>
+            <div className="flex items-center gap-4 mb-2">
+              <Image src="/logo.png" alt="Debsoc" width={36} height={36} className="object-contain" />
+              <h1 className="text-3xl md:text-4xl font-extralight tracking-tight text-white italic">Tech Head <span className="font-bold not-italic">Dashboard</span></h1>
+            </div>
             <p className="text-zinc-500 text-sm font-light">Verify and manage all society members and executives.</p>
           </div>
 

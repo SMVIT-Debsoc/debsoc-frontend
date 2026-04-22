@@ -89,9 +89,7 @@ export default function CabinetDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   // Form States - Session Log
-  const [sessionDate, setSessionDate] = useState(
-    new Date().toISOString().slice(0, 16),
-  );
+  const [sessionDate, setSessionDate] = useState("");
   const [chairName, setChairName] = useState(session?.user?.name || "");
   const [sessionMotion, setSessionMotion] = useState("");
   const [memberAttendance, setMemberAttendance] = useState<
@@ -108,6 +106,7 @@ export default function CabinetDashboard() {
   const [messageError, setMessageError] = useState<string | null>(null);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktopSidebar, setIsDesktopSidebar] = useState(true);
 
   const userName = session?.user?.name || "Cabinet Member";
   const userRole = (session?.user as any)?.position || "Cabinet";
@@ -162,6 +161,19 @@ export default function CabinetDashboard() {
 
   useEffect(() => {
     loadDashboardData();
+    setSessionDate(new Date().toISOString().slice(0, 16));
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const syncSidebarMode = () => setIsDesktopSidebar(mediaQuery.matches);
+
+    syncSidebarMode();
+    mediaQuery.addEventListener("change", syncSidebarMode);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncSidebarMode);
+    };
   }, []);
 
   useEffect(() => {
@@ -302,19 +314,17 @@ export default function CabinetDashboard() {
       <motion.aside 
         initial={false}
         animate={{ 
-          x: typeof window !== 'undefined' && window.innerWidth < 1024 
-            ? (isSidebarOpen ? 0 : -256) 
-            : 0 
+          x: isDesktopSidebar ? 0 : isSidebarOpen ? 0 : -256,
         }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col p-6 lg:translate-x-0 lg:sticky lg:h-screen"
       >
         <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-3 font-bold text-xl text-white">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
-              <Gavel size={20} />
+          <div className="flex items-center gap-3 font-bold text-xl text-white tracking-widest">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white p-1">
+              <Image src="/logo.png" alt="Debsoc" width={32} height={32} className="object-contain" />
             </div>
-            <span>DebateCab</span>
+            <span>DEBSOC</span>
           </div>
           <button 
             className="lg:hidden text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800 transition-colors"
@@ -416,6 +426,26 @@ export default function CabinetDashboard() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto relative">
+        {/* MOBILE TOP BAR */}
+        <div className="flex lg:hidden items-center justify-between mb-6 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div className="flex items-center gap-2">
+              <Image src="/logo.png" alt="Debsoc" width={28} height={28} className="object-contain" />
+              <span className="font-bold text-slate-900 tracking-wide">DEBSOC</span>
+            </div>
+          </div>
+          <button className="text-slate-400 hover:text-slate-600 relative p-1">
+            <Bell size={20} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4">
             <Loader2 className="animate-spin text-blue-600" size={40} />
@@ -437,12 +467,6 @@ export default function CabinetDashboard() {
             {/* HEADER */}
             <header className="flex justify-between items-center mb-8 border-b border-slate-200 pb-6">
               <div className="flex items-center gap-4">
-                <button 
-                  className="lg:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                  onClick={() => setIsSidebarOpen(true)}
-                >
-                  <Menu size={24} />
-                </button>
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
                     Operational Dashboard
@@ -452,7 +476,7 @@ export default function CabinetDashboard() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 md:gap-6">
+              <div className="hidden lg:flex items-center gap-3 md:gap-6">
                 <button className="text-slate-400 hover:text-slate-600 relative p-1">
                   <Bell size={24} />
                   <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
