@@ -10,6 +10,10 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  if (session.user.role !== "TechHead" && !session.user.isVerified) {
+    redirect("/unverified");
+  }
+
   if (session.user.role === "TechHead") {
     redirect("/dashboard/techhead");
   }

@@ -366,25 +366,59 @@ export default function MemberDashboard() {
                 fetch("/api/member/feedback"),
                 fetch("/api/member/presidents"),
             ]);
-            if (
-                !attRes.ok ||
-                !taskRes.ok ||
-                !fbRes.ok ||
-                !presRes.ok
-            )
-                throw new Error("Failed to load dashboard data");
-            const [attData, taskData, fbData, presData] = await Promise.all([
-                attRes.json(),
-                taskRes.json(),
-                fbRes.json(),
-                presRes.json(),
-            ]);
-            setAttendance(attData.attendance ?? []);
-            setTasks(taskData.tasks ?? []);
-            setFeedbacks(fbData.feedbacks ?? []);
-            setPresidents(presData.presidents ?? []);
-            if (presData.presidents?.length)
-                setSelectedPresidentId(presData.presidents[0].id);
+
+            const readMessage = async (response: Response, fallback: string) => {
+                try {
+                    const data = await response.json();
+                    if (data && typeof data.message === "string" && data.message.trim())
+                        return data.message;
+                } catch {}
+                return fallback;
+            };
+
+            const errors: string[] = [];
+
+            if (attRes.ok) {
+                const attData = await attRes.json();
+                setAttendance(attData.attendance ?? []);
+            } else {
+                setAttendance([]);
+                errors.push(await readMessage(attRes, "Attendance failed"));
+            }
+
+            if (taskRes.ok) {
+                const taskData = await taskRes.json();
+                setTasks(taskData.tasks ?? []);
+            } else {
+                setTasks([]);
+                errors.push(await readMessage(taskRes, "Tasks failed"));
+            }
+
+            if (fbRes.ok) {
+                const fbData = await fbRes.json();
+                setFeedbacks(fbData.feedbacks ?? []);
+            } else {
+                setFeedbacks([]);
+                errors.push(await readMessage(fbRes, "Feedback failed"));
+            }
+
+            if (presRes.ok) {
+                const presData = await presRes.json();
+                const nextPresidents = presData.presidents ?? [];
+                setPresidents(nextPresidents);
+                if (nextPresidents.length) {
+                    setSelectedPresidentId((current) =>
+                        current || nextPresidents[0].id,
+                    );
+                }
+            } else {
+                setPresidents([]);
+                errors.push(await readMessage(presRes, "President list failed"));
+            }
+
+            if (errors.length) {
+                setError(`Some data could not be loaded: ${errors.join(" | ")}`);
+            }
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Something went wrong");
         } finally {
