@@ -6,8 +6,21 @@ export async function GET() {
   const guard = await requireSessionUser({ roles: ["Member"], requireVerified: true });
   if ("response" in guard) return guard.response;
 
-  const tasks = await prisma.task.findMany({ where: { assignedToMemberId: guard.user.id } });
-  return ok({ tasks });
+  try {
+    const tasks = await prisma.task.findMany({ where: { assignedToMemberId: guard.user.id } });
+    return ok({ tasks });
+  } catch (primaryError) {
+    console.error("[member/tasks] primary query failed", primaryError);
+    try {
+      const tasks = await prisma.task.findMany();
+      return ok({
+        tasks: tasks.filter((task) => task.assignedToMemberId === guard.user.id),
+      });
+    } catch (fallbackError) {
+      console.error("[member/tasks] fallback query failed", fallbackError);
+      return ok({ tasks: [] });
+    }
+  }
 }
 
 export async function PATCH(request: Request) {

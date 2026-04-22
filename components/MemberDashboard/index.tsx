@@ -338,6 +338,7 @@ export default function MemberDashboard() {
     );
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [partialError, setPartialError] = useState<string | null>(null);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [selectedPresidentId, setSelectedPresidentId] = useState("");
@@ -359,6 +360,7 @@ export default function MemberDashboard() {
     async function loadAll() {
         setLoading(true);
         setError(null);
+        setPartialError(null);
         try {
             const [attRes, taskRes, fbRes, presRes] = await Promise.all([
                 fetch("/api/member/attendance"),
@@ -417,7 +419,9 @@ export default function MemberDashboard() {
             }
 
             if (errors.length) {
-                setError(`Some data could not be loaded: ${errors.join(" | ")}`);
+                setPartialError(
+                    `Some data could not be loaded: ${errors.join(" | ")}`,
+                );
             }
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Something went wrong");
@@ -815,6 +819,52 @@ export default function MemberDashboard() {
 
                 {/* Dashboard content */}
                 <AnimatePresence mode="wait">
+                    {!loading && !error && partialError && (
+                        <motion.div
+                            key="partial-error"
+                            variants={fadeUp}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            style={{
+                                padding: 16,
+                                background: "#fef2f2",
+                                borderRadius: 12,
+                                color: "#e11d48",
+                                border: "1px solid #fecdd3",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                maxWidth: 560,
+                                margin: "0 auto 20px auto",
+                            }}
+                        >
+                            <AlertCircle size={18} />
+                            <div style={{flex: 1, minWidth: 0}}>
+                                <strong>Error:</strong> {partialError}
+                            </div>
+                            <motion.button
+                                onClick={loadAll}
+                                whileHover={{scale: 1.05}}
+                                whileTap={{scale: 0.95}}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "6px 14px",
+                                    borderRadius: 8,
+                                    background: "#e11d48",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                }}
+                            >
+                                <RefreshCw size={14} /> Retry
+                            </motion.button>
+                        </motion.div>
+                    )}
                     {!loading && !error && (activeTab === "Dashboard" || activeTab === "Sessions" || activeTab === "Tasks" || activeTab === "Suggestions" || activeTab === "Feedback") && (
                         <motion.div
                             key="dashboard"
