@@ -5,20 +5,20 @@ import {motion} from "framer-motion";
 import {Menu, Moon, PenSquare, Search, Send, Sun, X} from "lucide-react";
 
 export type PlaceRecommendation = {
-  id: string;
-  name: string;
-  address: string;
-  rating: number | null;
-  review_count: number | null;
-  distance_km: number;
-  maps_url: string;
-  image_url: string | null;
-  place_uri: string | null;
-  directions_uri: string | null;
-  reviews_uri: string | null;
-  photos_uri: string | null;
-  why_recommended: string;
-};
+    id?: string;
+    name: string;
+    address?: string;
+    rating?: number | null;
+    review_count?: number | null;
+    distance_km?: number;
+    maps_url: string;
+    image_url: string | null;
+    place_uri: string | null;
+    directions_uri: string | null;
+    reviews_uri: string | null;
+    photos_uri: string | null;
+    why_recommended?: string;
+  };
 
 type ChatMessage = {
     id: string;
@@ -110,7 +110,7 @@ function timeStamp() {
 }
 
 function EmptyState({darkMode}: {darkMode: boolean}) {
-    const fullText = "Welcome to SMVIT PD";
+    const fullText = "Welcome to Fultung";
     const [displayText, setDisplayText] = useState("");
     const [isTypingComplete, setIsTypingComplete] = useState(false);
 
@@ -295,7 +295,7 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
                     <p
                         className={`text-sm font-medium ${darkMode ? "text-[#fff1ea]" : "text-[#4d0000]"}`}
                     >
-                        SMVIT PD is thinking
+                        Fultung is thinking
                     </p>
                     <div className="mt-2 flex items-center gap-2">
                         {[0, 1, 2].map((index) => (
@@ -326,26 +326,31 @@ function TypingIndicator({darkMode}: {darkMode: boolean}) {
 }
 
 function PlaceCard({ place, darkMode }: { place: PlaceRecommendation; darkMode: boolean }) {
-  return (
-    <article className={`mt-3 overflow-hidden rounded-[24px] border ${darkMode ? "border-white/10 bg-[#1c1715]" : "border-[#efe3d8] bg-white"}`}>
-      {place.image_url ? (
-        <img src={place.image_url} alt={place.name} loading="lazy" className="h-48 w-full object-cover" />
-      ) : (
-        <div aria-label="No place photo available" className={`h-48 w-full ${darkMode ? "bg-[#231c1a]" : "bg-[#f5efe8]"}`} />
-      )}
-      <div className={`p-4 ${darkMode ? "text-[#fff1ea]" : "text-[#171717]"}`}>
-         <h3 className="text-lg font-semibold">{place.name}</h3>
-         <p className="mt-1 text-sm opacity-80">{place.address}</p>
-         <p className="mt-2 text-sm opacity-70">
-            {place.rating !== null ? `${place.rating.toFixed(1)} rating` : "Rating unavailable"}
-            {place.review_count !== null ? ` | ${place.review_count} reviews` : ""}
-            {` | ${place.distance_km.toFixed(1)} km`}
-         </p>
-         <p className="mt-2 text-sm italic opacity-90">{place.why_recommended}</p>
-         <div className="mt-4 flex flex-wrap gap-2 text-sm">
-            <a href={place.maps_url} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Open in Maps</a>
-            {place.directions_uri ? <a href={place.directions_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Directions</a> : null}
-            {place.reviews_uri ? <a href={place.reviews_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Reviews</a> : null}
+    const title = place.name || "Recommended place";
+    const rating = typeof place.rating === "number" ? place.rating.toFixed(1) : null;
+    const reviewCount = typeof place.review_count === "number" ? place.review_count : null;
+    const distance = typeof place.distance_km === "number" ? `${place.distance_km.toFixed(1)} km` : null;
+
+    return (
+      <article className={`mt-3 overflow-hidden rounded-[24px] border ${darkMode ? "border-white/10 bg-[#1c1715]" : "border-[#efe3d8] bg-white"}`}>
+        {place.image_url ? (
+          <img src={place.image_url} alt={place.name} loading="lazy" className="h-48 w-full object-cover" />
+        ) : (
+          <div aria-label="No place photo available" className={`h-48 w-full ${darkMode ? "bg-[#231c1a]" : "bg-[#f5efe8]"}`} />
+        )}
+        <div className={`p-4 ${darkMode ? "text-[#fff1ea]" : "text-[#171717]"}`}>
+           <h3 className="text-lg font-semibold">{title}</h3>
+           {place.address ? <p className="mt-1 text-sm opacity-80">{place.address}</p> : null}
+           <p className="mt-2 text-sm opacity-70">
+              {rating ? `${rating} rating` : "Rating unavailable"}
+              {reviewCount !== null ? ` | ${reviewCount} reviews` : ""}
+              {distance ? ` | ${distance}` : ""}
+           </p>
+           {place.why_recommended ? <p className="mt-2 text-sm italic opacity-90">{place.why_recommended}</p> : null}
+           <div className="mt-4 flex flex-wrap gap-2 text-sm">
+              <a href={place.maps_url} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Open in Maps</a>
+              {place.directions_uri ? <a href={place.directions_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Directions</a> : null}
+              {place.reviews_uri ? <a href={place.reviews_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Reviews</a> : null}
             {place.photos_uri ? <a href={place.photos_uri} target="_blank" rel="noreferrer" className={`rounded-full px-4 py-1.5 font-medium ${darkMode ? "bg-white/10 hover:bg-white/20" : "bg-black/5 hover:bg-black/10"}`}>Photos</a> : null}
          </div>
       </div>
@@ -386,9 +391,9 @@ function MessageBubble({
                         {message.text}
                     </p>
                 </div>
-                {message.places?.map(place => (
-                    <PlaceCard key={place.id} darkMode={darkMode} place={place} />
-                ))}
+                {message.places?.map((place, index) => (
+                      <PlaceCard key={place.id ?? `${place.name}-${index}`} darkMode={darkMode} place={place} />
+                  ))}
                 <div
                     className={`mt-2 flex items-center justify-between px-1 text-xs uppercase tracking-[0.2em] ${
                         isUser

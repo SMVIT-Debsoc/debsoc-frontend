@@ -80,7 +80,7 @@ export default function WelcomePopup() {
                   SMVIT PD
                 </h2>
                 <h3 className="text-3xl font-light text-white mb-1 tracking-tight">
-                  FullTung
+                  Fultung
                 </h3>
                 <div className="h-[1px] w-8 bg-white/20 mx-auto mb-4" />
                 
