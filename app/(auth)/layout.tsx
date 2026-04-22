@@ -53,7 +53,7 @@ export default function AuthLayout({
           <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-[#030303]/80" />
       </div>
       
-      <div className="relative z-10 w-full max-w-md px-4 py-8">
+      <div className="relative z-10 w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </div>
     </div>

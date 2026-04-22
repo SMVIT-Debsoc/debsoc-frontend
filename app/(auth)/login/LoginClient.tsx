@@ -3,6 +3,7 @@
 import React, {useState, useEffect} from "react";
 import {motion, AnimatePresence} from "framer-motion";
 import {Sparkles, User, Users, Star, ChevronRight, Quote} from "lucide-react";
+import Image from "next/image";
 import {signIn} from "next-auth/react";
 import {useSearchParams} from "next/navigation";
 
@@ -45,8 +46,8 @@ export default function LoginClient() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-rose-500/10 blur-3xl pointer-events-none" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12 md:mb-16">
-            <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center">
-              <Sparkles size={20} className="text-white" />
+            <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center overflow-hidden">
+              <Image src="/logo.png" alt="Debsoc" width={28} height={28} className="object-contain" />
             </div>
             <span className="text-xl font-bold tracking-[0.3em] text-white">DEBSOC</span>
           </div>

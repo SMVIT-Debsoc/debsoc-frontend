@@ -115,7 +115,7 @@ function timeStamp() {
 }
 
 function EmptyState({darkMode}: {darkMode: boolean}) {
-  const fullText = "Welcome to Fultung";
+  const fullText = "Hi! I am Fultung, your virtual PD Assistant.";
   const [displayText, setDisplayText] = useState("");
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
