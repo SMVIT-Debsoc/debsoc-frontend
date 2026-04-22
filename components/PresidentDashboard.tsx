@@ -661,7 +661,7 @@ export default function PresidentDashboard() {
                             <div className="flex items-center gap-4">
                                 <div>
                                     <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
-                                        Executive Dashboard
+                                        President's Dashboard
                                     </h1>
                                     <p className="text-slate-500 text-xs md:text-sm">
                                         Oversee society operations, sessions,
@@ -688,11 +688,6 @@ export default function PresidentDashboard() {
                                     }
                                     className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-lg text-xs md:text-sm font-medium transition-colors shadow-sm shadow-blue-200"
                                 >
-                                    <Plus size={18} />
-                                    <span className="hidden xs:inline">
-                                        New Session
-                                    </span>
-                                    <span className="xs:hidden">New</span>
                                 </button>
                             </div>
                         </header>
