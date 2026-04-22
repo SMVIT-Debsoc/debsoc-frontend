@@ -26,12 +26,20 @@ import {
     RefreshCw,
     Loader2,
     Menu,
+    ChevronDown,
+    X,
 } from "lucide-react";
 import Image from "next/image";
 import {useSession, signOut} from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Member = {id: string; name: string; email: string; role: string};
+type CabinetMember = {
+    id: string;
+    name: string;
+    email: string;
+    position?: string;
+};
 type Task = {
     id: string;
     name: string;
@@ -73,7 +81,7 @@ export default function PresidentDashboard() {
 
     // Data Lists
     const [members, setMembers] = useState<Member[]>([]);
-    const [cabinet, setCabinet] = useState<Member[]>([]);
+    const [cabinet, setCabinet] = useState<CabinetMember[]>([]);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [allTasks, setAllTasks] = useState<Task[]>([]);
     const [receivedMessages, setReceivedMessages] = useState<any[]>([]);
@@ -95,6 +103,21 @@ export default function PresidentDashboard() {
     const [assignTo, setAssignTo] = useState("");
     const [assigning, setAssigning] = useState(false);
     const [assignSuccess, setAssignSuccess] = useState(false);
+
+    const [memberQuery, setMemberQuery] = useState("");
+    const [memberFilter, setMemberFilter] = useState("");
+    const [feedbackOpen, setFeedbackOpen] = useState(false);
+    const [feedbackMemberId, setFeedbackMemberId] = useState("");
+    const [feedbackText, setFeedbackText] = useState("");
+    const [feedbackSending, setFeedbackSending] = useState(false);
+    const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+    const [feedbackError, setFeedbackError] = useState<string | null>(null);
+    const [sentFeedbacks, setSentFeedbacks] = useState<any[]>([]);
+    const [sessionModalOpen, setSessionModalOpen] = useState(false);
+    const [selectedSession, setSelectedSession] = useState<Session | null>(
+        null,
+    );
+    const [analyticsNotice, setAnalyticsNotice] = useState("");
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isDesktopSidebar, setIsDesktopSidebar] = useState(true);
@@ -126,12 +149,14 @@ export default function PresidentDashboard() {
         setLoading(true);
         setError(null);
         try {
-            const [dashRes, sessionsRes, tasksRes, msgRes] = await Promise.all([
-                fetch("/api/president/dashboard"),
-                fetch("/api/president/sessions"),
-                fetch("/api/president/tasks"),
-                fetch("/api/president/messages"),
-            ]);
+            const [dashRes, sessionsRes, tasksRes, msgRes, feedbackRes] =
+                await Promise.all([
+                    fetch("/api/president/dashboard"),
+                    fetch("/api/president/sessions"),
+                    fetch("/api/president/tasks"),
+                    fetch("/api/president/messages"),
+                    fetch("/api/president/feedback/sent"),
+                ]);
 
             if (!dashRes.ok || !sessionsRes.ok || !tasksRes.ok) {
                 throw new Error("Failed to synchronize dashboard data.");
@@ -141,6 +166,9 @@ export default function PresidentDashboard() {
             const sessionsData = await sessionsRes.json();
             const tasksData = await tasksRes.json();
             const msgData = msgRes.ok ? await msgRes.json() : {messages: []};
+            const feedbackData = feedbackRes.ok
+                ? await feedbackRes.json()
+                : {feedbacks: []};
 
             const roster = dashData.members || [];
             const cabList = dashData.cabinet || [];
@@ -149,6 +177,7 @@ export default function PresidentDashboard() {
             setCabinet(cabList);
             setSessions(sessionsData.sessions || []);
             setReceivedMessages(msgData.messages || []);
+            setSentFeedbacks(feedbackData.feedbacks || []);
 
             const tasksList = tasksData.tasks || [];
             setAllTasks(tasksList);
@@ -278,6 +307,90 @@ export default function PresidentDashboard() {
             setAssigning(false);
         }
     };
+
+    const applyMemberFilter = () => {
+        setMemberFilter(memberQuery.trim());
+    };
+
+    const clearMemberFilter = () => {
+        setMemberQuery("");
+        setMemberFilter("");
+    };
+
+    const openFeedback = (memberId?: string) => {
+        setFeedbackMemberId(memberId || "");
+        setFeedbackText("");
+        setFeedbackError(null);
+        setFeedbackSuccess(false);
+        setFeedbackOpen(true);
+    };
+
+    const handleSendFeedback = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!feedbackMemberId || !feedbackText.trim()) {
+            setFeedbackError("Select a member and add feedback.");
+            return;
+        }
+
+        setFeedbackSending(true);
+        setFeedbackError(null);
+        try {
+            const res = await fetch("/api/president/feedback/give", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    feedback: feedbackText.trim(),
+                    memberId: feedbackMemberId,
+                }),
+            });
+
+            if (!res.ok) throw new Error("Failed to send feedback.");
+            setFeedbackSuccess(true);
+            setFeedbackText("");
+            loadDashboardData();
+            setTimeout(() => setFeedbackSuccess(false), 4000);
+        } catch (err: any) {
+            setFeedbackError(err.message || "Could not send feedback.");
+        } finally {
+            setFeedbackSending(false);
+        }
+    };
+
+    const handleToggleTask = (taskId: string) => {
+        setAllTasks((prev) => {
+            const next = prev.map((t) =>
+                t.id === taskId ? {...t, completed: !t.completed} : t,
+            );
+            setPendingTasksCount(next.filter((t) => !t.completed).length);
+            setCompletedTasks(next.filter((t) => t.completed).length);
+            return next;
+        });
+    };
+
+    const openSessionLedger = (session: Session) => {
+        setSelectedSession(session);
+        setSessionModalOpen(true);
+    };
+
+    const handleAnalyticsRequest = () => {
+        setAnalyticsNotice("Request received. We will email you a report.");
+        setTimeout(() => setAnalyticsNotice(""), 4000);
+    };
+
+    const scrollToMessages = () => {
+        document.getElementById("president-messages")?.scrollIntoView({
+            behavior: "smooth",
+        });
+    };
+
+    const visibleMembers = members.filter((m) => {
+        if (!memberFilter) return true;
+        const query = memberFilter.toLowerCase();
+        return (
+            m.name.toLowerCase().includes(query) ||
+            m.email.toLowerCase().includes(query)
+        );
+    });
 
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -441,7 +554,11 @@ export default function PresidentDashboard() {
                             </span>
                         </div>
                     </div>
-                    <button className="text-slate-400 hover:text-slate-600 relative p-1">
+                    <button
+                        type="button"
+                        onClick={scrollToMessages}
+                        className="text-slate-400 hover:text-slate-600 relative p-1"
+                    >
                         <Bell size={20} />
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
@@ -484,7 +601,11 @@ export default function PresidentDashboard() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 md:gap-6">
-                                <button className="hidden lg:flex text-slate-400 hover:text-slate-600 relative p-1">
+                                <button
+                                    type="button"
+                                    onClick={scrollToMessages}
+                                    className="hidden lg:flex text-slate-400 hover:text-slate-600 relative p-1"
+                                >
                                     <Bell size={24} />
                                     <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-50"></span>
                                 </button>
@@ -677,8 +798,8 @@ export default function PresidentDashboard() {
                                             </span>
                                         </div>
 
-                                        <div className="border border-slate-200 rounded-lg overflow-x-auto mb-8 max-h-[400px] overflow-y-auto">
-                                            <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <div className="border border-slate-200 rounded-lg overflow-x-auto mb-8 max-h-100 overflow-y-auto">
+                                            <table className="w-full text-left border-collapse min-w-125">
                                                 <thead className="sticky top-0 z-10">
                                                     <tr className="bg-slate-50 border-b border-slate-200">
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500">
@@ -716,7 +837,7 @@ export default function PresidentDashboard() {
                                                                             )
                                                                             .toUpperCase()}
                                                                     </div>
-                                                                    <span className="font-medium text-slate-700 text-sm truncate max-w-[120px] md:max-w-[200px]">
+                                                                    <span className="font-medium text-slate-700 text-sm truncate max-w-30 md:max-w-50">
                                                                         {
                                                                             member.name
                                                                         }
@@ -724,38 +845,46 @@ export default function PresidentDashboard() {
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 px-4 text-center">
-                                                                <select
-                                                                    className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
-                                                                    value={
-                                                                        memberAttendance[
-                                                                            member
-                                                                                .id
-                                                                        ]
-                                                                            ?.status ||
-                                                                        "Absent"
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        handleAttendanceChange(
-                                                                            member.id,
-                                                                            "status",
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <option value="Present">
-                                                                        Present
-                                                                    </option>
-                                                                    <option value="Absent">
-                                                                        Absent
-                                                                    </option>
-                                                                    <option value="Excused">
-                                                                        Excused
-                                                                    </option>
-                                                                </select>
+                                                                <div className="relative inline-flex">
+                                                                    <select
+                                                                        className="appearance-none bg-white border border-slate-200 rounded-md px-3 py-1.5 pr-7 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                                                        value={
+                                                                            memberAttendance[
+                                                                                member
+                                                                                    .id
+                                                                            ]
+                                                                                ?.status ||
+                                                                            "Absent"
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            handleAttendanceChange(
+                                                                                member.id,
+                                                                                "status",
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <option value="Present">
+                                                                            Present
+                                                                        </option>
+                                                                        <option value="Absent">
+                                                                            Absent
+                                                                        </option>
+                                                                        <option value="Excused">
+                                                                            Excused
+                                                                        </option>
+                                                                    </select>
+                                                                    <ChevronDown
+                                                                        size={
+                                                                            14
+                                                                        }
+                                                                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"
+                                                                    />
+                                                                </div>
                                                             </td>
                                                             <td className="py-3 px-4">
                                                                 <input
@@ -850,13 +979,16 @@ export default function PresidentDashboard() {
                             {/* RIGHT COLUMN */}
                             <div className="space-y-6">
                                 {/* Executive Tasks Card */}
-                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                <div
+                                    id="president-messages"
+                                    className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+                                >
                                     <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                                         <h2 className="text-lg font-bold text-slate-900">
                                             Executive Tasks
                                         </h2>
                                         <span className="text-xs text-slate-400">
-                                            5 Pending
+                                            {pendingTasksCount} Pending
                                         </span>
                                     </div>
                                     <div className="p-5">
@@ -915,6 +1047,7 @@ export default function PresidentDashboard() {
 
                                     <div className="px-5 pb-5 pt-4 text-center border-t border-slate-100">
                                         <button
+                                            type="button"
                                             onClick={() =>
                                                 setActiveTab("Tasks")
                                             }
@@ -986,10 +1119,14 @@ export default function PresidentDashboard() {
                                         </h2>
                                     </div>
                                     <p className="text-blue-100 text-xs mb-4">
-                                        Send constructive evaluations to cabinet
+                                        Send constructive evaluations to society
                                         members securely.
                                     </p>
-                                    <button className="w-full border border-blue-400 bg-blue-700/50 hover:bg-blue-700 text-white rounded-lg py-2.5 font-medium text-sm transition-colors">
+                                    <button
+                                        type="button"
+                                        onClick={() => openFeedback()}
+                                        className="w-full border border-blue-400 bg-blue-700/50 hover:bg-blue-700 text-white rounded-lg py-2.5 font-medium text-sm transition-colors"
+                                    >
                                         Open Evaluation Tool
                                     </button>
                                 </div>
@@ -1026,7 +1163,7 @@ export default function PresidentDashboard() {
                                             Chair: {s.Chair}
                                         </span>
                                     </div>
-                                    <h3 className="font-bold text-slate-900 mb-2 line-clamp-2 min-h-[40px]">
+                                    <h3 className="font-bold text-slate-900 mb-2 line-clamp-2 min-h-10">
                                         {s.motiontype}
                                     </h3>
                                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50 text-xs text-slate-400">
@@ -1036,7 +1173,11 @@ export default function PresidentDashboard() {
                                                 s.sessionDate,
                                             ).toLocaleDateString()}
                                         </div>
-                                        <button className="text-blue-600 font-semibold hover:underline">
+                                        <button
+                                            type="button"
+                                            onClick={() => openSessionLedger(s)}
+                                            className="text-blue-600 font-semibold hover:underline"
+                                        >
                                             View Ledger
                                         </button>
                                     </div>
@@ -1116,8 +1257,16 @@ export default function PresidentDashboard() {
                                                             "All Members"}
                                                     </span>
                                                 </div>
-                                                <button className="text-blue-600 hover:underline">
-                                                    Update Status
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleToggleTask(t.id)
+                                                    }
+                                                    className="text-blue-600 hover:underline"
+                                                >
+                                                    {t.completed
+                                                        ? "Reopen"
+                                                        : "Mark Complete"}
                                                 </button>
                                             </div>
                                         </div>
@@ -1157,23 +1306,20 @@ export default function PresidentDashboard() {
                                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
                                                 Assign To
                                             </label>
-                                            <select
-                                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white outline-none focus:border-blue-500"
-                                                value={assignTo}
-                                                onChange={(e) =>
-                                                    setAssignTo(e.target.value)
-                                                }
-                                            >
-                                                <option value="">
-                                                    Whole Society
-                                                </option>
-                                                {members
-                                                    .filter(
-                                                        (m) =>
-                                                            m.role !==
-                                                            "President",
-                                                    )
-                                                    .map((m) => (
+                                            <div className="relative">
+                                                <select
+                                                    className="appearance-none w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 pr-9 text-sm text-white outline-none focus:border-blue-500"
+                                                    value={assignTo}
+                                                    onChange={(e) =>
+                                                        setAssignTo(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="">
+                                                        Whole Society
+                                                    </option>
+                                                    {members.map((m) => (
                                                         <option
                                                             key={m.id}
                                                             value={m.id}
@@ -1181,15 +1327,20 @@ export default function PresidentDashboard() {
                                                             {m.name} (Member)
                                                         </option>
                                                     ))}
-                                                {cabinet.map((m) => (
-                                                    <option
-                                                        key={m.id}
-                                                        value={m.id}
-                                                    >
-                                                        {m.name} (Cabinet)
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                    {cabinet.map((m) => (
+                                                        <option
+                                                            key={m.id}
+                                                            value={m.id}
+                                                        >
+                                                            {m.name} (Cabinet)
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown
+                                                    size={16}
+                                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -1240,10 +1391,33 @@ export default function PresidentDashboard() {
                                     type="text"
                                     placeholder="Search members..."
                                     className="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm outline-none focus:border-blue-500"
+                                    value={memberQuery}
+                                    onChange={(e) =>
+                                        setMemberQuery(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            applyMemberFilter();
+                                        }
+                                    }}
                                 />
-                                <button className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                <button
+                                    type="button"
+                                    onClick={applyMemberFilter}
+                                    className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                                >
                                     Filter
                                 </button>
+                                {memberFilter && (
+                                    <button
+                                        type="button"
+                                        onClick={clearMemberFilter}
+                                        className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
                             </div>
                         </header>
                         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1265,7 +1439,7 @@ export default function PresidentDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {members.map((m) => (
+                                    {visibleMembers.map((m) => (
                                         <tr
                                             key={m.id}
                                             className="hover:bg-slate-50/50 transition-colors"
@@ -1286,10 +1460,8 @@ export default function PresidentDashboard() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
-                                                <span
-                                                    className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${m.role === "President" ? "bg-purple-100 text-purple-700" : m.role === "cabinet" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-600"}`}
-                                                >
-                                                    {m.role}
+                                                <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
+                                                    Member
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6">
@@ -1301,7 +1473,13 @@ export default function PresidentDashboard() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 text-right">
-                                                <button className="text-blue-600 font-bold text-xs hover:underline">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        openFeedback(m.id)
+                                                    }
+                                                    className="text-blue-600 font-bold text-xs hover:underline"
+                                                >
                                                     Evaluation
                                                 </button>
                                             </td>
@@ -1310,6 +1488,35 @@ export default function PresidentDashboard() {
                                 </tbody>
                             </table>
                         </div>
+                        {sentFeedbacks.length > 0 && (
+                            <div className="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                                <h3 className="text-sm font-bold text-slate-900 mb-4">
+                                    Recent Feedback Sent
+                                </h3>
+                                <div className="space-y-3">
+                                    {sentFeedbacks.slice(0, 5).map((f) => (
+                                        <div
+                                            key={f.id}
+                                            className="flex items-start justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 p-3"
+                                        >
+                                            <div>
+                                                <div className="text-xs font-bold text-slate-500 uppercase">
+                                                    {f.member?.name || "Member"}
+                                                </div>
+                                                <p className="text-sm text-slate-700">
+                                                    {f.feedback}
+                                                </p>
+                                            </div>
+                                            <span className="text-[10px] text-slate-400">
+                                                {new Date(
+                                                    f.createdAt,
+                                                ).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : activeTab === "Analytics" ? (
                     <div className="max-w-6xl mx-auto space-y-8 text-center py-20">
@@ -1325,9 +1532,18 @@ export default function PresidentDashboard() {
                             visualizations of speaker score trends,
                             participation heatmaps, and competitive rankings.
                         </p>
-                        <button className="mt-8 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-100">
+                        <button
+                            type="button"
+                            onClick={handleAnalyticsRequest}
+                            className="mt-8 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-100"
+                        >
                             Request Custom Report
                         </button>
+                        {analyticsNotice && (
+                            <p className="text-sm text-emerald-600 font-medium">
+                                {analyticsNotice}
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500">
@@ -1335,6 +1551,144 @@ export default function PresidentDashboard() {
                             {activeTab}
                         </h1>
                         <p>This section is coming soon.</p>
+                    </div>
+                )}
+                {feedbackOpen && (
+                    <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    Send Feedback
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setFeedbackOpen(false)}
+                                    className="text-slate-400 hover:text-slate-600"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <form
+                                onSubmit={handleSendFeedback}
+                                className="space-y-4"
+                            >
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                        Member
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            className="appearance-none w-full bg-white border border-slate-200 rounded-lg px-4 py-2 pr-9 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            value={feedbackMemberId}
+                                            onChange={(e) =>
+                                                setFeedbackMemberId(
+                                                    e.target.value,
+                                                )
+                                            }
+                                        >
+                                            <option value="">
+                                                Select a member
+                                            </option>
+                                            {members.map((m) => (
+                                                <option key={m.id} value={m.id}>
+                                                    {m.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown
+                                            size={16}
+                                            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                        Feedback
+                                    </label>
+                                    <textarea
+                                        rows={4}
+                                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                        value={feedbackText}
+                                        onChange={(e) =>
+                                            setFeedbackText(e.target.value)
+                                        }
+                                        placeholder="Write constructive feedback..."
+                                    />
+                                </div>
+                                {feedbackError && (
+                                    <p className="text-sm text-red-500">
+                                        {feedbackError}
+                                    </p>
+                                )}
+                                {feedbackSuccess && (
+                                    <p className="text-sm text-emerald-600">
+                                        Feedback sent successfully.
+                                    </p>
+                                )}
+                                <div className="flex justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFeedbackOpen(false)}
+                                        className="px-4 py-2 text-slate-500 font-medium hover:bg-slate-100 rounded-lg"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        disabled={feedbackSending}
+                                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white px-5 py-2 rounded-lg font-medium"
+                                    >
+                                        {feedbackSending
+                                            ? "Sending..."
+                                            : "Send Feedback"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {sessionModalOpen && selectedSession && (
+                    <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    Session Ledger
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setSessionModalOpen(false)}
+                                    className="text-slate-400 hover:text-slate-600"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                            <div className="space-y-3 text-sm text-slate-600">
+                                <div>
+                                    <span className="font-semibold text-slate-800">
+                                        Motion:
+                                    </span>{" "}
+                                    {selectedSession.motiontype}
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-slate-800">
+                                        Chair:
+                                    </span>{" "}
+                                    {selectedSession.Chair}
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-slate-800">
+                                        Date:
+                                    </span>{" "}
+                                    {new Date(
+                                        selectedSession.sessionDate,
+                                    ).toLocaleDateString()}
+                                </div>
+                                <p className="text-xs text-slate-400">
+                                    Attendance details are available in the full
+                                    session logs.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>
