@@ -15,5 +15,9 @@ export default async function CabinetDashboardPage() {
     redirect("/dashboard");
   }
 
+  if (!session.user.isVerified) {
+    redirect("/unverified");
+  }
+
   return <CabinetDashboard />;
 }

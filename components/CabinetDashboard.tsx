@@ -92,6 +92,7 @@ export default function CabinetDashboard() {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [partialError, setPartialError] = useState<string | null>(null);
 
     // Form States - Session Log
     const [sessionDate, setSessionDate] = useState("");
@@ -122,6 +123,7 @@ export default function CabinetDashboard() {
     async function loadDashboardData() {
         setLoading(true);
         setError(null);
+        setPartialError(null);
         try {
             const [dashRes, attRes, taskRes, sessRes] = await Promise.all([
                 fetch("/api/cabinet/dashboard"),
@@ -130,35 +132,68 @@ export default function CabinetDashboard() {
                 fetch("/api/cabinet/sessions"),
             ]);
 
-            if (!dashRes.ok || !attRes.ok || !taskRes.ok || !sessRes.ok) {
-                throw new Error("Failed to fetch dashboard data");
+            const readMessage = async (response: Response, fallback: string) => {
+                try {
+                    const data = await response.json();
+                    if (data && typeof data.message === "string" && data.message.trim())
+                        return data.message;
+                } catch {}
+                return fallback;
+            };
+
+            const errors: string[] = [];
+
+            if (dashRes.ok) {
+                const dashData = await dashRes.json();
+                setMembers(dashData.members || []);
+                setCabinet(dashData.cabinet || []);
+                setPresidents(dashData.presidents || []);
+                if (dashData.presidents?.length > 0) {
+                    setSelectedPresidentId((current) => current || dashData.presidents[0].id);
+                }
+
+                const initialAttendance: Record<
+                    string,
+                    {status: string; score: string}
+                > = {};
+                dashData.members?.forEach((m: Member) => {
+                    initialAttendance[m.id] = {status: "Absent", score: ""};
+                });
+                setMemberAttendance(initialAttendance);
+            } else {
+                setMembers([]);
+                setCabinet([]);
+                setPresidents([]);
+                errors.push(await readMessage(dashRes, "Dashboard data failed"));
             }
 
-            const dashData = await dashRes.json();
-            const attData = await attRes.json();
-            const taskData = await taskRes.json();
-            const sessData = await sessRes.json();
-
-            setMembers(dashData.members || []);
-            setCabinet(dashData.cabinet || []);
-            setPresidents(dashData.presidents || []);
-            setMyAttendance(attData.attendance || []);
-            setMyTasks(taskData.tasks || []);
-            setSessions(sessData.sessions || []);
-
-            if (dashData.presidents?.length > 0) {
-                setSelectedPresidentId(dashData.presidents[0].id);
+            if (attRes.ok) {
+                const attData = await attRes.json();
+                setMyAttendance(attData.attendance || []);
+            } else {
+                setMyAttendance([]);
+                errors.push(await readMessage(attRes, "Attendance failed"));
             }
 
-            // Initialize attendance state for all members
-            const initialAttendance: Record<
-                string,
-                {status: string; score: string}
-            > = {};
-            dashData.members?.forEach((m: Member) => {
-                initialAttendance[m.id] = {status: "Absent", score: ""};
-            });
-            setMemberAttendance(initialAttendance);
+            if (taskRes.ok) {
+                const taskData = await taskRes.json();
+                setMyTasks(taskData.tasks || []);
+            } else {
+                setMyTasks([]);
+                errors.push(await readMessage(taskRes, "Tasks failed"));
+            }
+
+            if (sessRes.ok) {
+                const sessData = await sessRes.json();
+                setSessions(sessData.sessions || []);
+            } else {
+                setSessions([]);
+                errors.push(await readMessage(sessRes, "Sessions failed"));
+            }
+
+            if (errors.length) {
+                setPartialError(`Some data could not be loaded: ${errors.join(" | ")}`);
+            }
         } catch (err: any) {
             setError(err.message || "An error occurred");
         } finally {
@@ -475,6 +510,19 @@ export default function CabinetDashboard() {
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
                 </div>
+
+                {!loading && !error && partialError && (
+                    <div className="max-w-3xl mx-auto mb-4 bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 flex items-center gap-3">
+                        <AlertCircle size={18} />
+                        <p className="text-sm font-medium flex-1">{partialError}</p>
+                        <button
+                            onClick={loadDashboardData}
+                            className="flex items-center gap-2 bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors"
+                        >
+                            <RefreshCw size={14} /> Retry
+                        </button>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-4">
