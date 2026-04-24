@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { buildPublicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPublicPageMetadata({
-  title: "Session",
+  title: "Gallery",
   description:
-    "Practice with SMVIT DebSoc motion sessions, debate formats, prep frameworks, and speaking strategy resources.",
-  path: "/session",
+    "Explore photos and highlights from SMVIT DebSoc debates, sessions, and events.",
+  path: "/gallery",
 });
 
-export default function SessionLayout({
+export default function GalleryLayout({
   children,
 }: {
   children: React.ReactNode;

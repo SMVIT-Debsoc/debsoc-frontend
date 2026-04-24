@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { buildPublicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPublicPageMetadata({
-  title: "Session",
+  title: "Debate Timer",
   description:
-    "Practice with SMVIT DebSoc motion sessions, debate formats, prep frameworks, and speaking strategy resources.",
-  path: "/session",
+    "Use the SMVIT DebSoc debate timer for British Parliamentary and Asian Parliamentary rounds with clear speaking-time controls.",
+  path: "/debate-timer",
 });
 
-export default function SessionLayout({
+export default function DebateTimerLayout({
   children,
 }: {
   children: React.ReactNode;
