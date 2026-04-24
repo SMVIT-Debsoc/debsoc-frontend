@@ -5,18 +5,21 @@ type PublicPageInput = {
   title: string;
   description: string;
   path: string;
+  keywords?: string[];
 };
 
 export function buildPublicPageMetadata({
   title,
   description,
   path,
+  keywords,
 }: PublicPageInput): Metadata {
   const canonicalUrl = `${SITE_URL}${path}`;
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: path,
     },

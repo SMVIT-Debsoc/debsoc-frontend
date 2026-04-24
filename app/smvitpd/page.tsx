@@ -3,10 +3,17 @@ import SMVITPDChatPage from "@/components/smvitpd/SMVITPDChatPage";
 import { buildPublicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPublicPageMetadata({
-    title: "SMVITPD Assistant",
+    title: "SMVIT PD Debate Assistant",
     description:
-        "Use the SMVITPD assistant for debate prep support, topic exploration, and argument structuring.",
+        "Use SMVIT PD, the SMVIT DebSoc debate assistant, for debate prep support, topic exploration, and argument structuring.",
     path: "/smvitpd",
+    keywords: [
+        "SMVIT PD",
+        "SMVITPD",
+        "SMVIT DebSoc",
+        "debate assistant",
+        "debate preparation",
+    ],
 });
 
 export default function Page() {
