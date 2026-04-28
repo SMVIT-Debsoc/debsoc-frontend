@@ -14,7 +14,6 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
     {name: "Home", href: "/"},
-    {name: "SMVITPD", href: "/smvitpd"},
     {name: "Why Choose Us", href: "/#whychoose", sectionId: "whychoose"},
     {name: "Team", href: "/#team", sectionId: "team"},
     {
@@ -33,7 +32,7 @@ const navLinks: NavLink[] = [
 const Navbar = () => {
     const router = useRouter();
     const pathname = usePathname();
-    const shouldHideNavbar = pathname?.startsWith("/smvitpd") || pathname?.startsWith("/dashboard");
+    const shouldHideNavbar = pathname?.startsWith("/dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Close mobile menu when route changes

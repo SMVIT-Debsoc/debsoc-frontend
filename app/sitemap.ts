@@ -7,7 +7,6 @@ const indexedRoutes = [
   "/session",
   "/debate-timer",
   "/equity",
-  "/smvitpd",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
