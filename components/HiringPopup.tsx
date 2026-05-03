@@ -274,6 +274,13 @@ export default function HiringPopup() {
     }
   };
 
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIdx > 0) {
+      setCurrentQuestionIdx((prev) => prev - 1);
+      setQuizError(false); // Clear error state when going back
+    }
+  };
+
   const currentQ = QUESTIONS[currentQuestionIdx];
 
   return (
@@ -297,7 +304,7 @@ export default function HiringPopup() {
             animate={{scale: 1, opacity: 1, y: 0}}
             exit={{scale: 0.95, opacity: 0, y: 20}}
             transition={{type: "spring", damping: 25, stiffness: 300}}
-            className="relative w-full max-w-md md:max-w-lg bg-zinc-950 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] md:max-h-[85vh]"
+            className="relative w-full max-w-md md:max-w-lg bg-zinc-950 border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] md:max-h-[92vh]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -574,7 +581,7 @@ export default function HiringPopup() {
                   initial={{opacity: 0, x: 20}}
                   animate={{opacity: 1, x: 0}}
                   exit={{opacity: 0, x: -20}}
-                  className="flex flex-col p-8 sm:p-10 w-full min-h-[450px] md:min-h-[500px]"
+                  className="flex flex-col p-8 sm:p-10 w-full min-h-[500px] md:min-h-[620px]"
                 >
                   <div className="flex-1 relative flex flex-col">
                     <h4 className="text-zinc-500 text-xs font-medium uppercase tracking-widest mb-4 shrink-0">
@@ -636,35 +643,46 @@ export default function HiringPopup() {
                   </div>
 
                   <div className="mt-8 shrink-0">
-                    <button
-                      onClick={handleNextQuestion}
-                      disabled={isSubmitting}
-                      className={`w-full px-6 py-4 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 font-medium tracking-wide uppercase text-sm flex justify-center items-center gap-2 mb-6 ${isSubmitting ? "opacity-70 pointer-events-none" : ""}`}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          Submitting{" "}
-                          <motion.div
-                            animate={{rotate: 360}}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 1,
-                              ease: "linear",
-                            }}
-                            className="w-4 h-4 border-2 border-black border-t-transparent rounded-full ml-2"
-                          />
-                        </>
-                      ) : currentQuestionIdx === QUESTIONS.length - 1 ? (
-                        <>
-                          "Submit Application"{" "}
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      ) : (
-                        <>
-                          "Next Question" <ArrowRight className="w-4 h-4" />
-                        </>
+                    <div className="flex gap-3 mb-6">
+                      {currentQuestionIdx > 0 && (
+                        <button
+                          onClick={handlePreviousQuestion}
+                          disabled={isSubmitting}
+                          className="px-6 py-4 bg-zinc-900 border border-white/10 text-zinc-300 rounded-xl hover:bg-zinc-800 transition-all active:scale-95 font-medium tracking-wide uppercase text-sm flex justify-center items-center shrink-0"
+                        >
+                          Back
+                        </button>
                       )}
-                    </button>
+                      <button
+                        onClick={handleNextQuestion}
+                        disabled={isSubmitting}
+                        className={`flex-1 px-6 py-4 bg-white text-black rounded-xl hover:bg-zinc-200 transition-all active:scale-95 font-medium tracking-wide uppercase text-sm flex justify-center items-center gap-2 ${isSubmitting ? "opacity-70 pointer-events-none" : ""}`}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            Submitting{" "}
+                            <motion.div
+                              animate={{rotate: 360}}
+                              transition={{
+                                repeat: Infinity,
+                                duration: 1,
+                                ease: "linear",
+                              }}
+                              className="w-4 h-4 border-2 border-black border-t-transparent rounded-full ml-2"
+                            />
+                          </>
+                        ) : currentQuestionIdx === QUESTIONS.length - 1 ? (
+                          <>
+                            Submit Application
+                            <ArrowRight className="w-4 h-4" />
+                          </>
+                        ) : (
+                          <>
+                            Next Question <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
 
                     {/* Progress Bar */}
                     <div className="w-full h-1 bg-zinc-900 rounded-full overflow-hidden flex">
