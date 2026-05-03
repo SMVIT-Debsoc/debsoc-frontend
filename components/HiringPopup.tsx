@@ -5,57 +5,89 @@ import {motion, AnimatePresence} from "framer-motion";
 import {X, ArrowRight, CheckCircle2, ChevronDown} from "lucide-react";
 
 const QUESTIONS = [
-  {id: 1, text: "Why do you want to join Debsoc?", type: "text"},
+  {id: 1, text: "If you could change one law in the Constitution, which one would it be?", type: "text"},
   {
     id: 2,
-    text: "How do you stay updated with current affairs?",
+    text: "Do you think women sometimes receive extra privileges in the name of equality?",
     type: "choice",
     options: [
-      "News Apps / Websites",
-      "Social Media",
-      "Newspapers",
-      "I don't follow news much",
+     "Yes",
+     "No"
     ],
   },
-  {id: 3, text: "Describe a time you changed someone's mind.", type: "text"},
-  {id: 4, text: "Which world leader do you most admire?", type: "text"},
+  {id: 3, text: "Russia is right in its aggressive approach towards Ukraine due to circumstances.", type: "choice",
+     options: [
+      "Strongly Agree",
+      "Agree",
+      "Neutral",
+      "Disagree",
+      "Strongly Disagree"
+     ]
+  },
+  {
+    id: 4,
+    text: "Feminism no longer aligns with its core agenda of bringing equality between the two genders.",
+    type: "choice",
+    options: [
+      "Strongly agree",
+      "Partially agree",
+      "Partially disagree",
+      "Strongly disagree"
+    ]
+  },
   {
     id: 5,
-    text: "If you could debate any topic on a global stage, what would it be?",
-    type: "text",
+    text: "People who have committed extreme crimes should be sent for rehabilitation instead of receiving death penalties. Agree or disagree?",
+    type: "choice",
+    options: [
+      "Agree",
+      "Disagree"
+    ]
   },
   {
     id: 6,
-    text: "How do you handle someone who vehemently disagrees with you?",
+    text: "People in power (politicians, activists, celebrities) have higher moral responsibilities than others.",
     type: "choice",
     options: [
-      "Try to find common ground",
-      "Argue my points logically",
-      "Change the subject",
-      "Walk away",
-    ],
+      "Yes",
+      "No"
+    ]
   },
   {
     id: 7,
-    text: "What's the most controversial opinion you hold?",
-    type: "text",
+    text: "Governments should spend more on education than defense.",
+    type: "choice",
+    options: [
+      "Strongly agree",
+      "Partially agree",
+      "Partially disagree",
+      "Strongly disagree"
+    ]
   },
   {
     id: 8,
-    text: "Choose a side: Is AI a threat or an opportunity for humanity?",
+    text: "Social media has caused more harm than benefit to image/reputation of feminism.",
     type: "choice",
-    options: ["Threat", "Opportunity", "Both", "Neither"],
+    options: [
+      "Yes",
+      "No"
+    ]
   },
   {
     id: 9,
-    text: "How do you prioritize your time when given multiple deadlines?",
+    text: "India's image outside of the country is currently something like “India is dirty”, “The streets in India are smelly”. DO you think western influencer has exaggerated it and if you change this mindset and how will you change it?",
     type: "text",
   },
   {
     id: 10,
-    text: "What is your favorite book/movie and what does it say about you?",
+    text: "If you were the President of the United States, would you have authorized military action against Iran? Why or why not? (brownie points : answer this one extra carefully)",
     type: "text",
   },
+  {
+    id : 11,
+    text : "tell us about your one of the hot takes and why do you think so?",
+    type : "text",
+  }
 ];
 
 function CustomSelect({
