@@ -85,7 +85,7 @@ const QUESTIONS = [
   },
   {
     id : 11,
-    text : "tell us about your one of the hot takes and why do you think so?",
+    text : "Give us one of your controversial opinions and why you think so. It'll be part of our discussions in subsequent rounds.",
     type : "text",
   }
 ];
