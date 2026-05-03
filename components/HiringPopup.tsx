@@ -271,23 +271,20 @@ export default function HiringPopup() {
 
       setIsSubmitting(true);
 
-      const webhookUrl = process.env.NEXT_PUBLIC_HIRING_WEBHOOK_URL;
-
-      if (!webhookUrl) {
-        console.error("Webhook URL is missing in environment variables.");
-        alert("System configuration error. Please contact the team.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      fetch(webhookUrl, {
+      // Route through backend API to bypass browser CORS / preflight / redirect issues
+      fetch("/api/applicants", {
         method: "POST",
         headers: {
-          "Content-Type": "text/plain;charset=utf-8",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(finalPayload),
-        mode: "no-cors",
       })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("API returned an error");
+          }
+          return res.json();
+        })
         .then(() => {
           setIsSubmitting(false);
           setStep("success");
@@ -327,7 +324,11 @@ export default function HiringPopup() {
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
-            onClick={handleClose}
+            onClick={() => {
+              if (step === "poster" || step === "success") {
+                handleClose();
+              }
+            }}
           />
 
           {/* Modal Container */}
@@ -397,7 +398,7 @@ export default function HiringPopup() {
                   initial={{opacity: 0, x: 20}}
                   animate={{opacity: 1, x: 0}}
                   exit={{opacity: 0, x: 20}}
-                  className="flex flex-col p-8 sm:p-10 w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                  className="flex flex-col p-6 sm:p-10 w-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 >
                   <div className="mb-8 text-center shrink-0">
                     <h3 className="text-2xl font-light text-white tracking-wide mb-2">
@@ -613,14 +614,14 @@ export default function HiringPopup() {
                   initial={{opacity: 0, x: 20}}
                   animate={{opacity: 1, x: 0}}
                   exit={{opacity: 0, x: -20}}
-                  className="flex flex-col p-8 sm:p-10 w-full min-h-[500px] md:min-h-[620px]"
+                  className="flex flex-col p-6 sm:p-10 w-full h-[85vh] max-h-[620px]"
                 >
-                  <div className="flex-1 relative flex flex-col">
-                    <h4 className="text-zinc-500 text-xs font-medium uppercase tracking-widest mb-4 shrink-0">
+                  <div className="flex-1 relative flex flex-col min-h-0">
+                    <h4 className="text-zinc-500 text-xs font-medium uppercase tracking-widest mb-2 sm:mb-4 shrink-0">
                       Question {currentQuestionIdx + 1} of {QUESTIONS.length}
                     </h4>
 
-                    <div className="relative flex-1 min-h-[200px]">
+                    <div className="relative flex-1 min-h-0">
                       <AnimatePresence mode="wait">
                         <motion.div
                           key={`q-${currentQuestionIdx}`}
@@ -630,7 +631,7 @@ export default function HiringPopup() {
                           transition={{duration: 0.2}}
                           className="absolute inset-0 flex flex-col"
                         >
-                          <h3 className="text-xl md:text-2xl font-light text-white leading-snug mb-6">
+                          <h3 className="text-lg sm:text-xl md:text-2xl font-light text-white leading-snug mb-4 shrink-0">
                             {currentQ.text}
                           </h3>
 
@@ -644,11 +645,11 @@ export default function HiringPopup() {
                                 });
                                 if (quizError) setQuizError(false);
                               }}
-                              className={`w-full bg-zinc-900 border ${quizError ? "border-red-500/50 focus:ring-red-500/50" : "border-white/10 focus:ring-white/30"} rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 transition-all min-h-[140px] resize-none`}
+                              className={`w-full flex-1 bg-zinc-900 border ${quizError ? "border-red-500/50 focus:ring-red-500/50" : "border-white/10 focus:ring-white/30"} rounded-xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 transition-all min-h-[140px] resize-none`}
                               placeholder="Type your answer here..."
                             />
                           ) : (
-                            <div className="flex flex-col gap-3 overflow-y-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                               {currentQ.options?.map((opt) => {
                                 const isSelected = answers[currentQ.id] === opt;
                                 return (
