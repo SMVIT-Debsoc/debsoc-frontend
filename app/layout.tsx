@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import {Suspense} from "react";
 import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
+import HiringPopup from "@/components/HiringPopup";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -87,6 +88,7 @@ export default function RootLayout({
         >
             <body className="min-h-full flex flex-col" suppressHydrationWarning>
                 <Providers>
+                    <HiringPopup />
                     <Suspense fallback={null}>
                         <Navbar />
                     </Suspense>
