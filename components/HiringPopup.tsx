@@ -532,37 +532,24 @@ export default function HiringPopup() {
                   exit={{opacity: 0, x: -20}}
                   className="flex flex-col w-full h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 >
-                  <div
-                    className="relative w-full aspect-[4/5] sm:aspect-square bg-zinc-900 overflow-hidden group cursor-pointer shrink-0"
-                    onClick={() => setStep("form")}
-                  >
+                  <div className="relative w-full overflow-hidden group shrink-0 bg-zinc-950 flex flex-col items-center">
                     <img
-                      src="/quote-image.jpg"
-                      alt="Hiring Poster Placeholder"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80 group-hover:opacity-100"
+                      src="/poster.jpeg"
+                      alt="Hiring Poster"
+                      className="w-full h-auto object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent pointer-events-none" />
-
-                    <div className="absolute bottom-6 inset-x-0 flex flex-col items-center text-center px-6 pointer-events-none">
-                      <h3 className="text-2xl font-light text-white tracking-wide mb-2 drop-shadow-lg">
-                        WE ARE RECRUITING
-                      </h3>
-                      <p className="text-zinc-300 text-sm font-light">
-                        Join the most intellectual society on campus.
-                      </p>
+                    {/* Floating Apply Button */}
+                    <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 w-full flex justify-center px-6">
+                      <button
+                        onClick={() => setStep("form")}
+                        className="group/btn flex items-center justify-center w-full max-w-[280px] sm:max-w-[320px] px-6 py-3 sm:py-4 bg-[#f97316] text-white rounded-full hover:bg-[#ea580c] shadow-xl shadow-orange-900/50 transition-all hover:scale-[1.05] active:scale-95"
+                      >
+                        <span className="font-bold text-base sm:text-lg tracking-wider uppercase">
+                          Apply Now
+                        </span>
+                        <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform ml-2 shrink-0" />
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="p-6 bg-zinc-950 flex flex-col items-center justify-center gap-3 shrink-0">
-                    <button
-                      onClick={() => setStep("form")}
-                      className="group flex items-center justify-between w-full max-w-[320px] px-6 py-4 bg-white text-black rounded-full hover:bg-zinc-200 transition-all hover:scale-[1.02] active:scale-95"
-                    >
-                      <span className="font-medium text-sm tracking-wide uppercase">
-                        Click me to start your journey with debsoc
-                      </span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform ml-2 shrink-0" />
-                    </button>
                   </div>
                 </motion.div>
               )}
