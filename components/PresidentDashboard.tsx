@@ -64,6 +64,12 @@ type LeaderboardEntry = {
     rank: number;
 };
 type LeaderboardScope = "overall" | "bi-monthly";
+type AttendanceParticipant = {
+    id: string;
+    name: string;
+    email: string;
+    role: "Member" | "Cabinet";
+};
 
 const fmtDate = (iso: string) => {
     const d = new Date(iso);
@@ -99,6 +105,9 @@ export default function PresidentDashboard() {
     // Form States - Log Session
     const [sessionDate, setSessionDate] = useState("");
     const [chairName, setChairName] = useState(session?.user?.name || "");
+    const [chairNameInitialized, setChairNameInitialized] = useState(
+        Boolean(session?.user?.name),
+    );
     const [sessionMotion, setSessionMotion] = useState("");
     const [memberAttendance, setMemberAttendance] = useState<
         Record<string, {status: string; score: string}>
@@ -143,6 +152,21 @@ export default function PresidentDashboard() {
         session?.user?.image ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0f172a&color=fff`;
 
+    const attendanceParticipants: AttendanceParticipant[] = [
+        ...members.map((member) => ({
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role: "Member" as const,
+        })),
+        ...cabinet.map((cabinetMember) => ({
+            id: cabinetMember.id,
+            name: cabinetMember.name,
+            email: cabinetMember.email,
+            role: "Cabinet" as const,
+        })),
+    ];
+
     useEffect(() => {
         loadDashboardData();
         setSessionDate(new Date().toISOString().slice(0, 16));
@@ -159,6 +183,13 @@ export default function PresidentDashboard() {
             mediaQuery.removeEventListener("change", syncSidebarMode);
         };
     }, []);
+
+    useEffect(() => {
+        if (session?.user?.name && !chairNameInitialized) {
+            setChairName(session.user.name);
+            setChairNameInitialized(true);
+        }
+    }, [session, chairNameInitialized]);
 
     const readApiError = async (
         response: Response,
@@ -250,6 +281,9 @@ export default function PresidentDashboard() {
             roster.forEach((m: Member) => {
                 initialAttendance[m.id] = {status: "Absent", score: ""};
             });
+            cabList.forEach((c: CabinetMember) => {
+                initialAttendance[c.id] = {status: "Absent", score: ""};
+            });
             setMemberAttendance(initialAttendance);
         } catch (err: any) {
             setError(err.message || "Connection error.");
@@ -314,16 +348,16 @@ export default function PresidentDashboard() {
             const sessionData = await sessionRes.json();
             const newSessionId = sessionData.session.id;
 
-            const attendanceData = Object.entries(memberAttendance).map(
-                ([memberId, data]) => ({
-                    memberId,
-                    status: data.status,
+            const attendanceData = attendanceParticipants.map((participant) => ({
+                ...(participant.role === "Member"
+                    ? {memberId: participant.id}
+                    : {cabinetId: participant.id}),
+                    status: memberAttendance[participant.id]?.status || "Absent",
                     speakerScore:
-                        data.status === "Present"
-                            ? parseInt(data.score) || 0
+                        memberAttendance[participant.id]?.status === "Present"
+                            ? parseInt(memberAttendance[participant.id]?.score || "", 10) || 0
                             : 0,
-                }),
-            );
+                }));
 
             const markRes = await fetch("/api/cabinet/attendance/mark", {
                 method: "POST",
@@ -805,11 +839,10 @@ export default function PresidentDashboard() {
                                                         className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-400"
                                                         placeholder="e.g. Sarah Jenkins"
                                                         value={chairName}
-                                                        onChange={(e) =>
-                                                            setChairName(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        onChange={(e) => {
+                                                            setChairNameInitialized(true);
+                                                            setChairName(e.target.value);
+                                                        }}
                                                         required
                                                     />
                                                 </div>
@@ -844,10 +877,10 @@ export default function PresidentDashboard() {
 
                                         <div className="mb-4 flex justify-between items-end">
                                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                Member Roster & Scoring
+                                                Participant Roster & Scoring
                                             </label>
                                             <span className="text-xs text-slate-400">
-                                                {members.length} Members Loaded
+                                                {attendanceParticipants.length} Participants Loaded
                                             </span>
                                         </div>
 
@@ -856,7 +889,7 @@ export default function PresidentDashboard() {
                                                 <thead className="sticky top-0 z-10">
                                                     <tr className="bg-slate-50 border-b border-slate-200">
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500">
-                                                            Member
+                                                            Participant
                                                         </th>
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
                                                             Status
@@ -867,15 +900,15 @@ export default function PresidentDashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {members.map((member) => (
+                                                    {attendanceParticipants.map((participant) => (
                                                         <tr
-                                                            key={member.id}
+                                                            key={`${participant.role}-${participant.id}`}
                                                             className="hover:bg-slate-50/50"
                                                         >
                                                             <td className="py-3 px-4">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                                                                        {member.name
+                                                                        {participant.name
                                                                             .split(
                                                                                 " ",
                                                                             )
@@ -890,11 +923,14 @@ export default function PresidentDashboard() {
                                                                             )
                                                                             .toUpperCase()}
                                                                     </div>
-                                                                    <span className="font-medium text-slate-700 text-sm truncate max-w-30 md:max-w-50">
-                                                                        {
-                                                                            member.name
-                                                                        }
-                                                                    </span>
+                                                                    <div className="min-w-0">
+                                                                        <span className="block font-medium text-slate-700 text-sm truncate max-w-30 md:max-w-50">
+                                                                            {participant.name}
+                                                                        </span>
+                                                                        <span className="block text-[11px] text-slate-400">
+                                                                            {participant.role}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 px-4 text-center">
@@ -903,7 +939,7 @@ export default function PresidentDashboard() {
                                                                         className="appearance-none bg-white border border-slate-200 rounded-md px-3 py-1.5 pr-7 text-xs text-slate-700 shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                                                         value={
                                                                             memberAttendance[
-                                                                                member
+                                                                                participant
                                                                                     .id
                                                                             ]
                                                                                 ?.status ||
@@ -913,7 +949,7 @@ export default function PresidentDashboard() {
                                                                             e,
                                                                         ) =>
                                                                             handleAttendanceChange(
-                                                                                member.id,
+                                                                                participant.id,
                                                                                 "status",
                                                                                 e
                                                                                     .target
@@ -946,7 +982,7 @@ export default function PresidentDashboard() {
                                                                     className="w-16 md:w-20 mx-auto block bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
                                                                     value={
                                                                         memberAttendance[
-                                                                            member
+                                                                            participant
                                                                                 .id
                                                                         ]
                                                                             ?.score ||
@@ -956,7 +992,7 @@ export default function PresidentDashboard() {
                                                                         e,
                                                                     ) =>
                                                                         handleAttendanceChange(
-                                                                            member.id,
+                                                                            participant.id,
                                                                             "score",
                                                                             e
                                                                                 .target
@@ -965,7 +1001,7 @@ export default function PresidentDashboard() {
                                                                     }
                                                                     disabled={
                                                                         memberAttendance[
-                                                                            member
+                                                                            participant
                                                                                 .id
                                                                         ]
                                                                             ?.status !==
@@ -987,9 +1023,9 @@ export default function PresidentDashboard() {
                                                 onClick={() => {
                                                     setSessionMotion("");
                                                     const initial: any = {};
-                                                    members.forEach(
-                                                        (m) =>
-                                                            (initial[m.id] = {
+                                                    attendanceParticipants.forEach(
+                                                        (participant) =>
+                                                            (initial[participant.id] = {
                                                                 status: "Absent",
                                                                 score: "",
                                                             }),
@@ -1005,7 +1041,7 @@ export default function PresidentDashboard() {
                                             <button
                                                 disabled={
                                                     savingSession ||
-                                                    members.length === 0
+                                                    attendanceParticipants.length === 0
                                                 }
                                                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                                             >

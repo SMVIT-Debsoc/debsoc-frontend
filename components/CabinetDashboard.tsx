@@ -38,6 +38,21 @@ type CabinetMember = {
     position: string;
 };
 type President = {id: string; name: string; email: string};
+type AttendanceParticipant = {
+    id: string;
+    name: string;
+    email: string;
+    role: "Member" | "Cabinet";
+};
+type LeaderboardEntry = {
+    id: string;
+    name: string;
+    type: "Member" | "Cabinet";
+    score: number;
+    sessions: number;
+    rank: number;
+};
+type LeaderboardScope = "overall" | "bi-monthly";
 type AttendanceRecord = {
     id: string;
     status: "Present" | "Absent" | "Excused";
@@ -89,6 +104,13 @@ export default function CabinetDashboard() {
     const [myAttendance, setMyAttendance] = useState<AttendanceRecord[]>([]);
     const [myTasks, setMyTasks] = useState<Task[]>([]);
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+    const [leaderboardScope, setLeaderboardScope] =
+        useState<LeaderboardScope>("overall");
+    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+    const [leaderboardError, setLeaderboardError] = useState<string | null>(
+        null,
+    );
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -97,6 +119,9 @@ export default function CabinetDashboard() {
     // Form States - Session Log
     const [sessionDate, setSessionDate] = useState("");
     const [chairName, setChairName] = useState(session?.user?.name || "");
+    const [chairNameInitialized, setChairNameInitialized] = useState(
+        Boolean(session?.user?.name),
+    );
     const [sessionMotion, setSessionMotion] = useState("");
     const [memberAttendance, setMemberAttendance] = useState<
         Record<string, {status: string; score: string}>
@@ -115,10 +140,25 @@ export default function CabinetDashboard() {
     const [isDesktopSidebar, setIsDesktopSidebar] = useState(true);
 
     const userName = session?.user?.name || "Cabinet Member";
-    const userRole = (session?.user as any)?.position || "Cabinet";
     const userImage =
         session?.user?.image ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff`;
+
+    const attendanceParticipants: AttendanceParticipant[] = [
+        ...members.map((member) => ({...member, role: "Member" as const})),
+        ...cabinet.map((cabinetMember) => ({
+            id: cabinetMember.id,
+            name: cabinetMember.name,
+            email: cabinetMember.email,
+            role: "Cabinet" as const,
+        })),
+    ];
+    const currentCabinetMember = cabinet.find(
+        (cabinetMember) =>
+            cabinetMember.email === session?.user?.email ||
+            cabinetMember.id === session?.user?.id,
+    );
+    const userRole = currentCabinetMember?.position || "Cabinet";
 
     async function loadDashboardData() {
         setLoading(true);
@@ -152,12 +192,12 @@ export default function CabinetDashboard() {
                     setSelectedPresidentId((current) => current || dashData.presidents[0].id);
                 }
 
-                const initialAttendance: Record<
-                    string,
-                    {status: string; score: string}
-                > = {};
+                const initialAttendance: Record<string, {status: string; score: string}> = {};
                 dashData.members?.forEach((m: Member) => {
                     initialAttendance[m.id] = {status: "Absent", score: ""};
+                });
+                dashData.cabinet?.forEach((c: CabinetMember) => {
+                    initialAttendance[c.id] = {status: "Absent", score: ""};
                 });
                 setMemberAttendance(initialAttendance);
             } else {
@@ -201,10 +241,39 @@ export default function CabinetDashboard() {
         }
     }
 
+    async function loadLeaderboard(scope: LeaderboardScope) {
+        setLeaderboardLoading(true);
+        setLeaderboardError(null);
+        try {
+            const response = await fetch(
+                `/api/leaderboard${scope === "bi-monthly" ? "?type=bi-monthly" : ""}`,
+            );
+            if (!response.ok) {
+                throw new Error("Failed to load leaderboard.");
+            }
+            const data: {leaderboard?: LeaderboardEntry[]} =
+                await response.json();
+            setLeaderboard(data.leaderboard ?? []);
+        } catch (err) {
+            setLeaderboard([]);
+            setLeaderboardError(
+                err instanceof Error ? err.message : "Failed to load leaderboard.",
+            );
+        } finally {
+            setLeaderboardLoading(false);
+        }
+    }
+
     useEffect(() => {
         loadDashboardData();
         setSessionDate(new Date().toISOString().slice(0, 16));
     }, []);
+
+    useEffect(() => {
+        if (activeTab === "Analytics" && leaderboard.length === 0 && !leaderboardLoading) {
+            loadLeaderboard(leaderboardScope);
+        }
+    }, [activeTab, leaderboard.length, leaderboardLoading, leaderboardScope]);
 
     useEffect(() => {
         const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -219,10 +288,11 @@ export default function CabinetDashboard() {
     }, []);
 
     useEffect(() => {
-        if (session?.user?.name && !chairName) {
+        if (session?.user?.name && !chairNameInitialized) {
             setChairName(session.user.name);
+            setChairNameInitialized(true);
         }
-    }, [session, chairName]);
+    }, [session, chairNameInitialized]);
 
     const handleAttendanceChange = (
         memberId: string,
@@ -259,16 +329,16 @@ export default function CabinetDashboard() {
             const {session: newSession} = await createRes.json();
 
             // 2. Mark Attendance
-            const attendanceData = Object.entries(memberAttendance).map(
-                ([memberId, data]) => ({
-                    memberId,
-                    status: data.status,
-                    speakerScore:
-                        data.status === "Present"
-                            ? parseFloat(data.score) || 0
-                            : undefined,
-                }),
-            );
+            const attendanceData = attendanceParticipants.map((participant) => ({
+                ...(participant.role === "Member"
+                    ? {memberId: participant.id}
+                    : {cabinetId: participant.id}),
+                status: memberAttendance[participant.id]?.status || "Absent",
+                speakerScore:
+                    memberAttendance[participant.id]?.status === "Present"
+                        ? parseFloat(memberAttendance[participant.id]?.score || "") || 0
+                        : undefined,
+            }));
 
             const markRes = await fetch("/api/cabinet/attendance/mark", {
                 method: "POST",
@@ -550,7 +620,7 @@ export default function CabinetDashboard() {
                             <div className="flex items-center gap-4">
                                 <div>
                                     <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
-                                        Operational Dashboard
+                                        {userRole}
                                     </h1>
                                     <p className="text-slate-500 text-xs md:text-sm">
                                         Manage sessions, tasks, and reporting
@@ -686,11 +756,10 @@ export default function CabinetDashboard() {
                                                         className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-10 pr-4 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-400"
                                                         placeholder="e.g. Sarah Jenkins"
                                                         value={chairName}
-                                                        onChange={(e) =>
-                                                            setChairName(
-                                                                e.target.value,
-                                                            )
-                                                        }
+                                                        onChange={(e) => {
+                                                            setChairNameInitialized(true);
+                                                            setChairName(e.target.value);
+                                                        }}
                                                         required
                                                     />
                                                 </div>
@@ -725,10 +794,10 @@ export default function CabinetDashboard() {
 
                                         <div className="mb-4 flex justify-between items-end">
                                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                Member Roster & Scoring
+                                                Participant Roster & Scoring
                                             </label>
                                             <span className="text-xs text-slate-400">
-                                                {members.length} Members Loaded
+                                                {attendanceParticipants.length} Participants Loaded
                                             </span>
                                         </div>
 
@@ -737,7 +806,7 @@ export default function CabinetDashboard() {
                                                 <thead className="sticky top-0 z-10">
                                                     <tr className="bg-slate-50 border-b border-slate-200">
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500">
-                                                            Member
+                                                            Participant
                                                         </th>
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
                                                             Status
@@ -748,15 +817,15 @@ export default function CabinetDashboard() {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {members.map((member) => (
+                                                    {attendanceParticipants.map((participant) => (
                                                         <tr
-                                                            key={member.id}
+                                                            key={`${participant.role}-${participant.id}`}
                                                             className="hover:bg-slate-50/50"
                                                         >
                                                             <td className="py-3 px-4">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
-                                                                        {member.name
+                                                                        {participant.name
                                                                             .split(
                                                                                 " ",
                                                                             )
@@ -771,11 +840,14 @@ export default function CabinetDashboard() {
                                                                             )
                                                                             .toUpperCase()}
                                                                     </div>
-                                                                    <span className="font-medium text-slate-700 text-sm truncate max-w-[120px] md:max-w-[200px]">
-                                                                        {
-                                                                            member.name
-                                                                        }
-                                                                    </span>
+                                                                    <div className="min-w-0">
+                                                                        <span className="block font-medium text-slate-700 text-sm truncate max-w-[120px] md:max-w-[200px]">
+                                                                            {participant.name}
+                                                                        </span>
+                                                                        <span className="block text-[11px] text-slate-400">
+                                                                            {participant.role}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 px-4 text-center">
@@ -783,7 +855,7 @@ export default function CabinetDashboard() {
                                                                     className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
                                                                     value={
                                                                         memberAttendance[
-                                                                            member
+                                                                            participant
                                                                                 .id
                                                                         ]
                                                                             ?.status ||
@@ -793,7 +865,7 @@ export default function CabinetDashboard() {
                                                                         e,
                                                                     ) =>
                                                                         handleAttendanceChange(
-                                                                            member.id,
+                                                                            participant.id,
                                                                             "status",
                                                                             e
                                                                                 .target
@@ -819,7 +891,7 @@ export default function CabinetDashboard() {
                                                                     className="w-16 md:w-20 mx-auto block bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-sm outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
                                                                     value={
                                                                         memberAttendance[
-                                                                            member
+                                                                            participant
                                                                                 .id
                                                                         ]
                                                                             ?.score ||
@@ -829,7 +901,7 @@ export default function CabinetDashboard() {
                                                                         e,
                                                                     ) =>
                                                                         handleAttendanceChange(
-                                                                            member.id,
+                                                                            participant.id,
                                                                             "score",
                                                                             e
                                                                                 .target
@@ -838,7 +910,7 @@ export default function CabinetDashboard() {
                                                                     }
                                                                     disabled={
                                                                         memberAttendance[
-                                                                            member
+                                                                            participant
                                                                                 .id
                                                                         ]
                                                                             ?.status !==
@@ -850,13 +922,13 @@ export default function CabinetDashboard() {
                                                             </td>
                                                         </tr>
                                                     ))}
-                                                    {members.length === 0 && (
+                                                    {attendanceParticipants.length === 0 && (
                                                         <tr>
                                                             <td
                                                                 colSpan={3}
                                                                 className="py-8 text-center text-slate-500 text-sm italic"
                                                             >
-                                                                No members
+                                                                No participants
                                                                 available to
                                                                 load.
                                                             </td>
@@ -872,9 +944,9 @@ export default function CabinetDashboard() {
                                                 onClick={() => {
                                                     setSessionMotion("");
                                                     const initial: any = {};
-                                                    members.forEach(
-                                                        (m) =>
-                                                            (initial[m.id] = {
+                                                    attendanceParticipants.forEach(
+                                                        (participant) =>
+                                                            (initial[participant.id] = {
                                                                 status: "Absent",
                                                                 score: "",
                                                             }),
@@ -890,7 +962,7 @@ export default function CabinetDashboard() {
                                             <button
                                                 disabled={
                                                     savingSession ||
-                                                    members.length === 0
+                                                    attendanceParticipants.length === 0
                                                 }
                                                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
                                             >
@@ -1369,17 +1441,39 @@ export default function CabinetDashboard() {
                         </div>
                     </div>
                 ) : activeTab === "Analytics" ? (
-                    <div className="max-w-6xl mx-auto">
-                        <header className="mb-8 border-b border-slate-200 pb-6">
-                            <h1 className="text-2xl font-bold text-slate-900 mb-1">
-                                Performance Analytics
-                            </h1>
-                            <p className="text-slate-500 text-sm">
-                                Deep dive into your session and task metrics
-                            </p>
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                                    Performance Analytics
+                                </h1>
+                                <p className="text-slate-500 text-sm">
+                                    Deep dive into your session metrics and the live speaker leaderboard.
+                                </p>
+                            </div>
+                            <div className="flex gap-2 p-1 rounded-full border border-slate-200 bg-white w-fit">
+                                {(
+                                    [
+                                        ["overall", "Overall"],
+                                        ["bi-monthly", "Last 60 days"],
+                                    ] as const
+                                ).map(([scope, label]) => (
+                                    <button
+                                        key={scope}
+                                        type="button"
+                                        onClick={() => {
+                                            setLeaderboardScope(scope);
+                                            loadLeaderboard(scope);
+                                        }}
+                                        className={`px-4 py-2 rounded-full text-xs font-semibold transition-colors ${leaderboardScope === scope ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
                         </header>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Attendance Breakdown */}
                             <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
                                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">
@@ -1499,6 +1593,114 @@ export default function CabinetDashboard() {
                                 </div>
                             </div>
                         </div>
+
+                        {leaderboardLoading ? (
+                            <div className="bg-white rounded-xl border border-slate-200 p-10 flex flex-col items-center gap-3 text-slate-500">
+                                <Loader2
+                                    size={28}
+                                    className="animate-spin text-blue-600"
+                                />
+                                <p className="text-sm font-medium">
+                                    Loading leaderboard...
+                                </p>
+                            </div>
+                        ) : leaderboardError ? (
+                            <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 flex items-center gap-3">
+                                <AlertCircle size={18} />
+                                <p className="text-sm font-medium">
+                                    {leaderboardError}
+                                </p>
+                            </div>
+                        ) : leaderboard.length === 0 ? (
+                            <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-slate-500">
+                                <BarChart2
+                                    size={38}
+                                    className="mx-auto mb-3 text-slate-300"
+                                />
+                                <p className="font-medium">
+                                    No leaderboard data available yet.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Ranked Debaters
+                                        </p>
+                                        <p className="text-2xl font-bold text-slate-900 mt-2">
+                                            {leaderboard.length}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Top Score
+                                        </p>
+                                        <p className="text-2xl font-bold text-slate-900 mt-2">
+                                            {leaderboard[0]?.score ?? 0}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded-xl border border-slate-200 p-5">
+                                        <p className="text-xs uppercase tracking-wide text-slate-500 font-bold">
+                                            Top Speaker
+                                        </p>
+                                        <p className="text-lg font-bold text-slate-900 mt-2 truncate">
+                                            {leaderboard[0]?.name ?? "-"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-200">
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Rank
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Name
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Role
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase">
+                                                        Sessions
+                                                    </th>
+                                                    <th className="py-3 px-4 text-xs font-bold text-slate-500 uppercase text-right">
+                                                        Score
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {leaderboard.map((entry) => (
+                                                    <tr
+                                                        key={`${entry.type}-${entry.id}`}
+                                                        className="hover:bg-slate-50"
+                                                    >
+                                                        <td className="py-3 px-4 font-semibold text-slate-700">
+                                                            #{entry.rank}
+                                                        </td>
+                                                        <td className="py-3 px-4 font-medium text-slate-900">
+                                                            {entry.name}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-600">
+                                                            {entry.type}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-slate-600">
+                                                            {entry.sessions}
+                                                        </td>
+                                                        <td className="py-3 px-4 text-right font-bold text-slate-900">
+                                                            {entry.score}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500">
