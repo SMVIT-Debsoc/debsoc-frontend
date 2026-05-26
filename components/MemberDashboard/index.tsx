@@ -891,7 +891,7 @@ export default function MemberDashboard() {
                                     </h1>
                                     <p className={styles.subtitle}>
                                         Here's your attendance overview for this
-                                        semester.
+                                        year.
                                     </p>
                                 </div>
                                 {rate > 0 && (

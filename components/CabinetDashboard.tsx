@@ -742,34 +742,34 @@ export default function CabinetDashboard() {
                         </header>
 
                         {/* STATS GRID */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 mb-6 md:mb-8">
                             {/* Stat 1 */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                                    <CheckCircle2 size={24} />
+                            <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 min-h-[112px] md:min-h-0">
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 size={20} className="md:w-6 md:h-6" />
                                 </div>
                                 <div>
-                                    <div className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
+                                    <div className="text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-1">
                                         My Attendance
                                     </div>
-                                    <div className="text-2xl font-bold text-slate-900">
+                                    <div className="text-xl md:text-2xl font-bold text-slate-900">
                                         {attendanceRate}%
                                     </div>
                                 </div>
                             </div>
 
                             {/* Stat 2 */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                                    <Medal size={24} />
+                            <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 min-h-[112px] md:min-h-0">
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                    <Medal size={20} className="md:w-6 md:h-6" />
                                 </div>
                                 <div>
-                                    <div className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
+                                    <div className="text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-1">
                                         Avg. Speaker Score
                                     </div>
-                                    <div className="text-2xl font-bold text-slate-900">
+                                    <div className="text-xl md:text-2xl font-bold text-slate-900">
                                         {avgSpeakerScore}
-                                        <span className="text-slate-400 text-sm font-medium">
+                                        <span className="text-slate-400 text-xs md:text-sm font-medium">
                                             /100
                                         </span>
                                     </div>
@@ -777,17 +777,17 @@ export default function CabinetDashboard() {
                             </div>
 
                             {/* Stat 3 */}
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                                    <ListTodo size={24} />
+                            <div className="col-span-2 md:col-span-1 bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 md:gap-4 min-h-[112px] md:min-h-0">
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                                    <ListTodo size={20} className="md:w-6 md:h-6" />
                                 </div>
                                 <div>
-                                    <div className="text-slate-500 text-xs font-medium uppercase tracking-wider mb-1">
+                                    <div className="text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-wider mb-1">
                                         Tasks Completed
                                     </div>
-                                    <div className="text-2xl font-bold text-slate-900">
+                                    <div className="text-xl md:text-2xl font-bold text-slate-900">
                                         {completedTasks}{" "}
-                                        <span className="text-slate-400 text-sm font-medium normal-case">
+                                        <span className="text-slate-400 text-xs md:text-sm font-medium normal-case">
                                             this term
                                         </span>
                                     </div>
