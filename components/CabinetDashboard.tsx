@@ -1480,7 +1480,7 @@ export default function CabinetDashboard() {
                                     Attendance Breakdown
                                 </h3>
                                 <div className="flex items-end gap-3 h-40 mb-6">
-                                    {["Present", "Absent", "Excused"].map(
+                                    {["Present", "Absent"].map(
                                         (status) => {
                                             const count = myAttendance.filter(
                                                 (a) => a.status === status,
@@ -1493,9 +1493,7 @@ export default function CabinetDashboard() {
                                             const color =
                                                 status === "Present"
                                                     ? "bg-blue-500"
-                                                    : status === "Absent"
-                                                      ? "bg-red-500"
-                                                      : "bg-slate-400";
+                                                    : "bg-red-500";
                                             return (
                                                 <div
                                                     key={status}
