@@ -1417,7 +1417,7 @@ export default function CabinetDashboard() {
                                                             const entries = Object.entries(grouped);
                                                             if (!entries.length) return "No pairing data";
                                                             return entries
-                                                                .map(([code, names]) => `${code}: ${names.join(", ")}`)
+                                                                .map(([, names]) => names.join(", "))
                                                                 .join(" | ");
                                                         })()}
                                                     </td>

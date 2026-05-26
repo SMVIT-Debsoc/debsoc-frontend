@@ -1094,7 +1094,7 @@ export default function MemberDashboard() {
                                                                         Pairing:{" "}
                                                                         {att.debatedAlone
                                                                             ? "Debated alone"
-                                                                            : `${att.pairingCode || "Group"} with ${att.pairedWith?.join(", ")}`}
+                                                                            : `With ${att.pairedWith?.join(", ")}`}
                                                                     </p>
                                                                 )}
                                                                 {att.speakerScore !=
