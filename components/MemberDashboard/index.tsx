@@ -33,8 +33,11 @@ import {useSession, signOut} from "next-auth/react";
 // Types
 type AttendanceRecord = {
     id: string;
-    status: "Present" | "Absent" | "Excused";
+    status: "Present" | "Absent";
     speakerScore?: number | null;
+    pairingCode?: string | null;
+    debatedAlone?: boolean;
+    pairedWith?: string[];
     session: {
         id: string;
         sessionDate: string;
@@ -1081,6 +1084,19 @@ export default function MemberDashboard() {
                                                                             .Chair
                                                                     }
                                                                 </p>
+                                                                {(att.debatedAlone ||
+                                                                    (att.pairedWith?.length ?? 0) > 0) && (
+                                                                    <p
+                                                                        className={
+                                                                            styles.sessionDesc
+                                                                        }
+                                                                    >
+                                                                        Pairing:{" "}
+                                                                        {att.debatedAlone
+                                                                            ? "Debated alone"
+                                                                            : `${att.pairingCode || "Group"} with ${att.pairedWith?.join(", ")}`}
+                                                                    </p>
+                                                                )}
                                                                 {att.speakerScore !=
                                                                     null && (
                                                                     <div

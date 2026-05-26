@@ -55,8 +55,10 @@ type LeaderboardEntry = {
 type LeaderboardScope = "overall" | "bi-monthly";
 type AttendanceRecord = {
     id: string;
-    status: "Present" | "Absent" | "Excused";
+    status: "Present" | "Absent";
     speakerScore?: number | null;
+    pairingCode?: string | null;
+    debatedAlone?: boolean;
     session: {
         id: string;
         sessionDate: string;
@@ -78,6 +80,14 @@ type Session = {
     sessionDate: string;
     motiontype: string;
     Chair: string;
+    attendance?: Array<{
+        id: string;
+        status: string;
+        pairingCode?: string | null;
+        debatedAlone?: boolean;
+        member?: {name: string} | null;
+        cabinet?: {name: string} | null;
+    }>;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -124,7 +134,7 @@ export default function CabinetDashboard() {
     );
     const [sessionMotion, setSessionMotion] = useState("");
     const [memberAttendance, setMemberAttendance] = useState<
-        Record<string, {status: string; score: string}>
+        Record<string, {status: string; score: string; pairingCode: string; debatedAlone: boolean}>
     >({});
     const [savingSession, setSavingSession] = useState(false);
     const [sessionSuccess, setSessionSuccess] = useState(false);
@@ -192,12 +202,15 @@ export default function CabinetDashboard() {
                     setSelectedPresidentId((current) => current || dashData.presidents[0].id);
                 }
 
-                const initialAttendance: Record<string, {status: string; score: string}> = {};
+                const initialAttendance: Record<
+                    string,
+                    {status: string; score: string; pairingCode: string; debatedAlone: boolean}
+                > = {};
                 dashData.members?.forEach((m: Member) => {
-                    initialAttendance[m.id] = {status: "Absent", score: ""};
+                    initialAttendance[m.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
                 });
                 dashData.cabinet?.forEach((c: CabinetMember) => {
-                    initialAttendance[c.id] = {status: "Absent", score: ""};
+                    initialAttendance[c.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
                 });
                 setMemberAttendance(initialAttendance);
             } else {
@@ -296,8 +309,8 @@ export default function CabinetDashboard() {
 
     const handleAttendanceChange = (
         memberId: string,
-        field: "status" | "score",
-        value: string,
+        field: "status" | "score" | "pairingCode" | "debatedAlone",
+        value: string | boolean,
     ) => {
         setMemberAttendance((prev) => ({
             ...prev,
@@ -338,6 +351,8 @@ export default function CabinetDashboard() {
                     memberAttendance[participant.id]?.status === "Present"
                         ? parseFloat(memberAttendance[participant.id]?.score || "") || 0
                         : undefined,
+                pairingCode: memberAttendance[participant.id]?.pairingCode?.trim() || undefined,
+                debatedAlone: Boolean(memberAttendance[participant.id]?.debatedAlone),
             }));
 
             const markRes = await fetch("/api/cabinet/attendance/mark", {
@@ -814,6 +829,9 @@ export default function CabinetDashboard() {
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
                                                             Score (0-100)
                                                         </th>
+                                                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
+                                                            Pairing
+                                                        </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
@@ -920,12 +938,48 @@ export default function CabinetDashboard() {
                                                                     max="100"
                                                                 />
                                                             </td>
+                                                            <td className="py-3 px-4">
+                                                                <div className="flex flex-col md:flex-row gap-2 items-center justify-center">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="e.g. P1"
+                                                                        className="w-20 bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                                                        value={
+                                                                            memberAttendance[participant.id]?.pairingCode || ""
+                                                                        }
+                                                                        onChange={(e) =>
+                                                                            handleAttendanceChange(
+                                                                                participant.id,
+                                                                                "pairingCode",
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                        disabled={memberAttendance[participant.id]?.debatedAlone}
+                                                                    />
+                                                                    <label className="flex items-center gap-1 text-[11px] text-slate-600">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={
+                                                                                memberAttendance[participant.id]?.debatedAlone || false
+                                                                            }
+                                                                            onChange={(e) =>
+                                                                                handleAttendanceChange(
+                                                                                    participant.id,
+                                                                                    "debatedAlone",
+                                                                                    e.target.checked,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        Alone
+                                                                    </label>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                     {attendanceParticipants.length === 0 && (
                                                         <tr>
                                                             <td
-                                                                colSpan={3}
+                                                                colSpan={4}
                                                                 className="py-8 text-center text-slate-500 text-sm italic"
                                                             >
                                                                 No participants
@@ -949,6 +1003,8 @@ export default function CabinetDashboard() {
                                                             (initial[participant.id] = {
                                                                 status: "Absent",
                                                                 score: "",
+                                                                pairingCode: "",
+                                                                debatedAlone: false,
                                                             }),
                                                     );
                                                     setMemberAttendance(
@@ -1195,13 +1251,16 @@ export default function CabinetDashboard() {
                                         <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                             Chair
                                         </th>
+                                        <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                            Pairings
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {sessions.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan={3}
+                                                colSpan={4}
                                                 className="py-12 text-center text-slate-400 italic"
                                             >
                                                 No sessions recorded yet.
@@ -1245,6 +1304,28 @@ export default function CabinetDashboard() {
                                                     </td>
                                                     <td className="py-4 px-6 text-sm text-slate-600">
                                                         {s.Chair}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-xs text-slate-600">
+                                                        {(() => {
+                                                            const grouped = (s.attendance ?? []).reduce(
+                                                                (acc, item) => {
+                                                                    const name = item.member?.name ?? item.cabinet?.name ?? "Unknown";
+                                                                    if (item.debatedAlone) {
+                                                                        acc[`solo-${item.id}`] = [`${name} (Alone)`];
+                                                                        return acc;
+                                                                    }
+                                                                    const key = item.pairingCode?.trim() || "Unpaired";
+                                                                    acc[key] = [...(acc[key] ?? []), name];
+                                                                    return acc;
+                                                                },
+                                                                {} as Record<string, string[]>,
+                                                            );
+                                                            const entries = Object.entries(grouped);
+                                                            if (!entries.length) return "No pairing data";
+                                                            return entries
+                                                                .map(([code, names]) => `${code}: ${names.join(", ")}`)
+                                                                .join(" | ");
+                                                        })()}
                                                     </td>
                                                 </tr>
                                             );

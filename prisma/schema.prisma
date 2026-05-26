@@ -57,6 +57,8 @@ model Attendance {
   cabinet      cabinet? @relation(fields: [cabinetId], references: [id])
   cabinetId    String?
   speakerScore Float?
+  pairingCode  String?
+  debatedAlone Boolean @default(false)
 }
 
 model cabinet {

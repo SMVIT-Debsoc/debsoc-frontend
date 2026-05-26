@@ -110,7 +110,7 @@ export default function PresidentDashboard() {
     );
     const [sessionMotion, setSessionMotion] = useState("");
     const [memberAttendance, setMemberAttendance] = useState<
-        Record<string, {status: string; score: string}>
+        Record<string, {status: string; score: string; pairingCode: string; debatedAlone: boolean}>
     >({});
     const [savingSession, setSavingSession] = useState(false);
     const [sessionSuccess, setSessionSuccess] = useState(false);
@@ -276,13 +276,13 @@ export default function PresidentDashboard() {
             // Initialize attendance state for all members
             const initialAttendance: Record<
                 string,
-                {status: string; score: string}
+                {status: string; score: string; pairingCode: string; debatedAlone: boolean}
             > = {};
             roster.forEach((m: Member) => {
-                initialAttendance[m.id] = {status: "Absent", score: ""};
+                initialAttendance[m.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
             });
             cabList.forEach((c: CabinetMember) => {
-                initialAttendance[c.id] = {status: "Absent", score: ""};
+                initialAttendance[c.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
             });
             setMemberAttendance(initialAttendance);
         } catch (err: any) {
@@ -319,8 +319,8 @@ export default function PresidentDashboard() {
 
     const handleAttendanceChange = (
         memberId: string,
-        field: string,
-        value: string,
+        field: "status" | "score" | "pairingCode" | "debatedAlone",
+        value: string | boolean,
     ) => {
         setMemberAttendance((prev) => ({
             ...prev,
@@ -357,6 +357,8 @@ export default function PresidentDashboard() {
                         memberAttendance[participant.id]?.status === "Present"
                             ? parseInt(memberAttendance[participant.id]?.score || "", 10) || 0
                             : 0,
+                    pairingCode: memberAttendance[participant.id]?.pairingCode?.trim() || undefined,
+                    debatedAlone: Boolean(memberAttendance[participant.id]?.debatedAlone),
                 }));
 
             const markRes = await fetch("/api/cabinet/attendance/mark", {
@@ -897,6 +899,9 @@ export default function PresidentDashboard() {
                                                         <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
                                                             Score (0-100)
                                                         </th>
+                                                        <th className="py-3 px-4 text-xs font-semibold text-slate-500 text-center">
+                                                            Pairing
+                                                        </th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
@@ -963,9 +968,6 @@ export default function PresidentDashboard() {
                                                                         <option value="Absent">
                                                                             Absent
                                                                         </option>
-                                                                        <option value="Excused">
-                                                                            Excused
-                                                                        </option>
                                                                     </select>
                                                                     <ChevronDown
                                                                         size={
@@ -1011,6 +1013,42 @@ export default function PresidentDashboard() {
                                                                     max="100"
                                                                 />
                                                             </td>
+                                                            <td className="py-3 px-4">
+                                                                <div className="flex flex-col md:flex-row gap-2 items-center justify-center">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="e.g. P1"
+                                                                        className="w-20 bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                                                        value={
+                                                                            memberAttendance[participant.id]?.pairingCode || ""
+                                                                        }
+                                                                        onChange={(e) =>
+                                                                            handleAttendanceChange(
+                                                                                participant.id,
+                                                                                "pairingCode",
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                        disabled={memberAttendance[participant.id]?.debatedAlone}
+                                                                    />
+                                                                    <label className="flex items-center gap-1 text-[11px] text-slate-600">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={
+                                                                                memberAttendance[participant.id]?.debatedAlone || false
+                                                                            }
+                                                                            onChange={(e) =>
+                                                                                handleAttendanceChange(
+                                                                                    participant.id,
+                                                                                    "debatedAlone",
+                                                                                    e.target.checked,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                        Alone
+                                                                    </label>
+                                                                </div>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -1028,6 +1066,8 @@ export default function PresidentDashboard() {
                                                             (initial[participant.id] = {
                                                                 status: "Absent",
                                                                 score: "",
+                                                                pairingCode: "",
+                                                                debatedAlone: false,
                                                             }),
                                                     );
                                                     setMemberAttendance(
