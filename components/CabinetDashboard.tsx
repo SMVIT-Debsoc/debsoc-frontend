@@ -569,7 +569,7 @@ export default function CabinetDashboard() {
                     x: isDesktopSidebar ? 0 : isSidebarOpen ? 0 : -256,
                 }}
                 transition={{type: "spring", damping: 25, stiffness: 200}}
-                className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col p-6 lg:translate-x-0 lg:sticky lg:h-screen"
+                className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col p-6 overflow-y-auto max-h-[100vh] lg:translate-x-0 lg:sticky lg:h-screen lg:max-h-screen"
             >
                 <div className="flex items-center justify-between mb-10">
                     <div className="flex items-center gap-3 font-bold text-xl text-white tracking-widest">
@@ -661,7 +661,7 @@ export default function CabinetDashboard() {
                     </a>
                 </nav>
 
-                <div className="flex items-center gap-3 mt-auto pt-6 border-t border-slate-800">
+                <div className="flex items-center gap-3 mt-auto pt-6 pb-[calc(10px+env(safe-area-inset-bottom,0px))] border-t border-slate-800 sticky bottom-0 bg-slate-900">
                     <img
                         src={userImage}
                         alt={userName}
