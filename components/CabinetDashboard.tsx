@@ -907,7 +907,90 @@ export default function CabinetDashboard() {
                                             </span>
                                         </div>
 
-                                        <div className="border border-slate-200 rounded-lg overflow-x-auto mb-4 md:mb-8 max-h-[360px] md:max-h-[400px] overflow-y-auto">
+                                        <div className="md:hidden space-y-3 mb-4">
+                                            {attendanceParticipants.map((participant) => (
+                                                <div
+                                                    key={`mobile-${participant.role}-${participant.id}`}
+                                                    className="border border-slate-200 rounded-lg p-3 bg-white"
+                                                >
+                                                    <div className="flex items-center gap-3 mb-3">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                                            {participant.name
+                                                                .split(" ")
+                                                                .map((n) => n[0])
+                                                                .join("")
+                                                                .toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <span className="block font-medium text-slate-700 text-sm truncate">
+                                                                {participant.name}
+                                                            </span>
+                                                            <span className="block text-[11px] text-slate-400">
+                                                                {participant.role}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <select
+                                                            className="bg-slate-50 border border-slate-200 rounded px-2 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+                                                            value={memberAttendance[participant.id]?.status || "Absent"}
+                                                            onChange={(e) =>
+                                                                handleAttendanceChange(participant.id, "status", e.target.value)
+                                                            }
+                                                        >
+                                                            <option value="Present">Present</option>
+                                                            <option value="Absent">Absent</option>
+                                                            <option value="Excused">Excused</option>
+                                                        </select>
+                                                        <input
+                                                            type="number"
+                                                            placeholder="Score"
+                                                            className="w-full bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-2 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                                            value={memberAttendance[participant.id]?.score || ""}
+                                                            onChange={(e) =>
+                                                                handleAttendanceChange(participant.id, "score", e.target.value)
+                                                            }
+                                                            disabled={memberAttendance[participant.id]?.status !== "Present"}
+                                                            min="0"
+                                                            max="100"
+                                                        />
+                                                        <select
+                                                            className="col-span-2 bg-white border border-slate-200 text-slate-700 rounded px-2 py-2 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                                            value={memberAttendance[participant.id]?.pairingCode || ""}
+                                                            onChange={(e) => handlePairingSelect(participant.id, e.target.value)}
+                                                            disabled={memberAttendance[participant.id]?.debatedAlone}
+                                                        >
+                                                            <option value="">No Pairing</option>
+                                                            {attendanceParticipants
+                                                                .filter(
+                                                                    (candidate) =>
+                                                                        candidate.id !== participant.id &&
+                                                                        (!pairingSelections.has(candidate.id) ||
+                                                                            memberAttendance[participant.id]?.pairingCode ===
+                                                                                candidate.id),
+                                                                )
+                                                                .map((candidate) => (
+                                                                    <option key={`mobile-opt-${candidate.role}-${candidate.id}`} value={candidate.id}>
+                                                                        {candidate.name} ({candidate.role})
+                                                                    </option>
+                                                                ))}
+                                                        </select>
+                                                        <label className="col-span-2 flex items-center gap-2 text-xs text-slate-600">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={memberAttendance[participant.id]?.debatedAlone || false}
+                                                                onChange={(e) =>
+                                                                    handleDebatedAloneChange(participant.id, e.target.checked)
+                                                                }
+                                                            />
+                                                            Alone
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="hidden md:block border border-slate-200 rounded-lg overflow-x-auto mb-4 md:mb-8 max-h-[360px] md:max-h-[400px] overflow-y-auto">
                                             <table className="w-full text-left border-collapse min-w-[500px]">
                                                 <thead className="sticky top-0 z-10">
                                                     <tr className="bg-slate-50 border-b border-slate-200">
