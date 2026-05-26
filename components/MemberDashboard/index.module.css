@@ -879,12 +879,13 @@
   }
   
   .main {
-    padding: 24px 16px;
+    padding: 16px 12px;
   }
   
   .header {
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
+    margin-bottom: 16px;
   }
   
   .statsGrid {
@@ -929,11 +930,16 @@
   }
   
   .rankBadge {
-    width: fit-content;
+    width: 100%;
+    justify-content: center;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
   }
   
   .sessionItem {
-    gap: 16px;
+    gap: 12px;
+    padding: 14px 0;
   }
   
   .sessionDate {
@@ -942,6 +948,73 @@
   
   .sessionDay {
     font-size: 16px;
+  }
+
+  .contentGrid {
+    gap: 14px;
+  }
+
+  .columnLeft,
+  .columnRight {
+    gap: 14px;
+  }
+
+  .card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .cardHeader {
+    margin-bottom: 14px;
+  }
+
+  .cardTitle {
+    font-size: 16px;
+  }
+
+  .sessionTitle {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .sessionDesc {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .taskItem {
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .taskTitle {
+    font-size: 13px;
+  }
+
+  .taskMeta,
+  .taskMetaWarning {
+    font-size: 12px;
+  }
+
+  .suggestionCard,
+  .feedbackCard {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .suggestionHeader {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .suggestionText {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+
+  .suggestionTextarea {
+    min-height: 82px;
+    font-size: 13px;
   }
 }
 
@@ -973,6 +1046,24 @@
   }
   
   .card {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .main {
+    padding: 12px 10px;
+  }
+
+  .cardHeader {
+    margin-bottom: 12px;
+  }
+
+  .sessionStatus {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .detailBox,
+  .detailBoxOrange {
+    padding: 10px 12px;
   }
 }

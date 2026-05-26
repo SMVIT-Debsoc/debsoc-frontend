@@ -720,9 +720,9 @@ export default function CabinetDashboard() {
                         </button>
                     </div>
                 ) : activeTab === "Dashboard" ? (
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
                         {/* HEADER */}
-                        <header className="flex justify-between items-center mb-8 border-b border-slate-200 pb-6">
+                        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6">
                             <div className="flex items-center gap-4">
                                 <div>
                                     <h1 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">
@@ -796,12 +796,12 @@ export default function CabinetDashboard() {
                         </div>
 
                         {/* MAIN CONTENT GRID */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
                             {/* LEFT COLUMN (WIDER) */}
-                            <div className="lg:col-span-2 space-y-8">
+                            <div className="lg:col-span-2 space-y-4 md:space-y-8">
                                 {/* Log New Session Card */}
                                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                    <div className="p-4 md:p-6 border-b border-slate-100 flex flex-wrap justify-between items-center gap-2 bg-slate-50/50">
                                         <div className="flex items-center gap-3">
                                             <FileText
                                                 className="text-blue-500"
@@ -825,9 +825,9 @@ export default function CabinetDashboard() {
 
                                     <form
                                         onSubmit={handleSaveSession}
-                                        className="p-6"
+                                        className="p-4 md:p-6"
                                     >
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
                                             <div>
                                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                                                     Session Date & Time
@@ -872,7 +872,7 @@ export default function CabinetDashboard() {
                                             </div>
                                         </div>
 
-                                        <div className="mb-8">
+                                        <div className="mb-4 md:mb-8">
                                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                                                 Motion / Topic
                                             </label>
@@ -907,7 +907,7 @@ export default function CabinetDashboard() {
                                             </span>
                                         </div>
 
-                                        <div className="border border-slate-200 rounded-lg overflow-x-auto mb-8 max-h-[400px] overflow-y-auto">
+                                        <div className="border border-slate-200 rounded-lg overflow-x-auto mb-4 md:mb-8 max-h-[360px] md:max-h-[400px] overflow-y-auto">
                                             <table className="w-full text-left border-collapse min-w-[500px]">
                                                 <thead className="sticky top-0 z-10">
                                                     <tr className="bg-slate-50 border-b border-slate-200">
@@ -1323,8 +1323,8 @@ export default function CabinetDashboard() {
                         </div>
                     </div>
                 ) : activeTab === "Sessions" ? (
-                    <div className="max-w-6xl mx-auto">
-                        <header className="mb-8 border-b border-slate-200 pb-6">
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+                        <header className="mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6">
                             <h1 className="text-2xl font-bold text-slate-900 mb-1">
                                 Debate Sessions
                             </h1>
@@ -1447,8 +1447,8 @@ export default function CabinetDashboard() {
                         </div>
                     </div>
                 ) : activeTab === "Members" ? (
-                    <div className="max-w-6xl mx-auto">
-                        <header className="mb-8 border-b border-slate-200 pb-6">
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+                        <header className="mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6">
                             <h1 className="text-2xl font-bold text-slate-900 mb-1">
                                 Society Members
                             </h1>
@@ -1529,8 +1529,8 @@ export default function CabinetDashboard() {
                         </div>
                     </div>
                 ) : activeTab === "Tasks" ? (
-                    <div className="max-w-6xl mx-auto">
-                        <header className="mb-8 border-b border-slate-200 pb-6 flex justify-between items-center">
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+                        <header className="mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                             <div>
                                 <h1 className="text-2xl font-bold text-slate-900 mb-1">
                                     My Task List
