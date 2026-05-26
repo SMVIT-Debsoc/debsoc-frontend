@@ -70,6 +70,12 @@ type AttendanceParticipant = {
     email: string;
     role: "Member" | "Cabinet";
 };
+type AttendanceFormRow = {
+    status: string;
+    score: string;
+    pairingCode: string;
+    debatedAlone: boolean;
+};
 
 const fmtDate = (iso: string) => {
     const d = new Date(iso);
@@ -109,9 +115,7 @@ export default function PresidentDashboard() {
         Boolean(session?.user?.name),
     );
     const [sessionMotion, setSessionMotion] = useState("");
-    const [memberAttendance, setMemberAttendance] = useState<
-        Record<string, {status: string; score: string; pairingCode: string; debatedAlone: boolean}>
-    >({});
+    const [memberAttendance, setMemberAttendance] = useState<Record<string, AttendanceFormRow>>({});
     const [savingSession, setSavingSession] = useState(false);
     const [sessionSuccess, setSessionSuccess] = useState(false);
 
@@ -328,6 +332,55 @@ export default function PresidentDashboard() {
         }));
     };
 
+    const getAttendanceRow = (participantId: string): AttendanceFormRow =>
+        memberAttendance[participantId] ?? {
+            status: "Absent",
+            score: "",
+            pairingCode: "",
+            debatedAlone: false,
+        };
+
+    const pairingSelections = new Set(
+        Object.entries(memberAttendance)
+            .filter(([, row]) => !row.debatedAlone && row.pairingCode.trim())
+            .map(([, row]) => row.pairingCode.trim()),
+    );
+
+    const handlePairingSelect = (participantId: string, selectedId: string) => {
+        setMemberAttendance((prev) => {
+            const next: Record<string, AttendanceFormRow> = {
+                ...prev,
+                [participantId]: {
+                    ...getAttendanceRow(participantId),
+                    ...prev[participantId],
+                    status: selectedId ? "Present" : prev[participantId]?.status || "Absent",
+                    debatedAlone: false,
+                    pairingCode: selectedId,
+                },
+            };
+            if (selectedId) {
+                next[selectedId] = {
+                    ...getAttendanceRow(selectedId),
+                    ...prev[selectedId],
+                    status: "Present",
+                };
+            }
+            return next;
+        });
+    };
+
+    const handleDebatedAloneChange = (participantId: string, checked: boolean) => {
+        setMemberAttendance((prev) => ({
+            ...prev,
+            [participantId]: {
+                ...getAttendanceRow(participantId),
+                ...prev[participantId],
+                debatedAlone: checked,
+                pairingCode: checked ? "" : prev[participantId]?.pairingCode || "",
+            },
+        }));
+    };
+
     const handleSaveSession = async (e: React.FormEvent) => {
         e.preventDefault();
         setSavingSession(true);
@@ -348,6 +401,39 @@ export default function PresidentDashboard() {
             const sessionData = await sessionRes.json();
             const newSessionId = sessionData.session.id;
 
+            const pairingGraph = new Map<string, Set<string>>();
+            attendanceParticipants.forEach((participant) => {
+                const row = memberAttendance[participant.id];
+                if (!row || row.debatedAlone || row.status !== "Present") return;
+                const partnerId = row.pairingCode?.trim();
+                if (!partnerId) return;
+                if (!pairingGraph.has(participant.id)) pairingGraph.set(participant.id, new Set());
+                if (!pairingGraph.has(partnerId)) pairingGraph.set(partnerId, new Set());
+                pairingGraph.get(participant.id)!.add(partnerId);
+                pairingGraph.get(partnerId)!.add(participant.id);
+            });
+
+            const pairingCodesById = new Map<string, string>();
+            const visited = new Set<string>();
+            for (const participantId of pairingGraph.keys()) {
+                if (visited.has(participantId)) continue;
+                const stack = [participantId];
+                const group: string[] = [];
+                while (stack.length) {
+                    const current = stack.pop()!;
+                    if (visited.has(current)) continue;
+                    visited.add(current);
+                    group.push(current);
+                    (pairingGraph.get(current) || new Set()).forEach((nextId) => {
+                        if (!visited.has(nextId)) stack.push(nextId);
+                    });
+                }
+                if (group.length === 2 || group.length === 3) {
+                    const code = `PAIR-${group.slice().sort().join("-")}`;
+                    group.forEach((id) => pairingCodesById.set(id, code));
+                }
+            }
+
             const attendanceData = attendanceParticipants.map((participant) => ({
                 ...(participant.role === "Member"
                     ? {memberId: participant.id}
@@ -357,7 +443,7 @@ export default function PresidentDashboard() {
                         memberAttendance[participant.id]?.status === "Present"
                             ? parseInt(memberAttendance[participant.id]?.score || "", 10) || 0
                             : 0,
-                    pairingCode: memberAttendance[participant.id]?.pairingCode?.trim() || undefined,
+                    pairingCode: pairingCodesById.get(participant.id),
                     debatedAlone: Boolean(memberAttendance[participant.id]?.debatedAlone),
                 }));
 
@@ -367,7 +453,13 @@ export default function PresidentDashboard() {
                 body: JSON.stringify({sessionId: newSessionId, attendanceData}),
             });
 
-            if (!markRes.ok) throw new Error("Could not mark attendance.");
+            if (!markRes.ok) {
+                const markError = await markRes
+                    .json()
+                    .then((data) => data?.message as string | undefined)
+                    .catch(() => undefined);
+                throw new Error(markError || "Could not mark attendance.");
+            }
 
             setSessionSuccess(true);
             setSessionMotion("");
@@ -1015,22 +1107,29 @@ export default function PresidentDashboard() {
                                                             </td>
                                                             <td className="py-3 px-4">
                                                                 <div className="flex flex-col md:flex-row gap-2 items-center justify-center">
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder="e.g. P1"
-                                                                        className="w-20 bg-white border border-slate-200 text-center text-slate-700 rounded px-2 py-1.5 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
-                                                                        value={
-                                                                            memberAttendance[participant.id]?.pairingCode || ""
-                                                                        }
+                                                                    <select
+                                                                        className="w-44 bg-white border border-slate-200 text-slate-700 rounded px-2 py-1.5 text-xs outline-none focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                                                                        value={memberAttendance[participant.id]?.pairingCode || ""}
                                                                         onChange={(e) =>
-                                                                            handleAttendanceChange(
-                                                                                participant.id,
-                                                                                "pairingCode",
-                                                                                e.target.value,
-                                                                            )
+                                                                            handlePairingSelect(participant.id, e.target.value)
                                                                         }
                                                                         disabled={memberAttendance[participant.id]?.debatedAlone}
-                                                                    />
+                                                                    >
+                                                                        <option value="">No Pairing</option>
+                                                                        {attendanceParticipants
+                                                                            .filter(
+                                                                                (candidate) =>
+                                                                                    candidate.id !== participant.id &&
+                                                                                    (!pairingSelections.has(candidate.id) ||
+                                                                                        memberAttendance[participant.id]?.pairingCode ===
+                                                                                            candidate.id),
+                                                                            )
+                                                                            .map((candidate) => (
+                                                                                <option key={`${candidate.role}-${candidate.id}`} value={candidate.id}>
+                                                                                    {candidate.name} ({candidate.role})
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
                                                                     <label className="flex items-center gap-1 text-[11px] text-slate-600">
                                                                         <input
                                                                             type="checkbox"
@@ -1038,11 +1137,7 @@ export default function PresidentDashboard() {
                                                                                 memberAttendance[participant.id]?.debatedAlone || false
                                                                             }
                                                                             onChange={(e) =>
-                                                                                handleAttendanceChange(
-                                                                                    participant.id,
-                                                                                    "debatedAlone",
-                                                                                    e.target.checked,
-                                                                                )
+                                                                                handleDebatedAloneChange(participant.id, e.target.checked)
                                                                             }
                                                                         />
                                                                         Alone

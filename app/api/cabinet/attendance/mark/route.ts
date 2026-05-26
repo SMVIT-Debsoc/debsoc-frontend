@@ -56,23 +56,17 @@ export async function POST(request: Request) {
 
   // Pairing validation rules per session payload:
   // - Optional for everyone.
-  // - If debatedAlone is true, pairingCode must be empty.
+  // - If debatedAlone is true, pairingCode is ignored.
   // - For present participants with a pairingCode, group size must be 2 or 3.
   const pairingCounts = new Map<string, number>();
-  const pairingSoloFlags = new Map<string, boolean[]>();
   for (const record of body.attendanceData) {
     if (record.status !== "Present") continue;
 
     const trimmedPairingCode = record.pairingCode?.trim() ?? "";
     const debatedAlone = Boolean(record.debatedAlone);
 
-    if (debatedAlone && trimmedPairingCode) {
-      return error("A participant marked as debated alone cannot have a pairing code.", 400);
-    }
-
     if (!debatedAlone && trimmedPairingCode) {
       pairingCounts.set(trimmedPairingCode, (pairingCounts.get(trimmedPairingCode) ?? 0) + 1);
-      pairingSoloFlags.set(trimmedPairingCode, [...(pairingSoloFlags.get(trimmedPairingCode) ?? []), debatedAlone]);
     }
   }
 
@@ -87,15 +81,19 @@ export async function POST(request: Request) {
 
   const result = await prisma.$transaction(async (tx: typeof prisma) =>
     tx.attendance.createMany({
-      data: body.attendanceData!.map((record) => ({
-        sessionId: body.sessionId!,
-        memberId: record.memberId ?? null,
-        cabinetId: record.cabinetId ?? null,
-        status: record.status!,
-        speakerScore: record.speakerScore ?? null,
-        pairingCode: record.pairingCode?.trim() || null,
-        debatedAlone: Boolean(record.debatedAlone),
-      })),
+      data: body.attendanceData!.map((record) => {
+        const debatedAlone = Boolean(record.debatedAlone);
+        const pairingCode = debatedAlone ? null : record.pairingCode?.trim() || null;
+        return {
+          sessionId: body.sessionId!,
+          memberId: record.memberId ?? null,
+          cabinetId: record.cabinetId ?? null,
+          status: record.status!,
+          speakerScore: record.speakerScore ?? null,
+          pairingCode,
+          debatedAlone,
+        };
+      }),
     }),
   );
 
