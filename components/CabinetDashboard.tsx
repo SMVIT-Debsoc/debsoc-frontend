@@ -1499,13 +1499,13 @@ export default function CabinetDashboard() {
                                             return (
                                                 <div
                                                     key={status}
-                                                    className="flex-1 flex flex-col items-center gap-2 group"
+                                                    className="flex-1 h-full flex flex-col items-center justify-end gap-2 group"
                                                 >
                                                     <div className="text-[10px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         {pct}%
                                                     </div>
                                                     <div
-                                                        className={`w-full ${color} rounded-t-lg transition-all duration-500`}
+                                                        className={`w-full max-w-16 ${color} rounded-t-lg transition-all duration-500`}
                                                         style={{
                                                             height: `${Math.max(pct, 5)}%`,
                                                         }}
