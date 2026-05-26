@@ -888,7 +888,44 @@
   }
   
   .statsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .statCard {
+    padding: 14px;
+    border-radius: 12px;
+    min-height: 132px;
+  }
+
+  .statCardHeader {
+    margin-bottom: 10px;
+  }
+
+  .statIcon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  .statValueContainer {
+    gap: 6px;
+  }
+
+  .statValue {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .statSubtext,
+  .statSubtextGreen,
+  .statSubtextOrange {
+    font-size: 12px;
   }
   
   .rankBadge {
@@ -909,6 +946,24 @@
 }
 
 @media (max-width: 480px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .statCard {
+    padding: 12px;
+    min-height: 120px;
+  }
+
+  .statValue {
+    font-size: 22px;
+  }
+
+  .progressBarContainer {
+    margin-top: 8px;
+  }
+
   .sessionDetails {
     flex-direction: column;
   }

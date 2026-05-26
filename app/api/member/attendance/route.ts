@@ -4,6 +4,8 @@ import { prisma } from "@/lib/server/prisma";
 
 type AttendanceItem = {
   id: string;
+  memberId: string | null;
+  cabinetId: string | null;
   status: string;
   speakerScore: number | null;
   pairingCode: string | null;
@@ -19,6 +21,8 @@ export async function GET() {
     where: { memberId: guard.user.id },
     select: {
       id: true,
+      memberId: true,
+      cabinetId: true,
       status: true,
       speakerScore: true,
       pairingCode: true,
@@ -54,44 +58,19 @@ export async function GET() {
         where: {
           sessionId: record.session.id,
           pairingCode: record.pairingCode,
-          NOT: { memberId: guard.user.id },
         },
         select: {
+          memberId: true,
+          cabinetId: true,
           member: { select: { name: true } },
           cabinet: { select: { name: true } },
         },
       });
 
       let pairedWith = peers
+        .filter((peer: { memberId: string | null }) => peer.memberId !== guard.user.id)
         .map((peer: { member: { name: string } | null; cabinet: { name: string } | null }) => peer.member?.name ?? peer.cabinet?.name ?? null)
         .filter((name: string | null): name is string => Boolean(name));
-
-      if (pairedWith.length === 0 && record.pairingCode.startsWith("PAIR-")) {
-        const participantIds = record.pairingCode
-          .replace("PAIR-", "")
-          .split("-")
-          .map((id) => id.trim())
-          .filter(Boolean)
-          .filter((id) => id !== guard.user.id);
-
-        if (participantIds.length > 0) {
-          const [memberPeers, cabinetPeers] = await Promise.all([
-            prisma.member.findMany({
-              where: { id: { in: participantIds } },
-              select: { id: true, name: true },
-            }),
-            prisma.cabinet.findMany({
-              where: { id: { in: participantIds } },
-              select: { id: true, name: true },
-            }),
-          ]);
-
-          const nameById = new Map<string, string>();
-          memberPeers.forEach((peer: { id: string; name: string }) => nameById.set(peer.id, peer.name));
-          cabinetPeers.forEach((peer: { id: string; name: string }) => nameById.set(peer.id, peer.name));
-          pairedWith = participantIds.map((id) => nameById.get(id)).filter((name): name is string => Boolean(name));
-        }
-      }
 
       return {
         ...record,

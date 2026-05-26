@@ -1416,9 +1416,26 @@ export default function CabinetDashboard() {
                                                             );
                                                             const entries = Object.entries(grouped);
                                                             if (!entries.length) return "No pairing data";
-                                                            return entries
-                                                                .map(([, names]) => names.join(", "))
-                                                                .join(" | ");
+                                                            let pairIndex = 1;
+                                                            return (
+                                                                <div className="space-y-1">
+                                                                    {entries.map(([key, names]) => {
+                                                                        const isSolo = key.startsWith("solo-");
+                                                                        const isUnpaired = key === "Unpaired";
+                                                                        let label = `Pair ${pairIndex++}`;
+                                                                        if (isSolo) label = "Solo";
+                                                                        if (isUnpaired) label = "Unpaired";
+                                                                        return (
+                                                                            <div key={key} className="text-slate-700">
+                                                                                <span className="font-semibold text-slate-500 mr-1">
+                                                                                    {label}:
+                                                                                </span>
+                                                                                <span>{names.join(" - ")}</span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
                                                         })()}
                                                     </td>
                                                 </tr>
