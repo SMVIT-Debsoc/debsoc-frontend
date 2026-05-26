@@ -412,6 +412,10 @@
   font-weight: 700;
   font-size: 15px;
   color: #1e293b;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
 }
 
 .sessionStatus {

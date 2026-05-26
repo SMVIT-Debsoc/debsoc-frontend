@@ -517,6 +517,35 @@ export default function CabinetDashboard() {
 
     const completedTasks = myTasks.filter((t) => t.completed).length;
     const pendingTasksCount = myTasks.filter((t) => !t.completed).length;
+    const formatSessionPairings = (session: Session) => {
+        const grouped = (session.attendance ?? []).reduce(
+            (acc, item) => {
+                if (item.status !== "Present") {
+                    return acc;
+                }
+                const name = item.member?.name ?? item.cabinet?.name ?? "Unknown";
+                if (item.debatedAlone) {
+                    acc[`solo-${item.id}`] = [`${name} (Alone)`];
+                    return acc;
+                }
+                const key = item.pairingCode?.trim() || "Unpaired";
+                acc[key] = [...(acc[key] ?? []), name];
+                return acc;
+            },
+            {} as Record<string, string[]>,
+        );
+        const entries = Object.entries(grouped);
+        if (!entries.length) return [{label: "Pairings", text: "No pairing data"}];
+        let pairIndex = 1;
+        return entries.map(([key, names]) => {
+            const isSolo = key.startsWith("solo-");
+            const isUnpaired = key === "Unpaired";
+            let label = `Pair ${pairIndex++}`;
+            if (isSolo) label = "Solo";
+            if (isUnpaired) label = "Unpaired";
+            return {label, text: names.join(" - ")};
+        });
+    };
 
     return (
         <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
@@ -1415,7 +1444,45 @@ export default function CabinetDashboard() {
                                 View all recorded sessions and their motions
                             </p>
                         </header>
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="md:hidden space-y-3">
+                            {sessions.length === 0 ? (
+                                <div className="py-10 text-center text-slate-400 italic bg-white rounded-xl border border-slate-200">
+                                    No sessions recorded yet.
+                                </div>
+                            ) : (
+                                sessions.map((s) => {
+                                    const {month, day} = fmtDate(s.sessionDate);
+                                    const pairings = formatSessionPairings(s);
+                                    return (
+                                        <div key={`mobile-session-${s.id}`} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="bg-blue-100 text-blue-600 w-10 h-10 rounded flex flex-col items-center justify-center font-bold text-[10px]">
+                                                    <span>{month}</span>
+                                                    <span className="text-sm">{day}</span>
+                                                </div>
+                                                <div className="text-sm text-slate-600">
+                                                    {new Date(s.sessionDate).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1 mb-2">
+                                                <p className="text-sm font-semibold text-slate-900 break-words [overflow-wrap:anywhere]">{s.motiontype}</p>
+                                                <p className="text-xs text-slate-500">Chair: {s.Chair}</p>
+                                            </div>
+                                            <div className="mt-3 border-t border-slate-100 pt-3 space-y-1">
+                                                {pairings.map((entry, idx) => (
+                                                    <p key={`${s.id}-pair-${idx}`} className="text-xs text-slate-700">
+                                                        <span className="font-semibold text-slate-500 mr-1">{entry.label}:</span>
+                                                        {entry.text}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        <div className="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-200">
@@ -1476,50 +1543,23 @@ export default function CabinetDashboard() {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td className="py-4 px-6 font-semibold text-slate-900 text-sm">
+                                                    <td className="py-4 px-6 font-semibold text-slate-900 text-sm max-w-[300px] break-words [overflow-wrap:anywhere]">
                                                         {s.motiontype}
                                                     </td>
                                                     <td className="py-4 px-6 text-sm text-slate-600">
                                                         {s.Chair}
                                                     </td>
                                                     <td className="py-4 px-6 text-xs text-slate-600">
-                                                        {(() => {
-                                                            const grouped = (s.attendance ?? []).reduce(
-                                                                (acc, item) => {
-                                                                    const name = item.member?.name ?? item.cabinet?.name ?? "Unknown";
-                                                                    if (item.debatedAlone) {
-                                                                        acc[`solo-${item.id}`] = [`${name} (Alone)`];
-                                                                        return acc;
-                                                                    }
-                                                                    const key = item.pairingCode?.trim() || "Unpaired";
-                                                                    acc[key] = [...(acc[key] ?? []), name];
-                                                                    return acc;
-                                                                },
-                                                                {} as Record<string, string[]>,
-                                                            );
-                                                            const entries = Object.entries(grouped);
-                                                            if (!entries.length) return "No pairing data";
-                                                            let pairIndex = 1;
-                                                            return (
-                                                                <div className="space-y-1">
-                                                                    {entries.map(([key, names]) => {
-                                                                        const isSolo = key.startsWith("solo-");
-                                                                        const isUnpaired = key === "Unpaired";
-                                                                        let label = `Pair ${pairIndex++}`;
-                                                                        if (isSolo) label = "Solo";
-                                                                        if (isUnpaired) label = "Unpaired";
-                                                                        return (
-                                                                            <div key={key} className="text-slate-700">
-                                                                                <span className="font-semibold text-slate-500 mr-1">
-                                                                                    {label}:
-                                                                                </span>
-                                                                                <span>{names.join(" - ")}</span>
-                                                                            </div>
-                                                                        );
-                                                                    })}
+                                                        <div className="space-y-1">
+                                                            {formatSessionPairings(s).map((entry, idx) => (
+                                                                <div key={`${s.id}-desktop-pair-${idx}`} className="text-slate-700">
+                                                                    <span className="font-semibold text-slate-500 mr-1">
+                                                                        {entry.label}:
+                                                                    </span>
+                                                                    <span>{entry.text}</span>
                                                                 </div>
-                                                            );
-                                                        })()}
+                                                            ))}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
