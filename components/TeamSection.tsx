@@ -64,57 +64,27 @@ const DEPARTMENTS: Department[] = [
         intro: "The operations team is there to drive the pulse of engagement through debating. It is responsible for planning and executing each and every event conducted by SMVIT Debsoc, with key events like Axiom, Debsoc Premier League (DPL), Literary Lane and the SMVIT PD, creating enriching experiences.",
         icon: <Zap size={16} className="text-zinc-400" />,
         lead: {
-            name: "Dhruv Kumar",
-            role: "Operational Lead",
-            photo: "/media/DhruveKumar.jpg",
+            name: "Mohammed Rayyan",
+            role: "Operational Head",
+            photo: "/media/MohammedRayyanKhaleel.jpg",
             isLead: true,
-            linkedin: "https://linkedin.com",
         },
         members: [
             {
-                name: "Rohan Singh",
-                role: "Operational Lead",
-                photo: "/media/RohanSingh.jpg",
-                linkedin: "https://www.linkedin.com/in/rohan-singh-10bb401a4",
-            },
-            {
-                name: "Srejoni Sarkar",
-                role: "Operational Executive",
-                photo: "/media/SSerojiniSarkar.jpg",
-                linkedin: "https://www.linkedin.com/in/srejoni-sarkar-663722286/",
-            },
-            {
-                name: "Prachi Kumari",
-                role: "Operational Executive",
-                photo: "/media/PrachiKumari.jpg",
-                linkedin: "https://www.linkedin.com/in/pra-chi",
-            },
-            {
                 name: "Piyush Ratn",
-                role: "Operational Executive",
+                role: "Operational Head",
                 photo: "/media/PiyushRatn.jpg",
                 linkedin: "https://www.linkedin.com/in/piyush-ratn/",
             },
             {
-                name: "Vishal",
-                role: "Executive Member",
-                photo: "/media/Vishal.jpg",
-                linkedin: "https://www.linkedin.com/in/vishal-ravichandran-48524b363",
-            },
-            {
                 name: "Srujan Rai",
-                role: "Executive Member",
+                role: "Operational Co-Head",
                 photo: "/media/SrujanRai.jpg",
                 linkedin: "https://www.linkedin.com/in/nramsrujanraj",
             },
             {
-                name: "Nandini Sharma",
-                role: "Executive Member",
-                photo: "/media/NNandini.png",
-            },
-            {
                 name: "Kripa Chhajer",
-                role: "Executive Member",
+                role: "Operational Co-Head",
                 photo: "/media/KripaChhajer.jpg",
             },
         ],
@@ -126,32 +96,22 @@ const DEPARTMENTS: Department[] = [
         intro: "The SMVIT Debating Society’s Equity Policy ensures a safe, inclusive, and respectful environment for all.It is grounded in dignity, equality, and accessibility, applying to members, judges, and guests alike.Bullying, harassment, and harmful language are prohibited, with focus on impact over intent.",
         icon: <Shield size={16} className="text-zinc-400" />,
         lead: {
-            name: "Vittala Chaithanya",
+            name: "Nainika",
             role: "Equity Head",
-            photo: "/media/VittalaChaithanyaNM.jpg",
+            photo: "/media/NNainika.jpg",
             isLead: true,
+            linkedin: "https://www.linkedin.com/in/nainika-53b226390?utm_source=share_via&utm_content=profile&utm_medium=member_android",
         },
         members: [
             {
-                name: "Mohammed Owais",
+                name: "Vishal",
                 role: "Equity Head",
-                photo: "/media/MohammedOwais.jpg",
-            },
-            {
-                name: "Nainika",
-                role: "Equity Executive",
-                photo: "/media/NNainika.jpg",
-                linkedin: "https://www.linkedin.com/in/nainika-53b226390?utm_source=share_via&utm_content=profile&utm_medium=member_android",
-            },
-            {
-                name: "Advitiya Pandey",
-                role: "Equity Member",
-                photo: "/media/AdvitiyaPandey.jpg",
-                linkedin: "https://www.linkedin.com/in/advitiya-pandey-58194623b",
+                photo: "/media/Vishal.jpg",
+                linkedin: "https://www.linkedin.com/in/vishal-ravichandran-48524b363",
             },
             {
                 name: "Stuti Padhi",
-                role: "Equity Member",
+                role: "Equity Co-Head",
                 photo: "/media/StutiPadhi.jpg",
                 linkedin: "https://www.linkedin.com/in/stuti-padhi-5a9880360",
             },
@@ -173,7 +133,7 @@ const DEPARTMENTS: Department[] = [
         members: [
             {
                 name: "Ishan",
-                role: "Tech Member",
+                role: "Tech Co-Lead",
                 photo: "/media/Ishan.png",
                 linkedin: "https://www.linkedin.com/in/ishantrive?utm_source=share_via&utm_content=profile&utm_medium=member_android",
             }
@@ -188,20 +148,20 @@ const DEPARTMENTS: Department[] = [
         lead: {
             name: "Ananya Singh",
             role: "Social Media Lead",
-            photo: "/media/AnanyaSingh.jpg",
+            photo: "/media/AnanyaSingh.jpeg",
             isLead: true,
             linkedin: "https://www.linkedin.com/in/ananya-singh-437054238/",
         },
         members: [
             {
                 name: "Pankhuri Singh",
-                role: "Social Media Member",
+                role: "Social Media Co-Head",
                 photo: "/media/PankhuriSingh.jpg",
                 linkedin: "https://www.linkedin.com/in/pankhuri-singh-19b43a318?utm_source=share_via&utm_content=profile&utm_medium=member_android",
             },
             {
                 name: "Kanani Utsav",
-                role: "Social Media Member",
+                role: "Social Media Co-Head",
                 photo: "/media/KananiUtsav.jpg",
             },
         ],
@@ -228,19 +188,9 @@ const DEPARTMENTS: Department[] = [
             },
             {
                 name: "Tanmay Shankar",
-                role: "Content Member",
+                role: "Content Co-Head",
                 photo: "/media/TanmayShankar.jpg",
                 linkedin: "https://www.linkedin.com/in/tanmay-shankar2911",
-            },
-            {
-                name: "Pranathi N P",
-                role: "Content Member",
-                photo: "/media/PranathiNP.jpg",
-            },
-            {
-                name: "Mohammed Rayyan",
-                role: "Content Member",
-                photo: "/media/MohammedRayyanKhaleel.jpg",
             },
         ],
     },
@@ -420,11 +370,14 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
     );
 
     // Executives (Middle tier)
-    const executives = allMembers.filter(
-        (m) =>
-            m.role.toLowerCase().includes("executive") &&
-            !m.role.toLowerCase().includes("member"),
-    );
+    const executives = allMembers.filter((m) => {
+        const role = m.role.toLowerCase();
+        return (
+            (role.includes("executive") && !role.includes("member")) ||
+            role.includes("co-head") ||
+            role.includes("co-lead")
+        );
+    });
 
     // Members (Base tier)
     const regularMembers = allMembers.filter(
@@ -551,7 +504,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
             <div className="hidden md:block flex-1 min-h-[400px] z-10 pb-0 sm:pb-2">
                 {dept.name === "Social Sphere" ? (
                     <div className="h-full flex gap-4 md:gap-6">
-                        <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full shrink-0">
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
                             {leads[0] && (
                                 <MemberCard
                                     member={leads[0]}
@@ -561,29 +514,113 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                                 />
                             )}
                         </div>
-                        <div className="w-[22%] md:w-[20%] lg:w-[18%] h-full flex flex-col gap-3 md:gap-4 shrink-0">
-                            <div className="flex-1 min-h-0">
-                                {regularMembers[0] && (
+
+                        <div className="flex-1 h-[78%] self-end flex gap-4 md:gap-5">
+                            <div className="w-[48%] min-w-0 h-full">
+                                {executives[0] && (
                                     <MemberCard
-                                        member={regularMembers[0]}
+                                        member={executives[0]}
                                         size="md"
-                                        delay={300}
+                                        delay={320}
                                         objectPosition="center"
                                     />
                                 )}
                             </div>
-                            <div className="flex-1 min-h-0">
-                                {regularMembers[1] && (
+                            <div className="w-[48%] min-w-0 h-full">
+                                {executives[1] && (
                                     <MemberCard
-                                        member={regularMembers[1]}
+                                        member={executives[1]}
                                         size="md"
-                                        delay={400}
+                                        delay={420}
                                         objectPosition="bottom"
                                     />
                                 )}
                             </div>
                         </div>
-                        <div className="flex-1 h-full">{missionDirective}</div>
+                    </div>
+                ) : isOpCore ? (
+                    <div className="h-full flex gap-4 md:gap-6">
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
+                            {leads[0] && (
+                                <MemberCard
+                                    member={leads[0]}
+                                    size="lg"
+                                    delay={200}
+                                    objectPosition="center 10%"
+                                />
+                            )}
+                        </div>
+
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
+                            {leads[1] && (
+                                <MemberCard
+                                    member={leads[1]}
+                                    size="lg"
+                                    delay={320}
+                                    objectPosition="center 10%"
+                                />
+                            )}
+                        </div>
+
+                        <div className="flex-1 h-[72%] self-end flex gap-4 md:gap-5">
+                            <div className="flex-1 min-w-0 h-full">
+                                {executives[0] && (
+                                    <MemberCard
+                                        member={executives[0]}
+                                        size="md"
+                                        delay={420}
+                                        objectPosition="center 10%"
+                                    />
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0 h-full">
+                                {executives[1] && (
+                                    <MemberCard
+                                        member={executives[1]}
+                                        size="md"
+                                        delay={520}
+                                        objectPosition="center 10%"
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ) : isEquity ? (
+                    <div className="h-full flex gap-4 md:gap-6">
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
+                            {leads[0] && (
+                                <MemberCard
+                                    member={leads[0]}
+                                    size="lg"
+                                    delay={200}
+                                    objectPosition="center 10%"
+                                />
+                            )}
+                        </div>
+
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
+                            {leads[1] && (
+                                <MemberCard
+                                    member={leads[1]}
+                                    size="lg"
+                                    delay={320}
+                                    objectPosition="center 10%"
+                                />
+                            )}
+                        </div>
+
+                        <div className="flex-1 h-[72%] self-end flex gap-4 md:gap-5">
+                            <div className="w-[48%] min-w-0 h-full">
+                                {executives[0] && (
+                                    <MemberCard
+                                        member={executives[0]}
+                                        size="md"
+                                        delay={420}
+                                        objectPosition="center 10%"
+                                    />
+                                )}
+                            </div>
+                        </div>
                     </div>
                 ) : isSpecialGrid ? (
                     <div className="h-full flex gap-4 md:gap-6">
@@ -591,13 +628,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                         <div className="w-[28%] md:w-[25%] lg:w-[22%] flex flex-col gap-3 md:gap-4 shrink-0">
                             <div className="flex-1 min-h-0">
                                 <MemberCard
-                                    member={
-                                        leads.find(
-                                            (m) =>
-                                                m.name.includes("Dhruv") ||
-                                                m.name.includes("Vittala"),
-                                        ) || leads[0]
-                                    }
+                                    member={leads[0]}
                                     size="lg"
                                     delay={200}
                                     objectPosition="center 10%"
@@ -605,25 +636,13 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                             </div>
                             <div className="flex-1 min-h-0">
                                 <MemberCard
-                                    member={
-                                        leads.find(
-                                            (m) =>
-                                                m.name.includes("Rohan") ||
-                                                m.name.includes("Owais"),
-                                        ) || leads[1]
-                                    }
+                                    member={leads[1]}
                                     size="lg"
                                     delay={400}
                                     objectPosition={
-                                        (
-                                            leads.find(
-                                                (m) =>
-                                                    m.name.includes("Rohan") ||
-                                                    m.name.includes("Owais"),
-                                            ) || leads[1]
-                                        ).name.includes("Rohan")
-                                            ? "center"
-                                            : "center 10%"
+                                        leads[1]?.name.includes("Owais")
+                                            ? "center 10%"
+                                            : "center"
                                     }
                                 />
                             </div>
@@ -705,11 +724,11 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                             <div className="flex-[0.8] min-h-0 w-full">
                                 {missionDirective}
                             </div>
-                            {regularMembers.length > 0 && (
+                            {(executives[0] || regularMembers[0]) && (
                                 <div className="h-[65%] w-[50%] lg:w-[40%] min-h-0">
-                                    {regularMembers[0] && (
+                                    {(executives[0] || regularMembers[0]) && (
                                         <MemberCard
-                                            member={regularMembers[0]}
+                                            member={executives[0] || regularMembers[0]}
                                             size="md"
                                             delay={300}
                                             objectPosition="center 10%"
@@ -721,8 +740,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                     </div>
                 ) : dept.name === "Content Engine" ? (
                     <div className="h-full flex gap-4 md:gap-6">
-                        {/* Left Column: Rishikesh (leads[0]) */}
-                        <div className="w-[30%] md:w-[35%] lg:w-[28%] h-full shrink-0">
+                        <div className="w-[28%] md:w-[25%] lg:w-[22%] h-full shrink-0">
                             {leads[0] && (
                                 <MemberCard
                                     member={leads[0]}
@@ -733,51 +751,26 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                             )}
                         </div>
 
-                        {/* Right Column Group */}
-                        <div className="flex-1 h-full flex flex-col gap-4 md:gap-6">
-                            {/* Top Row: Anika (leads[1]) */}
-                            <div className="flex-[1.3] min-h-0">
-                                {leads[1] && (
-                                    <MemberCard
-                                        member={leads[1]}
-                                        size="lg"
-                                        delay={250}
-                                        objectPosition="center 25%"
-                                    />
-                                )}
-                            </div>
+                        <div className="w-[32%] md:w-[29%] lg:w-[26%] h-full shrink-0">
+                            {leads[1] && (
+                                <MemberCard
+                                    member={leads[1]}
+                                    size="lg"
+                                    delay={320}
+                                    objectPosition="center 25%"
+                                />
+                            )}
+                        </div>
 
-                            {/* Bottom Row: Tanmay, Rayyan, Pranati */}
-                            <div className="flex-1 min-h-0 flex gap-4 md:gap-6">
-                                {regularMembers[0] && (
-                                    <div className="flex-1 h-full">
-                                        <MemberCard
-                                            member={regularMembers[0]}
-                                            size="sm"
-                                            delay={300}
-                                            objectPosition="center 10%"
-                                        />
-                                    </div>
-                                )}
-                                {regularMembers[2] && (
-                                    <div className="flex-1 h-full">
-                                        <MemberCard
-                                            member={regularMembers[2]}
-                                            size="sm"
-                                            delay={350}
-                                            objectPosition="center 40%"
-                                        />
-                                    </div>
-                                )}
-                                {regularMembers[1] && (
-                                    <div className="flex-1 h-full">
-                                        <MemberCard
-                                            member={regularMembers[1]}
-                                            size="sm"
-                                            delay={400}
-                                            objectPosition="center 10%"
-                                        />
-                                    </div>
+                        <div className="w-[22%] md:w-[20%] lg:w-[18%] h-[78%] self-end shrink-0">
+                            <div className="w-full h-full">
+                                {executives[0] && (
+                                    <MemberCard
+                                        member={executives[0]}
+                                        size="md"
+                                        delay={420}
+                                        objectPosition="center 10%"
+                                    />
                                 )}
                             </div>
                         </div>
@@ -885,9 +878,9 @@ export default function TeamSection() {
                     </AnimatedSection>
 
                     {/* Desktop grid (hidden on mobile) */}
-                    <div className="flex-1 min-h-0 hidden md:grid md:grid-cols-[30%_1fr_35%] md:grid-rows-[auto_1fr_auto] gap-x-6 lg:gap-x-10 gap-y-0">
-                        {/* Kanishk photo — spans all 3 rows on the left */}
-                        <div className="row-span-3 col-start-1 min-h-[400px] lg:min-h-[500px]">
+                    <div className="flex-1 min-h-0 hidden md:grid md:grid-cols-[1.15fr_0.9fr_0.9fr] md:grid-rows-1 gap-6 lg:gap-8">
+                        {/* Prachi photo — spans all 3 rows on the left */}
+                        <div className="col-start-1 min-h-[420px] lg:min-h-[560px]">
                             <AnimatedSection
                                 className="group w-full h-full"
                                 delay={300}
@@ -899,7 +892,7 @@ export default function TeamSection() {
                                     className="block cursor-pointer relative w-full h-full overflow-hidden contrast-125 brightness-90 transition-all duration-1000 border border-white/5 shadow-2xl"
                                 >
                                     <Image
-                                        src="/media/KanishkChaudhary.jpg"
+                                        src="/media/PrachiKumari.jpg"
                                         alt="President"
                                         fill
                                         draggable={false}
@@ -909,9 +902,9 @@ export default function TeamSection() {
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent opacity-80 flex flex-col justify-end" />
                                     <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 right-6 md:right-8 text-left z-30 flex justify-between items-end">
                                         <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-[-0.03em] leading-none text-white">
-                                            Kanishk
+                                            Prachi
                                             <br />
-                                            Chaudhary
+                                            Kumari
                                         </h2>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             <Linkedin className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md mb-2" />
@@ -921,7 +914,7 @@ export default function TeamSection() {
                             </AnimatedSection>
                         </div>
 
-                        {/* PRESIDENT — overlay on Kanishk card */}
+                        {/* PRESIDENT — overlay on Prachi card */}
                         <div className="col-start-1 row-start-1 z-20 flex items-start pl-4 md:pl-6 pt-4 md:pt-6 pointer-events-none">
                             <AnimatedSection delay={200}>
                                 <span className="text-[1.6rem] md:text-[2.5rem] lg:text-[3.5rem] font-black uppercase tracking-[-0.04em] text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
@@ -932,37 +925,45 @@ export default function TeamSection() {
                         </div>
 
                         {/* Empty space — middle of column 2 */}
-                        <div className="col-start-2 row-start-2" />
+                        <div className="hidden" />
 
                         {/* Empty space — top of column 3 (Aditya is pushed down) */}
-                        <div className="col-start-3 row-start-1" />
+                        <div className="hidden" />
 
                         {/* Aditya photo — rows 2-3 on the right, pushed down */}
-                        <div className="row-span-2 col-start-3 row-start-2 min-h-[350px] lg:min-h-[450px]">
+                        <div className="col-start-2 min-h-[380px] lg:min-h-[500px]">
                             <AnimatedSection
                                 className="group w-full h-full"
                                 delay={400}
                             >
                                 <a
-                                    href="https://www.linkedin.com/in/aditya707"
+                                    href="https://linkedin.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block cursor-pointer relative w-full h-full overflow-hidden contrast-125 brightness-75 transition-all duration-1000 border border-white/5 shadow-2xl"
                                 >
                                     <Image
-                                        src="/media/AdityaKumarSingh.jpg"
+                                        src="/media/NNandini.png"
                                         alt="Vice President"
                                         fill
                                         draggable={false}
-                                        className="object-cover pointer-events-none select-none"
+                                        className="object-cover object-top pointer-events-none select-none"
                                         sizes="600px"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 flex flex-col justify-end" />
+                                    <div className="absolute top-6 left-6 z-30 pointer-events-none">
+                                        <span className="text-[1.2rem] md:text-[1.6rem] lg:text-[1.9rem] font-black uppercase tracking-[-0.04em] text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+                                            VICE
+                                            <br />
+                                            PRESIDENT
+                                        </span>
+                                        <div className="w-16 h-[2px] bg-white/60 mt-3 shadow-[0_0_10px_rgba(0,0,0,0.75)]" />
+                                    </div>
                                     <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 right-6 md:right-8 text-left z-30 flex justify-between items-end">
                                         <h3 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-white leading-tight">
-                                            Aditya Kumar
+                                            Nandini
                                             <br />
-                                            Singh
+                                            Sharma
                                         </h3>
                                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             <Linkedin className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md mb-2" />
@@ -973,7 +974,49 @@ export default function TeamSection() {
                         </div>
 
                         {/* VICE PRESIDENT — directly above Aditya card */}
-                        <div className="col-start-3 row-start-1 z-20 flex items-end pl-4 md:pl-6 pb-4 md:pb-6 pointer-events-none">
+                        <div className="col-start-3 min-h-[380px] lg:min-h-[500px]">
+                            <AnimatedSection
+                                className="group w-full h-full"
+                                delay={450}
+                            >
+                                <a
+                                    href="https://linkedin.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block cursor-pointer relative w-full h-full overflow-hidden contrast-125 brightness-75 transition-all duration-1000 border border-white/5 shadow-2xl"
+                                >
+                                    <Image
+                                        src="/media/SSerojiniSarkar.jpg"
+                                        alt="Vice President"
+                                        fill
+                                        draggable={false}
+                                        className="object-cover object-top pointer-events-none select-none"
+                                        sizes="600px"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 flex flex-col justify-end" />
+                                    <div className="absolute top-6 left-6 z-30 pointer-events-none">
+                                        <span className="text-[1.2rem] md:text-[1.6rem] lg:text-[1.9rem] font-black uppercase tracking-[-0.04em] text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
+                                            VICE
+                                            <br />
+                                            PRESIDENT
+                                        </span>
+                                        <div className="w-16 h-[2px] bg-white/60 mt-3 shadow-[0_0_10px_rgba(0,0,0,0.75)]" />
+                                    </div>
+                                    <div className="absolute bottom-8 left-6 md:bottom-10 md:left-8 right-6 md:right-8 text-left z-30 flex justify-between items-end">
+                                        <h3 className="text-xl md:text-2xl lg:text-3xl font-black uppercase tracking-tight text-white leading-tight">
+                                            Srejoni
+                                            <br />
+                                            Sarkar
+                                        </h3>
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <Linkedin className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md mb-2" />
+                                        </div>
+                                    </div>
+                                </a>
+                            </AnimatedSection>
+                        </div>
+
+                        <div className="hidden">
                             <AnimatedSection delay={500}>
                                 <span className="text-[1.3rem] md:text-[2rem] lg:text-[2.6rem] font-black uppercase tracking-[-0.04em] text-white leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
                                     VICE
@@ -1002,7 +1045,7 @@ export default function TeamSection() {
                                         className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl contrast-125 brightness-90 transition-all duration-1000"
                                     >
                                         <Image
-                                            src="/media/KanishkChaudhary.jpg"
+                                            src="/media/PrachiKumari.jpg"
                                             alt="President"
                                             fill
                                             draggable={false}
@@ -1018,7 +1061,7 @@ export default function TeamSection() {
                                         </div>
                                         <div className="absolute bottom-5 left-5 right-5 z-30 flex justify-between items-end">
                                             <h2 className="text-xl font-black uppercase tracking-tight text-white">
-                                                Kanishk Chaudhary
+                                                Prachi Kumari
                                             </h2>
                                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                 <Linkedin className="w-6 h-6 text-white drop-shadow-md" />
@@ -1034,13 +1077,51 @@ export default function TeamSection() {
                                     delay={400}
                                 >
                                     <a
-                                        href="https://www.linkedin.com/in/aditya707"
+                                        href="https://linkedin.com"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl contrast-125 brightness-75 transition-all duration-1000"
                                     >
                                         <Image
-                                            src="/media/AdityaKumarSingh.jpg"
+                                            src="/media/NNandini.png"
+                                            alt="Vice President"
+                                            fill
+                                            draggable={false}
+                                        className="object-cover object-top pointer-events-none select-none"
+                                            sizes="100vw"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-95 flex flex-col justify-end" />
+                                        <div className="absolute top-4 left-4 z-30 pointer-events-none">
+                                            <span className="text-base font-black uppercase tracking-tight text-white drop-shadow-lg">
+                                                VICE PRESIDENT
+                                            </span>
+                                            <div className="w-10 h-[2px] bg-white/60 mt-2" />
+                                        </div>
+                                        <div className="absolute bottom-5 left-5 right-5 z-30 flex justify-between items-end">
+                                            <h3 className="text-lg font-black uppercase tracking-tight text-white">
+                                                Nandini Sharma
+                                            </h3>
+                                            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <Linkedin className="w-6 h-6 text-white drop-shadow-md" />
+                                            </div>
+                                        </div>
+                                    </a>
+                                </AnimatedSection>
+                            </div>
+
+                            <div className="snap-start shrink-0 w-[85vw] max-w-[460px] h-[clamp(300px,50svh,500px)]">
+                                <AnimatedSection
+                                    className="group w-full h-full"
+                                    delay={450}
+                                >
+                                    <a
+                                        href="https://linkedin.com"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block cursor-pointer relative w-full h-full overflow-hidden border border-white/5 shadow-2xl contrast-125 brightness-75 transition-all duration-1000"
+                                    >
+                                        <Image
+                                            src="/media/SSerojiniSarkar.jpg"
                                             alt="Vice President"
                                             fill
                                             draggable={false}
@@ -1056,7 +1137,7 @@ export default function TeamSection() {
                                         </div>
                                         <div className="absolute bottom-5 left-5 right-5 z-30 flex justify-between items-end">
                                             <h3 className="text-lg font-black uppercase tracking-tight text-white">
-                                                Aditya Kumar Singh
+                                                Srejoni Sarkar
                                             </h3>
                                             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                 <Linkedin className="w-6 h-6 text-white drop-shadow-md" />
