@@ -377,7 +377,7 @@ Edges:
 Principle (`11`,`15 §2`): `app/api/*` = transport only (parse, guard, call ONE service, format);
 `lib/server/*` = domain logic; Prisma only in repositories; shared contracts in `types/`.
 
-- **[B0] types/{pairing,session,scoring,eval}.ts** · shared contracts.
+- **[B0] types/{pairing,session,scoring,eval}.ts** - shared contracts. BUILT (`types/pairing.ts`, `types/session.ts`, `types/scoring.ts`, `types/eval.ts`). Phase 1 assumptions: `MotionType` remains `string` because the docs do not freeze a closed value set; score payload values are numeric while `ScoreSubmissionType` remains a controlled domain label type.
 - **[B1] lib/server/pairing/engine.ts** · `generatePairingProposal()` orchestrator (the 9 stages).
 - **[B2] candidate-generator.ts** · `generateCandidateProposals()`.
 - **[B3] proposal-scorer.ts** · `scoreProposal()`, `scoreTeam()`.
@@ -503,6 +503,7 @@ N1 product
     worth revisiting; staying on B per decision.)
 </content>
 </invoke>
+
 
 
 
