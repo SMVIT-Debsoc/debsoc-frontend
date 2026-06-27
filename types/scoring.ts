@@ -1,4 +1,4 @@
-import type { BenchPosition, MemberId, SessionId, SpeakingRole } from "@/types/pairing";
+import type { BenchPosition, MemberId, SessionId, SpeakingRole } from "./pairing.ts";
 
 export type ScoreValue = number;
 

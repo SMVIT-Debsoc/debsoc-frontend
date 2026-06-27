@@ -1,4 +1,4 @@
-import type { MemberId, MotionType, PairingObjective, SessionId } from "@/types/pairing";
+import type { MemberId, MotionType, PairingObjective, SessionId } from "./pairing.ts";
 
 export const sessionRoles = ["speaker", "adjudicator"] as const;
 export type SessionRole = (typeof sessionRoles)[number];
@@ -24,7 +24,7 @@ export interface AttendanceRecordView {
   isFinalized: boolean;
   wasAssigned: boolean;
   wasUnassigned: boolean;
-  unassignedReason: import("@/types/pairing").LeftoverReason | null;
+  unassignedReason: import("./pairing.ts").LeftoverReason | null;
 }
 
 export interface SessionRoleAssignmentView {

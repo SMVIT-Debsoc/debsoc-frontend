@@ -1,4 +1,4 @@
-import type { ProposalId, SessionId, TuningMode } from "@/types/pairing";
+import type { ProposalId, SessionId, TuningMode } from "./pairing.ts";
 
 export interface EvalReplayRequest {
   runType: "historical_replay" | "synthetic_replay";

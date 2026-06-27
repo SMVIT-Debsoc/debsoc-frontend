@@ -238,7 +238,7 @@ export interface ParticipantContext {
   participantKind: ParticipantKind;
   name: string;
   academicYear: number | null;
-  sessionRole: import("@/types/session").SessionRole;
+  sessionRole: import("./session.ts").SessionRole;
   isChairEligible: boolean;
 }
 
