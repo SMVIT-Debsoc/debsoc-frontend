@@ -18,6 +18,7 @@ import type {
   UnassignedParticipantView,
 } from "../../../types/pairing.ts";
 import type { SessionRole } from "../../../types/session.ts";
+import type { PersistGeneratedProposalInput } from "../pairing/types.ts";
 import { createMetricsRepository, resolveParticipantId } from "./metrics-repository.ts";
 
 type PairingRepositoryClient = PrismaClient;
@@ -58,6 +59,14 @@ function participantNameFromProjection(participant: ParticipantProjection): stri
 
 function participantIdFromProjection(participant: ParticipantProjection): MemberId {
   return resolveParticipantId(participant);
+}
+
+function buildParticipantReferenceData(participantId: MemberId, participantKind: ParticipantKind) {
+  return {
+    memberId: participantKind === "member" ? participantId : null,
+    cabinetId: participantKind === "cabinet" ? participantId : null,
+    presidentId: participantKind === "president" ? participantId : null,
+  };
 }
 
 function toSessionRole(role: string): SessionRole {
@@ -475,6 +484,100 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
     };
   }
 
+  async function saveGeneratedProposal(input: PersistGeneratedProposalInput): Promise<PairingProposalView> {
+    return client.$transaction(async (tx: TransactionClient) => {
+      const latestProposal = await tx.pairingProposal.findFirst({
+        where: { sessionId: input.sessionId },
+        orderBy: { proposalVersion: "desc" },
+        select: { proposalVersion: true },
+      });
+
+      const proposalVersion = (latestProposal?.proposalVersion ?? 0) + 1;
+      const createdProposal = await tx.pairingProposal.create({
+        data: {
+          sessionId: input.sessionId,
+          proposalVersion,
+          status: "GENERATED",
+          engineVersion: input.audit.engineVersion,
+          ruleVersion: input.audit.ruleVersion,
+          topBandRank: input.audit.selectedRank,
+          proposalScore: input.candidate.proposalScore,
+          scoreBreakdownJson: {
+            ...input.candidate.scoreBreakdown,
+            audit: {
+              metricSnapshotVersion: input.audit.metricSnapshotVersion,
+              finalSelectionProbability: input.audit.selectedProbability,
+              randomSeed: input.audit.seed,
+              objective: input.audit.objective,
+              topBandSize: input.audit.topBandSize,
+            },
+          },
+          generatedBy: input.generatedBy,
+          roomAssignments: {
+            create: input.candidate.rooms.map((room) => ({
+              roomIndex: room.roomIndex,
+              roomScore: room.roomScore,
+              roomBalanceScore: room.roomBalanceScore,
+              roomDifficultyScore: room.roomDifficultyScore,
+              teamAssignments: {
+                create: room.teams.map((team) => ({
+                  bpPosition: team.bpPosition,
+                  teamScore: team.teamScore,
+                  speakerAssignments: {
+                    create: team.speakers.map((speaker, index) => ({
+                      ...buildParticipantReferenceData(
+                        speaker.participantId,
+                        input.participantKindsById.get(speaker.participantId) ?? "member",
+                      ),
+                      speakingRole: speaker.speakingRole,
+                      speakerOrder: index + 1,
+                    })),
+                  },
+                })),
+              },
+              adjudicatorAssignments: {
+                create: room.adjudicators.map((adjudicator) => ({
+                  ...buildParticipantReferenceData(
+                    adjudicator.participantId,
+                    input.participantKindsById.get(adjudicator.participantId) ?? "member",
+                  ),
+                  isChair: adjudicator.isChair,
+                  chairAssignmentScore: adjudicator.chairAssignmentScore,
+                })),
+              },
+            })),
+          },
+          unassignedParticipants: {
+            create: input.candidate.unassignedParticipants.map((participant) => ({
+              ...buildParticipantReferenceData(
+                participant.participantId,
+                input.participantKindsById.get(participant.participantId) ?? "member",
+              ),
+              reason: participant.reason,
+            })),
+          },
+        },
+        select: { id: true },
+      });
+
+      await tx.debateSession.update({
+        where: { id: input.sessionId },
+        data: {
+          pairingStatus: "GENERATED",
+          publicationStatus: "DRAFT",
+        },
+      });
+
+      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
+      const proposal = await txBackedRepository.getPairingProposalView(createdProposal.id);
+      if (!proposal) {
+        throw new Error(`Generated proposal ${createdProposal.id} could not be materialized.`);
+      }
+
+      return proposal;
+    });
+  }
+
   async function getPairingProposalView(proposalId: string): Promise<PairingProposalView | null> {
     const proposal = await loadProposalForView(client, proposalId);
     if (!proposal) {
@@ -611,6 +714,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
 
   return {
     getGenerationContext,
+    saveGeneratedProposal,
     getPairingProposalView,
     getRoomAssignmentSummary,
     getPublishedPairing,
@@ -619,3 +723,5 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
 }
 
 export const pairingRepository = createPairingRepository();
+
+

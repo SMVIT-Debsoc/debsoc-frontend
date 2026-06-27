@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createPairingRepository } from "./pairing-repository.ts";
+import type { PersistGeneratedProposalInput } from "../pairing/types.ts";
 
 test("getGenerationContext uses explicit projections and shapes participants", async () => {
   const mockClient = {
@@ -150,3 +151,83 @@ test("publishProposalTransaction wraps publish state changes in one transaction"
   assert.equal(published.sessionId, "session-1");
   assert.equal(published.proposalId, "proposal-1");
 });
+
+test("saveGeneratedProposal persists audit metadata in the proposal payload", async () => {
+  let createdData: Record<string, unknown> | null = null;
+
+  const tx = {
+    pairingProposal: {
+      findFirst: async () => ({ proposalVersion: 1 }),
+      create: async (args: Record<string, unknown>) => {
+        createdData = args.data as Record<string, unknown>;
+        return { id: "proposal-2" };
+      },
+      findUnique: async () => ({
+        id: "proposal-2",
+        sessionId: "session-1",
+        proposalVersion: 2,
+        status: "GENERATED",
+        engineVersion: "pairing-engine-v1",
+        ruleVersion: "pairing-rules-v1",
+        topBandRank: 1,
+        proposalScore: 0.88,
+        scoreBreakdownJson: createdData ? (createdData["scoreBreakdownJson"] as unknown) : {},
+        generatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        generatedBy: "cabinet-1",
+        approvedAt: null,
+        publishedAt: null,
+        isPublishedOfficially: false,
+        roomAssignments: [],
+        unassignedParticipants: [],
+        reviewLogs: [],
+      }),
+    },
+    debateSession: {
+      update: async () => ({ id: "session-1" }),
+    },
+  };
+
+  const mockClient = {
+    $transaction: async (callback: (transactionClient: typeof tx) => Promise<unknown>) => callback(tx),
+  };
+
+  const repository = createPairingRepository(mockClient as never);
+  const input: PersistGeneratedProposalInput = {
+    sessionId: "session-1",
+    generatedBy: "cabinet-1",
+    candidate: {
+      rooms: [],
+      unassignedParticipants: [],
+      proposalScore: 0.88,
+      scoreBreakdown: {
+        roomBalanceScore: 0.9,
+        adjudicatorAverageScore: 0.8,
+        chairScore: 0.85,
+        teamQualityAggregate: 0.75,
+        experienceDistributionAggregate: 0.7,
+        totalProposalScore: 0.88,
+      },
+    },
+    participantKindsById: new Map(),
+    audit: {
+      seed: 12345,
+      selectedRank: 1,
+      selectedProbability: 0.3,
+      topBandSize: 5,
+      engineVersion: "pairing-engine-v1",
+      ruleVersion: "pairing-rules-v1",
+      metricSnapshotVersion: "metrics-v1",
+      objective: "BALANCED",
+    },
+  };
+
+  const proposal = await repository.saveGeneratedProposal(input);
+  const scoreBreakdownJson = (createdData?.["scoreBreakdownJson"] ?? {}) as { audit?: Record<string, unknown> };
+
+  assert.equal(scoreBreakdownJson.audit?.metricSnapshotVersion, "metrics-v1");
+  assert.equal(scoreBreakdownJson.audit?.finalSelectionProbability, 0.3);
+  assert.equal(scoreBreakdownJson.audit?.randomSeed, 12345);
+  assert.equal(scoreBreakdownJson.audit?.objective, "BALANCED");
+  assert.equal(proposal.summary.version, 2);
+});
+

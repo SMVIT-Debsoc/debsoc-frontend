@@ -1,10 +1,13 @@
 import type {
   ActivePairingRules,
   AdjudicatorMetricSnapshot,
+  MemberMetricSnapshot,
   PairMetricSnapshot,
   PairingGenerationContext,
   PairingObjective,
   ParticipantContext,
+  ParticipantKind,
+  PairingProposalView,
   PairingRoomView,
   ProposalScoreBreakdown,
   ReviewAction,
@@ -110,6 +113,7 @@ export interface ChairAllocationResult {
 }
 
 export interface PairingMetricContext {
+  version: string;
   definitions: Array<{
     key: string;
     category: string;
@@ -144,6 +148,54 @@ export interface SelectionResult {
   candidate: ScoredPairingCandidate;
   audit: SelectionAuditRecord;
 }
+
+export interface PreparedScoringContext extends PairingGenerationContext {
+  memberMetricSnapshotsByParticipantId: Map<string, Map<string, MemberMetricSnapshot>>;
+  pairMetricSnapshotsByPairKey: Map<string, Map<string, PairMetricSnapshot>>;
+  metricWeightsByKey: Map<string, number>;
+  metricSnapshotVersion: string;
+}
+
+export interface GeneratedProposalAuditRecord extends SelectionAuditRecord {
+  engineVersion: string;
+  ruleVersion: string;
+  metricSnapshotVersion: string;
+  objective: PairingObjective;
+}
+
+export interface PersistGeneratedProposalInput {
+  sessionId: string;
+  generatedBy: string | null;
+  candidate: ScoredPairingCandidate;
+  participantKindsById: Map<string, ParticipantKind>;
+  audit: GeneratedProposalAuditRecord;
+}
+
+export interface GeneratePairingProposalInput {
+  sessionId: string;
+  generatedBy?: string | null;
+  seed?: number;
+}
+
+export interface PairingGenerationFailure {
+  ok: false;
+  reason:
+    | "SESSION_NOT_FOUND"
+    | "INSUFFICIENT_SPEAKERS"
+    | "INSUFFICIENT_ADJUDICATORS"
+    | "NO_CANDIDATES_GENERATED"
+    | "NO_VALID_PROPOSAL";
+  detail: string;
+  violations: Array<{ code: string; message: string }>;
+}
+
+export interface PairingGenerationSuccess {
+  ok: true;
+  proposal: PairingProposalView;
+  audit: GeneratedProposalAuditRecord;
+}
+
+export type PairingProposalResult = PairingGenerationSuccess | PairingGenerationFailure;
 
 export interface PairingMetricsLoader {
   loadPairingMetrics(sessionId: string): Promise<PairingMetricContext>;

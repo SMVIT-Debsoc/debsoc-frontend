@@ -32,6 +32,22 @@ interface PairingRepositoryContract {
   getGenerationContext(sessionId: string): Promise<PairingGenerationContext>;
 }
 
+function buildMetricSnapshotVersion(
+  definitions: Array<{ key: string; baseWeight: number; isEnabled: boolean }>,
+  adjustments: Array<{ metricDefinitionId: string; currentAdjustment: number }>,
+): string {
+  const definitionPart = definitions
+    .map((definition) => `${definition.key}:${definition.baseWeight}:${definition.isEnabled ? 1 : 0}`)
+    .sort()
+    .join("|");
+  const adjustmentPart = adjustments
+    .map((adjustment) => `${adjustment.metricDefinitionId}:${adjustment.currentAdjustment}`)
+    .sort()
+    .join("|");
+
+  return `defs[${definitionPart}]::adjs[${adjustmentPart}]`;
+}
+
 export function createMetricsLoader(
   metricsRepo: MetricsRepositoryContract = metricsRepository,
   sessionRepo: SessionRepositoryContract = sessionRepository,
@@ -60,6 +76,7 @@ export function createMetricsLoader(
     }
 
     return {
+      version: buildMetricSnapshotVersion(definitions, adjustments),
       definitions,
       adjustmentsByMetricKey,
     };
