@@ -482,7 +482,7 @@ N1 product
 ```
 
 ## Pre-coding gates (must be resolved before the matching phase — `07`, `08`)
-1. **Metric catalog accepted** (M1–M13, M18, M11) — blocks C4/C7/C5.
+1. **Metric catalog accepted** (M1-M13, M18, M11) - RESOLVED. Full V1 catalog accepted; no listed metric deferred at this stage. Blocks C4/C7/C5.
 2. **Hard vs soft rule split confirmed** — blocks B5/E5.
 3. **Session-role-only routing confirmed (R4)** — blocks D3/A12/A13.
 4. **Post-session form fields confirmed** — RESOLVED (Gate 4): speaker form = chairScore 0–10 +
@@ -503,5 +503,6 @@ N1 product
     worth revisiting; staying on B per decision.)
 </content>
 </invoke>
+
 
 

@@ -25,10 +25,12 @@ The metric catalog is now broadly defined and should include at minimum:
 - `adjudicator_average_score`
 - `chair_score`
 
-What still needs confirmation:
+Status: ACCEPTED for V1.
 
-- whether any metric should be removed from V1
-- whether any metric should be stored now but activated later
+Decision recorded in Phase 0:
+
+- accept the full metric catalog for V1
+- do not defer any listed metric to stored-now / activated-later status at this stage
 
 ## 2. Hard Rules Vs Soft Rules
 
@@ -198,3 +200,4 @@ The safest implementation order is:
 1. confirm the pre-coding decisions in this file
 2. keep metric and database docs aligned with them
 3. begin schema and backend implementation only after that
+

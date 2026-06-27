@@ -36,7 +36,7 @@ What still needs final confirmation:
 - exact `role_score` aggregation formula
 - exact tuning-adjustment formula
 
-## 3. Confidence Targets
+## 2. Confidence Targets
 
 We have the confidence formula, but the exact target counts still need final sign-off.
 
@@ -48,7 +48,7 @@ What still needs final confirmation:
 - motion-type-by-role target count
 - chair-score target count
 
-## 4. Proposal Selection Distribution
+## 3. Proposal Selection Distribution
 
 We have agreed on top-band probabilistic selection for V1, but may refine it later.
 
@@ -58,7 +58,7 @@ What still needs final confirmation:
 - whether the current `30/24/18/15/13` probability shape remains unchanged beyond V1
 - do we want fixed-by-rank probabilities or score-gap-aware probabilities later
 
-## 5. Admin Proposal Rating Shape
+## 4. Admin Proposal Rating Shape
 
 We have agreed that proposal rating should exist.
 
@@ -68,7 +68,7 @@ What still needs final confirmation:
 - are issue tags optional or required
 - are free-text notes optional or required
 
-## 6. Post-Session Form Final Shape — RESOLVED
+## 5. Post-Session Form Final Shape — RESOLVED
 
 Locked (Gate 4):
 
@@ -93,7 +93,7 @@ Also decided:
 
 Minor detail still tunable (not a blocker): the numeric range of the raw speaker score.
 
-## 7. Tuning Governance
+## 6. Tuning Governance
 
 We have agreed on periodic tuning after about `6-7` sessions.
 
@@ -103,7 +103,7 @@ What still needs final confirmation:
 - can any bounded adjustment be auto-applied in V1
 - who approves tuning suggestions if manual review is required
 
-## 8. Eval Threshold Final Freeze
+## 7. Eval Threshold Final Freeze
 
 We now have proposed eval formulas and thresholds.
 
@@ -113,7 +113,7 @@ What still needs final confirmation:
 - do we want to relax any threshold until real data distribution is observed
 - how many repeated runs per scenario should be required in V1
 
-## 9. Cleanup Scope Confirmation
+## 8. Cleanup Scope Confirmation
 
 We know some old features will be reduced or removed.
 
@@ -123,7 +123,7 @@ What still needs final confirmation:
 - exact schema remnants to retire
 - whether old data is archived, migrated, or ignored
 
-## 10. Progress Verdict Thresholds
+## 9. Progress Verdict Thresholds
 
 The member-progress verdict layer (`docs/14 §7`, `docs/17 §3b`) synthesizes statements like "strong
 in IR, weak in Feminism" from the metrics. The interpretation rules are agreed; the exact thresholds
@@ -142,3 +142,4 @@ As each item above gets locked, it should be removed from this document and refl
 Important implementation note:
 
 - the `Fo10` formula set remains open and blocks Phase 6 of `docs/16-build-plan.md`
+
