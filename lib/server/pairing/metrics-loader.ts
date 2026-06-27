@@ -1,0 +1,92 @@
+import type { PairingGenerationContext } from "../../../types/pairing.ts";
+import { metricsRepository } from "../repositories/metrics-repository.ts";
+import { sessionRepository } from "../repositories/session-repository.ts";
+import { pairingRepository } from "../repositories/pairing-repository.ts";
+import type { PairingMetricContext, SessionInputContext } from "./types.ts";
+
+interface MetricsRepositoryContract {
+  getMetricDefinitions(): Promise<Array<{
+    id?: string;
+    key: string;
+    category: string;
+    baseWeight: number;
+    isEnabled: boolean;
+    isHardRule: boolean;
+    isSoftRule: boolean;
+    scope: string;
+    fallbackConfigJson: unknown;
+  }>>;
+  getMetricAdjustments(): Promise<Array<{
+    metricDefinitionId: string;
+    currentAdjustment: number;
+  }>>;
+}
+
+interface SessionRepositoryContract {
+  getSessionById(sessionId: string): Promise<{
+    pairingObjective: string;
+  } | null>;
+}
+
+interface PairingRepositoryContract {
+  getGenerationContext(sessionId: string): Promise<PairingGenerationContext>;
+}
+
+export function createMetricsLoader(
+  metricsRepo: MetricsRepositoryContract = metricsRepository,
+  sessionRepo: SessionRepositoryContract = sessionRepository,
+  pairingRepo: PairingRepositoryContract = pairingRepository,
+) {
+  async function loadPairingMetrics(sessionId: string): Promise<PairingMetricContext> {
+    await pairingRepo.getGenerationContext(sessionId);
+
+    const [definitions, adjustments] = await Promise.all([
+      metricsRepo.getMetricDefinitions(),
+      metricsRepo.getMetricAdjustments(),
+    ]);
+
+    const definitionIdsById = new Map(
+      definitions
+        .filter((definition): definition is typeof definition & { id: string } => typeof definition.id === "string")
+        .map((definition) => [definition.id, definition.key]),
+    );
+    const adjustmentsByMetricKey = new Map<string, number>();
+
+    for (const adjustment of adjustments) {
+      const metricKey = definitionIdsById.get(adjustment.metricDefinitionId);
+      if (metricKey) {
+        adjustmentsByMetricKey.set(metricKey, adjustment.currentAdjustment);
+      }
+    }
+
+    return {
+      definitions,
+      adjustmentsByMetricKey,
+    };
+  }
+
+  async function loadSessionInputs(sessionId: string): Promise<SessionInputContext> {
+    const session = await sessionRepo.getSessionById(sessionId);
+    if (!session) {
+      throw new Error(`Session ${sessionId} not found.`);
+    }
+
+    return {
+      objective: (session.pairingObjective ?? "BALANCED") as SessionInputContext["objective"],
+      rules: {
+        timeConstraintParticipantIds: [],
+        forcedTeamUps: [],
+        forcedSeparations: [],
+        forcedChairParticipantId: null,
+        forcedRoomCount: null,
+      },
+    };
+  }
+
+  return {
+    loadPairingMetrics,
+    loadSessionInputs,
+  };
+}
+
+export const { loadPairingMetrics, loadSessionInputs } = createMetricsLoader();
