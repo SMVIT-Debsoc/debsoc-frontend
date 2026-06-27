@@ -62,6 +62,15 @@ This affects:
 - scoring-form assignment
 - session-role storage
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- post-session routing is based on the user's role in that session, not permanent account role
+- authorization for post-session scoring flows is based on `SessionRoleAssignment`
+- scoring-form assignment is based on the user's session role for that debate session
+- session role must be stored explicitly and used as the governing source for post-session behavior
+
 ## 4. Post-Session Scoring Inputs
 
 We must confirm the exact inputs each session role submits after debate.
