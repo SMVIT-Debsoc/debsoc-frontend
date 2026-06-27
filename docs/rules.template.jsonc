@@ -1,0 +1,270 @@
+{
+  // Runtime-oriented rules template for the debate pairing engine.
+  // Use this as the descriptive engine behavior template, while
+  // pairing-metric-seed.example.jsonc acts as a richer DB/seed example.
+  "version": "2.0.0",
+  "engine": {
+    "name": "debate_pairing_engine",
+    "mode": "probabilistic_weighted",
+    "description": "Generates many valid BP pairing proposals, scores them with hard and soft logic, selects probabilistically from the top band, and improves through bounded periodic tuning.",
+    "selection": {
+      "candidateGenerationTarget": 250,
+      "topBandSize": 5,
+      "selectionMode": "weighted_random_from_top_band",
+      "topBandProbabilities": [0.30, 0.24, 0.18, 0.15, 0.13],
+      "useScoreGapAwareScaling": false,
+      "storeCandidateScores": true,
+      "allowRegeneration": true
+    },
+    "learning": {
+      "enabled": true,
+      "strategy": "confidence_weighted_periodic_tuning",
+      "tuningWindowSessions": 7,
+      "adjustmentMode": "bounded_overlay",
+      "maxSingleCycleAdjustment": 0.01,
+      "maxTotalLearnedAdjustment": 0.03,
+      "effectiveWeightFormula": "effective_weight = base_weight + learned_adjustment",
+      "requiresAdminReview": true,
+      "includeAdminProposalRating": true,
+      "includePostSessionOutcomes": true,
+      "allowFullyAutomaticWeightMutation": false
+    }
+  },
+  "formatRules": {
+    "debateFormat": "BP",
+    "speakersPerRoom": 8,
+    "teamsPerRoom": 4,
+    "speakersPerTeam": 2,
+    "bpPositions": ["OG", "OO", "CG", "CO"],
+    "speakingRoles": ["PM", "DPM", "LO", "DLO", "MG", "GW", "MO", "OW"],
+    "minimumAdjudicatorsPerRoom": 1,
+    "exactChairsPerRoom": 1,
+    "allowAutomaticIncompleteRooms": false,
+    "roomCountFormula": "floor(number_of_speakers / 8)",
+    "leftoverHandling": {
+      "mode": "mark_unassigned",
+      "leftoverFormula": "number_of_speakers % 8",
+      "allowSilentDrop": false,
+      "allowAutoConvertSpeakerToAdjudicator": false,
+      "allowAdminAdjustmentAndRegeneration": true
+    }
+  },
+  "workflow": {
+    "requiresAttendancePreparation": true,
+    "requiresSessionRoleAssignment": true,
+    "requiresMotionType": true,
+    "requiresMotion": true,
+    "requiresProposalReviewBeforePublish": true,
+    "reviewActions": ["approve", "override", "regenerate", "rate"],
+    "publishRequiresApprovedProposal": true
+  },
+  "sessionInputs": {
+    "required": ["motion_type", "motion", "pairing_objective"],
+    "optional": ["time_constraint", "event_team_up_preference"],
+    "storesWithSession": true,
+    "doesNotCreatePermanentLearnedMetric": true
+  },
+  "pairingObjectives": {
+    "DEVELOPMENT": {
+      "description": "Prioritize growth, rotation, and exploration while keeping proposals valid and reasonably fair.",
+      "metricMultipliers": {
+        "speaker_total_score": 0.90,
+        "speaker_motion_type_score": 0.95,
+        "speaker_strength": 0.90,
+        "partner_dynamics_overall": 0.90,
+        "partner_dynamics_by_motion_type": 0.95,
+        "bp_position_history": 1.50,
+        "internal_speaking_role_history": 1.50,
+        "role_score": 1.10,
+        "motion_type_x_role_score": 1.05,
+        "repeat_partner_penalty": 0.80,
+        "room_balance_score": 1.00,
+        "chair_score": 0.95
+      }
+    },
+    "BALANCED": {
+      "description": "Use the base system with moderate quality optimization and moderate development exposure.",
+      "metricMultipliers": {
+        "speaker_total_score": 1.00,
+        "speaker_motion_type_score": 1.00,
+        "speaker_strength": 1.00,
+        "partner_dynamics_overall": 1.00,
+        "partner_dynamics_by_motion_type": 1.00,
+        "bp_position_history": 1.00,
+        "internal_speaking_role_history": 1.00,
+        "role_score": 1.00,
+        "motion_type_x_role_score": 1.00,
+        "repeat_partner_penalty": 1.00,
+        "room_balance_score": 1.00,
+        "chair_score": 1.00
+      }
+    },
+    "COMPETITIVE": {
+      "description": "Prioritize strongest likely teams, stronger motion fit, proven partnerships, and stronger chair allocation.",
+      "metricMultipliers": {
+        "speaker_total_score": 1.20,
+        "speaker_motion_type_score": 1.20,
+        "speaker_strength": 1.15,
+        "partner_dynamics_overall": 1.15,
+        "partner_dynamics_by_motion_type": 1.10,
+        "bp_position_history": 0.80,
+        "internal_speaking_role_history": 0.80,
+        "role_score": 1.15,
+        "motion_type_x_role_score": 1.20,
+        "repeat_partner_penalty": 1.00,
+        "room_balance_score": 1.05,
+        "chair_score": 1.15
+      }
+    }
+  },
+  "hardRules": {
+    "onlyPresentParticipantsAllowed": true,
+    "everyPresentParticipantNeedsSessionRole": true,
+    "noDuplicateAssignmentPerProposal": true,
+    "roomsMustBeFullBPStructure": true,
+    "validBPPositionsRequired": true,
+    "minimumAdjudicatorCoverageRequired": true,
+    "exactlyOneChairPerRoom": true,
+    "strictSessionConstraintsInvalidateProposal": true,
+    "adminApprovalRequiredBeforePublish": true
+  },
+  "strictConstraintTypes": [
+    "forced_team_up",
+    "forced_separation",
+    "strict_time_constraint",
+    "forced_chair",
+    "forced_participant_role",
+    "forced_room_count"
+  ],
+  "softMetricWeights": {
+    "teamAndSpeakerLayer": {
+      "academic_year": 0.05,
+      "speaker_total_score": 0.22,
+      "speaker_motion_type_score": 0.18,
+      "speaker_strength": 0.12,
+      "partner_dynamics_overall": 0.12,
+      "partner_dynamics_by_motion_type": 0.10,
+      "repeat_partner_penalty": -0.09,
+      "bp_position_history": 0.07,
+      "internal_speaking_role_history": 0.07,
+      "role_score": 0.04,
+      "motion_type_x_role_score": 0.03
+    },
+    "proposalAndRoomLayer": {
+      "room_balance_score": 0.40,
+      "adjudicator_average_score": 0.20,
+      "chair_score": 0.20,
+      "team_quality_aggregate": 0.12,
+      "experience_distribution_aggregate": 0.08
+    }
+  },
+  "fallbackRules": {
+    "speaker_motion_type_score": {
+      "fallbackKey": "speaker_total_score",
+      "targetObservationCount": 5,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+    },
+    "speaker_strength": {
+      "fallbackKey": "speaker_total_score",
+      "targetObservationCount": 5,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+    },
+    "partner_dynamics_by_motion_type": {
+      "fallbackKey": "partner_dynamics_overall",
+      "targetObservationCount": 4,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+    },
+    "role_score": {
+      "fallbackKey": "speaker_total_score",
+      "targetObservationCount": 5,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+    },
+    "motion_type_x_role_score": {
+      "fallbackChain": ["role_score", "speaker_motion_type_score", "speaker_total_score"],
+      "targetObservationCount": 5,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback_chain"
+    },
+    "chair_score": {
+      "fallbackKey": "adjudicator_average_score",
+      "targetObservationCount": 4,
+      "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+    }
+  },
+  "confidenceRules": {
+    "formula": "confidence = min(observation_count / target_count, 1.0)",
+    "broadMetricsTrustedEarlier": true,
+    "specificMetricsTrustedLater": true,
+    "preventOverfittingOnSparseData": true
+  },
+  "computedFormulas": {
+    "speaker_strength": "0.70 * normalized_speaker_total_score + 0.20 * consistency_score + 0.10 * confidence_score",
+    "room_balance_score": "1.0 - (0.75 * normalized_strength_variance + 0.25 * normalized_experience_variance)",
+    "chair_assignment_score": "0.60 * chair_score + 0.25 * adjudicator_average_score + 0.15 * chair_confidence_score"
+  },
+  "assignmentPolicies": {
+    "timeConstraintPolicy": {
+      "preferredEarlyRoles": ["PM", "LO"],
+      "preferredEarlyPositions": ["OG", "OO"],
+      "canBeStrict": true,
+      "canBeSoft": true
+    },
+    "eventTeamUpPolicy": {
+      "canBeStrict": true,
+      "canBeSoft": true,
+      "requiresSameTeam": true,
+      "doesNotForceExactPositionUnlessSpecified": true
+    },
+    "chairAssignment": {
+      "assignStrongerChairsToStrongerRoomsFirst": true,
+      "allowAdminForceChair": true,
+      "allowAdminOverrideChair": true
+    }
+  },
+  "reviewAndFeedback": {
+    "adminProposalRating": {
+      "enabled": true,
+      "scale": "1_to_5",
+      "notesAllowed": true,
+      "issueTagsOptional": true,
+      "suggestedIssueTags": [
+        "repetitive_pairing",
+        "weak_room_balance",
+        "weak_chair_allocation",
+        "poor_development_spread",
+        "poor_tournament_preparation_fit"
+      ]
+    },
+    "postSession": {
+      "speakerRatesChair": true,
+      "chairRatesAdjudicators": true,
+      "regularAdjudicatorsScoreOthers": false,
+      "sessionRoleRoutingRequired": true
+    }
+  },
+  "tuningReview": {
+    "windowSessions": 7,
+    "compareSignals": [
+      "engine_proposal_score",
+      "admin_pairing_rating",
+      "speaker_scores",
+      "bp_team_result_points",
+      "chair_feedback",
+      "adjudicator_scores",
+      "repetition_patterns",
+      "pairing_objective"
+    ],
+    "updatePolicy": {
+      "style": "micro_adjustment",
+      "reviewAssisted": true,
+      "fullyAutomatic": false,
+      "maxSingleCycleAdjustment": 0.01,
+      "maxTotalLearnedAdjustment": 0.03
+    }
+  },
+  "notes": {
+    "terminology": {
+      "chair": "Preferred term replacing older CAP terminology."
+    },
+    "status": "Template aligned with current planning docs and metric seed example."
+  }
+}

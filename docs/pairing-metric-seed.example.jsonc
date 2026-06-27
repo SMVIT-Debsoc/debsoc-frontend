@@ -1,0 +1,533 @@
+{
+  // Example seed/config payload showing how the pairing engine can be initialized
+  // from DB-backed metric definitions plus engine-level defaults.
+  // This is not strict production schema. It is a planning-oriented reference file.
+  "version": "2.0.0",
+  "engine": {
+    "name": "debate_pairing_engine",
+    "mode": "probabilistic_weighted",
+    "description": "Adaptive BP pairing engine that scores many valid proposals, keeps a top band, selects probabilistically, and tunes weights slowly from repeated evidence.",
+    "selection": {
+      "candidateGenerationTarget": 250,
+      "topBandSize": 5,
+      "selectionMode": "weighted_random_from_top_band",
+      "topBandProbabilities": [0.30, 0.24, 0.18, 0.15, 0.13],
+      "storeAllCandidateScores": true
+    },
+    "learning": {
+      "enabled": true,
+      "strategy": "confidence_weighted_periodic_tuning",
+      "tuningWindowSessions": 7,
+      "maxLearnedAdjustmentPerMetric": 0.03,
+      "adjustmentMode": "bounded_overlay",
+      "effectiveWeightFormula": "effective_weight = base_weight + learned_adjustment",
+      "adminProposalRatingIncluded": true,
+      "postSessionOutcomeIncluded": true,
+      "requiresAuditTrail": true
+    }
+  },
+  "sessionFormat": {
+    "debateFormat": "BP",
+    "speakersPerRoom": 8,
+    "teamsPerRoom": 4,
+    "speakersPerTeam": 2,
+    "bpPositions": ["OG", "OO", "CG", "CO"],
+    "speakingRoles": ["PM", "DPM", "LO", "DLO", "MG", "GW", "MO", "OW"],
+    "minimumAdjudicatorsPerRoom": 1,
+    "exactChairsPerRoom": 1,
+    "allowAutomaticIncompleteRooms": false,
+    "leftoverHandling": {
+      "mode": "mark_unassigned",
+      "formula": "room_count = floor(number_of_speakers / 8), leftover_speakers = number_of_speakers % 8",
+      "allowSilentDrop": false,
+      "allowAdminAdjustmentAndRegeneration": true
+    }
+  },
+  "sessionOnlyInputs": [
+    {
+      "key": "motion_type",
+      "name": "Motion Type",
+      "description": "Current session motion category such as IR, Policy, Moral, Legal, or Economic.",
+      "inputType": "enum_or_text",
+      "required": true,
+      "storedWithSession": true,
+      "learnedMetric": false,
+      "canBeHardRule": false,
+      "canBeSoftRule": true,
+      "affects": ["speaker_scoring", "pair_scoring", "role_scoring"]
+    },
+    {
+      "key": "motion",
+      "name": "Motion",
+      "description": "Exact debate motion text for the session.",
+      "inputType": "text",
+      "required": true,
+      "storedWithSession": true,
+      "learnedMetric": false,
+      "canBeHardRule": false,
+      "canBeSoftRule": false,
+      "affects": ["session_record", "future_analytics"]
+    },
+    {
+      "key": "pairing_objective",
+      "name": "Pairing Objective",
+      "description": "Controls whether the engine prioritizes development, balanced growth, or strongest likely competitive output.",
+      "inputType": "enum",
+      "allowedValues": ["DEVELOPMENT", "BALANCED", "COMPETITIVE"],
+      "required": true,
+      "storedWithSession": true,
+      "learnedMetric": false,
+      "canBeHardRule": false,
+      "canBeSoftRule": true,
+      "affects": ["weight_multipliers", "proposal_scoring"]
+    },
+    {
+      "key": "time_constraint",
+      "name": "Time Constraint",
+      "description": "Marks a participant who needs an earlier speaking slot for that session only.",
+      "inputType": "participant_constraint",
+      "required": false,
+      "storedWithSession": true,
+      "learnedMetric": false,
+      "canBeHardRule": true,
+      "canBeSoftRule": true,
+      "affects": ["role_assignment", "position_assignment"]
+    },
+    {
+      "key": "event_team_up_preference",
+      "name": "Event Team-Up Preference",
+      "description": "Marks a pair that should be teamed together for tournament preparation in that session only.",
+      "inputType": "participant_pair_constraint",
+      "required": false,
+      "storedWithSession": true,
+      "learnedMetric": false,
+      "canBeHardRule": true,
+      "canBeSoftRule": true,
+      "affects": ["team_pairing"]
+    }
+  ],
+  "hardRules": [
+    {
+      "key": "present_status",
+      "name": "Present Status",
+      "description": "Only marked-present participants can be considered by the engine.",
+      "scope": "session",
+      "affects": ["speaker_pool", "adjudicator_pool"],
+      "validation": "participant.present == true"
+    },
+    {
+      "key": "session_role_required",
+      "name": "Session Role Required",
+      "description": "Each present participant must be marked as either speaker or adjudicator.",
+      "scope": "session",
+      "affects": ["eligibility"],
+      "validation": "participant.session_role in ['speaker','adjudicator']"
+    },
+    {
+      "key": "no_duplicate_assignment",
+      "name": "No Duplicate Assignment",
+      "description": "A participant cannot be assigned to more than one room or role in the same proposal.",
+      "scope": "proposal",
+      "affects": ["proposal_validity"],
+      "validation": "participant.assignment_count == 1"
+    },
+    {
+      "key": "full_bp_room_only",
+      "name": "Full BP Room Only",
+      "description": "Each generated BP room must contain exactly 8 speakers arranged as 4 teams of 2.",
+      "scope": "room",
+      "affects": ["room_validity"],
+      "validation": "room.speaker_count == 8 and room.team_count == 4"
+    },
+    {
+      "key": "valid_bp_positions",
+      "name": "Valid BP Positions",
+      "description": "Each room must contain OG, OO, CG, and CO exactly once.",
+      "scope": "room",
+      "affects": ["position_validity"],
+      "validation": "room.positions == ['OG','OO','CG','CO']"
+    },
+    {
+      "key": "minimum_adjudicator_coverage",
+      "name": "Minimum Adjudicator Coverage",
+      "description": "Every room must have at least one adjudicator.",
+      "scope": "room",
+      "affects": ["room_validity"],
+      "validation": "room.adjudicator_count >= 1"
+    },
+    {
+      "key": "exactly_one_chair",
+      "name": "Exactly One Chair",
+      "description": "Every room must have exactly one chair.",
+      "scope": "room",
+      "affects": ["chair_assignment"],
+      "validation": "room.chair_count == 1"
+    },
+    {
+      "key": "strict_session_constraints",
+      "name": "Strict Session Constraints",
+      "description": "If a session-only admin input is marked strict, the engine must satisfy it or invalidate the proposal.",
+      "scope": "session",
+      "affects": ["proposal_validity"],
+      "validation": "all_strict_constraints_satisfied == true"
+    },
+    {
+      "key": "admin_approval_required",
+      "name": "Admin Approval Required",
+      "description": "A proposal cannot be published until it is explicitly approved.",
+      "scope": "workflow",
+      "affects": ["publication"],
+      "validation": "proposal.status == 'approved'"
+    }
+  ],
+  "learnedMetrics": [
+    {
+      "key": "academic_year",
+      "name": "Academic Year",
+      "description": "Experience-balance signal used to mix more experienced and less experienced speakers within teams and rooms.",
+      "category": "profile",
+      "scope": "historical_profile",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.05,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.02, "max": 0.08 },
+      "affects": ["team_pairing", "room_balance"]
+    },
+    {
+      "key": "speaker_total_score",
+      "name": "Speaker Total Score",
+      "description": "Overall broad speaker performance from accumulated history.",
+      "category": "speaker",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.22,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.16, "max": 0.28 },
+      "affects": ["team_pairing", "team_quality_aggregate"]
+    },
+    {
+      "key": "speaker_motion_type_score",
+      "name": "Speaker Motion Type Score",
+      "description": "Speaker performance in the current motion type.",
+      "category": "speaker",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.18,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.12, "max": 0.24 },
+      "affects": ["team_pairing", "motion_fit"],
+      "fallback": {
+        "fallbackKey": "speaker_total_score",
+        "targetObservationCount": 5,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+      }
+    },
+    {
+      "key": "speaker_strength",
+      "name": "Speaker Strength",
+      "description": "Engine-derived interpreted strength using broad score, consistency, and confidence.",
+      "category": "computed_strength",
+      "scope": "computed",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.12,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.08, "max": 0.16 },
+      "affects": ["team_pairing", "room_balance"],
+      "formula": {
+        "type": "weighted_sum",
+        "expression": "0.70 * normalized_speaker_total_score + 0.20 * consistency_score + 0.10 * confidence_score",
+        "inputs": ["normalized_speaker_total_score", "consistency_score", "confidence_score"]
+      },
+      "fallback": {
+        "fallbackKey": "speaker_total_score",
+        "targetObservationCount": 5,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+      }
+    },
+    {
+      "key": "partner_dynamics_overall",
+      "name": "Partner Dynamics Overall",
+      "description": "Overall pair compatibility based primarily on actual results together, not mostly on subjective opinion.",
+      "category": "pair_dynamics",
+      "scope": "historical_relationship",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.12,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.08, "max": 0.16 },
+      "affects": ["team_pairing"],
+      "measurement": {
+        "type": "bp_result_points",
+        "mapping": {
+          "first": 3,
+          "second": 2,
+          "third": 1,
+          "fourth": 0
+        }
+      }
+    },
+    {
+      "key": "partner_dynamics_by_motion_type",
+      "name": "Partner Dynamics By Motion Type",
+      "description": "Pair compatibility within a specific motion type.",
+      "category": "pair_dynamics",
+      "scope": "historical_relationship",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.10,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.06, "max": 0.14 },
+      "affects": ["team_pairing", "motion_fit"],
+      "fallback": {
+        "fallbackKey": "partner_dynamics_overall",
+        "targetObservationCount": 4,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+      }
+    },
+    {
+      "key": "repeat_partner_penalty",
+      "name": "Repeat Partner Penalty",
+      "description": "Penalty discouraging the same speakers from being paired together too often.",
+      "category": "history_penalty",
+      "scope": "historical_relationship",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": -0.09,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": -0.12, "max": -0.04 },
+      "affects": ["team_pairing", "diversity_control"]
+    },
+    {
+      "key": "bp_position_history",
+      "name": "BP Position History",
+      "description": "Repetition-control signal preventing speakers from always receiving the same broad BP bench.",
+      "category": "history_diversity",
+      "scope": "historical_positioning",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.07,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.04, "max": 0.10 },
+      "affects": ["position_assignment"],
+      "trackedValues": ["OG", "OO", "CG", "CO"]
+    },
+    {
+      "key": "internal_speaking_role_history",
+      "name": "Internal Speaking Role History",
+      "description": "Repetition-control signal preventing speakers from always receiving the same exact internal speaking role.",
+      "category": "history_diversity",
+      "scope": "historical_positioning",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.07,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.04, "max": 0.10 },
+      "affects": ["role_assignment"],
+      "trackedValues": ["PM", "DPM", "LO", "DLO", "MG", "GW", "MO", "OW"]
+    },
+    {
+      "key": "role_score",
+      "name": "Role Score",
+      "description": "Performance quality of a speaker in a specific internal speaking role.",
+      "category": "role_performance",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.04,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.01, "max": 0.08 },
+      "affects": ["role_assignment", "team_pairing"],
+      "fallback": {
+        "fallbackKey": "speaker_total_score",
+        "targetObservationCount": 5,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+      },
+      "trackedValues": ["PM", "DPM", "LO", "DLO", "MG", "GW", "MO", "OW"]
+    },
+    {
+      "key": "motion_type_x_role_score",
+      "name": "Motion Type X Role Score",
+      "description": "Most specific role-performance metric, combining motion type with exact speaking role.",
+      "category": "role_performance",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.03,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.00, "max": 0.06 },
+      "affects": ["role_assignment", "motion_fit"],
+      "fallback": {
+        "fallbackKey": "role_score",
+        "targetObservationCount": 5,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback_then_motion_type_then_total"
+      }
+    },
+    {
+      "key": "room_balance_score",
+      "name": "Room Balance Score",
+      "description": "Proposal-level fairness metric ensuring one room is not overloaded with top speakers while another is disproportionately weak or inexperienced.",
+      "category": "structure",
+      "scope": "proposal_computed",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.40,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.30, "max": 0.48 },
+      "affects": ["proposal_scoring"],
+      "formula": {
+        "type": "variance_penalty_inverse",
+        "expression": "1.0 - (0.75 * normalized_strength_variance + 0.25 * normalized_experience_variance)",
+        "roomStrengthFormula": "average(speaker_strength of all 8 speakers in room)",
+        "roomExperienceFormula": "average(experience_index of all 8 speakers in room)",
+        "singleRoomDefault": 1.0
+      }
+    },
+    {
+      "key": "adjudicator_average_score",
+      "name": "Adjudicator Average Score",
+      "description": "Overall adjudicator quality used when distributing adjudicators across rooms.",
+      "category": "adjudicator",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.20,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.14, "max": 0.24 },
+      "affects": ["adjudicator_assignment", "proposal_scoring"]
+    },
+    {
+      "key": "chair_score",
+      "name": "Chair Score",
+      "description": "Speaker-rated chair quality used when selecting the strongest chair for a room.",
+      "category": "chair",
+      "scope": "historical_performance",
+      "isEnabled": true,
+      "isHardRule": false,
+      "isSoftRule": true,
+      "baseWeight": 0.20,
+      "learnedAdjustment": 0.0,
+      "weightBounds": { "min": 0.14, "max": 0.24 },
+      "affects": ["chair_assignment", "proposal_scoring"],
+      "fallback": {
+        "fallbackKey": "adjudicator_average_score",
+        "targetObservationCount": 4,
+        "formula": "effective = confidence * specific + (1 - confidence) * fallback"
+      }
+    }
+  ],
+  "derivedScoring": {
+    "chairAssignment": {
+      "formula": "0.60 * chair_score + 0.25 * adjudicator_average_score + 0.15 * chair_confidence_score",
+      "roomAllocationStrategy": "assign stronger chairs to stronger or more sensitive rooms first"
+    },
+    "proposalReviewFeedback": {
+      "enabled": true,
+      "ratingScale": "1_to_5",
+      "issueTags": [
+        "repetitive_pairing",
+        "weak_room_balance",
+        "weak_chair_allocation",
+        "poor_development_spread",
+        "poor_tournament_preparation_fit"
+      ],
+      "notesAllowed": true
+    }
+  },
+  "objectiveModes": {
+    "DEVELOPMENT": {
+      "description": "Prioritizes growth, role rotation, new pair exploration, and exposure to weaker areas while preserving basic fairness.",
+      "metricMultipliers": {
+        "speaker_total_score": 0.90,
+        "speaker_motion_type_score": 0.95,
+        "speaker_strength": 0.90,
+        "partner_dynamics_overall": 0.90,
+        "partner_dynamics_by_motion_type": 0.95,
+        "bp_position_history": 1.50,
+        "internal_speaking_role_history": 1.50,
+        "role_score": 1.10,
+        "motion_type_x_role_score": 1.05,
+        "repeat_partner_penalty": 0.80,
+        "room_balance_score": 1.00,
+        "chair_score": 0.95
+      }
+    },
+    "BALANCED": {
+      "description": "Keeps the base system behavior with moderate quality optimization and moderate development exposure.",
+      "metricMultipliers": {
+        "speaker_total_score": 1.00,
+        "speaker_motion_type_score": 1.00,
+        "speaker_strength": 1.00,
+        "partner_dynamics_overall": 1.00,
+        "partner_dynamics_by_motion_type": 1.00,
+        "bp_position_history": 1.00,
+        "internal_speaking_role_history": 1.00,
+        "role_score": 1.00,
+        "motion_type_x_role_score": 1.00,
+        "repeat_partner_penalty": 1.00,
+        "room_balance_score": 1.00,
+        "chair_score": 1.00
+      }
+    },
+    "COMPETITIVE": {
+      "description": "Prioritizes strongest likely teams, better motion fit, stronger proven pairings, and stronger chair allocation.",
+      "metricMultipliers": {
+        "speaker_total_score": 1.20,
+        "speaker_motion_type_score": 1.20,
+        "speaker_strength": 1.15,
+        "partner_dynamics_overall": 1.15,
+        "partner_dynamics_by_motion_type": 1.10,
+        "bp_position_history": 0.80,
+        "internal_speaking_role_history": 0.80,
+        "role_score": 1.15,
+        "motion_type_x_role_score": 1.20,
+        "repeat_partner_penalty": 1.00,
+        "room_balance_score": 1.05,
+        "chair_score": 1.15
+      }
+    }
+  },
+  "tuningReview": {
+    "windowSessions": 7,
+    "compareSignals": [
+      "engine_proposal_score",
+      "admin_pairing_rating",
+      "speaker_scores",
+      "bp_team_result_points",
+      "chair_feedback",
+      "adjudicator_scores",
+      "repetition_patterns",
+      "pairing_objective"
+    ],
+    "updatePolicy": {
+      "style": "micro_adjustment",
+      "maxSingleCycleAdjustment": 0.01,
+      "maxTotalLearnedAdjustment": 0.03,
+      "automatic": false,
+      "requiresReview": true
+    }
+  },
+  "seedNotes": {
+    "intendedUse": "Reference seed for DB-backed metrics and engine behavior defaults.",
+    "importantReminder": "This file is illustrative. Final production schema may split these records across tables rather than storing one large JSON document.",
+    "terminology": {
+      "chair": "Preferred term replacing older CAP terminology."
+    }
+  }
+}
