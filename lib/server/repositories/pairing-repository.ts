@@ -578,6 +578,259 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
     });
   }
 
+
+  async function approveProposalReviewAction(proposalId: string, reviewerId: string): Promise<PairingProposalSummary> {
+    return client.$transaction(async (tx: TransactionClient) => {
+      const proposal = await tx.pairingProposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          sessionId: true,
+          status: true,
+          isPublishedOfficially: true,
+          session: {
+            select: {
+              publishedProposalId: true,
+            },
+          },
+        },
+      });
+
+      if (!proposal) {
+        throw new Error(`Proposal ${proposalId} not found.`);
+      }
+
+      if (proposal.isPublishedOfficially || proposal.status === "PUBLISHED" || proposal.session.publishedProposalId) {
+        throw new Error(`Proposal ${proposalId} can no longer be approved because the session is already published.`);
+      }
+
+      if (proposal.status !== "GENERATED" && proposal.status !== "OVERRIDDEN" && proposal.status !== "APPROVED") {
+        throw new Error(`Proposal ${proposalId} is not in an approvable state.`);
+      }
+
+      if (proposal.status !== "APPROVED") {
+        await tx.pairingProposal.update({
+          where: { id: proposalId },
+          data: {
+            status: "APPROVED",
+            approvedAt: new Date(),
+          },
+        });
+
+        await tx.proposalReviewLog.create({
+          data: {
+            proposalId,
+            reviewerId,
+            action: "APPROVE",
+          },
+        });
+
+        await tx.debateSession.update({
+          where: { id: proposal.sessionId },
+          data: {
+            acceptedProposalId: proposalId,
+            pairingStatus: "APPROVED",
+            publicationStatus: "DRAFT",
+          },
+        });
+      }
+
+      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
+      const approvedProposal = await txBackedRepository.getPairingProposalView(proposalId);
+      if (!approvedProposal) {
+        throw new Error(`Approved proposal ${proposalId} could not be materialized.`);
+      }
+
+      return approvedProposal.summary;
+    });
+  }
+
+  async function overrideProposalReviewAction(input: {
+    proposalId: string;
+    reviewerId: string;
+    overrideType: string;
+    payload: Record<string, unknown>;
+    notes: string | null;
+  }): Promise<PairingProposalView> {
+    return client.$transaction(async (tx: TransactionClient) => {
+      const proposal = await tx.pairingProposal.findUnique({
+        where: { id: input.proposalId },
+        select: {
+          id: true,
+          sessionId: true,
+          status: true,
+          isPublishedOfficially: true,
+          scoreBreakdownJson: true,
+          session: {
+            select: {
+              publishedProposalId: true,
+            },
+          },
+        },
+      });
+
+      if (!proposal) {
+        throw new Error(`Proposal ${input.proposalId} not found.`);
+      }
+
+      if (proposal.isPublishedOfficially || proposal.status === "PUBLISHED" || proposal.session.publishedProposalId) {
+        throw new Error(`Proposal ${input.proposalId} can no longer be overridden because the session is already published.`);
+      }
+
+      const existingBreakdown = (proposal.scoreBreakdownJson ?? {}) as Record<string, unknown>;
+      const manualOverrideAudit = {
+        overrideType: input.overrideType,
+        payload: input.payload,
+        notes: input.notes,
+        reviewerId: input.reviewerId,
+        overriddenAt: new Date().toISOString(),
+      };
+
+      await tx.pairingProposal.update({
+        where: { id: input.proposalId },
+        data: {
+          status: "APPROVED",
+          approvedAt: new Date(),
+          scoreBreakdownJson: {
+            ...existingBreakdown,
+            manualOverride: manualOverrideAudit,
+          },
+        },
+      });
+
+      await tx.proposalReviewLog.create({
+        data: {
+          proposalId: input.proposalId,
+          reviewerId: input.reviewerId,
+          action: "OVERRIDE",
+          notes: JSON.stringify(manualOverrideAudit),
+        },
+      });
+
+      await tx.debateSession.update({
+        where: { id: proposal.sessionId },
+        data: {
+          acceptedProposalId: input.proposalId,
+          pairingStatus: "APPROVED",
+          publicationStatus: "DRAFT",
+        },
+      });
+
+      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
+      const overriddenProposal = await txBackedRepository.getPairingProposalView(input.proposalId);
+      if (!overriddenProposal) {
+        throw new Error(`Overridden proposal ${input.proposalId} could not be materialized.`);
+      }
+
+      return overriddenProposal;
+    });
+  }
+
+  async function recordRegenerateReviewAction(proposalId: string, reviewerId: string): Promise<{ sessionId: string }> {
+    return client.$transaction(async (tx: TransactionClient) => {
+      const proposal = await tx.pairingProposal.findUnique({
+        where: { id: proposalId },
+        select: {
+          id: true,
+          sessionId: true,
+          status: true,
+          isPublishedOfficially: true,
+          session: {
+            select: {
+              publishedProposalId: true,
+            },
+          },
+        },
+      });
+
+      if (!proposal) {
+        throw new Error(`Proposal ${proposalId} not found.`);
+      }
+
+      if (proposal.isPublishedOfficially || proposal.status === "PUBLISHED" || proposal.session.publishedProposalId) {
+        throw new Error(`Proposal ${proposalId} can no longer be regenerated because the session is already published.`);
+      }
+
+      await tx.proposalReviewLog.create({
+        data: {
+          proposalId,
+          reviewerId,
+          action: "REGENERATE",
+        },
+      });
+
+      return {
+        sessionId: proposal.sessionId,
+      };
+    });
+  }
+
+  async function upsertProposalRating(input: {
+    proposalId: string;
+    reviewerId: string;
+    rating: number;
+    issueTags: string[];
+    notes: string | null;
+  }): Promise<{
+    proposalId: string;
+    reviewerId: string;
+    rating: number;
+    issueTags: string[];
+    notes: string | null;
+  }> {
+    return client.$transaction(async (tx: TransactionClient) => {
+      const proposal = await tx.pairingProposal.findUnique({
+        where: { id: input.proposalId },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!proposal) {
+        throw new Error(`Proposal ${input.proposalId} not found.`);
+      }
+
+      await tx.proposalRating.upsert({
+        where: {
+          proposalId: input.proposalId,
+        },
+        update: {
+          reviewerId: input.reviewerId,
+          rating: input.rating,
+          issueTagsJson: input.issueTags,
+          notes: input.notes,
+        },
+        create: {
+          proposalId: input.proposalId,
+          reviewerId: input.reviewerId,
+          rating: input.rating,
+          issueTagsJson: input.issueTags,
+          notes: input.notes,
+        },
+      });
+
+      await tx.proposalReviewLog.create({
+        data: {
+          proposalId: input.proposalId,
+          reviewerId: input.reviewerId,
+          action: "RATE",
+          notes: JSON.stringify({
+            rating: input.rating,
+            issueTags: input.issueTags,
+            notes: input.notes,
+          }),
+        },
+      });
+
+      return {
+        proposalId: input.proposalId,
+        reviewerId: input.reviewerId,
+        rating: input.rating,
+        issueTags: input.issueTags,
+        notes: input.notes,
+      };
+    });
+  }
   async function getPairingProposalView(proposalId: string): Promise<PairingProposalView | null> {
     const proposal = await loadProposalForView(client, proposalId);
     if (!proposal) {
@@ -657,6 +910,23 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
 
   async function publishProposalTransaction(input: PublishPairingRequest): Promise<PublishedPairingView> {
     return client.$transaction(async (tx: TransactionClient) => {
+      const publishedSession = await tx.debateSession.findUnique({
+        where: { id: input.sessionId },
+        select: {
+          publishedProposalId: true,
+          publishedAt: true,
+        },
+      });
+
+      if (publishedSession?.publishedProposalId && publishedSession.publishedAt) {
+        const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
+        const existingPublishedPairing = await txBackedRepository.getPublishedPairing(input.sessionId);
+        if (!existingPublishedPairing) {
+          throw new Error(`Published pairing could not be materialized for session ${input.sessionId}.`);
+        }
+        return existingPublishedPairing;
+      }
+
       const approvedProposal = await tx.pairingProposal.findFirst({
         where: {
           sessionId: input.sessionId,
@@ -715,6 +985,10 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
   return {
     getGenerationContext,
     saveGeneratedProposal,
+    approveProposalReviewAction,
+    overrideProposalReviewAction,
+    recordRegenerateReviewAction,
+    upsertProposalRating,
     getPairingProposalView,
     getRoomAssignmentSummary,
     getPublishedPairing,
@@ -723,5 +997,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
 }
 
 export const pairingRepository = createPairingRepository();
+
+
 
 
