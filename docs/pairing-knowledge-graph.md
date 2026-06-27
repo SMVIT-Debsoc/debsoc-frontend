@@ -16,6 +16,29 @@
 
 ---
 
+## Build status (updated at the end of every phase — see `docs/build/`)
+
+> Per `AGENTS.md` Rule 8, the agent updates this table and tags implemented nodes `BUILT
+> (path)` when a phase's Done-when passes. A phase is not complete until this reflects reality.
+
+| Phase | Scope | Status | Notes |
+|-------|-------|--------|-------|
+| 0 | Decision freeze (gates 1–10) | ☐ not started | |
+| 1 | Shared types (B0) | ☐ not started | |
+| 2 | Schema D1–D18 | ☐ not started | |
+| 3 | Repositories (B-repo) | ☐ not started | |
+| 4 | Session services (B-sess) | ☐ not started | |
+| 5 | Engine internals (LOCKED) | ☐ not started | |
+| 6 | Scoring engine (B1,B3) | ☐ blocked: Gate 10 | |
+| 7 | Review/publish (B10,B11) | ☐ not started | |
+| 8 | Post-session scoring (B-score) | ☐ not started | |
+| 9 | Eval + tuning | ☐ not started | |
+| 10 | Validations + routes | ☐ not started | |
+| 11 | Deprecation cleanup | ☐ not started | |
+
+Node status markers used below: `BUILT (path)` = implemented & verified; otherwise the node is
+still planned. `RETIRED` = removed in Phase 11.
+
 ## Legend
 
 - **Node types:** `concept` (domain idea), `rule` (hard/soft constraint), `formula`
