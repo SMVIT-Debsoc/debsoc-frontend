@@ -574,9 +574,9 @@ the list itself).
 
 ### Purpose
 
-Optional batch summary for the existing roster (e.g. to show a strength/data-maturity badge inline
-before hover). Not required if the existing member/cabinet list already has what it needs and only
-the hover fetches detail.
+Optional batch summary for the existing roster of participants (member, cabinet, and president — all
+debate), e.g. to show a strength/data-maturity badge inline before hover. Not required if the
+existing roster already has what it needs and only the hover fetches detail.
 
 ### Access
 

@@ -162,8 +162,9 @@ until the gate it depends on is resolved.**
   **Governing docs:** `02 §6,§8`, `13 §what-learns`, `14 §4–5,§7`, `15 §10,§16`.
 - **Gate:** Gate 4 (form fields), Gate 11 (participant ref — already resolved Option B). Phase 7 done.
 - **Deliverables (`lib/server/scoring/*`):** `speaker-scoring-service.ts`, `chair-scoring-service.ts`,
-  `leaderboard-service.ts` (derive from raw, never sole truth; speaker = cumulative, adjudicator =
-  average + counts), `metric-update-service.ts` (`updateLearnedMetricsFromSession`,
+  `leaderboard-service.ts` (derive from raw, never sole truth; speaker = cumulative total,
+  adjudicator = average-only ranking with participation counts shown as context, not a ranking
+  factor), `metric-update-service.ts` (`updateLearnedMetricsFromSession`,
   `updatePairMetricSnapshotsFromSession`, `updateRolePerformanceFromSession`), and
   `member-progress-service.ts` (B-progress) producing the per-participant **verdict** (strengths /
   weaknesses / gaps / role-aptitude / compatibility, confidence-gated) for A15/A16. Progress
