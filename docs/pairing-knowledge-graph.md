@@ -488,7 +488,7 @@ N1 product
 4. **Post-session form fields confirmed** — RESOLVED (Gate 4): speaker form = chairScore 0–10 +
    optional teamDynamicsRating 0–10; chair form = adjudicator scores + chair-entered raw speaker
    scores; non-chair adjudicators submit nothing. See `docs/14 §4`, `docs/02 §6`.
-5. **Core models accepted (C7)** — blocks schema work.
+5. **Core models accepted (C7)** - RESOLVED. Accepted V1 core model structure from `docs/12-backend-data-model-map.md`; schema drafting remains Phase 2 work and must preserve the participant-reference convention. Blocks schema work.
 6. **Room/leftover rules accepted (Fo7)** — blocks B8.
 7. **Top-band selection accepted (Fo8)** — blocks B4.
 8. **Tuning governance (auto vs review-assisted)** — blocks B-tune.

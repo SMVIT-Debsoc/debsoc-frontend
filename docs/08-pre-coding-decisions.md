@@ -112,6 +112,15 @@ Core model direction:
 - `PairMetricSnapshot`
 - `PublishedPairingView` as a logical read model for the official published pairing
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- accept the authoritative core model vocabulary from `docs/12-backend-data-model-map.md` and the graph
+- keep the minimum V1 core model direction as `DebateSession`, `AttendanceRecord`, `SessionRoleAssignment`, `PairingProposal`, `DebateRoomAssignment`, `DebateTeamAssignment`, `TeamSpeakerAssignment`, `RoomAdjudicatorAssignment`, `UnassignedParticipant`, `ProposalReviewLog`, `ProposalRating`, `SpeakerScoreRecord`, `ChairFeedbackRecord`, `AdjudicatorScoreRecord`, `PairingMetricDefinition`, `PairingMetricAdjustment`, `MemberMetricSnapshot`, `PairMetricSnapshot`, and `PublishedPairingView` as the logical read model
+- preserve the participant-reference convention from Gate 11 when this is converted into schema work in Phase 2
+- schema drafting is deferred to Phase 2; this gate freezes the model structure only
+
 ## 6. Room Generation And Leftover Handling
 
 We already have a default rule direction, but it should be explicitly confirmed before coding:
