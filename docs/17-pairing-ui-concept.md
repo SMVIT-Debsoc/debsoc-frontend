@@ -53,6 +53,13 @@ official.
    (`docs/15 §20 UI contract`, `docs/15 §8/§10`)
 7. **Access is enforced server-side; UI only mirrors it.** Hiding a button is UX, not security.
    (`docs/15 §16`)
+8. **Two orthogonal axes: account role vs participant.** A user's **account role**
+   (`Member / cabinet / President / TechHead`) governs *control & access*. Being a **debating
+   participant** is separate: Member, cabinet, AND President all get paired, scored, ranked, and
+   profiled — everything participant-level applies to all three identically (TechHead is the only
+   account that does not debate). So a president can run the pairing *and* appear in it as a speaker.
+   The UI must never assume "admin = not a debater." (`docs/12 Participant Reference Convention`,
+   knowledge-graph Gate 11)
 
 ---
 
@@ -76,10 +83,12 @@ cabinet / President (admins)            Member                      TechHead / P
 • My Scoring Tasks (when they debate)
 ```
 
-Note: an admin who also debates in a session sees the **member surfaces too** (My Pairings, My
-Scoring Tasks) for that session — driven by their session role.
+Note: account role drives navigation, but participation is separate (principle 8). Any
+cabinet/president who debates in a session also gets the **participant surfaces** (My Pairing, My
+Scoring Tasks, My Stats) for that session, driven by their session role. "Member" column above
+really means "any participant's self-view."
 
-`Grounded in: docs/14 route groups, docs/06 §7, docs/01 §access.`
+`Grounded in: docs/14 route groups, docs/06 §7, docs/01 §access, docs/12 participant convention.`
 
 ---
 
@@ -258,7 +267,11 @@ Design notes:
 `Grounded in: docs/14 §7, docs/05 (all per-member metrics + confidence), docs/12 D17/D18,
 docs/15 §16; knowledge-graph C4 metrics, C8/A16, Gate 11.`
 
-## 4. Member flow — published, read-only, role-aware
+## 4. Participant flow — published, read-only, role-aware
+
+> "Participant" = any debater's self-view: Member, cabinet, OR president when they debate in a
+> session (principle 8). Everything below is the same regardless of account type; it's gated by
+> *session role* (speaker / adjudicator / chair), not account role.
 
 ### 4a. "My Pairing" (after publish)
 The member's single most important screen. Reads **only** the official published proposal.
