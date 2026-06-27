@@ -130,6 +130,15 @@ We already have a default rule direction, but it should be explicitly confirmed 
 - incomplete rooms are not auto-generated
 - admin resolves leftovers by adjustment and regeneration
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- `room_count = floor(speakers / 8)` for V1 generation
+- leftovers are marked `UNASSIGNED`
+- incomplete BP rooms are not auto-generated
+- admin resolves leftovers through adjustment and regeneration
+
 ## 7. Proposal Selection Strategy
 
 We have a strong current direction:
@@ -144,6 +153,15 @@ What still needs confirmation:
 - whether any post-V1 refinement is wanted beyond the current top-band size of `5`
 - whether any post-V1 refinement is wanted beyond the current weighted-rank distribution direction
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- accept V1 top-band probabilistic proposal selection
+- keep top `5` proposals after scoring
+- use the weighted rank distribution `0.30 / 0.24 / 0.18 / 0.15 / 0.13` for V1
+- later refinement is allowed, but V1 treats the current top-band size and weighted-rank pattern as accepted
+
 ## 8. Tuning Governance
 
 We have a strong current direction:
@@ -155,6 +173,14 @@ We have a strong current direction:
 What still needs confirmation:
 
 - whether tuning is review-assisted only or partially automatic
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- tuning remains review-assisted only in V1
+- no bounded adjustment is auto-applied in V1
+- tuning suggestions require explicit review and approval before any metric adjustment is applied
 
 ## 9. Access Control And Published Visibility
 
@@ -170,6 +196,16 @@ What still needs confirmation:
 - exact names of the auth guard helpers
 - whether cabinet and president are the only admin roles for V1, or whether a separate future admin role will be introduced later
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- only `cabinet` and `President` control pairing lifecycle actions in V1: generate, review, approve, override, regenerate, rate, and publish
+- `Member` cannot control the pairing lifecycle in V1
+- published pairing visibility is available to `Member`, `cabinet`, and `President`
+- the official published proposal is the only source of truth for published pairing visibility
+- no extra lifecycle admin role is introduced in V1 beyond the documented roles
+
 ## 10. Phase 6 Formula Blocker
 
 The scoring-engine phase cannot start until the `Fo10` formulas are explicitly finalized.
@@ -183,6 +219,19 @@ This includes:
 - pair-dynamics aggregation
 - `role_score` aggregation
 - tuning-adjustment formula
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- `consistency_score = 1 / (1 + normalized_standard_deviation)`
+- `experience_index = normalized_academic_year`
+- `partner_dynamics_overall = average(bp_result_points_together)`
+- `partner_dynamics_by_motion_type = average(bp_result_points_together_in_motion_type)`
+- `role_score(role) = average(raw_speaker_scores_when_assigned_that_role)`
+- `team_quality_aggregate = weighted_sum(speaker_total_score, speaker_motion_type_score, speaker_strength, partner_dynamics_overall, partner_dynamics_by_motion_type, role_score, motion_type_x_role_score, repeat_partner_penalty, bp_position_history, internal_speaking_role_history)`
+- `proposal_score = 0.40 * room_balance_score + 0.20 * adjudicator_average_score + 0.20 * chair_score + 0.12 * team_quality_aggregate + 0.08 * experience_distribution_aggregate`
+- tuning adjustment remains review-assisted and bounded to `+/- 0.03` in V1
 
 ## What Can Still Be Tuned Later
 
@@ -226,4 +275,5 @@ The safest implementation order is:
 1. confirm the pre-coding decisions in this file
 2. keep metric and database docs aligned with them
 3. begin schema and backend implementation only after that
+
 

@@ -489,11 +489,11 @@ N1 product
    optional teamDynamicsRating 0–10; chair form = adjudicator scores + chair-entered raw speaker
    scores; non-chair adjudicators submit nothing. See `docs/14 §4`, `docs/02 §6`.
 5. **Core models accepted (C7)** - RESOLVED. Accepted V1 core model structure from `docs/12-backend-data-model-map.md`; schema drafting remains Phase 2 work and must preserve the participant-reference convention. Blocks schema work.
-6. **Room/leftover rules accepted (Fo7)** — blocks B8.
-7. **Top-band selection accepted (Fo8)** — blocks B4.
-8. **Tuning governance (auto vs review-assisted)** — blocks B-tune.
-9. **Access-control + published-view rules accepted (R1/R2)** — blocks guards.
-10. **OPEN formulas Fo10 finalized** — blocks B3 (scoring engine).
+6. **Room/leftover rules accepted (Fo7)** - RESOLVED. Accepted V1 rule: `room_count = floor(speakers / 8)`, leftovers are `UNASSIGNED`, incomplete BP rooms are not auto-generated, and admin resolves leftovers through adjustment/regeneration. Blocks B8.
+7. **Top-band selection accepted (Fo8)** - RESOLVED. Accepted V1 top-band selection: keep top `5` proposals and apply weighted random rank selection `0.30 / 0.24 / 0.18 / 0.15 / 0.13`. Blocks B4.
+8. **Tuning governance (auto vs review-assisted)** - RESOLVED. Accepted V1 tuning governance: review-assisted only; no automatic adjustment application in V1. Blocks B-tune.
+9. **Access-control + published-view rules accepted (R1/R2)** - RESOLVED. Accepted V1 access rule: only `cabinet` and `President` control lifecycle actions; published pairing visibility is limited to `Member`, `cabinet`, and `President`; the official published proposal is the only published-read source of truth. Blocks guards.
+10. **OPEN formulas Fo10 finalized** - RESOLVED. Accepted V1 formulas for `consistency_score`, `experience_index`, `team_quality_aggregate`, `proposal_score`, `partner_dynamics_*`, `role_score`, and review-assisted bounded tuning adjustment are now recorded in `docs/09-metric-formulas.md` and `docs/08-pre-coding-decisions.md`. Blocks B3 (scoring engine).
 11. **Participant identity for metrics/progress** — RESOLVED: **Option B**, account-agnostic.
     Pairing covers `Member` + `cabinet` + `President` (TechHead does not debate). Tables stay
     separate; every debater-referencing field is a **participant reference** = (`memberId?`,
