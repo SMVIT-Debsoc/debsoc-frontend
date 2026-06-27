@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:repositories": "node --experimental-strip-types --test lib/server/repositories/*.test.ts",
+    "test:services": "node --experimental-strip-types --test lib/server/sessions/*.test.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
