@@ -95,6 +95,14 @@ still planned. `RETIRED` = removed in Phase 11.
   read route. Generation access and published visibility are intentionally different.
 - **[R4] Session-role authorization** · rule · `08`,`14`,`15` — post-session routing and
   scoring-form access are driven by a user's **role in that session**, never permanent role.
+- **[R5] Scoring oversight access** · rule · `14 §scoring-status/Auth`,`15 §16` — scoring
+  completion tracking (who hasn't filled their role's form) is read-only oversight for cabinet,
+  president, and TechHead; completion + identity only, never submission content; nudge/close
+  actions = cabinet+president only. *Completion ≠ content.*
+- **[R6] Member-progress access** · rule · `14 §7`,`15 §16` — per-person progress analytics readable
+  by cabinet+president for ANY participant; a member sees only their own. Analytics surface (≠
+  leaderboard ranking). **Dependency:** requires participant metrics to cover cabinet accounts, not
+  only `Member` (see Gate 11 below).
 
 Edges:
 - N1 --part_of--> N2, N3
@@ -170,10 +178,16 @@ Four layers (`05`): **hard rules**, **session-only inputs**, **learned metrics**
 **soft optimization metrics**.
 
 ### Learned DB metrics (with base-weight zones & fallbacks)
-- **[M1] speaker_total_score** · 0.20–0.24 · broad, no fallback.
+- **[M1] speaker_total_score** · 0.20–0.24 · broad, no fallback. **CUMULATIVE SUM** of raw speaker
+  scores across sessions (NOT averaged) = additive speaker leaderboard value; rewards attendance,
+  so non-attendees can't rank high on an average (`09 §16b`). Ability-for-balance = M3 speaker_strength.
 - **[M2] speaker_motion_type_score** · 0.16–0.20 · falls_back_to M1.
-- **[M3] speaker_strength** · 0.10–0.14 · falls_back_to M1; formula Fo4.
-- **[M4] partner_dynamics_overall** · 0.10–0.14 · BP result points 3/2/1/0; no fallback.
+- **[M3] speaker_strength** · 0.10–0.14 · falls_back_to M1; formula Fo4. Built on cumulative M1 +
+  consistency + confidence → **intentionally attendance/data-sensitive**: irregular/low-data members
+  get a lower, less-trusted strength (less practice = weaker; thin data = low confidence). NOT
+  attendance-neutral (`05` Regularity/Data Sensitivity, `09 §4`).
+- **[M4] partner_dynamics_overall** · 0.10–0.14 · BP result points 3/2/1/0 (primary); optional
+  secondary input from D19 TeamDynamicsRating; no fallback.
 - **[M5] partner_dynamics_by_motion_type** · 0.08–0.12 · falls_back_to M4.
 - **[M6] repeat_partner_penalty** · −0.06…−0.10 · soft penalty.
 - **[M7] bp_position_history** · 0.06–0.09 · tracks OG/OO/CG/CO; diversity.
@@ -181,8 +195,15 @@ Four layers (`05`): **hard rules**, **session-only inputs**, **learned metrics**
 - **[M9] role_score** · falls_back_to M1 · per exact speaking role.
 - **[M10] motion_type_x_role_score** · falls_back_to M9→M2→M1 · most specific; trust slowly.
 - **[M11] academic_year** · 0.04–0.07 · experience balance input.
-- **[M12] adjudicator_average_score** · 0.16–0.22.
-- **[M13] chair_score** · 0.16–0.22 · falls_back_to M12. (Renamed from "CAP score".)
+- **[M12] adjudicator_average_score** · 0.16–0.22 · chair scores each adj individually (1/session);
+  **mean across sessions** = leaderboard rank (average ONLY, not cumulative, not count-boosted) so a
+  member can be both speaker & adjudicator without penalty; counts (#adjudicated/#chaired) shown as
+  context only (`09 §16b`).
+- **[M13] chair_score** · 0.16–0.22 · falls_back_to M12. (Renamed from "CAP score".) **Derived
+  average** of speaker→chair ratings: two-stage mean (within session, then across sessions),
+  confidence by sessions chaired (target 4). Many `ChairFeedbackRecord` rows in → one averaged
+  score out → leaderboard-stable. (Within-session multi-rater averaging applies to M13 ONLY; M12 =
+  across-session mean+counts, M1 = cumulative sum — `09 §16b`.)
 - **[M18] room_balance_score** · 0.35–0.45 · proposal-level; formula Fo5; only when rooms>1.
 
 ### Session-only inputs (`05`; stored with the generation request, never learned)
@@ -196,6 +217,8 @@ Four layers (`05`): **hard rules**, **session-only inputs**, **learned metrics**
 - **[R-hard] Core validity** · rule — only present participants; each marked speaker|adjudicator;
   no double assignment; each room = exactly 8 speakers, 4 teams, 2 speakers/team; benches
   OG/OO/CG/CO; ≥1 adjudicator/room; exactly 1 chair/room; no publish without approval.
+  *(Panel size beyond the 1 required adjudicator is NOT hard — it is the soft, overridable panel
+  distribution in B9/Fo6b.)*
 - **[R-hard-strict] Session strict rules** · forced team-up, forced separation, strict
   time-constraint, forced chair, forced role, forced room-count override.
 
@@ -217,6 +240,8 @@ Edges:
 - **[Fo5] room_balance_score = 1.0 − (0.75·norm_strength_var + 0.25·norm_experience_var)**;
   `=1.0` if one room · PROPOSED-V1.
 - **[Fo6] chair_assignment_score = 0.60·chair_score + 0.25·adj_avg + 0.15·chair_confidence** · LOCKED.
+- **[Fo6b] adjudicator panel distribution** · PROPOSED-V1 · `surplus = total_adj − room_count`;
+  hardest-first round-robin; cap `MAX_ADJUDICATORS_PER_ROOM = 3`; overflow → RESERVE. Soft/overridable (`09 §6b`).
 - **[Fo7] room_count = floor(speakers/8); leftovers = speakers % 8** · LOCKED.
 - **[Fo8] top-band: top 5, weighted random; pattern 0.30/0.24/0.18/0.15/0.13** · LOCKED (size & shape OPEN to refine, `07 §4`).
 - **[Fo9] objective_adjusted_weight = effective_weight · objective_multiplier** · LOCKED.
@@ -281,14 +306,19 @@ always auditable · always eval against baseline.
 - **[D9] UnassignedParticipant** — proposalId, memberId, reason.
 - **[D10] ProposalReviewLog** — reviewerId, action, notes, createdAt.
 - **[D11] ProposalRating** — reviewerId, rating, issueTagsJson, notes.
-- **[D12] SpeakerScoreRecord** — bpPosition, speakingRole, rawScore, teamResultPoints.
-- **[D13] ChairFeedbackRecord** — speakerMemberId, chairMemberId, rating, notes.
+- **[D12] SpeakerScoreRecord** — bpPosition, speakingRole, rawScore, teamResultPoints,
+  `scoredByMemberId` (the **chair** enters speaker scores — Gate 4).
+- **[D13] ChairFeedbackRecord** — speakerMemberId, chairMemberId, `rating` (speaker→chair 0–10),
+  notes. (Team-dynamics rating is NOT here — see D19.)
 - **[D14] AdjudicatorScoreRecord** — chairMemberId, adjudicatorMemberId, rating, notes.
 - **[D15] PairingMetricDefinition** — key, category, baseWeight, isEnabled, isHardRule,
   isSoftRule, scope, fallbackConfigJson.
 - **[D16] PairingMetricAdjustment** — currentAdjustment, lastUpdatedAt, sourceWindowId.
 - **[D17] MemberMetricSnapshot** — metricKey, contextKey, value, observationCount, confidence.
 - **[D18] PairMetricSnapshot** — memberAId, memberBId, metricKey, contextKey, value, obs, confidence.
+- **[D19] TeamDynamicsRating** — sessionId, raterMemberId, teammateMemberId, rating 0–10. The
+  speaker form's optional team-dynamics rating, stored WITH the pair-dynamics data (not on D13);
+  **secondary** input to partner_dynamics (M4/M5), which stays results-based.
 
 ### Deferrable (`12 §later`)
 LeaderboardSnapshot, MetricAdjustmentHistory, EvalScenario, EvalRun, EvalScenarioResult,
@@ -315,7 +345,10 @@ logic in `lib/server/...`; access explicit. **V1 priority order = the list below
 - **[A2] POST /api/attendance/mark** · cabinet,president → `markAttendance()`.
 - **[A3] GET /api/sessions/:id** · cabinet,president → `getSessionPreparationContext()`.
 - **[A3b] PATCH /api/sessions/:id** · cabinet,president → session update (motionType/Text/objective).
-- **[A3c] GET /api/sessions/:id/scoring-status** · admins + participants.
+- **[A3c] GET /api/sessions/:id/scoring-status** · **oversight read = cabinet+president+TechHead**
+  (completion tracking + who hasn't filled their role's form; identity only, NOT submission
+  content per `15 §16`); participants see their own task status; act on cycle (nudge/close) =
+  cabinet+president only; TechHead read-only.
 - **[A4] POST /api/pairing/generate** · cabinet,president ONLY → `generatePairingProposal()`.
 - **[A5] GET /api/pairing/proposal/:id** · cabinet,president → repository fetch.
 - **[A6] POST …/proposal/:id/approve** · → `approveProposal()`.
@@ -324,10 +357,19 @@ logic in `lib/server/...`; access explicit. **V1 priority order = the list below
 - **[A9] POST …/proposal/:id/rate** · → `rateProposal()`.
 - **[A10] POST /api/pairing/publish/:sessionId** · → `publishApprovedProposal()`.
 - **[A11] GET /api/pairing/published/:sessionId** · member,cabinet,president → `getPublishedPairing()`.
-- **[A12] POST /api/scoring/speaker** · session speakers only → speaker-scoring service (+chair rating).
-- **[A13] POST /api/scoring/chair** · session chairs only → `submitChairAdjudicatorScore()`.
+- **[A12] POST /api/scoring/speaker** · session speakers only → `submitSpeakerChairRating()`:
+  `chairScore` 0–10 (req) → D13; optional `teamDynamicsRating` 0–10 → D19. Speakers do NOT enter raw speaker score.
+- **[A13] POST /api/scoring/chair** · session chairs only → `submitChairAdjudicatorScore()` +
+  `submitRoomSpeakerScores()`: two sections — adjudicator ratings AND chair-entered raw speaker scores.
 - **[A13b] GET /api/leaderboard/speakers · /adjudicators** · authenticated.
 - **[A14] POST /api/eval/replay · /eval/compare** · TechHead,president.
+- **[A15] GET /api/progress/members** · cabinet+president · OPTIONAL batch summary for the existing
+  roster (inline strength/data-maturity badge). Not needed if the existing list + hover detail suffice.
+- **[A16] GET /api/progress/members/:participantId** · cabinet+president (any participant —
+  member/cabinet/president); participant self (own only) · returns raw metrics PLUS a **synthesized
+  verdict** ("strong in IR, weak in Feminism; few Finance debates; good PM/DPM not Whip; pairs well
+  with B, friction with C/D on certain motions"). Confidence-gated (thin data → "needs more data").
+  Powers the **hover popover** on the existing roster (no new page). Built by B-progress.
 
 Edges:
 - A4 --validated_by--> B-val-pairing; A4 --calls--> B1 (engine.ts)
@@ -350,13 +392,19 @@ Principle (`11`,`15 §2`): `app/api/*` = transport only (parse, guard, call ONE 
 - **[B6] fallback.ts** · `computeConfidence()`, `blendSpecificWithFallback()` (Fo2,Fo3).
 - **[B7] objectives.ts** · `getObjectiveMultipliers()`, `applyObjectiveMultiplier()` (Fo9).
 - **[B8] leftovers.ts** · `computeRoomPlan()`, `buildUnassignedParticipants()` (Fo7).
-- **[B9] chair-assignment.ts** · `computeChairAssignmentScore()`, `assignChairsToRooms()` (Fo6).
+- **[B9] chair-assignment.ts** · `computeChairAssignmentScore()` (Fo6), `assignChairsToRooms()`,
+  and panel distribution `distributeAdjudicatorPanels()` — surplus adjudicators spread across rooms
+  by difficulty (hardest-first round-robin), cap `MAX_ADJUDICATORS_PER_ROOM = 3` (1 chair + ≤2
+  panel), overflow → `RESERVE`. Soft + admin-overridable; PROPOSED-V1 (`05` Allocation Logic, `09 §6b`).
 - **[B-ml] metrics-loader.ts** · `loadPairingMetrics()`, `loadSessionInputs()`.
 - **[B10] review.ts** · approve/override/regenerate/rate.
 - **[B11] publish.ts** · `publishApprovedProposal()`, `getPublishedPairing()`.
 - **[B-tune] tuning.ts** · `buildTuningReview()`, `suggestMetricAdjustments()` (L4).
 - **[B-sess] sessions/{session,attendance,session-role}-service.ts**.
 - **[B-score] scoring/{speaker,chair,leaderboard,metric-update}-service.ts** (L1).
+- **[B-progress] scoring/member-progress-service.ts** · reads metric snapshots + raw records and
+  produces the per-participant **verdict** (strengths/weaknesses/gaps/role-aptitude/compatibility,
+  confidence-gated). Interprets existing metrics only — NO new scoring. Powers A15/A16.
 - **[B-eval] eval/{harness,replay-runner,regression-checker,report-builder,synthetic-scenarios}.ts**.
 - **[B-repo] repositories/{pairing,session,scoring,metrics,eval}-repository.ts** · all Prisma here.
 - **[B-val] validations/{pairing,scoring,session}-validation.ts** · zod (project uses zod v4).
@@ -444,12 +492,21 @@ N1 product
 1. **Metric catalog accepted** (M1–M13, M18, M11) — blocks C4/C7/C5.
 2. **Hard vs soft rule split confirmed** — blocks B5/E5.
 3. **Session-role-only routing confirmed (R4)** — blocks D3/A12/A13.
-4. **Post-session form fields confirmed** — blocks D12/D13/D14/A12/A13.
+4. **Post-session form fields confirmed** — RESOLVED (Gate 4): speaker form = chairScore 0–10 +
+   optional teamDynamicsRating 0–10; chair form = adjudicator scores + chair-entered raw speaker
+   scores; non-chair adjudicators submit nothing. See `docs/14 §4`, `docs/02 §6`.
 5. **Core models accepted (C7)** — blocks schema work.
 6. **Room/leftover rules accepted (Fo7)** — blocks B8.
 7. **Top-band selection accepted (Fo8)** — blocks B4.
 8. **Tuning governance (auto vs review-assisted)** — blocks B-tune.
 9. **Access-control + published-view rules accepted (R1/R2)** — blocks guards.
 10. **OPEN formulas Fo10 finalized** — blocks B3 (scoring engine).
+11. **Participant identity for metrics/progress** — RESOLVED: **Option B**, account-agnostic.
+    Pairing covers `Member` + `cabinet` + `President` (TechHead does not debate). Tables stay
+    separate; every debater-referencing field is a **participant reference** = (`memberId?`,
+    `cabinetId?`, `presidentId?`) with EXACTLY ONE set. Metric reads, leaderboards, and progress
+    (A15/A16) must resolve all three keys. See `docs/12` "Participant Reference Convention".
+    Constrains Phase 2 schema. (Heads-up: with 3 debating account types, unified-id Option A is
+    worth revisiting; staying on B per decision.)
 </content>
 </invoke>

@@ -147,11 +147,16 @@ When a proposal is approved and published, the backend needs to trigger several 
 
 Once the debate session ends, the backend must open a scoring phase.
 
-### Expected roles
+### Expected roles (RESOLVED — Gate 4)
 
-- speakers submit chair-related scoring and any future pairing input questions
-- regular adjudicators do not score others
-- chairs score the adjudicators in that room
+- speakers submit a simple form: score the assigned chair (0–10) and optionally rate their own
+  team dynamics (0–10). Speakers do NOT enter their own raw speaker score.
+- regular (non-chair) adjudicators do not submit anything
+- chairs submit two things for their room: (1) score the panel adjudicators (0–10), and (2) enter
+  the raw speaker scores for the speakers in that room
+
+The chair is therefore the entry point for raw speaker scores; the speaker is the entry point for
+chair quality and optional team-dynamics feedback.
 
 ### Backend responsibilities
 
@@ -177,20 +182,27 @@ The same user may appear in different contexts across sessions. For one session 
 
 The leaderboard system will need to update from post-session scoring rather than being loosely tied to current attendance or session records.
 
-### Speaker leaderboard should eventually account for
+### Speaker leaderboard should account for
 
-- total speaker score
-- motion-type-specific speaker score
+- total speaker score — a **cumulative sum** across sessions (NOT an average), so attendance and
+  repeated performance are rewarded and a low-attendance member cannot rank high on a small-sample
+  average
+- motion-type-specific speaker score — same cumulative shape, per motion type
 - role-specific score later where useful
 
-### Adjudicator leaderboard should eventually account for
+### Adjudicator leaderboard should account for
 
-- adjudicator scoring average
+- adjudicator scoring **average** — the ranking value (chair scores each adjudicator individually,
+  averaged across sessions); NOT cumulative and NOT boosted by adjudication count, so a member who
+  also speaks in some sessions is not penalized for adjudicating fewer times
 - chair-related score inputs
-- number of times serving as adjudicator
-- number of times serving as chair where needed
+- number of times serving as adjudicator — shown as context only, not a ranking multiplier
+- number of times serving as chair where needed — context only
 
-The backend should be designed so leaderboard values are derived from raw scoring data and can be recalculated safely.
+Speaker ranking is cumulative (rewards attendance); adjudicator ranking is a pure average (lets
+members split between speaking and adjudicating without distorting the board). Counts are displayed
+for context but never inflate adjudicator rank. The backend should be designed so leaderboard
+values are derived from raw scoring data and can be recalculated safely.
 
 ## 9. Metrics And Configuration Handling
 

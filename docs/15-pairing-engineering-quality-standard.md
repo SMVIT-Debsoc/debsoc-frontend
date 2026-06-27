@@ -737,6 +737,17 @@ Even though this is not a payments system, it still handles sensitive society da
 - proposal diagnostics returned to the frontend should be role-appropriate
 - stored metadata should be minimized to what is needed for audit and debugging
 
+### Scoring oversight vs. submission content (completion ≠ content)
+
+- post-session scoring **completion tracking** (who has/hasn't submitted the form for their
+  session role) is oversight data, readable by cabinet, president, and techhead so they can
+  monitor progress and chase missing submissions
+- the **content** of a submission (the actual scores/ratings a participant gave) is restricted —
+  it is not browsable by other participants, and oversight roles see completion + identity only,
+  not the values others entered; the public derived output is the leaderboards
+- acting on the scoring cycle (nudge, close scoring) is limited to cabinet and president;
+  techhead oversight is read-only
+
 ## 17. Observability And Debugging Standard
 
 This feature must be inspectable in production-like conditions.

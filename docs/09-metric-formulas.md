@@ -103,20 +103,29 @@ speaker_strength =
 
 ### Meaning
 
-- `normalized_speaker_total_score` gives broad performance quality
+- `normalized_speaker_total_score` gives broad performance quality (built on the CUMULATIVE total,
+  so low-attendance members start from a low base)
 - `consistency_score` rewards stable speaker performance
 - `confidence_score` rewards having enough evidence to trust the estimate
+
+### Regularity / Data Sensitivity (intended)
+
+This metric is deliberately attendance/data-sensitive: irregular or low-data members get a lower,
+less-trusted strength, because less practice = a genuinely weaker speaker and thin data = lower
+confidence. Direction for the confidence term: `confidence_score = min(sessions / target, 1.0)`.
+Do NOT make this attendance-neutral. Full rationale in `05` → `speaker_strength`.
 
 ### Why This Formula Works
 
 - keeps raw broad performance as the strongest signal
 - prevents raw totals from fully dominating
 - gives the engine a more dependable strength estimate for balancing rooms and teams
+- penalizes irregularity correctly (less practice + less data → lower, less-trusted strength)
 
 ### Still Open Inside This Formula
 
 - exact `consistency_score` calculation
-- exact `confidence_score` calculation for overall speaker strength
+- exact `confidence_score` calculation (direction set above: observation/session count based)
 - whether recent-form component should be added later
 
 ## 5. Room Balance Score Formula
@@ -204,7 +213,52 @@ chair_assignment_score =
 1. rank rooms by difficulty or importance
 2. rank available adjudicators by `chair_assignment_score`
 3. assign stronger chairs to stronger or more sensitive rooms first
-4. assign remaining adjudicators as panel adjudicators or reserves
+4. the remaining adjudicators become the surplus pool for the panel distribution rule below
+
+## 6b. Adjudicator Panel Distribution
+
+### Status
+
+`PROPOSED V1`
+
+### Purpose
+
+After each room has exactly one chair, spread the surplus adjudicators across rooms weighted by
+room difficulty/importance, so harder rooms get larger panels. Balances adjudication quality
+instead of stacking one room. Full prose lives in `05-pairing-metrics.md` →
+"Adjudicator And Chair Allocation Logic".
+
+### Formula
+
+```text
+surplus = total_adjudicators - room_count
+MAX_ADJUDICATORS_PER_ROOM = 3            # 1 chair + up to 2 panel
+```
+
+### Rule
+
+1. every room starts at chair-only (panel size 0)
+2. using the difficulty/importance ranking from chair allocation, hand out surplus adjudicators
+   one at a time, hardest room first, looping until surplus runs out
+3. never exceed `MAX_ADJUDICATORS_PER_ROOM` per room
+4. adjudicators left after every room hits the cap become `RESERVE` (shown to admin, never dropped)
+
+### Hard-rule boundary
+
+Panel distribution is soft and admin-overridable, but it sits ON TOP of two hard adjudicator
+rules that it may never violate:
+
+- each room has at least 1 adjudicator
+- each room has **exactly 1 chair** — never 0, never 2
+
+`surplus` is computed from adjudicators that are NOT chairs, and the distribution step only ever
+assigns non-chair panel members. Neither distribution nor any admin override may create a room
+with ≠1 chair; such a proposal is invalid and must be rejected before persistence.
+
+### Still Open Inside This Rule
+
+- whether `MAX_ADJUDICATORS_PER_ROOM` should be configurable per session
+- whether difficulty ranking should also weight panel-member strength, not just panel size
 
 ## 7. Leftover Speaker Calculation
 
@@ -553,6 +607,63 @@ motion_type_x_role_score
 - whether this should include BP result points too
 - how much data is required before trusting it
 - whether this metric should stay lightly weighted in early versions
+
+## 16b. Feedback Metric Aggregation
+
+### Status
+
+`PROPOSED V1`
+
+### Purpose
+
+Post-session feedback metrics aggregate differently depending on whether a metric is a *quality*
+signal (averaged) or a *participation/points* signal (cumulative). Each raw rating is its own
+record; the metric is derived and recomputable. Full prose in `05-pairing-metrics.md`.
+
+### chair_score — two-stage mean (only metric with multiple raters per session)
+
+Up to 8 speakers rate one chair, so average within a session, then across sessions:
+
+```text
+session_chair_rating(chair, session) = mean(speaker ratings for that chair that session)
+chair_score(chair)                   = mean(session_chair_rating over the chair's sessions)
+confidence                           = min(sessions_chaired / 4, 1.0)
+```
+
+### adjudicator_average_score — across-session mean ONLY (not cumulative, not count-boosted)
+
+The chair scores each adjudicator individually (one rating per adjudicator per session):
+
+```text
+adjudicator_average_score(adj) = mean(chair rating for that adjudicator over their sessions)
+```
+
+The leaderboard ranks by this average only — so a member can be both speaker and adjudicator across
+sessions without their adjudicator standing being penalized for adjudicating fewer times. Counts
+(#adjudicated, #chaired) are shown as context only (may gate a min-sessions threshold to appear),
+never as a ranking multiplier.
+
+### speaker_total_score — CUMULATIVE SUM (not averaged)
+
+One chair-entered raw score per speaker per session; the metric and the speaker leaderboard are
+the running total:
+
+```text
+speaker_total_score(member) = sum(raw_speaker_score over the member's speaking sessions)
+```
+
+Additive on purpose — non-attendance must not be rewarded; a member with few sessions cannot rank
+high on an average. Same cumulative shape applies per motion type for the motion-type leaderboard.
+
+### Still Open Inside This Rule
+
+- whether to weight recent sessions more (recency) for the averaged metrics
+- whether to drop outlier ratings before averaging `chair_score`
+
+RESOLVED: `speaker_strength` stays built on the cumulative `speaker_total_score` (+ consistency +
+confidence) and is intentionally attendance/data-sensitive — it is NOT switched to a per-session
+average. Irregular / low-data members get a lower, less-trusted strength by design (see `05` →
+`speaker_strength` → "Regularity / Data Sensitivity").
 
 ## 17. Tuning Adjustment Formula
 

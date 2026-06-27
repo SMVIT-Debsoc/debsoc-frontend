@@ -73,15 +73,36 @@ These are long-term metrics stored in the database and improved after each sessi
 
 ### Purpose
 
-Represents the overall measurable speaker performance of a member across past sessions.
+Represents the overall accumulated speaker performance of a member across past sessions.
 
 ### Type
 
 Learned DB metric
 
+### Aggregation (cumulative — NOT averaged)
+
+`speaker_total_score` is a **cumulative sum** of the chair-entered raw speaker scores across all of
+the member's speaking sessions. It is NOT an average.
+
+```text
+speaker_total_score(member) = sum(raw_speaker_score over the member's speaking sessions)
+```
+
+This is also the **speaker leaderboard** value (and the same applies per motion type for the
+motion-type leaderboard view). It is deliberately additive: a member who attends and performs
+repeatedly should rank higher. Averaging is rejected here because a member who attends very few
+sessions could otherwise rank unfairly high — non-attendance must not be rewarded.
+
+> Engine-balance note (RESOLVED): the interpreted ability signal `speaker_strength` is built on
+> this cumulative total (plus consistency + confidence) and is **intentionally attendance/data-
+> sensitive** — irregular members get a lower, less-trusted strength because less practice + less
+> data genuinely means a weaker, less-proven speaker. We do NOT make balancing attendance-neutral.
+> See `speaker_strength` → "Regularity / Data Sensitivity".
+
 ### Why It Exists
 
-This is the broadest and most direct speaker quality signal. It gives the engine a baseline understanding of how strong a speaker is in general.
+This is the broadest and most direct speaker output signal. It gives the engine a baseline
+understanding of a member's accumulated speaking record.
 
 ### How The Engine Uses It
 
@@ -171,6 +192,25 @@ speaker_strength =
   0.10 * confidence_score
 ```
 
+### Regularity / Data Sensitivity (RESOLVED — do NOT make this attendance-neutral)
+
+`speaker_strength` is intentionally lower and less trusted for irregular / low-attendance members.
+The reasoning: not being regular to sessions generally means less practice (a genuinely weaker
+speaker), and it also means we simply have less data to trust. Both effects must pull strength
+down — so this metric is deliberately attendance/data-sensitive, not normalized away.
+
+This is already encoded in the formula:
+
+- `normalized_speaker_total_score` is built on the **cumulative** `speaker_total_score`, so a
+  low-attendance member has a low total → low normalized base → lower strength.
+- `confidence_score` reflects how much evidence exists (direction: `min(sessions / target, 1.0)`),
+  so thin data lowers strength and keeps it close to the broad fallback.
+- `consistency_score` needs enough sessions to be meaningful; sparse data should not produce a
+  falsely high consistency.
+
+Net effect: a member who rarely attends cannot present as a strong, dependable speaker. Regular,
+proven speakers rank higher for team balancing — which is the intended behavior.
+
 ### Rough Weight Priority
 
 Medium-high
@@ -196,6 +236,12 @@ Learned DB metric
 ### Meaning
 
 This should be based primarily on actual results together, not mainly on subjective teammate opinion.
+
+> Note (Gate 4): the speaker post-session form has an OPTIONAL `teamDynamicsRating` (0–10), stored
+> in its own `TeamDynamicsRating` record alongside this pair-dynamics data (not on the chair
+> record). It is a secondary/auxiliary subjective input only — `partner_dynamics_*` stays primarily
+> results-based (BP result points / pair win record) as below. Do not let the subjective rating
+> dominate the metric. (`docs/12 TeamDynamicsRating`, `docs/14 §4`)
 
 The current preferred measurement direction is pair performance in BP using team outcome points:
 
@@ -483,6 +529,24 @@ Represents overall adjudicator quality.
 
 Learned DB metric
 
+### Aggregation (average only — NOT cumulative)
+
+The chair scores each adjudicator in the room **individually** — one rating per adjudicator per
+session (no within-session multi-rater averaging). The metric is the mean across sessions:
+
+```text
+adjudicator_average_score(adj) = mean(chair rating for that adjudicator over their sessions)
+```
+
+The **adjudicator leaderboard ranks by this average only** — deliberately NOT cumulative and NOT
+boosted by adjudication count. Reason: a member may be a speaker in some sessions and an
+adjudicator in others. A pure average gives them the leverage to split roles freely — adjudicating
+fewer times does not drag down their adjudicator standing, and it does not distort the leaderboard.
+This is the opposite of `speaker_total_score`, which is cumulative on purpose.
+
+Participation counts (#sessions adjudicated, #sessions chaired) are shown as **context/transparency
+only** (and may gate a minimum-sessions threshold to appear), but they are NOT a ranking multiplier.
+
 ### Why It Exists
 
 Adjudicator quality should be evaluated separately from speaker quality.
@@ -520,6 +584,38 @@ Learned DB metric
 ### Meaning
 
 This is the metric previously discussed under the name `CAP score`. The preferred terminology now is `chair_score`.
+
+### Aggregation (multiple raters per session)
+
+A chair is rated by every speaker in their room — up to `8` speakers in a full BP room. These are
+stored as individual `ChairFeedbackRecord` rows (one per speaker). `chair_score` is a **derived
+average**, never a single rating, so the leaderboard stays stable regardless of how many speakers
+rated:
+
+```text
+session_chair_rating(chair, session) = mean(speaker chair ratings for that chair in that session)
+chair_score(chair) = mean(session_chair_rating over the chair's sessions)
+```
+
+Two-stage mean (average within a session first, then across sessions) so a room with 8 raters does
+not outweigh a room with 6. Confidence uses the standard formula with the chair-score target count
+(`4` sessions):
+
+```text
+confidence = min(sessions_chaired / 4, 1.0)
+```
+
+`chair_score` is a **derived/recomputable** value — the raw `ChairFeedbackRecord` rows remain the
+source of truth (`docs/15 §6 snapshot rule`).
+
+Within-session multi-rater averaging like this applies ONLY to `chair_score` (many speakers rate
+one chair). The other feedback metrics aggregate differently:
+
+- `adjudicator_average_score` — the chair scores each adjudicator **individually** (one rating per
+  adjudicator per session), so it is a mean **across sessions**, paired on the leaderboard with
+  participation counts (#adjudicated, #chaired).
+- `speaker_total_score` — a **cumulative sum** across sessions, NOT an average (see its section
+  above); this is the additive speaker leaderboard value.
 
 ### Why It Exists
 
@@ -876,7 +972,12 @@ leftover_speakers = number_of_speakers % 8
 - remove some speakers
 - approve a revised valid room count and regenerate
 
-## Chair Assignment Logic
+## Adjudicator And Chair Allocation Logic
+
+This covers two things: which adjudicator chairs each room (chair allocation), and how the
+remaining adjudicators are spread across rooms as panel members (panel distribution).
+
+### Chair Allocation
 
 Each room must have exactly one chair.
 
@@ -889,17 +990,62 @@ chair_assignment_score =
   0.15 * chair_confidence_score
 ```
 
-### Allocation Rule
+Chair allocation rule:
 
 1. rank rooms by difficulty or importance
 2. rank available adjudicators by `chair_assignment_score`
 3. assign the stronger chairs to the stronger or more sensitive rooms first
-4. assign remaining adjudicators as panel adjudicators or reserves
+4. the adjudicators not chosen as chairs become the surplus pool for panel distribution below
+
+### Panel Distribution (surplus adjudicators)
+
+> **Hard invariant — never broken.** Every room has **exactly one chair**: not zero, not two.
+> Panel distribution operates ONLY on adjudicators that are not chairs and can never add, remove,
+> or duplicate a chair. A proposal with any room holding ≠1 chair is invalid regardless of panel
+> sizing, and no admin override or distribution step may produce that state.
+
+After every room has its one chair, the leftover adjudicators are distributed as **panel**
+members weighted by room difficulty/importance, so harder rooms get larger panels and easier
+rooms get fewer (down to just the chair). This keeps adjudication quality balanced toward the
+rooms that need it most instead of stacking one room.
+
+```text
+surplus = total_adjudicators - room_count        # adjudicators beyond one chair per room
+```
+
+Distribution rule:
+
+1. start every room at panel size 0 (chair only)
+2. take the difficulty/importance ranking already used for chair allocation
+3. hand out surplus adjudicators one at a time, hardest room first, looping through the ranked
+   rooms, until the surplus runs out
+   - this makes panels differ by at most 1 between adjacent difficulty ranks
+4. cap each room at `MAX_ADJUDICATORS_PER_ROOM = 3` total (1 chair + up to 2 panel)
+5. any adjudicators left after every room hits the cap become `RESERVE`, shown to admin, not
+   silently dropped
+
+Worked example (5 adjudicators, 2 rooms):
+
+```text
+2 chairs (1 per room) + 3 surplus
+Room 1 (harder): chair + 2 panel = 3 adjudicators
+Room 2 (easier): chair + 1 panel = 2 adjudicators
+```
+
+### Rule Status
+
+- chair allocation is `FINALIZED ENOUGH` (uses the locked `chair_assignment_score`)
+- panel distribution + the `MAX_ADJUDICATORS_PER_ROOM = 3` cap are `PROPOSED V1`
+- panel distribution is a **soft allocation**: the engine proposes it, and the only hard rules
+  remain "each room has at least 1 adjudicator" and "each room has exactly 1 chair"
 
 ### Admin Control
 
 - admin may force a specific chair before generation
 - admin may override chair assignment during review
+- admin may override panel sizes and reserve assignments during review
+- admin may override the room difficulty/importance ranking that drives both chair and panel
+  allocation
 
 ## Adaptive Learning And Probabilistic Behavior
 

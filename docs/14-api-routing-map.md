@@ -163,13 +163,27 @@ Update session-level inputs before generation.
 
 ### Purpose
 
-Return whether post-session scoring is pending, open, partial, or complete.
+Return whether post-session scoring is pending, open, partial, or complete, plus per-role
+completion tracking: which participants have NOT yet submitted the form for their session role
+(speakers who owe their speaker form, chairs who owe their adjudicator scores). This is
+**completion tracking only** — it returns who has/hasn't submitted, never the content of anyone's
+submission.
 
 ### Access
 
 - cabinet admin
 - president admin
-- session participants where relevant
+- techhead admin (always-on oversight, read-only)
+- session participants may see their own task status only
+
+### Privacy boundary
+
+- monitors (cabinet, president, techhead) may see completion status + participant identity
+  (who hasn't filled their role's form)
+- monitors may NOT see the content/scores another participant submitted; submission content is
+  restricted (see `15 §16`), and the public derived output is the leaderboards
+- only cabinet and president may act on the cycle (nudge pending, close scoring); techhead is
+  read-only
 
 ### Should call
 
@@ -371,7 +385,9 @@ These routes handle post-session submissions.
 
 ### Purpose
 
-Submit speaker-side post-session inputs.
+Submit the speaker's post-session form. RESOLVED (Gate 4): the speaker does NOT enter their own
+raw speaker score — the chair does that (see the chair route). The speaker form is intentionally
+simple: rate the assigned chair, and optionally rate their own team dynamics.
 
 ### Access
 
@@ -379,30 +395,35 @@ Submit speaker-side post-session inputs.
 
 ### Request body
 
-Expected to include speaker-side inputs such as:
-
 ```json
 {
   "sessionId": "string",
-  "speakerScore": 74,
-  "chairRating": 4,
+  "chairScore": 8,
+  "teamDynamicsRating": 7,
   "notes": "optional"
 }
 ```
 
+- `chairScore` — REQUIRED, integer 0–10 → stored as `ChairFeedbackRecord`; source for `chair_score`.
+- `teamDynamicsRating` — OPTIONAL, integer 0–10 → stored as its own `TeamDynamicsRating` record
+  (NOT on ChairFeedbackRecord), co-located with the partner-dynamics data. It is a
+  secondary/auxiliary signal; `partner_dynamics_*` stays primarily results-based (`docs/05`).
+- `notes` — OPTIONAL.
+
 ### Should call
 
 - validation from `lib/server/validations/scoring-validation.ts`
-- `submitSpeakerScore()`
-- `submitSpeakerChairRating()`
-
-Both from `lib/server/scoring/speaker-scoring-service.ts`
+- `submitSpeakerChairRating()` (writes ChairFeedbackRecord; if present, writes TeamDynamicsRating)
+  from `lib/server/scoring/speaker-scoring-service.ts`
 
 ## `POST /api/scoring/chair`
 
 ### Purpose
 
-Submit chair-to-adjudicator scoring.
+Submit the chair's post-session form. RESOLVED (Gate 4): the chair has TWO responsibilities —
+(1) score the panel adjudicators in their room, and (2) enter the raw speaker scores for the
+speakers in their room. Kept as ONE route carrying two arrays; the UI presents two separate
+sections/screens (one endpoint, separate UI — better UX than two endpoints).
 
 ### Access
 
@@ -413,20 +434,32 @@ Submit chair-to-adjudicator scoring.
 ```json
 {
   "sessionId": "string",
-  "scores": [
+  "adjudicatorScores": [
+    { "adjudicatorMemberId": "string", "rating": 8, "notes": "optional" }
+  ],
+  "speakerScores": [
     {
-      "adjudicatorMemberId": "string",
-      "rating": 4,
-      "notes": "optional"
+      "memberId": "string",
+      "rawScore": 75,
+      "bpPosition": "OG",
+      "speakingRole": "PM",
+      "teamResultPoints": 3
     }
   ]
 }
 ```
 
+- `adjudicatorScores[]` — chair-to-adjudicator ratings (0–10) → `AdjudicatorScoreRecord`,
+  source for `adjudicator_average_score`.
+- `speakerScores[]` — chair-entered raw speaker scores → `SpeakerScoreRecord` (records the chair
+  as `scoredByMemberId` for audit). `rawScore` uses the existing raw speaker-score convention;
+  `teamResultPoints` is the BP 3/2/1/0 outcome.
+
 ### Should call
 
 - validation from `lib/server/validations/scoring-validation.ts`
-- `submitChairAdjudicatorScore()` from `lib/server/scoring/chair-scoring-service.ts`
+- `submitChairAdjudicatorScore()` and `submitRoomSpeakerScores()`
+  from `lib/server/scoring/chair-scoring-service.ts`
 
 ## 5. Leaderboard Routes
 
@@ -525,6 +558,91 @@ Compare one eval result against a baseline.
 
 - `compareEvalReports()` from `lib/server/eval/regression-checker.ts`
 
+## 7. Progress / Analytics Routes (admin)
+
+These routes expose per-person progress analytics built from the metric snapshots and raw records.
+They are oversight/development tools, distinct from the public leaderboards (ranking).
+
+UI integration: there is NO new progress page. The existing member & cabinet section in the cabinet
+dashboard is the roster; hovering a row opens a progress popover that calls the per-participant
+route below. The roster route is therefore optional (use it only if a batch summary is needed for
+the list itself).
+
+## `GET /api/progress/members` (optional batch summary)
+
+### Purpose
+
+Optional batch summary for the existing roster (e.g. to show a strength/data-maturity badge inline
+before hover). Not required if the existing member/cabinet list already has what it needs and only
+the hover fetches detail.
+
+### Access
+
+- cabinet
+- president
+
+### Response summary
+
+- per participant: cumulative `speaker_total_score`, `speaker_strength` (with its confidence/data
+  level), participation counts (sessions spoken / adjudicated / chaired), and a data-maturity flag
+- sortable/filterable; low-data members flagged so their numbers aren't over-read
+
+### Should call
+
+- progress read from `lib/server/scoring/leaderboard-service.ts` (or a dedicated
+  `member-progress-service.ts`) over `metrics-repository.ts` + `scoring-repository.ts`
+
+## `GET /api/progress/members/:participantId`
+
+### Purpose
+
+Full progress profile for one participant.
+
+### Access
+
+- cabinet
+- president
+- a member may read their OWN profile only (self view); members cannot read others'
+
+### Response summary
+
+Two layers — the raw metrics AND a synthesized, human-readable verdict generated from them.
+
+Raw metric layer:
+
+- speaker: cumulative `speaker_total_score` overall + by motion type, `speaker_strength` with
+  confidence, `role_score` per speaking role, `motion_type_x_role` highlights, `bp_position_history`
+  and `internal_speaking_role_history` (rotation/diversity), notable `partner_dynamics`, academic year
+- adjudicator/chair: `adjudicator_average_score`, `chair_score`, #adjudicated / #chaired, confidence
+- trend over time + per-metric data-maturity (observation counts / confidence)
+
+Verdict/insight layer (the "progress" the admin actually reads) — short statements derived from the
+metrics, e.g.:
+
+- motion-type strengths/weaknesses: "strong in IR, weak in Feminism"
+- coverage gaps (low observation count): "few debates on Finance"
+- role aptitude: "good as PM/DPM, weaker as Whip"
+- pair compatibility: "pairs well with B; friction with C and D on certain motion types"
+
+Verdict generation rules (thresholds are tunable — see open items):
+
+- strength/weakness = a motion-type / role score notably above or below the participant's own
+  baseline (or cohort baseline), only when confidence is sufficient
+- gap = low observation count for a motion type or role (also drives a "needs data" flag)
+- compatibility = high vs low `partner_dynamics_overall` / `partner_dynamics_by_motion_type` per pair
+- never assert a verdict from thin data — if confidence is low, say "not enough data" instead
+
+### Should call
+
+- profile + verdict from the progress/insight service (e.g. `member-progress-service.ts`) over
+  `metrics-repository.ts` + `scoring-repository.ts`. The service translates metrics into the verdict
+  statements; it performs NO new scoring — it only interprets existing metrics/snapshots.
+
+### Privacy
+
+- admin profiles may include full metric detail (cabinet/president oversight); the member self-view
+  is role-appropriate and excludes any admin-only annotations (`15 §16`)
+
 ## Auth And Access Expectations
 
 This section summarizes the intended route access model.
@@ -541,6 +659,36 @@ This section summarizes the intended route access model.
 - chair scoring route
 
 These must check session role, not only permanent account role.
+
+## Scoring Monitoring / Oversight (read-only)
+
+- `GET /api/sessions/:sessionId/scoring-status`
+
+Post-session scoring progress and per-role completion tracking (who has/hasn't filled the form for
+their session role) is readable by:
+
+- cabinet
+- president
+- techhead
+
+This is always-on oversight so President and TechHead can monitor completion across sessions and
+see who still owes a submission. It exposes completion + identity only — never the content/scores
+of anyone's submission (`15 §16`). Acting on the cycle (nudge pending, close scoring) stays
+restricted to cabinet and president; techhead is read-only.
+
+## Member Progress / Analytics (read)
+
+- `GET /api/progress/members`
+- `GET /api/progress/members/:participantId`
+
+Per-person progress analytics (development trajectory + current metric profile) is readable by:
+
+- cabinet
+- president
+
+Cabinet and president may view any participant's profile (members and cabinet). A member may view
+their OWN profile only and never another participant's. Profiles surface per-metric data maturity so
+low-data numbers are not over-read.
 
 ## Published Pairing Read Route
 

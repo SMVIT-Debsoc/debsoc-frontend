@@ -65,8 +65,14 @@ until the gate it depends on is resolved.**
 - **Deliverables (in `prisma/schema.prisma`):**
   - Extend `DebateSession` (D1) and `Attendance`→ keep model, add D2 fields. Add `SessionRoleAssignment`
     (D3) — **session role is distinct from account role**.
-  - Add the V1 model set: D4–D18 with the exact field names from `12`. Singular PascalCase,
-    explicit relation names where a model joins `Member` twice (D13, D14, D18).
+  - Add the V1 model set: D4–D19 with the exact field names from `12` (D19 = `TeamDynamicsRating`,
+    the speaker form's optional team-dynamics rating, stored with pair data — not on D13). Singular
+    PascalCase, explicit relation names where a model joins `Member` twice (D13, D14, D18, D19).
+  - **Participant reference convention (Gate 11 = Option B, account-agnostic):** pairing covers
+    Member + cabinet + President (not TechHead). Every debater-referencing field is
+    `(memberId?, cabinetId?, presidentId?)` with EXACTLY ONE set (extends existing `Attendance`).
+    Apply to all participant-carrying models per `docs/12` "Participant Reference Convention";
+    enforce exactly-one in validation/DB check. Do NOT key metrics to `Member` only.
   - Index every field flagged in `15 §6 Indexing rule`: session scoping, published-proposal lookup,
     proposal status, member-session-role, pair-metric key, score uniqueness, review timeline.
   - One migration; do not drop or rename existing columns relied on by current code.
@@ -150,17 +156,21 @@ until the gate it depends on is resolved.**
 
 ---
 
-## Phase 8 — Post-session scoring & learning  ·  `B-score, L1`
+## Phase 8 — Post-session scoring, learning & progress  ·  `B-score, B-progress, L1`
 
-- **Graph nodes:** B-score, L1, S6, S7, D12–D14. **Governing docs:** `02 §6,§8`, `13 §what-learns`,
-  `14 §4–5`, `15 §10`.
-- **Gate:** Gate 4 (form fields). Phase 7 done.
+- **Graph nodes:** B-score, B-progress, L1, S6, S7, D12–D14; progress routes A15/A16, rule R6.
+  **Governing docs:** `02 §6,§8`, `13 §what-learns`, `14 §4–5,§7`, `15 §10,§16`.
+- **Gate:** Gate 4 (form fields), Gate 11 (participant ref — already resolved Option B). Phase 7 done.
 - **Deliverables (`lib/server/scoring/*`):** `speaker-scoring-service.ts`, `chair-scoring-service.ts`,
-  `leaderboard-service.ts` (derive from raw, never sole truth), `metric-update-service.ts`
-  (`updateLearnedMetricsFromSession`, `updatePairHistoryFromSession`,
-  `updateRolePerformanceFromSession`).
+  `leaderboard-service.ts` (derive from raw, never sole truth; speaker = cumulative, adjudicator =
+  average + counts), `metric-update-service.ts` (`updateLearnedMetricsFromSession`,
+  `updatePairHistoryFromSession`, `updateRolePerformanceFromSession`), and
+  `member-progress-service.ts` (B-progress) producing the per-participant **verdict** (strengths /
+  weaknesses / gaps / role-aptitude / compatibility, confidence-gated) for A15/A16. Progress
+  interprets existing metrics only — NO new scoring.
 - **Done-when:** scoring gated on session role (R4); duplicate submissions idempotent (`15 §10`);
-  leaderboards recomputable from raw; metric snapshots + confidence updated (Fo2).
+  leaderboards recomputable from raw; metric snapshots + confidence updated (Fo2); progress verdict
+  resolves all participant keys (member/cabinet/president) and never asserts from thin data.
 
 ---
 

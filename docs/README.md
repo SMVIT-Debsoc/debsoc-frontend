@@ -54,6 +54,9 @@ Engineering quality standard for implementing the pairing system safely, with gu
 ### [16-build-plan.md](16-build-plan.md)
 Tightly-coupled, phase-by-phase build plan derived from docs 01–15. Every step cites its graph nodes, governing docs, pre-coding gate, exact deliverable files, and acceptance checks. Strict ordering; no step may be skipped.
 
+### [17-pairing-ui-concept.md](17-pairing-ui-concept.md)
+Conceptual UI for the whole pairing system — role-aware, lifecycle-driven screens and flows for admins (cabinet/president), members, and ops (TechHead/president), grounded in docs 01–15. Design thinking only; no frontend is built while the backend-only scope holds.
+
 ### [pairing-knowledge-graph.md](pairing-knowledge-graph.md)
 Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, build-status table, pre-coding gates). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work, and requires updating it at the end of every phase.
 

@@ -33,6 +33,37 @@ The pairing engine needs the database to support four types of data:
 
 The model set should reflect those four concerns clearly.
 
+## Participant Reference Convention (Gate 11 — Option B)
+
+Pairing is **position/account agnostic**: `Member`, `cabinet`, AND `President` all get paired and
+all accrue metrics. (`TechHead` is the only account that does NOT debate.) So any field that
+identifies a debating participant is a **participant reference**, not a plain `memberId`:
+
+```text
+participant reference = ( memberId?  cabinetId?  presidentId? )   // EXACTLY ONE is set
+```
+
+This extends the existing `Attendance` pattern (already nullable `memberId` + `cabinetId`) to also
+cover president. The rule:
+
+- exactly one of `memberId` / `cabinetId` / `presidentId` must be non-null on each participant reference
+- enforce it in validation (and a DB check where practical)
+- metric reads, leaderboards, and the progress routes (A15/A16) must resolve ALL THREE keys
+- being a participant (paired/scored/ranked) is independent of lifecycle-control access: a president
+  can both control the pairing lifecycle AND be paired as a debater
+
+Below, wherever a field is described with `...MemberId` (e.g. `memberId`, `speakerMemberId`,
+`chairMemberId`, `memberAId`, `raterMemberId`, `scoredByMemberId`), read it as a **participant
+reference** following this convention — it may resolve to a member, a cabinet, OR a president. The
+names are kept `...MemberId` for readability; the storage is the (memberId?, cabinetId?, presidentId?)
+set.
+
+Models that carry participant references: `AttendanceRecord`, `SessionRoleAssignment`,
+`TeamSpeakerAssignment`, `RoomAdjudicatorAssignment`, `UnassignedParticipant`, `SpeakerScoreRecord`,
+`ChairFeedbackRecord`, `AdjudicatorScoreRecord`, `MemberMetricSnapshot`, `PairMetricSnapshot`,
+`TeamDynamicsRating`, `LeaderboardSnapshot`. (Admin-actor fields like `ProposalReviewLog.reviewerId`
+follow the same shape since reviewers are cabinet/president.)
+
 ## Recommended Core Model Groups
 
 ```text
@@ -430,11 +461,14 @@ Stores speaker score outcome for a member in a session.
 - `speakingRole`
 - `rawScore`
 - `teamResultPoints`
+- `scoredByMemberId` — the chair who entered this raw speaker score (Gate 4: chair enters speaker
+  scores). Kept for audit/authorization.
 
 ### Relationships
 
 - belongs to `DebateSession`
-- belongs to `Member`
+- belongs to `Member` (the speaker)
+- belongs to `Member` as `scoredBy` (the chair)
 - can reference `TeamSpeakerAssignment`
 
 ## `ChairFeedbackRecord`
@@ -456,13 +490,17 @@ Stores speaker-to-chair rating after the session.
 - `proposalId`
 - `speakerMemberId`
 - `chairMemberId`
-- `rating`
+- `rating` — speaker-to-chair score, 0–10 (Gate 4). Source for `chair_score`.
 - `notes`
+
+Note: the speaker form's optional team-dynamics rating is NOT stored here (it is about the team,
+not the chair). It lives in its own `TeamDynamicsRating` record alongside the partner-dynamics
+data — see below.
 
 ### Relationships
 
 - belongs to `DebateSession`
-- belongs to `Member` twice by role
+- belongs to `Member` twice by role (speaker, chair)
 
 ## `AdjudicatorScoreRecord`
 
@@ -665,6 +703,40 @@ Stores learned metrics about two-member pair dynamics.
 
 - belongs to `Member` twice
 
+## `TeamDynamicsRating`
+
+### Purpose
+
+Stores the speaker post-session form's OPTIONAL subjective team-dynamics rating (0–10). It lives
+here, with the partner-dynamics data, NOT on `ChairFeedbackRecord` — because it is about the
+speaker's team/teammate, not the chair.
+
+### Suggested responsibilities
+
+- capture one speaker's subjective rating of their own team dynamics for a session
+- act as a **secondary** input to `partner_dynamics_*`; the primary input stays results-based
+  (BP result points / pair win record). Never let this subjective rating dominate the metric.
+
+### Important fields
+
+- `id`
+- `sessionId`
+- `raterMemberId` — the speaker who submitted the rating
+- `teammateMemberId` — their teammate (the other half of the BP team)
+- `rating` — 0–10
+- `createdAt`
+
+### Relationships
+
+- belongs to `DebateSession`
+- belongs to `Member` twice (rater, teammate)
+- feeds `PairMetricSnapshot` (partner_dynamics) as a secondary signal
+
+### Why It Matters
+
+Keeps the subjective signal cleanly separated from chair feedback and co-located with the pair
+data it actually informs, while preserving the rule that partner dynamics is primarily results-based.
+
 ## 5. Evaluation Models
 
 These models support eval harness replay and safe comparison of engine behavior.
@@ -827,6 +899,7 @@ If we want to stay practical, these are the models I would treat as the minimum 
 - `PairingMetricAdjustment`
 - `MemberMetricSnapshot`
 - `PairMetricSnapshot`
+- `TeamDynamicsRating`
 
 ## Models That Can Be Added Slightly Later
 

@@ -26,13 +26,21 @@ TASK — Phase 2. In prisma/schema.prisma:
 - Extend DebateSession (D1) and Attendance (D2) with the fields named in docs/12 — do NOT remove
   or rename existing columns relied on by current code.
 - Add SessionRoleAssignment (D3) — session role is DISTINCT from account role.
-- Add the V1 model set D4–D18 with the EXACT field names and relations from docs/12:
+- Add the V1 model set D4–D19 with the EXACT field names and relations from docs/12:
   PairingProposal, DebateRoomAssignment, DebateTeamAssignment, TeamSpeakerAssignment,
   RoomAdjudicatorAssignment, UnassignedParticipant, ProposalReviewLog, ProposalRating,
   SpeakerScoreRecord, ChairFeedbackRecord, AdjudicatorScoreRecord, PairingMetricDefinition,
-  PairingMetricAdjustment, MemberMetricSnapshot, PairMetricSnapshot.
+  PairingMetricAdjustment, MemberMetricSnapshot, PairMetricSnapshot, TeamDynamicsRating.
+  Note SpeakerScoreRecord has scoredByMemberId (chair-entered); TeamDynamicsRating (D19) is the
+  speaker form's optional team-dynamics rating and is stored here, NOT on ChairFeedbackRecord.
 - Use singular PascalCase model names and explicit relation names where a model joins Member twice
-  (ChairFeedbackRecord, AdjudicatorScoreRecord, PairMetricSnapshot).
+  (ChairFeedbackRecord, AdjudicatorScoreRecord, PairMetricSnapshot, TeamDynamicsRating).
+- PARTICIPANT REFERENCE CONVENTION (Gate 11 = Option B, account-agnostic): Member, cabinet, AND
+  President all debate (TechHead does not). Every debater-referencing field is
+  (memberId?, cabinetId?, presidentId?) with EXACTLY ONE set — extending the existing Attendance
+  model. Apply to all participant-carrying models listed in docs/12 "Participant Reference
+  Convention"; enforce exactly-one in validation (and a DB check where practical). Do NOT key
+  metrics/scores/snapshots to Member only.
 - Add @@index on every field flagged in docs/15 §6: session scoping, published-proposal lookup,
   proposal status, member-session-role, pair-metric key, score uniqueness, review timeline.
 - Do NOT add deferred models (LeaderboardSnapshot, MetricAdjustmentHistory, Eval*,

@@ -65,16 +65,30 @@ What still needs final confirmation:
 - are issue tags optional or required
 - are free-text notes optional or required
 
-## 6. Post-Session Form Final Shape
+## 6. Post-Session Form Final Shape — RESOLVED
 
-We have the role-routing direction, but the exact form payloads still need final lock.
+Locked (Gate 4):
 
-What still needs final confirmation:
+- speaker form: `chairScore` 0–10 (required) + `teamDynamicsRating` 0–10 (optional) + notes
+  (optional). Speakers do NOT enter their own raw speaker score.
+- chair form: `adjudicatorScores[]` (0–10 per panel adjudicator) + `speakerScores[]` (chair enters
+  raw speaker scores for the room, with bpPosition/speakingRole/teamResultPoints).
+- non-chair adjudicators submit nothing.
+- raw speaker score is entered by the chair (resolves "who enters the raw speaker score").
+- the optional team-dynamics rating is a secondary signal; `partner_dynamics_*` stays
+  results-based.
 
-- exact speaker submission fields
-- exact chair submission fields
-- whether teammate-related feedback fields are fully optional
-- whether any issue taxonomy is mandatory for future learning
+Authoritative detail now lives in `docs/14 §4` and `docs/02 §6`.
+
+Also decided:
+
+- chair scoring stays ONE route (`/api/scoring/chair`) carrying both arrays, with two separate UI
+  sections/screens (one endpoint + separate UI = better UX than two endpoints).
+- the optional `teamDynamicsRating` is stored in its own `TeamDynamicsRating` record alongside the
+  partner-dynamics data, NOT on `ChairFeedbackRecord`. Secondary signal; partner dynamics stays
+  results-based.
+
+Minor detail still tunable (not a blocker): the numeric range of the raw speaker score.
 
 ## 7. Tuning Governance
 
@@ -105,6 +119,16 @@ What still needs final confirmation:
 - exact routes to deprecate
 - exact schema remnants to retire
 - whether old data is archived, migrated, or ignored
+
+## 10. Progress Verdict Thresholds
+
+The member-progress verdict layer (`docs/14 §7`, `docs/17 §3b`) synthesizes statements like "strong
+in IR, weak in Feminism" from the metrics. The interpretation rules are agreed; the exact thresholds
+are tunable and not blockers:
+
+- what gap above/below baseline counts as "strong" vs "weak" (and baseline = own history vs cohort)
+- minimum observation count before a verdict is asserted vs shown as "needs more data"
+- partner_dynamics cutoffs for "pairs well" vs "friction"
 
 ## Summary
 
