@@ -55,7 +55,10 @@ Engineering quality standard for implementing the pairing system safely, with gu
 Tightly-coupled, phase-by-phase build plan derived from docs 01–15. Every step cites its graph nodes, governing docs, pre-coding gate, exact deliverable files, and acceptance checks. Strict ordering; no step may be skipped.
 
 ### [pairing-knowledge-graph.md](pairing-knowledge-graph.md)
-Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, pre-coding gates). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work.
+Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, build-status table, pre-coding gates). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work, and requires updating it at the end of every phase.
+
+### [build/](build/)
+Per-phase, copy-paste build prompts (`phase-00…` to `phase-11…`) plus an index. Each prompt routes through `AGENTS.md` + the knowledge graph, enforces the backend-only scope, reads only the docs that phase needs (especially `docs/15`), and ends by updating the knowledge graph. Run one phase per conversation in order.
 
 ## Reference Files
 
