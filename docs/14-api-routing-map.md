@@ -13,6 +13,7 @@ It answers:
 - which HTTP method each route should use
 - who should be allowed to call it
 - which backend service should handle it
+- which realtime transport entrypoints and event scopes should exist
 
 This is a planning and implementation map, not a final OpenAPI spec.
 
@@ -36,6 +37,7 @@ The pairing-system backend should be grouped into these route families:
 4. `scoring`
 5. `leaderboard`
 6. `eval`
+7. `realtime`
 
 ## 1. Attendance Routes
 
@@ -585,7 +587,7 @@ the hover fetches detail.
 
 - per participant: cumulative `speaker_total_score`, `speaker_strength` (with its confidence/data
   level), participation counts (sessions spoken / adjudicated / chaired), and a data-maturity flag
-- sortable/filterable; low-data members flagged so their numbers aren't over-read
+- sortable/filterable; low-data members flagged so their numbers are not over-read
 
 ### Should call
 
@@ -608,30 +610,6 @@ Full progress profile for one participant.
 
 Two layers — the raw metrics AND a synthesized, human-readable verdict generated from them.
 
-Raw metric layer:
-
-- speaker: cumulative `speaker_total_score` overall + by motion type, `speaker_strength` with
-  confidence, `role_score` per speaking role, `motion_type_x_role` highlights, `bp_position_history`
-  and `internal_speaking_role_history` (rotation/diversity), notable `partner_dynamics`, academic year
-- adjudicator/chair: `adjudicator_average_score`, `chair_score`, #adjudicated / #chaired, confidence
-- trend over time + per-metric data-maturity (observation counts / confidence)
-
-Verdict/insight layer (the "progress" the admin actually reads) — short statements derived from the
-metrics, e.g.:
-
-- motion-type strengths/weaknesses: "strong in IR, weak in Feminism"
-- coverage gaps (low observation count): "few debates on Finance"
-- role aptitude: "good as PM/DPM, weaker as Whip"
-- pair compatibility: "pairs well with B; friction with C and D on certain motion types"
-
-Verdict generation rules (thresholds are tunable — see open items):
-
-- strength/weakness = a motion-type / role score notably above or below the participant's own
-  baseline (or cohort baseline), only when confidence is sufficient
-- gap = low observation count for a motion type or role (also drives a "needs data" flag)
-- compatibility = high vs low `partner_dynamics_overall` / `partner_dynamics_by_motion_type` per pair
-- never assert a verdict from thin data — if confidence is low, say "not enough data" instead
-
 ### Should call
 
 - profile + verdict from the progress/insight service (e.g. `member-progress-service.ts`) over
@@ -643,6 +621,33 @@ Verdict generation rules (thresholds are tunable — see open items):
 - admin profiles may include full metric detail (cabinet/president oversight); the member self-view
   is role-appropriate and excludes any admin-only annotations (`15 §16`)
 
+## 8. Realtime Routes
+
+These routes provide the authenticated websocket transport for pairing-system realtime delivery.
+
+## `GET /api/realtime/socket`
+
+### Purpose
+
+Open the authenticated websocket connection used for pairing lifecycle, scoring-status, and leaderboard refresh notifications.
+
+### Access
+
+- authenticated `Member`
+- authenticated `cabinet`
+- authenticated `President`
+- authenticated `TechHead`
+
+### Connection rules
+
+- connection authentication is required before subscriptions are accepted
+- subscription scope and payload visibility are filtered server-side
+- websocket delivery is supplemental to HTTP; clients must refetch the authoritative HTTP state after reconnect when needed
+
+### Should call
+
+- connection authorization from `lib/server/realtime/channel-auth.ts`
+- `acceptRealtimeConnection()` from `lib/server/realtime/websocket-hub.ts`
 ## Auth And Access Expectations
 
 This section summarizes the intended route access model.
@@ -705,6 +710,11 @@ This should be visible once the pairing is published to:
 - eval replay
 - eval compare
 
+## Realtime Route
+
+- `GET /api/realtime/socket`
+
+This route requires authentication, but each subscription and outgoing payload must still be filtered by role and session visibility.
 ## Route Design Notes
 
 ### Keep routes thin
@@ -745,6 +755,7 @@ This routing map gives the backend a clear API surface for:
 - role-based post-session scoring
 - leaderboard reads
 - evaluation and regression checks
+- authenticated websocket delivery for live pairing, scoring, and leaderboard refresh notifications
 
 It should be used together with:
 
@@ -753,3 +764,4 @@ It should be used together with:
 - `13-pairing-learning-loop.md`
 
 when we begin implementation.
+

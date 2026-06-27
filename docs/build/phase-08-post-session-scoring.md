@@ -29,7 +29,7 @@ TASK — Phase 8. Create only:
 - lib/server/scoring/leaderboard-service.ts → recomputeSpeakerLeaderboard(),
   recomputeAdjudicatorLeaderboard(), recomputeChairDerivedStats()
 - lib/server/scoring/metric-update-service.ts → updateLearnedMetricsFromSession(sessionId),
-  updatePairHistoryFromSession(sessionId), updateRolePerformanceFromSession(sessionId)
+  updatePairMetricSnapshotsFromSession(sessionId), updateRolePerformanceFromSession(sessionId)
 
 Requirements (docs/15):
 - Scoring is gated on SESSION role (the SessionRoleAssignment), not account role.
@@ -57,3 +57,4 @@ CLOSE-OUT (required):
 - Metric snapshots + confidence update correctly; tests pass (shown).
 - Graph B-score BUILT, L1 marked; `Grounded in:` printed.
 </content>
+

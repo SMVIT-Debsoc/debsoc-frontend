@@ -10,14 +10,17 @@ It should not repeat decisions that are already covered elsewhere in the docs se
 
 ## 1. Final Formula Acceptance
 
-We now have proposed V1 formulas for the key engine calculations.
+We now have a mix of finalized-enough and proposed-V1 formulas for the key engine calculations.
 
 What still needs final confirmation:
 
 - do we accept the current `speaker_strength` formula as-is
 - do we accept the current `room_balance_score` formula as-is
-- do we accept the current `chair_assignment_score` formula as-is
-- do we accept the current fallback-confidence formula as-is
+
+What is already treated as implementation-ready by the authoritative formula doc:
+
+- `chair_assignment_score` is `FINALIZED ENOUGH`
+- the fallback-confidence stack (`confidence`, `effective_metric`) is `FINALIZED ENOUGH`
 
 ## 2. Secondary Formula Locking
 
@@ -47,12 +50,12 @@ What still needs final confirmation:
 
 ## 4. Proposal Selection Distribution
 
-We have agreed on top-band probabilistic selection.
+We have agreed on top-band probabilistic selection for V1, but may refine it later.
 
 What still needs final confirmation:
 
-- do we lock top band size at `5`
-- do we keep the current `30/24/18/15/13` probability shape
+- whether top band size remains `5` beyond V1
+- whether the current `30/24/18/15/13` probability shape remains unchanged beyond V1
 - do we want fixed-by-rank probabilities or score-gap-aware probabilities later
 
 ## 5. Admin Proposal Rating Shape
@@ -135,3 +138,7 @@ are tunable and not blockers:
 This file should now remain short.
 
 As each item above gets locked, it should be removed from this document and reflected only in the more detailed source-of-truth docs.
+
+Important implementation note:
+
+- the `Fo10` formula set remains open and blocks Phase 6 of `docs/16-build-plan.md`

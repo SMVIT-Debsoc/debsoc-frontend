@@ -68,25 +68,29 @@ This includes:
 The main model structure must be stable before coding.
 
 Minimum model direction should follow `12-backend-data-model-map.md`.
+Use the authoritative model vocabulary from `docs/12-backend-data-model-map.md` and
+`docs/pairing-knowledge-graph.md`; do not reintroduce older placeholder names here.
 
 Core model direction:
 
-- `Attendance`
+- `AttendanceRecord`
 - `DebateSession`
-- `SessionParticipantRole`
+- `SessionRoleAssignment`
 - `PairingProposal`
-- `ProposalRating`
-- `PairingRoom`
-- `PairingTeam`
+- `DebateRoomAssignment`
+- `DebateTeamAssignment`
 - `TeamSpeakerAssignment`
 - `RoomAdjudicatorAssignment`
-- `ChairAssignment`
-- `LeftoverAssignment`
-- `PairHistory`
-- `SpeakerScore`
-- `AdjudicatorScore`
-- `PairingMetric`
+- `UnassignedParticipant`
+- `ProposalReviewLog`
+- `ProposalRating`
+- `SpeakerScoreRecord`
+- `ChairFeedbackRecord`
+- `AdjudicatorScoreRecord`
+- `PairingMetricDefinition`
 - `PairingMetricAdjustment`
+- `MemberMetricSnapshot`
+- `PairMetricSnapshot`
 - `PublishedPairingView` as a logical read model for the official published pairing
 
 ## 6. Room Generation And Leftover Handling
@@ -109,8 +113,8 @@ We have a strong current direction:
 
 What still needs confirmation:
 
-- exact top-band size
-- exact probability distribution approach
+- whether any post-V1 refinement is wanted beyond the current top-band size of `5`
+- whether any post-V1 refinement is wanted beyond the current weighted-rank distribution direction
 
 ## 8. Tuning Governance
 
@@ -137,6 +141,20 @@ What still needs confirmation:
 
 - exact names of the auth guard helpers
 - whether cabinet and president are the only admin roles for V1, or whether a separate future admin role will be introduced later
+
+## 10. Phase 6 Formula Blocker
+
+The scoring-engine phase cannot start until the `Fo10` formulas are explicitly finalized.
+
+This includes:
+
+- `team_quality_aggregate`
+- full `proposal_score`
+- `consistency_score`
+- `experience_index`
+- pair-dynamics aggregation
+- `role_score` aggregation
+- tuning-adjustment formula
 
 ## What Can Still Be Tuned Later
 
@@ -171,6 +189,7 @@ Before coding starts, we should be able to answer these clearly:
 7. Is top-band probabilistic proposal selection accepted?
 8. Is tuning governance accepted?
 9. Are the cabinet/president control rules and member published-view rule accepted?
+10. Are the `Fo10` formulas finalized enough to start the scoring engine phase?
 
 ## Recommendation
 

@@ -1,7 +1,7 @@
 # Pairing System — Knowledge Graph (Memory Graph)
 
 > **What this file is.** A single, self-contained *memory graph* of the entire debate
-> pairing feature, distilled from `docs/01` through `docs/15`. It exists so any agent
+> pairing feature, distilled from `docs/01` through `docs/17`. It exists so any agent
 > (human or AI) can load the *whole idea* in one pass before touching code, then drill
 > into the governing doc for exact detail.
 >
@@ -18,26 +18,27 @@
 
 ## Build status (updated at the end of every phase — see `docs/build/`)
 
-> Per `AGENTS.md` Rule 8, the agent updates this table and tags implemented nodes `BUILT
-> (path)` when a phase's Done-when passes. A phase is not complete until this reflects reality.
+> Per `AGENTS.md` Rule 8, the agent updates this table and tags implemented nodes `BUILT`
+> (path) when a phase's Done-when passes. A phase is not complete until this reflects reality.
 
 | Phase | Scope | Status | Notes |
 |-------|-------|--------|-------|
-| 0 | Decision freeze (gates 1–10) | ☐ not started | |
-| 1 | Shared types (B0) | ☐ not started | |
-| 2 | Schema D1–D18 | ☐ not started | |
-| 3 | Repositories (B-repo) | ☐ not started | |
-| 4 | Session services (B-sess) | ☐ not started | |
-| 5 | Engine internals (LOCKED) | ☐ not started | |
-| 6 | Scoring engine (B1,B3) | ☐ blocked: Gate 10 | |
-| 7 | Review/publish (B10,B11) | ☐ not started | |
-| 8 | Post-session scoring (B-score) | ☐ not started | |
-| 9 | Eval + tuning | ☐ not started | |
-| 10 | Validations + routes | ☐ not started | |
-| 11 | Deprecation cleanup | ☐ not started | |
+| 0 | Decision freeze (gates 1�10) | ? not started | |
+| 1 | Shared types (B0) | ? not started | |
+| 2 | Schema D1�D18 | ? not started | |
+| 3 | Repositories (B-repo) | ? not started | |
+| 4 | Session services (B-sess) | ? not started | |
+| 5 | Engine internals (LOCKED) | ? not started | |
+| 6 | Scoring engine (B1,B3) | ? blocked: Gate 10 | |
+| 7 | Review/publish (B10,B11) | ? not started | |
+| 8 | Post-session scoring (B-score) | ? not started | |
+| 9 | Eval + tuning | ? not started | |
+| 10 | Realtime websocket integration (B-rt,A17) | ? not started | |
+| 11 | Validations + routes | ? not started | |
+| 12 | Deprecation cleanup | ? not started | |
 
 Node status markers used below: `BUILT (path)` = implemented & verified; otherwise the node is
-still planned. `RETIRED` = removed in Phase 11.
+still planned. `RETIRED` = removed in Phase 12.
 
 ## Legend
 
@@ -46,7 +47,7 @@ still planned. `RETIRED` = removed in Phase 11.
   `role` (access actor), `state` (lifecycle state), `flow` (process), `standard`
   (engineering rule).
 - **Confidence of a design point:** `LOCKED` (treat as fixed), `PROPOSED-V1`
-  (implement as written, may refine), `OPEN` (must be confirmed before coding — see
+  (implement as written, may refine), `OPEN` (must be confirmed before coding � see
   `docs/07-open-questions.md`).
 - **Edge relations:** `governs`, `produces`, `feeds`, `validated_by`, `persists_to`,
   `calls`, `falls_back_to`, `restricted_to`, `transitions_to`, `optimizes`, `part_of`.
@@ -57,17 +58,17 @@ still planned. `RETIRED` = removed in Phase 11.
 
 | # | Community | Owning docs | Core nodes |
 |---|-----------|-------------|-----------|
-| C1 | Product intent & access control | 01, 02 | N1, N2, N3, R1–R4 |
-| C2 | Lifecycle & state machine | 02, 04, 06 | S1–S8, F1 |
-| C3 | Engine pipeline | 04, 15 | E1–E9 |
-| C4 | Metrics taxonomy | 05, 08 | M1–M18 |
-| C5 | Formulas | 09, 05 | Fo1–Fo10 |
-| C6 | Learning & tuning loop | 13, 05 | L1–L5 |
-| C7 | Data model | 03, 12, 08 | D1–D18 |
-| C8 | API surface | 14, 11 | A1–A14 |
-| C9 | Backend module map | 11 | B1–B12 |
-| C10 | Eval harness | 10, 13 | V1–V5 |
-| C11 | Engineering quality standard | 15 | Q1–Q15 |
+| C1 | Product intent & access control | 01, 02 | N1, N2, N3, R1�R4 |
+| C2 | Lifecycle & state machine | 02, 04, 06 | S1�S8, F1 |
+| C3 | Engine pipeline | 04, 15 | E1�E9 |
+| C4 | Metrics taxonomy | 05, 08 | M1�M18 |
+| C5 | Formulas | 09, 05 | Fo1�Fo10 |
+| C6 | Learning & tuning loop | 13, 05 | L1�L5 |
+| C7 | Data model | 03, 12, 08 | D1�D18 |
+| C8 | API surface | 14, 11, 17 | A1–A17 |
+| C9 | Backend module map | 11, 17 | B1–B12, B-rt |
+| C10 | Eval harness | 10, 13 | V1�V5 |
+| C11 | Engineering quality standard | 15, 17 | Q1�Q18 |
 
 ---
 
@@ -275,7 +276,7 @@ Edges:
   (2) post-session metric update, (3) periodic tuning+eval. MUST stay separate modules.
 
 Edges:
-- S7 --feeds--> L1 --feeds--> L2; L3 --feeds--> L4; L4 --produces--> D15 (PairingMetricAdjustment)
+- S7 --feeds--> L1 --feeds--> L2; L3 --feeds--> L4; L4 --produces--> D16 (PairingMetricAdjustment)
 - L4 --validated_by--> C10 (eval harness); L5 --governs--> B-layering (C9)
 
 Hyperedge **HE3 (safe-learning rules, `13 §safe`)**: never break hard rules · never auto-publish ·
@@ -336,19 +337,16 @@ Edges (relationship map, `12`):
 
 ---
 
-## C8 — API surface  ·  governs: `14` (route contracts authoritative), `11`
+## C8 — API surface  ·  governs: `14` (route contracts authoritative), `11`, `17`
 
-Route groups: attendance, sessions, pairing, scoring, leaderboard, eval. All routes thin;
+Route groups: attendance, sessions, pairing, scoring, leaderboard, progress, realtime, eval. All routes thin;
 logic in `lib/server/...`; access explicit. **V1 priority order = the list below.**
 
 - **[A1] POST /api/attendance/prepare** · cabinet,president → `prepareAttendance()`.
 - **[A2] POST /api/attendance/mark** · cabinet,president → `markAttendance()`.
 - **[A3] GET /api/sessions/:id** · cabinet,president → `getSessionPreparationContext()`.
 - **[A3b] PATCH /api/sessions/:id** · cabinet,president → session update (motionType/Text/objective).
-- **[A3c] GET /api/sessions/:id/scoring-status** · **oversight read = cabinet+president+TechHead**
-  (completion tracking + who hasn't filled their role's form; identity only, NOT submission
-  content per `15 §16`); participants see their own task status; act on cycle (nudge/close) =
-  cabinet+president only; TechHead read-only.
+- **[A3c] GET /api/sessions/:id/scoring-status** · oversight read = cabinet+president+TechHead; participants see their own task status only.
 - **[A4] POST /api/pairing/generate** · cabinet,president ONLY → `generatePairingProposal()`.
 - **[A5] GET /api/pairing/proposal/:id** · cabinet,president → repository fetch.
 - **[A6] POST …/proposal/:id/approve** · → `approveProposal()`.
@@ -357,28 +355,24 @@ logic in `lib/server/...`; access explicit. **V1 priority order = the list below
 - **[A9] POST …/proposal/:id/rate** · → `rateProposal()`.
 - **[A10] POST /api/pairing/publish/:sessionId** · → `publishApprovedProposal()`.
 - **[A11] GET /api/pairing/published/:sessionId** · member,cabinet,president → `getPublishedPairing()`.
-- **[A12] POST /api/scoring/speaker** · session speakers only → `submitSpeakerChairRating()`:
-  `chairScore` 0–10 (req) → D13; optional `teamDynamicsRating` 0–10 → D19. Speakers do NOT enter raw speaker score.
-- **[A13] POST /api/scoring/chair** · session chairs only → `submitChairAdjudicatorScore()` +
-  `submitRoomSpeakerScores()`: two sections — adjudicator ratings AND chair-entered raw speaker scores.
+- **[A12] POST /api/scoring/speaker** · session speakers only → `submitSpeakerChairRating()`; speakers do NOT enter raw speaker score.
+- **[A13] POST /api/scoring/chair** · session chairs only → `submitChairAdjudicatorScore()` + `submitRoomSpeakerScores()`.
 - **[A13b] GET /api/leaderboard/speakers · /adjudicators** · authenticated.
 - **[A14] POST /api/eval/replay · /eval/compare** · TechHead,president.
-- **[A15] GET /api/progress/members** · cabinet+president · OPTIONAL batch summary for the existing
-  roster (inline strength/data-maturity badge). Not needed if the existing list + hover detail suffice.
-- **[A16] GET /api/progress/members/:participantId** · cabinet+president (any participant —
-  member/cabinet/president); participant self (own only) · returns raw metrics PLUS a **synthesized
-  verdict** ("strong in IR, weak in Feminism; few Finance debates; good PM/DPM not Whip; pairs well
-  with B, friction with C/D on certain motions"). Confidence-gated (thin data → "needs more data").
-  Powers the **hover popover** on the existing roster (no new page). Built by B-progress.
+- **[A15] GET /api/progress/members** · cabinet+president · OPTIONAL batch summary for the existing roster.
+- **[A16] GET /api/progress/members/:participantId** · cabinet+president or participant self-only · returns raw metrics plus a synthesized verdict.
+- **[A17] GET /api/realtime/socket** · authenticated pairing-system roles → websocket connection + filtered subscriptions.
 
 Edges:
 - A4 --validated_by--> B-val-pairing; A4 --calls--> B1 (engine.ts)
 - A6–A9 --calls--> B10 (review.ts); A10,A11 --calls--> B11 (publish.ts)
 - A11 --reads--> D-PV (official source only); A12/A13 --validated_by--> R4 (session role)
+- A15,A16 --calls--> B-progress
+- A17 --calls--> B-rt; A17 --restricted_to--> Rl-member, Rl-cabinet, Rl-president, Rl-techhead
 
 ---
 
-## C9 — Backend module map  ·  governs: `11` (folder/file/export map authoritative)
+## C9 — Backend module map  ·  governs: `11`, `17` (folder/file/export map authoritative)
 
 Principle (`11`,`15 §2`): `app/api/*` = transport only (parse, guard, call ONE service, format);
 `lib/server/*` = domain logic; Prisma only in repositories; shared contracts in `types/`.
@@ -392,19 +386,15 @@ Principle (`11`,`15 §2`): `app/api/*` = transport only (parse, guard, call ONE 
 - **[B6] fallback.ts** · `computeConfidence()`, `blendSpecificWithFallback()` (Fo2,Fo3).
 - **[B7] objectives.ts** · `getObjectiveMultipliers()`, `applyObjectiveMultiplier()` (Fo9).
 - **[B8] leftovers.ts** · `computeRoomPlan()`, `buildUnassignedParticipants()` (Fo7).
-- **[B9] chair-assignment.ts** · `computeChairAssignmentScore()` (Fo6), `assignChairsToRooms()`,
-  and panel distribution `distributeAdjudicatorPanels()` — surplus adjudicators spread across rooms
-  by difficulty (hardest-first round-robin), cap `MAX_ADJUDICATORS_PER_ROOM = 3` (1 chair + ≤2
-  panel), overflow → `RESERVE`. Soft + admin-overridable; PROPOSED-V1 (`05` Allocation Logic, `09 §6b`).
+- **[B9] chair-assignment.ts** · `computeChairAssignmentScore()`, `assignChairsToRooms()`, and adjudicator panel distribution.
 - **[B-ml] metrics-loader.ts** · `loadPairingMetrics()`, `loadSessionInputs()`.
 - **[B10] review.ts** · approve/override/regenerate/rate.
 - **[B11] publish.ts** · `publishApprovedProposal()`, `getPublishedPairing()`.
 - **[B-tune] tuning.ts** · `buildTuningReview()`, `suggestMetricAdjustments()` (L4).
 - **[B-sess] sessions/{session,attendance,session-role}-service.ts**.
 - **[B-score] scoring/{speaker,chair,leaderboard,metric-update}-service.ts** (L1).
-- **[B-progress] scoring/member-progress-service.ts** · reads metric snapshots + raw records and
-  produces the per-participant **verdict** (strengths/weaknesses/gaps/role-aptitude/compatibility,
-  confidence-gated). Interprets existing metrics only — NO new scoring. Powers A15/A16.
+- **[B-progress] scoring/member-progress-service.ts** · reads metric snapshots + raw records and produces the per-participant verdict.
+- **[B-rt] realtime/{websocket-hub,event-publisher,channel-auth,types}.ts** + `types/realtime.ts` · authenticated websocket delivery + post-commit event fan-out.
 - **[B-eval] eval/{harness,replay-runner,regression-checker,report-builder,synthetic-scenarios}.ts**.
 - **[B-repo] repositories/{pairing,session,scoring,metrics,eval}-repository.ts** · all Prisma here.
 - **[B-val] validations/{pairing,scoring,session}-validation.ts** · zod (project uses zod v4).
@@ -413,7 +403,7 @@ Anti-patterns (`11 §What Should Not Happen`, forbidden): formulas in routes; on
 eval mixed into runtime; attendance-prep mixed with scoring; Prisma spread without repositories.
 
 Implementation order (`11 §Recommended`): types → repositories → session/attendance services →
-pairing internal modules → review+publish → published read → scoring → eval → wire routes.
+pairing internal modules → review+publish → published read → scoring → progress → eval → realtime modules → wire routes and websocket entrypoint.
 
 ---
 
@@ -432,41 +422,44 @@ Edges: L4 --validated_by--> V5; V5 --gates--> engine/formula changes; V1 --feeds
 
 ---
 
-## C11 — Engineering quality standard  ·  governs: `15` (implementation contract)
+## C11 � Engineering quality standard  �  governs: `15`, `17` (implementation contract)
 
 Each is a non-negotiable `standard` node; full text in `15`. Treat as the review checklist gate.
 
-- **[Q1] Correctness** — no double assignment, no invalid rooms, no unreviewed publish, no
+- **[Q1] Correctness** � no double assignment, no invalid rooms, no unreviewed publish, no
   published/visible mismatch, no stale-proposal action, no leaderboard from partial scores.
-- **[Q2] Layered architecture** — route/service/repository/formula separation (C9).
-- **[Q3] Bounded engine** — constrained generation, early invalidation, pruning, explicit
+- **[Q2] Layered architecture** � route/service/repository/formula separation (C9).
+- **[Q3] Bounded engine** � constrained generation, early invalidation, pruning, explicit
   max-candidate + time-budget + top-band-size guardrails from V1; no combinatorial explosion.
-- **[Q4] Front-loaded DB access** — batch-load context; project only needed fields; NO query in
+- **[Q4] Front-loaded DB access** � batch-load context; project only needed fields; NO query in
   candidate/scoring loops; N+1 forbidden; index session/proposal/role/pair/score-uniqueness fields.
-- **[Q5] Pre-shaped context object** — engine consumes `PairingGenerationContext` (Maps for
+- **[Q5] Pre-shaped context object** � engine consumes `PairingGenerationContext` (Maps for
   per-member/per-pair lookup), not raw tables.
-- **[Q6] TypeScript rigor** — no `any`; explicit service-boundary types; enums/`as const` for
+- **[Q6] TypeScript rigor** � no `any`; explicit service-boundary types; enums/`as const` for
   proposal status, session role, objective, motion type, review action, score type, leftover
   reason, tuning mode; aliased ids (`MemberId`, `SessionId`, `ProposalId`); numeric safety
   (normalize probabilities, clamp, no divide-by-zero, explicit zero-observation fallback).
-- **[Q7] State-machine discipline** — explicit validated transitions + stale-write/version guards.
-- **[Q8] Concurrency & idempotency** — guard double-generate/double-publish/duplicate-score;
+- **[Q7] State-machine discipline** � explicit validated transitions + stale-write/version guards.
+- **[Q8] Concurrency & idempotency** � guard double-generate/double-publish/duplicate-score;
   one official publish wins; optimistic locking / `updatedAt` checks; machine-readable conflicts.
-- **[Q9] Auditable randomness** — randomness only in final selection; store engine/rule/metric
+- **[Q9] Auditable randomness** � randomness only in final selection; store engine/rule/metric
   version, candidate score summary, top-band rank, selection probability, seed, objective.
-- **[Q10] Override preserves original** — keep original proposal, actor, reason, overridden fields.
-- **[Q11] Transactions & one source of truth** — publish/score/tuning/override are transactional;
+- **[Q10] Override preserves original** � keep original proposal, actor, reason, overridden fields.
+- **[Q11] Transactions & one source of truth** � publish/score/tuning/override are transactional;
   one official published proposal per session; full-commit or full-rollback only.
-- **[Q12] Config/rule/schema governance** — validate rules before activation; reject contradictory
+- **[Q12] Config/rule/schema governance** � validate rules before activation; reject contradictory
   configs; migrations preserve replayability + historical readability + version refs.
-- **[Q13] Error taxonomy** — distinguish validation/authz/impossible-state/insufficient-
+- **[Q13] Error taxonomy** � distinguish validation/authz/impossible-state/insufficient-
   participants/no-valid-proposal/stale/duplicate/conflict/timeout/config errors; stable shape.
-- **[Q14] Observability** — log generation start/end/duration, candidate counts, rejected count,
+- **[Q14] Observability** � log generation start/end/duration, candidate counts, rejected count,
   top-band size, selected id, publish + score + tuning outcomes, conflicts; latency metrics.
-- **[Q15] Test layers** — unit (formulas, guards), service (generate/publish), repository,
+- **[Q15] Test layers** � unit (formulas, guards), service (generate/publish), repository,
   integration (role-based scoring + published visibility), concurrency, eval-replay, migration.
+- **[Q16] Realtime post-commit rule** � websocket events are emitted only after authoritative commit; HTTP stays source of truth (`15 �24`, `17`).
+- **[Q17] Realtime visibility rule** � websocket payloads are role-filtered, session-filtered, and member-safe where required (`15 �16`,`15 �24`,`17`).
+- **[Q18] Realtime recovery rule** � reconnect must recover through authenticated resubscribe + HTTP refetch; websocket failure must not corrupt committed state (`15 �24`,`17`).
 
-Cross-cutting edge: **Q-context (`15 §21`)** — AI-assisted work MUST reference the *smallest
+Cross-cutting edge: **Q-context (`15 �21`)** � AI-assisted work MUST reference the *smallest
 relevant doc subset* per task, not the whole folder. This graph is the index that enables that.
 
 ---
@@ -484,8 +477,8 @@ N1 product
        │ updated by                         │
    C6 learning loop (L1..L5) ──validated_by──> C10 eval (V1..V5)
        │ stored in
-   C7 data model (D1..D18) ──read by──> C8 API (A1..A14) ──calls──> C9 modules (B*)
-                                   everything bounded by ──> C11 quality (Q1..Q15)
+   C7 data model (D1..D18) --read by--> C8 API (A1..A17) --calls--> C9 modules (B*)
+                                   everything bounded by --> C11 quality (Q1..Q18)
 ```
 
 ## Pre-coding gates (must be resolved before the matching phase — `07`, `08`)
@@ -510,3 +503,5 @@ N1 product
     worth revisiting; staying on B per decision.)
 </content>
 </invoke>
+
+

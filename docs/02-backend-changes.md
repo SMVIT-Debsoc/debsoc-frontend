@@ -4,7 +4,7 @@
 
 This document describes the backend-level changes required to support the debate pairing system. It focuses on system behavior, data flow, and backend responsibilities rather than frontend presentation.
 
-The pairing system will require major changes to the current backend because the pairing lifecycle touches attendance, session state, scoring, leaderboard updates, review workflows, and adaptive tuning.
+The pairing system will require major changes to the current backend because the pairing lifecycle touches attendance, session state, scoring, leaderboard updates, review workflows, adaptive tuning, and realtime delivery.
 
 ## Overall Backend Direction
 
@@ -244,7 +244,27 @@ Although exact routes are still to be finalized, the backend will likely need en
 - leaderboard retrieval
 - session detail retrieval
 
-## 12. Removal And Deprecation Impact
+
+## 12. Realtime Websocket Flow
+
+The backend should support an authenticated websocket layer for fast pairing-system updates.
+
+### Required backend direction
+
+- websocket delivery is supplemental to HTTP, not the source of truth
+- events are emitted only after the authoritative transaction commits
+- admin-only proposal and review events stay restricted to cabinet and president views
+- member-visible realtime updates begin only when the underlying state is already member-safe
+- reconnecting clients must be able to recover by refetching the authoritative HTTP state
+
+### Expected realtime domains
+
+- attendance and session preparation updates for admins
+- proposal lifecycle updates for admins
+- published pairing updates for members and admins
+- scoring-window and scoring-status updates for participants and admins
+- leaderboard refresh notifications after scoring changes are processed
+## 13. Removal And Deprecation Impact
 
 Some existing backend flows are expected to be removed or replaced as part of this redesign.
 
@@ -258,3 +278,5 @@ Some existing backend flows are expected to be removed or replaced as part of th
 ## Summary
 
 At the backend level, the pairing system is not one isolated feature. It is a coordinated state machine for debate sessions with proposal review, role-based scoring, and adaptive learning inputs.
+
+
