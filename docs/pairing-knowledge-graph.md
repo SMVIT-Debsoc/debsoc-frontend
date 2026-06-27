@@ -31,7 +31,7 @@
 | 5 | Engine internals (LOCKED) | ☐ not started | |
 | 6 | Scoring engine (B1,B3) | ☐ blocked: Gate 10 | |
 | 7 | Review/publish (B10,B11) | ☐ not started | |
-| 8 | Post-session scoring (B-score) | ☐ not started | |
+| 8 | Post-session scoring + progress (B-score, B-progress) | ☐ not started | |
 | 9 | Eval + tuning | ☐ not started | |
 | 10 | Validations + routes | ☐ not started | |
 | 11 | Deprecation cleanup | ☐ not started | |

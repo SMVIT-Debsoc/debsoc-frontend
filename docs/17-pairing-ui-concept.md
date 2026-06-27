@@ -251,9 +251,9 @@ Design notes:
 - Surfaces development signals (motion-type gaps, role aptitude, compatibility), so admins can target
   who needs which practice — directly useful for `DEVELOPMENT` sessions.
 
-> Gate 11 RESOLVED (Option B): cabinet rows work because every metric/score record uses a
-> participant reference `(memberId?, cabinetId?)`, so cabinet accounts accrue pairing metrics just
-> like members. (`docs/12` Participant Reference Convention)
+> Gate 11 RESOLVED (Option B): member, cabinet, AND president rows all work because every
+> metric/score record uses a participant reference `(memberId?, cabinetId?, presidentId?)`, so all
+> three account types accrue pairing metrics. (`docs/12` Participant Reference Convention)
 
 `Grounded in: docs/14 §7, docs/05 (all per-member metrics + confidence), docs/12 D17/D18,
 docs/15 §16; knowledge-graph C4 metrics, C8/A16, Gate 11.`
