@@ -51,6 +51,12 @@ Dedicated backend API routing map covering endpoint groups, methods, access rule
 ### [15-pairing-engineering-quality-standard.md](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\15-pairing-engineering-quality-standard.md)
 Engineering quality standard for implementing the pairing system safely, with guidance on performance, scalability, type safety, state management, observability, testing, and UX responsiveness.
 
+### [16-build-plan.md](16-build-plan.md)
+Tightly-coupled, phase-by-phase build plan derived from docs 01–15. Every step cites its graph nodes, governing docs, pre-coding gate, exact deliverable files, and acceptance checks. Strict ordering; no step may be skipped.
+
+### [pairing-knowledge-graph.md](pairing-knowledge-graph.md)
+Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, pre-coding gates). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work.
+
 ## Reference Files
 
 ### [rules.template.jsonc](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\rules.template.jsonc)
