@@ -483,7 +483,7 @@ N1 product
 
 ## Pre-coding gates (must be resolved before the matching phase — `07`, `08`)
 1. **Metric catalog accepted** (M1-M13, M18, M11) - RESOLVED. Full V1 catalog accepted; no listed metric deferred at this stage. Blocks C4/C7/C5.
-2. **Hard vs soft rule split confirmed** — blocks B5/E5.
+2. **Hard vs soft rule split confirmed** - RESOLVED. Accepted V1 split: R-hard core validity and R-hard-strict forced constraints remain hard; room balance, repeat partner penalty, pair quality, role/motion fit, and surplus panel distribution remain soft. Blocks B5/E5.
 3. **Session-role-only routing confirmed (R4)** — blocks D3/A12/A13.
 4. **Post-session form fields confirmed** — RESOLVED (Gate 4): speaker form = chairScore 0–10 +
    optional teamDynamicsRating 0–10; chair form = adjudicator scores + chair-entered raw speaker

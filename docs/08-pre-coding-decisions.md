@@ -43,6 +43,14 @@ This affects:
 - scoring behavior
 - regeneration logic
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- hard rules = only present participants, speaker or adjudicator role required, no double assignment, exactly 8 speakers per room, exactly 4 teams per room, exactly 2 speakers per team, valid BP positions `OG/OO/CG/CO`, at least 1 adjudicator per room, exactly 1 chair per room, no publish before approval
+- strict forced constraints remain hard: forced team-up, forced separation, strict time constraint, forced chair, forced role, forced room-count override
+- soft rules = repeat partner penalty, room balance, pair quality, motion-role fit, panel distribution beyond the required 1 adjudicator, and non-strict event team-up preference
+
 ## 3. Session-Role Routing Rule
 
 Post-session dashboard behavior must be driven by the user's role in that session, not by permanent account role.
