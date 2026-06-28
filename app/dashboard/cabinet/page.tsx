@@ -1,5 +1,3 @@
-import React from "react";
-import CabinetDashboard from "@/components/CabinetDashboard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
@@ -19,5 +17,5 @@ export default async function CabinetDashboardPage() {
     redirect("/unverified");
   }
 
-  return <CabinetDashboard />;
+  redirect("/dashboard");
 }

@@ -1,5 +1,3 @@
-import React from "react";
-import PresidentDashboard from "@/components/PresidentDashboard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
@@ -19,5 +17,5 @@ export default async function PresidentDashboardPage() {
     redirect("/unverified");
   }
 
-  return <PresidentDashboard />;
+  redirect("/dashboard");
 }

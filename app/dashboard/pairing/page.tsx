@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
-import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 export const metadata = {
   title: "Pairing — Debsoc",
@@ -21,10 +20,5 @@ export default async function PairingDashboardPage() {
     redirect("/unverified");
   }
 
-  return (
-    <PairingDashboard
-      role={session.user.role}
-      userName={session.user.name ?? ""}
-    />
-  );
+  redirect("/dashboard");
 }

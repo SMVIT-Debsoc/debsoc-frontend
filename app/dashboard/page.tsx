@@ -1,7 +1,7 @@
-import MemberDashboard from '@/components/MemberDashboard';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -14,18 +14,10 @@ export default async function DashboardPage() {
     redirect("/unverified");
   }
 
-  if (session.user.role === "TechHead") {
-    redirect("/dashboard/techhead");
-  }
-
-  if (session.user.role === "cabinet") {
-    redirect("/dashboard/cabinet");
-  }
-
-  if (session.user.role === "President") {
-    redirect("/dashboard/president");
-  }
-
-  // Currently defaults to MemberDashboard for others
-  return <MemberDashboard />;
+  return (
+    <PairingDashboard
+      role={session.user.role}
+      userName={session.user.name ?? ""}
+    />
+  );
 }
