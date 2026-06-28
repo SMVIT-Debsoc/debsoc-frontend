@@ -14,7 +14,6 @@ import {
     Medal,
     ListTodo,
     FileText,
-    CalendarDays,
     User,
     MessageSquare,
     Send,
@@ -27,8 +26,8 @@ import {
     Menu,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import {useSession, signOut} from "next-auth/react";
+import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Member = {id: string; name: string; email: string};
@@ -95,6 +94,13 @@ type Session = {
         member?: {name: string} | null;
         cabinet?: {name: string} | null;
     }>;
+};
+
+type PairingBootstrap = {
+    members: Member[];
+    cabinet: CabinetMember[];
+    presidents: President[];
+    sessions: Session[];
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -180,11 +186,10 @@ export default function CabinetDashboard() {
         setError(null);
         setPartialError(null);
         try {
-            const [dashRes, attRes, taskRes, sessRes] = await Promise.all([
-                fetch("/api/cabinet/dashboard"),
+            const [bootstrapRes, attRes, taskRes] = await Promise.all([
+                fetch("/api/pairing/bootstrap"),
                 fetch("/api/cabinet/attendance/my"),
                 fetch("/api/cabinet/tasks"),
-                fetch("/api/cabinet/sessions"),
             ]);
 
             const readMessage = async (response: Response, fallback: string) => {
@@ -198,23 +203,24 @@ export default function CabinetDashboard() {
 
             const errors: string[] = [];
 
-            if (dashRes.ok) {
-                const dashData = await dashRes.json();
-                setMembers(dashData.members || []);
-                setCabinet(dashData.cabinet || []);
-                setPresidents(dashData.presidents || []);
-                if (dashData.presidents?.length > 0) {
-                    setSelectedPresidentId((current) => current || dashData.presidents[0].id);
+            if (bootstrapRes.ok) {
+                const bootstrapData: PairingBootstrap = await bootstrapRes.json();
+                setMembers(bootstrapData.members || []);
+                setCabinet(bootstrapData.cabinet || []);
+                setPresidents(bootstrapData.presidents || []);
+                setSessions(bootstrapData.sessions || []);
+                if (bootstrapData.presidents?.length > 0) {
+                    setSelectedPresidentId((current) => current || bootstrapData.presidents[0].id);
                 }
 
                 const initialAttendance: Record<
                     string,
                     {status: string; score: string; pairingCode: string; debatedAlone: boolean}
                 > = {};
-                dashData.members?.forEach((m: Member) => {
+                bootstrapData.members?.forEach((m: Member) => {
                     initialAttendance[m.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
                 });
-                dashData.cabinet?.forEach((c: CabinetMember) => {
+                bootstrapData.cabinet?.forEach((c: CabinetMember) => {
                     initialAttendance[c.id] = {status: "Absent", score: "", pairingCode: "", debatedAlone: false};
                 });
                 setMemberAttendance(initialAttendance);
@@ -222,7 +228,8 @@ export default function CabinetDashboard() {
                 setMembers([]);
                 setCabinet([]);
                 setPresidents([]);
-                errors.push(await readMessage(dashRes, "Dashboard data failed"));
+                setSessions([]);
+                errors.push(await readMessage(bootstrapRes, "Dashboard data failed"));
             }
 
             if (attRes.ok) {
@@ -239,14 +246,6 @@ export default function CabinetDashboard() {
             } else {
                 setMyTasks([]);
                 errors.push(await readMessage(taskRes, "Tasks failed"));
-            }
-
-            if (sessRes.ok) {
-                const sessData = await sessRes.json();
-                setSessions(sessData.sessions || []);
-            } else {
-                setSessions([]);
-                errors.push(await readMessage(sessRes, "Sessions failed"));
             }
 
             if (errors.length) {
@@ -660,14 +659,18 @@ export default function CabinetDashboard() {
                         <Users size={20} />
                         <span>Members</span>
                     </a>
-                    <Link
-                        href="/dashboard/pairing"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors hover:bg-slate-800 hover:text-white"
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setActiveTab("Pairing");
+                            setIsSidebarOpen(false);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Pairing" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
                     >
                         <Gavel size={20} />
                         <span>Pairing</span>
-                    </Link>
+                    </a>
                 </nav>
 
                 <div className="flex items-center gap-3 mt-auto pt-6 pb-[calc(10px+env(safe-area-inset-bottom,0px))] border-t border-slate-800 sticky bottom-0 bg-slate-900">
@@ -1442,6 +1445,22 @@ export default function CabinetDashboard() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                ) : activeTab === "Pairing" ? (
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+                        <header className="mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6">
+                            <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                                Pairing System
+                            </h1>
+                            <p className="text-slate-500 text-sm">
+                                Manage the pairing lifecycle inside the cabinet workspace using the dedicated pairing routes.
+                            </p>
+                        </header>
+                        <PairingDashboard
+                            role="cabinet"
+                            userName={userName}
+                            embedded
+                        />
                     </div>
                 ) : activeTab === "Sessions" ? (
                     <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">

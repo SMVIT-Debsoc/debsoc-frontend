@@ -20,7 +20,7 @@ import {
 import { toast } from "react-hot-toast";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
-import Link from "next/link";
+import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 interface UserRecord {
   id: string;
@@ -47,7 +47,7 @@ export default function TechHeadDashboard() {
   const [verified, setVerified] = useState<VerifiedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<"pending" | "verified">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "verified" | "pairing">("pending");
 
   const fetchData = async () => {
     setLoading(true);
@@ -206,14 +206,18 @@ export default function TechHeadDashboard() {
               />
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                href="/dashboard/pairing"
-                className="flex-1 sm:flex-none px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center gap-2 text-sm"
+              <button
+                onClick={() => setActiveTab("pairing")}
+                className={`flex-1 sm:flex-none px-4 py-3.5 border rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-sm ${
+                  activeTab === "pairing"
+                    ? "bg-white text-black border-white"
+                    : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+                }`}
                 title="Pairing dashboard"
               >
                 <Gavel size={16} />
                 <span>Pairing</span>
-              </Link>
+              </button>
               <button
                 onClick={fetchData}
                 className="flex-1 sm:flex-none p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center"
@@ -273,7 +277,17 @@ export default function TechHeadDashboard() {
         </div>
 
         <AnimatePresence mode="wait">
-          {loading ? (
+          {activeTab === "pairing" ? (
+            <motion.div
+              key="pairing"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <PairingDashboard role="TechHead" userName="Tech Head" embedded />
+            </motion.div>
+          ) : loading ? (
             <motion.div
               key="loading"
               initial={{ opacity: 0 }}
