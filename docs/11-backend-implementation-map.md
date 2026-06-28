@@ -24,7 +24,7 @@ The real business logic should live in `lib/server/`.
 That means:
 
 - `app/api/...` should parse requests, call guards, call services, and format responses
-- `lib/server/...` should contain pairing logic, scoring logic, evaluation logic, and database orchestration
+- `lib/server/...` should contain pairing logic, scoring logic, realtime delivery logic, evaluation logic, and database orchestration
 - Prisma access should be grouped in repository-style files instead of being spread across route handlers
 
 This structure fits the current repo because the project already uses `lib/server/` for backend-oriented code.
@@ -36,12 +36,14 @@ The following docs should now be treated as fixed implementation references duri
 - `12-backend-data-model-map.md`
 - `13-pairing-learning-loop.md`
 - `14-api-routing-map.md`
+- `17-websocket-realtime-flow.md`
 
 What each one controls:
 
 - `12-backend-data-model-map.md` controls entity naming, relationships, and the minimum V1 data-model direction
 - `13-pairing-learning-loop.md` controls how metric updates, confidence growth, and periodic tuning affect service boundaries and stored data
-- `14-api-routing-map.md` controls endpoint grouping, access rules, and route-to-service mapping
+- `14-api-routing-map.md`
+- `17-websocket-realtime-flow.md` controls websocket event scope, visibility, delivery rules, and module boundaries
 
 These should not be treated as optional reading once implementation begins.
 
@@ -121,6 +123,7 @@ types/
   session.ts
   scoring.ts
   eval.ts
+  realtime.ts
 ```
 
 ## Why This Structure Is Recommended
@@ -169,7 +172,19 @@ It should contain:
 - speaker scoring submission handling
 - chair scoring submission handling
 - leaderboard update logic
-- metric history update logic
+- metric snapshot update logic
+
+### `lib/server/realtime/...`
+
+This should own websocket connection handling and post-commit event fan-out.
+
+It should contain:
+
+- websocket connection authentication
+- subscription scope validation
+- session and role-based event filtering
+- post-commit event publishing
+- reconnect-safe event envelope shaping
 
 ### `lib/server/eval/...`
 
@@ -535,13 +550,55 @@ Update and derive leaderboard data from raw submissions.
 ### Should export
 
 - `updateLearnedMetricsFromSession(sessionId: string)`
-- `updatePairHistoryFromSession(sessionId: string)`
+- `updatePairMetricSnapshotsFromSession(sessionId: string)`
 - `updateRolePerformanceFromSession(sessionId: string)`
 
 ### Responsibility
 
 Convert post-session raw data into future pairing inputs.
 
+
+## Realtime Module File Map
+
+## `lib/server/realtime/websocket-hub.ts`
+
+### Should export
+
+- `acceptRealtimeConnection(input: AcceptRealtimeConnectionInput)`
+- `broadcastRealtimeEvent(event: RealtimeEventEnvelope)`
+
+### Responsibility
+
+Own authenticated websocket connections, subscriptions, and fan-out.
+
+## `lib/server/realtime/event-publisher.ts`
+
+### Should export
+
+- `publishRealtimeEvent(event: RealtimeEventEnvelope)`
+- `publishSessionRealtimeEvent(sessionId: string, event: RealtimeEventEnvelope)`
+
+### Responsibility
+
+Receive post-commit domain events from services and hand them to the websocket hub.
+
+## `lib/server/realtime/channel-auth.ts`
+
+### Should export
+
+- `canConnectToRealtime(user)`
+- `canSubscribeToRealtimeScope(input)`
+- `filterRealtimeEventForSubscriber(input)`
+
+### Responsibility
+
+Own connection authorization, subscription authorization, and role-safe payload filtering.
+
+## `lib/server/realtime/types.ts`
+
+### Responsibility
+
+Local realtime-only types and internal transport helpers.
 ## Eval Module File Map
 
 ## `lib/server/eval/harness.ts`
@@ -700,6 +757,16 @@ These files should hide Prisma access from the domain services.
 - chair scoring payloads
 - leaderboard DTOs
 
+## `types/realtime.ts`
+
+### Should contain
+
+- websocket event envelope types
+- realtime event-name constants
+- realtime subscription scope types
+- realtime visibility types
+- reconnect/refetch hint DTOs
+
 ## `types/eval.ts`
 
 ### Should contain
@@ -803,6 +870,14 @@ Should call:
 
 ## Eval Routes
 
+### `app/api/realtime/socket/route.ts`
+
+Should call:
+
+- authenticated realtime connection bootstrap or upgrade handling
+- connection and scope checks from `lib/server/realtime/channel-auth.ts`
+- `acceptRealtimeConnection()` from `lib/server/realtime/websocket-hub.ts`
+
 ### `app/api/eval/replay/route.ts`
 
 Should call:
@@ -867,3 +942,6 @@ The clean backend architecture for this project is:
 - shared contracts in `types`
 
 This gives the project a backend structure that can support the pairing engine, the review workflow, the scoring flow, published pairing visibility, and the adaptive evaluation system without turning the codebase into a tangle.
+
+
+

@@ -25,10 +25,12 @@ The metric catalog is now broadly defined and should include at minimum:
 - `adjudicator_average_score`
 - `chair_score`
 
-What still needs confirmation:
+Status: ACCEPTED for V1.
 
-- whether any metric should be removed from V1
-- whether any metric should be stored now but activated later
+Decision recorded in Phase 0:
+
+- accept the full metric catalog for V1
+- do not defer any listed metric to stored-now / activated-later status at this stage
 
 ## 2. Hard Rules Vs Soft Rules
 
@@ -41,6 +43,14 @@ This affects:
 - scoring behavior
 - regeneration logic
 
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- hard rules = only present participants, speaker or adjudicator role required, no double assignment, exactly 8 speakers per room, exactly 4 teams per room, exactly 2 speakers per team, valid BP positions `OG/OO/CG/CO`, at least 1 adjudicator per room, exactly 1 chair per room, no publish before approval
+- strict forced constraints remain hard: forced team-up, forced separation, strict time constraint, forced chair, forced role, forced room-count override
+- soft rules = repeat partner penalty, room balance, pair quality, motion-role fit, panel distribution beyond the required 1 adjudicator, and non-strict event team-up preference
+
 ## 3. Session-Role Routing Rule
 
 Post-session dashboard behavior must be driven by the user's role in that session, not by permanent account role.
@@ -51,6 +61,15 @@ This affects:
 - authorization logic
 - scoring-form assignment
 - session-role storage
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- post-session routing is based on the user's role in that session, not permanent account role
+- authorization for post-session scoring flows is based on `SessionRoleAssignment`
+- scoring-form assignment is based on the user's session role for that debate session
+- session role must be stored explicitly and used as the governing source for post-session behavior
 
 ## 4. Post-Session Scoring Inputs
 
@@ -68,26 +87,39 @@ This includes:
 The main model structure must be stable before coding.
 
 Minimum model direction should follow `12-backend-data-model-map.md`.
+Use the authoritative model vocabulary from `docs/12-backend-data-model-map.md` and
+`docs/pairing-knowledge-graph.md`; do not reintroduce older placeholder names here.
 
 Core model direction:
 
-- `Attendance`
+- `AttendanceRecord`
 - `DebateSession`
-- `SessionParticipantRole`
+- `SessionRoleAssignment`
 - `PairingProposal`
-- `ProposalRating`
-- `PairingRoom`
-- `PairingTeam`
+- `DebateRoomAssignment`
+- `DebateTeamAssignment`
 - `TeamSpeakerAssignment`
 - `RoomAdjudicatorAssignment`
-- `ChairAssignment`
-- `LeftoverAssignment`
-- `PairHistory`
-- `SpeakerScore`
-- `AdjudicatorScore`
-- `PairingMetric`
+- `UnassignedParticipant`
+- `ProposalReviewLog`
+- `ProposalRating`
+- `SpeakerScoreRecord`
+- `ChairFeedbackRecord`
+- `AdjudicatorScoreRecord`
+- `PairingMetricDefinition`
 - `PairingMetricAdjustment`
+- `MemberMetricSnapshot`
+- `PairMetricSnapshot`
 - `PublishedPairingView` as a logical read model for the official published pairing
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- accept the authoritative core model vocabulary from `docs/12-backend-data-model-map.md` and the graph
+- keep the minimum V1 core model direction as `DebateSession`, `AttendanceRecord`, `SessionRoleAssignment`, `PairingProposal`, `DebateRoomAssignment`, `DebateTeamAssignment`, `TeamSpeakerAssignment`, `RoomAdjudicatorAssignment`, `UnassignedParticipant`, `ProposalReviewLog`, `ProposalRating`, `SpeakerScoreRecord`, `ChairFeedbackRecord`, `AdjudicatorScoreRecord`, `PairingMetricDefinition`, `PairingMetricAdjustment`, `MemberMetricSnapshot`, `PairMetricSnapshot`, and `PublishedPairingView` as the logical read model
+- preserve the participant-reference convention from Gate 11 when this is converted into schema work in Phase 2
+- schema drafting is deferred to Phase 2; this gate freezes the model structure only
 
 ## 6. Room Generation And Leftover Handling
 
@@ -97,6 +129,15 @@ We already have a default rule direction, but it should be explicitly confirmed 
 - leftovers are marked `UNASSIGNED`
 - incomplete rooms are not auto-generated
 - admin resolves leftovers by adjustment and regeneration
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- `room_count = floor(speakers / 8)` for V1 generation
+- leftovers are marked `UNASSIGNED`
+- incomplete BP rooms are not auto-generated
+- admin resolves leftovers through adjustment and regeneration
 
 ## 7. Proposal Selection Strategy
 
@@ -109,8 +150,17 @@ We have a strong current direction:
 
 What still needs confirmation:
 
-- exact top-band size
-- exact probability distribution approach
+- whether any post-V1 refinement is wanted beyond the current top-band size of `5`
+- whether any post-V1 refinement is wanted beyond the current weighted-rank distribution direction
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- accept V1 top-band probabilistic proposal selection
+- keep top `5` proposals after scoring
+- use the weighted rank distribution `0.30 / 0.24 / 0.18 / 0.15 / 0.13` for V1
+- later refinement is allowed, but V1 treats the current top-band size and weighted-rank pattern as accepted
 
 ## 8. Tuning Governance
 
@@ -123,6 +173,14 @@ We have a strong current direction:
 What still needs confirmation:
 
 - whether tuning is review-assisted only or partially automatic
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- tuning remains review-assisted only in V1
+- no bounded adjustment is auto-applied in V1
+- tuning suggestions require explicit review and approval before any metric adjustment is applied
 
 ## 9. Access Control And Published Visibility
 
@@ -137,6 +195,43 @@ What still needs confirmation:
 
 - exact names of the auth guard helpers
 - whether cabinet and president are the only admin roles for V1, or whether a separate future admin role will be introduced later
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- only `cabinet` and `President` control pairing lifecycle actions in V1: generate, review, approve, override, regenerate, rate, and publish
+- `Member` cannot control the pairing lifecycle in V1
+- published pairing visibility is available to `Member`, `cabinet`, and `President`
+- the official published proposal is the only source of truth for published pairing visibility
+- no extra lifecycle admin role is introduced in V1 beyond the documented roles
+
+## 10. Phase 6 Formula Blocker
+
+The scoring-engine phase cannot start until the `Fo10` formulas are explicitly finalized.
+
+This includes:
+
+- `team_quality_aggregate`
+- full `proposal_score`
+- `consistency_score`
+- `experience_index`
+- pair-dynamics aggregation
+- `role_score` aggregation
+- tuning-adjustment formula
+
+Status: ACCEPTED for V1.
+
+Decision recorded in Phase 0:
+
+- `consistency_score = 1 / (1 + normalized_standard_deviation)`
+- `experience_index = normalized_academic_year`
+- `partner_dynamics_overall = average(bp_result_points_together)`
+- `partner_dynamics_by_motion_type = average(bp_result_points_together_in_motion_type)`
+- `role_score(role) = average(raw_speaker_scores_when_assigned_that_role)`
+- `team_quality_aggregate = weighted_sum(speaker_total_score, speaker_motion_type_score, speaker_strength, partner_dynamics_overall, partner_dynamics_by_motion_type, role_score, motion_type_x_role_score, repeat_partner_penalty, bp_position_history, internal_speaking_role_history)`
+- `proposal_score = 0.40 * room_balance_score + 0.20 * adjudicator_average_score + 0.20 * chair_score + 0.12 * team_quality_aggregate + 0.08 * experience_distribution_aggregate`
+- tuning adjustment remains review-assisted and bounded to `+/- 0.03` in V1
 
 ## What Can Still Be Tuned Later
 
@@ -171,6 +266,7 @@ Before coding starts, we should be able to answer these clearly:
 7. Is top-band probabilistic proposal selection accepted?
 8. Is tuning governance accepted?
 9. Are the cabinet/president control rules and member published-view rule accepted?
+10. Are the `Fo10` formulas finalized enough to start the scoring engine phase?
 
 ## Recommendation
 
@@ -179,3 +275,5 @@ The safest implementation order is:
 1. confirm the pre-coding decisions in this file
 2. keep metric and database docs aligned with them
 3. begin schema and backend implementation only after that
+
+

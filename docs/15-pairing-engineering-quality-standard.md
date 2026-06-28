@@ -979,3 +979,44 @@ The quality bar for this feature should be:
 
 The pairing system should be built like infrastructure, not like a convenience feature.
 That is the right standard because if this feature becomes unreliable, the rest of the debate workflow becomes unreliable with it.
+## 24. Realtime Websocket Standard
+
+The websocket layer must behave like a delivery system around authoritative backend state, not like a second source of truth.
+
+### Required rules
+
+- websocket events are emitted only after the authoritative transaction commits
+- websocket delivery must never publish unpublished member data early
+- websocket payloads must be role-filtered and session-filtered just like HTTP reads
+- websocket failure after commit must not roll back the authoritative action
+- reconnect must be recoverable through the authoritative HTTP read model
+
+### Transport rule
+
+The backend should prefer one authenticated websocket entrypoint with typed event envelopes over scattered ad hoc realtime channels.
+
+### Consistency rule
+
+If a client suspects missed or out-of-order websocket events, the client should refetch the authoritative HTTP endpoint and continue from server truth.
+
+### Observability rule
+
+Track at minimum:
+
+- active websocket connection count
+- connection auth failures
+- subscription rejections
+- emitted event count by type
+- dropped event count
+- reconnect rate
+- commit-to-emit delay
+- fan-out failure count
+
+### Test rule
+
+Include explicit tests for:
+
+- member-safe vs admin-only event visibility
+- post-commit-only emission
+- reconnect and refetch recovery
+- websocket publish failure not corrupting committed pairing state

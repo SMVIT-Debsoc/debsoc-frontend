@@ -53,3 +53,4 @@ CLOSE-OUT (required):
 - Each removal confirmed, replaced, verified dead, and history-safe; test suite green (shown).
 - Graph + `docs/02 §12` updated to RETIRED; `Grounded in:` printed.
 </content>
+

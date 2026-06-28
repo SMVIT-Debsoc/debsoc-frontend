@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
   engineType = "library"
 }
 
@@ -20,62 +20,141 @@ model TechHead {
 }
 
 model President {
-  id                   String              @id @default(uuid())
-  name                 String
-  email                String              @unique
-  password             String
-  isVerified           Boolean             @default(false)
-  verifiedByTechHeadId String?
-  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesPresident", fields: [verifiedByTechHeadId], references: [id])
-  anonymousMessages    AnonymousMessage[]  @relation("messageToPresident")
-  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackFromPresident")
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  id                                    String                      @id @default(uuid())
+  name                                  String
+  email                                 String                      @unique
+  password                              String
+  isVerified                            Boolean                     @default(false)
+  verifiedByTechHeadId                  String?
+  verifiedByTechHead                    TechHead?                   @relation("TechHeadVerifiesPresident", fields: [verifiedByTechHeadId], references: [id])
+  anonymousMessages                     AnonymousMessage[]          @relation("messageToPresident")
+  anonymousFeedbacks                    AnonymousFeedback[]         @relation("feedbackFromPresident")
+  attendanceRecords                     Attendance[]                @relation("AttendancePresident")
+  sessionRoleAssignments                SessionRoleAssignment[]     @relation("SessionRoleAssignmentPresident")
+  teamSpeakerAssignments                TeamSpeakerAssignment[]     @relation("TeamSpeakerAssignmentPresident")
+  roomAdjudicatorAssignments            RoomAdjudicatorAssignment[] @relation("RoomAdjudicatorAssignmentPresident")
+  unassignedParticipants                UnassignedParticipant[]     @relation("UnassignedParticipantPresident")
+  speakerScoreParticipant               SpeakerScoreRecord[]        @relation("SpeakerScoreRecordPresident")
+  speakerScoreRecordedBy                SpeakerScoreRecord[]        @relation("SpeakerScoreRecordScoredByPresident")
+  chairFeedbackAsSpeaker                ChairFeedbackRecord[]       @relation("ChairFeedbackSpeakerPresident")
+  chairFeedbackAsChair                  ChairFeedbackRecord[]       @relation("ChairFeedbackChairPresident")
+  adjudicatorScoreAsChair               AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreChairPresident")
+  adjudicatorScoreAsAdjudicator         AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreAdjudicatorPresident")
+  memberMetricSnapshots                 MemberMetricSnapshot[]      @relation("MemberMetricSnapshotPresident")
+  pairMetricAsAPresident                PairMetricSnapshot[]        @relation("PairMetricSnapshotPresidentA")
+  pairMetricAsBPresident                PairMetricSnapshot[]        @relation("PairMetricSnapshotPresidentB")
+  teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterPresident")
+  teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammatePresident")
+  createdAt                             DateTime                    @default(now())
+  updatedAt                             DateTime                    @updatedAt
 }
 
 model DebateSession {
-  id          String       @id @default(uuid())
-  sessionDate DateTime
-  motiontype  String
-  Chair       String
-  attendance  Attendance[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                     String                   @id @default(uuid())
+  sessionDate            DateTime
+  motiontype             String
+  Chair                  String
+  motionType             String?
+  motionText             String?
+  pairingObjective       String?
+  status                 String?
+  pairingStatus          String?
+  publicationStatus      String?
+  scoringStatus          String?
+  acceptedProposalId     String?
+  publishedProposalId    String?
+  publishedAt            DateTime?
+  attendance             Attendance[]
+  pairingProposals       PairingProposal[]       @relation("PairingProposalSession")
+  sessionRoleAssignments SessionRoleAssignment[]
+  speakerScoreRecords    SpeakerScoreRecord[]
+  chairFeedbackRecords   ChairFeedbackRecord[]
+  adjudicatorScoreRecords AdjudicatorScoreRecord[]
+  teamDynamicsRatings    TeamDynamicsRating[]
+  acceptedProposal       PairingProposal?        @relation("AcceptedProposal", fields: [acceptedProposalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  publishedProposal      PairingProposal?        @relation("PublishedProposal", fields: [publishedProposalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 
+  @@index([publishedProposalId])
+  @@index([acceptedProposalId])
   @@map("Session")
 }
 
 model Attendance {
-  id           String   @id @default(uuid())
-  sessionId    String
-  session      DebateSession  @relation(fields: [sessionId], references: [id])
-  memberId     String?
-  member       Member?  @relation(fields: [memberId], references: [id])
-  status       String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  cabinet      cabinet? @relation(fields: [cabinetId], references: [id])
-  cabinetId    String?
-  speakerScore Float?
-  pairingCode  String?
-  debatedAlone Boolean @default(false)
+  id             String        @id @default(uuid())
+  sessionId      String
+  session        DebateSession @relation(fields: [sessionId], references: [id])
+  memberId       String?
+  member         Member?       @relation("AttendanceMember", fields: [memberId], references: [id])
+  cabinetId      String?
+  cabinet        cabinet?      @relation("AttendanceCabinet", fields: [cabinetId], references: [id])
+  presidentId    String?
+  president      President?    @relation("AttendancePresident", fields: [presidentId], references: [id])
+  status         String
+  isPresent      Boolean       @default(false)
+  isFinalized    Boolean       @default(false)
+  wasAssigned    Boolean       @default(false)
+  wasUnassigned  Boolean       @default(false)
+  unassignedReason String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  speakerScore   Float?
+  pairingCode    String?
+  debatedAlone   Boolean       @default(false)
+
+  @@index([sessionId])
+  @@index([sessionId, memberId, cabinetId, presidentId])
 }
 
+
+model SessionRoleAssignment {
+  id             String        @id @default(uuid())
+  sessionId      String
+  session        DebateSession @relation(fields: [sessionId], references: [id])
+  memberId       String?
+  member         Member?       @relation("SessionRoleAssignmentMember", fields: [memberId], references: [id])
+  cabinetId      String?
+  cabinet        cabinet?      @relation("SessionRoleAssignmentCabinet", fields: [cabinetId], references: [id])
+  presidentId    String?
+  president      President?    @relation("SessionRoleAssignmentPresident", fields: [presidentId], references: [id])
+  role           String
+  isChair        Boolean       @default(false)
+  roleAssignedAt DateTime?
+
+  @@index([sessionId])
+  @@index([sessionId, memberId, cabinetId, presidentId])
+}
 model cabinet {
-  id                   String              @id @default(uuid())
-  name                 String
-  position             String
-  email                String              @unique
-  password             String
-  isVerified           Boolean             @default(false)
-  verifiedByTechHeadId String?
-  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesCabinet", fields: [verifiedByTechHeadId], references: [id])
-  tasks                task[]              @relation("assignedTo")
-  anonymousMessages    AnonymousMessage[]  @relation("messageToPresidentFromCabinet")
-  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackFromCabinet")
-  attendance           Attendance[]
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  id                                    String                      @id @default(uuid())
+  name                                  String
+  position                              String
+  email                                 String                      @unique
+  password                              String
+  isVerified                            Boolean                     @default(false)
+  verifiedByTechHeadId                  String?
+  verifiedByTechHead                    TechHead?                   @relation("TechHeadVerifiesCabinet", fields: [verifiedByTechHeadId], references: [id])
+  tasks                                 task[]                      @relation("assignedTo")
+  anonymousMessages                     AnonymousMessage[]          @relation("messageToPresidentFromCabinet")
+  anonymousFeedbacks                    AnonymousFeedback[]         @relation("feedbackFromCabinet")
+  attendance                            Attendance[]                @relation("AttendanceCabinet")
+  sessionRoleAssignments                SessionRoleAssignment[]     @relation("SessionRoleAssignmentCabinet")
+  teamSpeakerAssignments                TeamSpeakerAssignment[]     @relation("TeamSpeakerAssignmentCabinet")
+  roomAdjudicatorAssignments            RoomAdjudicatorAssignment[] @relation("RoomAdjudicatorAssignmentCabinet")
+  unassignedParticipants                UnassignedParticipant[]     @relation("UnassignedParticipantCabinet")
+  speakerScoreParticipant               SpeakerScoreRecord[]        @relation("SpeakerScoreRecordCabinet")
+  speakerScoreRecordedBy                SpeakerScoreRecord[]        @relation("SpeakerScoreRecordScoredByCabinet")
+  chairFeedbackAsSpeaker                ChairFeedbackRecord[]       @relation("ChairFeedbackSpeakerCabinet")
+  chairFeedbackAsChair                  ChairFeedbackRecord[]       @relation("ChairFeedbackChairCabinet")
+  adjudicatorScoreAsChair               AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreChairCabinet")
+  adjudicatorScoreAsAdjudicator         AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreAdjudicatorCabinet")
+  memberMetricSnapshots                 MemberMetricSnapshot[]      @relation("MemberMetricSnapshotCabinet")
+  pairMetricAsACabinet                  PairMetricSnapshot[]        @relation("PairMetricSnapshotCabinetA")
+  pairMetricAsBCabinet                  PairMetricSnapshot[]        @relation("PairMetricSnapshotCabinetB")
+  teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterCabinet")
+  teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammateCabinet")
+  createdAt                             DateTime                    @default(now())
+  updatedAt                             DateTime                    @updatedAt
 }
 
 model task {
@@ -93,19 +172,34 @@ model task {
 }
 
 model Member {
-  id                   String              @id @default(uuid())
-  name                 String
-  email                String              @unique
-  password             String
-  isVerified           Boolean             @default(false)
-  verifiedByTechHeadId String?
-  verifiedByTechHead   TechHead?           @relation("TechHeadVerifiesMember", fields: [verifiedByTechHeadId], references: [id])
-  tasks                task[]              @relation("assignedToMember")
-  anonymousMessages    AnonymousMessage[]  @relation("messageFromMember")
-  anonymousFeedbacks   AnonymousFeedback[] @relation("feedbackToMember")
-  attendance           Attendance[]
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  id                                    String                      @id @default(uuid())
+  name                                  String
+  email                                 String                      @unique
+  password                              String
+  isVerified                            Boolean                     @default(false)
+  verifiedByTechHeadId                  String?
+  verifiedByTechHead                    TechHead?                   @relation("TechHeadVerifiesMember", fields: [verifiedByTechHeadId], references: [id])
+  tasks                                 task[]                      @relation("assignedToMember")
+  anonymousMessages                     AnonymousMessage[]          @relation("messageFromMember")
+  anonymousFeedbacks                    AnonymousFeedback[]         @relation("feedbackToMember")
+  attendance                            Attendance[]                @relation("AttendanceMember")
+  sessionRoleAssignments                SessionRoleAssignment[]     @relation("SessionRoleAssignmentMember")
+  teamSpeakerAssignments                TeamSpeakerAssignment[]     @relation("TeamSpeakerAssignmentMember")
+  roomAdjudicatorAssignments            RoomAdjudicatorAssignment[] @relation("RoomAdjudicatorAssignmentMember")
+  unassignedParticipants                UnassignedParticipant[]     @relation("UnassignedParticipantMember")
+  speakerScoreParticipant               SpeakerScoreRecord[]        @relation("SpeakerScoreRecordMember")
+  speakerScoreRecordedBy                SpeakerScoreRecord[]        @relation("SpeakerScoreRecordScoredByMember")
+  chairFeedbackAsSpeaker                ChairFeedbackRecord[]       @relation("ChairFeedbackSpeakerMember")
+  chairFeedbackAsChair                  ChairFeedbackRecord[]       @relation("ChairFeedbackChairMember")
+  adjudicatorScoreAsChair               AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreChairMember")
+  adjudicatorScoreAsAdjudicator         AdjudicatorScoreRecord[]    @relation("AdjudicatorScoreAdjudicatorMember")
+  memberMetricSnapshots                 MemberMetricSnapshot[]      @relation("MemberMetricSnapshotMember")
+  pairMetricAsAMember                   PairMetricSnapshot[]        @relation("PairMetricSnapshotMemberA")
+  pairMetricAsBMember                   PairMetricSnapshot[]        @relation("PairMetricSnapshotMemberB")
+  teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterMember")
+  teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammateMember")
+  createdAt                             DateTime                    @default(now())
+  updatedAt                             DateTime                    @updatedAt
 }
 
 model AnonymousMessage {
@@ -134,6 +228,319 @@ model AnonymousFeedback {
   senderPresident   President? @relation("feedbackFromPresident", fields: [senderPresidentId], references: [id])
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
+}
+
+model PairingProposal {
+  id                  String                 @id @default(uuid())
+  sessionId           String
+  session             DebateSession          @relation("PairingProposalSession", fields: [sessionId], references: [id])
+  proposalVersion     Int
+  status              String
+  engineVersion       String
+  ruleVersion         String
+  topBandRank         Int?
+  proposalScore       Float
+  scoreBreakdownJson  Json
+  generatedAt         DateTime               @default(now())
+  generatedBy         String?
+  approvedAt          DateTime?
+  publishedAt         DateTime?
+  isPublishedOfficially Boolean             @default(false)
+  roomAssignments        DebateRoomAssignment[]
+  reviewLogs             ProposalReviewLog[]
+  rating                 ProposalRating?
+  unassignedParticipants UnassignedParticipant[]
+  speakerScoreRecords    SpeakerScoreRecord[]
+  chairFeedbackRecords   ChairFeedbackRecord[]
+  adjudicatorScoreRecords AdjudicatorScoreRecord[]
+  acceptedForSessions    DebateSession[]        @relation("AcceptedProposal")
+  publishedForSessions   DebateSession[]        @relation("PublishedProposal")
+
+  @@index([sessionId])
+  @@index([status])
+  @@index([sessionId, status])
+  @@index([publishedAt])
+}
+
+model DebateRoomAssignment {
+  id                  String                    @id @default(uuid())
+  proposalId          String
+  proposal            PairingProposal           @relation(fields: [proposalId], references: [id])
+  roomIndex           Int
+  roomScore           Float?
+  roomBalanceScore    Float?
+  roomDifficultyScore Float?
+  teamAssignments     DebateTeamAssignment[]
+  adjudicatorAssignments RoomAdjudicatorAssignment[]
+
+  @@index([proposalId])
+  @@index([proposalId, roomIndex])
+}
+
+model DebateTeamAssignment {
+  id               String                  @id @default(uuid())
+  roomAssignmentId String
+  roomAssignment   DebateRoomAssignment    @relation(fields: [roomAssignmentId], references: [id])
+  bpPosition       String
+  teamScore        Float?
+  speakerAssignments TeamSpeakerAssignment[]
+
+  @@index([roomAssignmentId])
+}
+
+model TeamSpeakerAssignment {
+  id               String               @id @default(uuid())
+  teamAssignmentId String
+  teamAssignment   DebateTeamAssignment @relation(fields: [teamAssignmentId], references: [id])
+  memberId         String?
+  member           Member?              @relation("TeamSpeakerAssignmentMember", fields: [memberId], references: [id])
+  cabinetId        String?
+  cabinet          cabinet?             @relation("TeamSpeakerAssignmentCabinet", fields: [cabinetId], references: [id])
+  presidentId      String?
+  president        President?           @relation("TeamSpeakerAssignmentPresident", fields: [presidentId], references: [id])
+  speakingRole     String
+  speakerOrder     Int
+
+  @@index([teamAssignmentId])
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model RoomAdjudicatorAssignment {
+  id                   String                 @id @default(uuid())
+  roomAssignmentId     String
+  roomAssignment       DebateRoomAssignment   @relation(fields: [roomAssignmentId], references: [id])
+  memberId             String?
+  member               Member?                @relation("RoomAdjudicatorAssignmentMember", fields: [memberId], references: [id])
+  cabinetId            String?
+  cabinet              cabinet?               @relation("RoomAdjudicatorAssignmentCabinet", fields: [cabinetId], references: [id])
+  presidentId          String?
+  president            President?             @relation("RoomAdjudicatorAssignmentPresident", fields: [presidentId], references: [id])
+  isChair              Boolean                @default(false)
+  chairAssignmentScore Float?
+
+  @@index([roomAssignmentId])
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model UnassignedParticipant {
+  id           String          @id @default(uuid())
+  proposalId   String
+  proposal     PairingProposal @relation(fields: [proposalId], references: [id])
+  memberId     String?
+  member       Member?         @relation("UnassignedParticipantMember", fields: [memberId], references: [id])
+  cabinetId    String?
+  cabinet      cabinet?        @relation("UnassignedParticipantCabinet", fields: [cabinetId], references: [id])
+  presidentId  String?
+  president    President?      @relation("UnassignedParticipantPresident", fields: [presidentId], references: [id])
+  reason       String
+
+  @@index([proposalId])
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model ProposalReviewLog {
+  id         String          @id @default(uuid())
+  proposalId String
+  proposal   PairingProposal @relation(fields: [proposalId], references: [id])
+  reviewerId String
+  action     String
+  notes      String?
+  createdAt  DateTime        @default(now())
+
+  @@index([proposalId, createdAt])
+  @@index([reviewerId])
+}
+
+model ProposalRating {
+  id            String          @id @default(uuid())
+  proposalId    String          @unique
+  proposal      PairingProposal @relation(fields: [proposalId], references: [id])
+  reviewerId    String
+  rating        Int
+  issueTagsJson Json?
+  notes         String?
+  createdAt     DateTime        @default(now())
+
+  @@index([reviewerId])
+}
+
+model SpeakerScoreRecord {
+  id                 String        @id @default(uuid())
+  sessionId          String
+  session            DebateSession @relation(fields: [sessionId], references: [id])
+  proposalId         String
+  proposal           PairingProposal @relation(fields: [proposalId], references: [id])
+  memberId           String?
+  member             Member?       @relation("SpeakerScoreRecordMember", fields: [memberId], references: [id])
+  cabinetId          String?
+  cabinet            cabinet?      @relation("SpeakerScoreRecordCabinet", fields: [cabinetId], references: [id])
+  presidentId        String?
+  president          President?    @relation("SpeakerScoreRecordPresident", fields: [presidentId], references: [id])
+  bpPosition         String
+  speakingRole       String
+  rawScore           Float
+  teamResultPoints   Int
+  scoredByMemberId   String?
+  scoredByMember     Member?       @relation("SpeakerScoreRecordScoredByMember", fields: [scoredByMemberId], references: [id])
+  scoredByCabinetId  String?
+  scoredByCabinet    cabinet?      @relation("SpeakerScoreRecordScoredByCabinet", fields: [scoredByCabinetId], references: [id])
+  scoredByPresidentId String?
+  scoredByPresident  President?    @relation("SpeakerScoreRecordScoredByPresident", fields: [scoredByPresidentId], references: [id])
+
+  @@index([sessionId])
+  @@index([proposalId])
+  @@index([memberId, cabinetId, presidentId])
+  @@index([scoredByMemberId, scoredByCabinetId, scoredByPresidentId])
+}
+
+model ChairFeedbackRecord {
+  id                  String        @id @default(uuid())
+  sessionId           String
+  session             DebateSession @relation(fields: [sessionId], references: [id])
+  proposalId          String
+  proposal            PairingProposal @relation(fields: [proposalId], references: [id])
+  speakerMemberId     String?
+  speakerMember       Member?       @relation("ChairFeedbackSpeakerMember", fields: [speakerMemberId], references: [id])
+  speakerCabinetId    String?
+  speakerCabinet      cabinet?      @relation("ChairFeedbackSpeakerCabinet", fields: [speakerCabinetId], references: [id])
+  speakerPresidentId  String?
+  speakerPresident    President?    @relation("ChairFeedbackSpeakerPresident", fields: [speakerPresidentId], references: [id])
+  chairMemberId       String?
+  chairMember         Member?       @relation("ChairFeedbackChairMember", fields: [chairMemberId], references: [id])
+  chairCabinetId      String?
+  chairCabinet        cabinet?      @relation("ChairFeedbackChairCabinet", fields: [chairCabinetId], references: [id])
+  chairPresidentId    String?
+  chairPresident      President?    @relation("ChairFeedbackChairPresident", fields: [chairPresidentId], references: [id])
+  rating              Int
+  notes               String?
+
+  @@index([sessionId])
+  @@index([proposalId])
+  @@index([speakerMemberId, speakerCabinetId, speakerPresidentId])
+  @@index([chairMemberId, chairCabinetId, chairPresidentId])
+}
+
+model AdjudicatorScoreRecord {
+  id                        String        @id @default(uuid())
+  sessionId                 String
+  session                   DebateSession @relation(fields: [sessionId], references: [id])
+  proposalId                String
+  proposal                  PairingProposal @relation(fields: [proposalId], references: [id])
+  chairMemberId             String?
+  chairMember               Member?       @relation("AdjudicatorScoreChairMember", fields: [chairMemberId], references: [id])
+  chairCabinetId            String?
+  chairCabinet              cabinet?      @relation("AdjudicatorScoreChairCabinet", fields: [chairCabinetId], references: [id])
+  chairPresidentId          String?
+  chairPresident            President?    @relation("AdjudicatorScoreChairPresident", fields: [chairPresidentId], references: [id])
+  adjudicatorMemberId       String?
+  adjudicatorMember         Member?       @relation("AdjudicatorScoreAdjudicatorMember", fields: [adjudicatorMemberId], references: [id])
+  adjudicatorCabinetId      String?
+  adjudicatorCabinet        cabinet?      @relation("AdjudicatorScoreAdjudicatorCabinet", fields: [adjudicatorCabinetId], references: [id])
+  adjudicatorPresidentId    String?
+  adjudicatorPresident      President?    @relation("AdjudicatorScoreAdjudicatorPresident", fields: [adjudicatorPresidentId], references: [id])
+  rating                    Int
+  notes                     String?
+
+  @@index([sessionId])
+  @@index([proposalId])
+  @@index([chairMemberId, chairCabinetId, chairPresidentId])
+  @@index([adjudicatorMemberId, adjudicatorCabinetId, adjudicatorPresidentId])
+}
+
+model PairingMetricDefinition {
+  id                 String                  @id @default(uuid())
+  key                String                  @unique
+  name               String
+  description        String
+  category           String
+  baseWeight         Float
+  isEnabled          Boolean                 @default(true)
+  isHardRule         Boolean                 @default(false)
+  isSoftRule         Boolean                 @default(false)
+  scope              String
+  fallbackConfigJson Json?
+  adjustments        PairingMetricAdjustment[]
+
+  @@index([category])
+}
+
+model PairingMetricAdjustment {
+  id                 String                  @id @default(uuid())
+  metricDefinitionId String
+  metricDefinition   PairingMetricDefinition @relation(fields: [metricDefinitionId], references: [id])
+  currentAdjustment  Float
+  lastUpdatedAt      DateTime                @default(now())
+  sourceWindowId     String?
+
+  @@index([metricDefinitionId])
+}
+
+model MemberMetricSnapshot {
+  id               String      @id @default(uuid())
+  memberId         String?
+  member           Member?     @relation("MemberMetricSnapshotMember", fields: [memberId], references: [id])
+  cabinetId        String?
+  cabinet          cabinet?    @relation("MemberMetricSnapshotCabinet", fields: [cabinetId], references: [id])
+  presidentId      String?
+  president        President?  @relation("MemberMetricSnapshotPresident", fields: [presidentId], references: [id])
+  metricKey        String
+  contextKey       String?
+  value            Float
+  observationCount Int
+  confidence       Float
+  updatedAt        DateTime    @updatedAt
+
+  @@index([metricKey, contextKey])
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model PairMetricSnapshot {
+  id             String     @id @default(uuid())
+  memberAId      String?
+  memberA        Member?    @relation("PairMetricSnapshotMemberA", fields: [memberAId], references: [id])
+  cabinetAId     String?
+  cabinetA       cabinet?   @relation("PairMetricSnapshotCabinetA", fields: [cabinetAId], references: [id])
+  presidentAId   String?
+  presidentA     President? @relation("PairMetricSnapshotPresidentA", fields: [presidentAId], references: [id])
+  memberBId      String?
+  memberB        Member?    @relation("PairMetricSnapshotMemberB", fields: [memberBId], references: [id])
+  cabinetBId     String?
+  cabinetB       cabinet?   @relation("PairMetricSnapshotCabinetB", fields: [cabinetBId], references: [id])
+  presidentBId   String?
+  presidentB     President? @relation("PairMetricSnapshotPresidentB", fields: [presidentBId], references: [id])
+  metricKey      String
+  contextKey     String?
+  value          Float
+  observationCount Int
+  confidence     Float
+  updatedAt      DateTime   @updatedAt
+
+  @@index([metricKey, contextKey])
+  @@index([memberAId, cabinetAId, presidentAId, memberBId, cabinetBId, presidentBId])
+}
+
+model TeamDynamicsRating {
+  id                  String        @id @default(uuid())
+  sessionId           String
+  session             DebateSession @relation(fields: [sessionId], references: [id])
+  raterMemberId       String?
+  raterMember         Member?       @relation("TeamDynamicsRatingRaterMember", fields: [raterMemberId], references: [id])
+  raterCabinetId      String?
+  raterCabinet        cabinet?      @relation("TeamDynamicsRatingRaterCabinet", fields: [raterCabinetId], references: [id])
+  raterPresidentId    String?
+  raterPresident      President?    @relation("TeamDynamicsRatingRaterPresident", fields: [raterPresidentId], references: [id])
+  teammateMemberId    String?
+  teammateMember      Member?       @relation("TeamDynamicsRatingTeammateMember", fields: [teammateMemberId], references: [id])
+  teammateCabinetId   String?
+  teammateCabinet     cabinet?      @relation("TeamDynamicsRatingTeammateCabinet", fields: [teammateCabinetId], references: [id])
+  teammatePresidentId String?
+  teammatePresident   President?    @relation("TeamDynamicsRatingTeammatePresident", fields: [teammatePresidentId], references: [id])
+  rating              Int
+  createdAt           DateTime      @default(now())
+
+  @@index([sessionId])
+  @@index([raterMemberId, raterCabinetId, raterPresidentId])
+  @@index([teammateMemberId, teammateCabinetId, teammatePresidentId])
 }
 
 model User {
@@ -185,4 +592,73 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("auth_verification_tokens")
+}
+
+
+
+model LeaderboardSnapshot {
+  id          String   @id @default(uuid())
+  memberId    String?
+  cabinetId   String?
+  presidentId String?
+  leaderboardType String
+  valueJson   Json
+  updatedAt   DateTime @updatedAt
+
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model MetricAdjustmentHistory {
+  id                 String   @id @default(uuid())
+  metricDefinitionId String
+  oldAdjustment      Float
+  newAdjustment      Float
+  reason             String
+  tuningWindowId     String?
+  createdAt          DateTime @default(now())
+
+  @@index([metricDefinitionId])
+  @@index([tuningWindowId])
+}
+
+model EvalScenario {
+  id                  String   @id @default(uuid())
+  scenarioType        String
+  name                String   @unique
+  inputJson           Json
+  expectedSignalsJson Json?
+  createdAt           DateTime @default(now())
+}
+
+model EvalRun {
+  id          String   @id @default(uuid())
+  engineVersion String
+  ruleVersion String
+  runType     String
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  summaryJson Json
+  resultStatus String
+}
+
+model EvalScenarioResult {
+  id             String   @id @default(uuid())
+  evalRunId      String
+  scenarioId     String
+  validityJson   Json
+  qualityJson    Json
+  recommendation String
+
+  @@index([evalRunId])
+  @@index([scenarioId])
+}
+
+model TuningReviewWindow {
+  id                   String   @id @default(uuid())
+  windowStartSessionId String
+  windowEndSessionId   String
+  sessionCount         Int
+  analysisJson         Json
+  status               String
+  reviewedAt           DateTime?
 }

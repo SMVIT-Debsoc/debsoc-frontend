@@ -27,8 +27,9 @@ binding protocol, and ends by updating the memory graph.
 | `phase-07-review-publish.md` | 7 | review, publish, published read | 9 |
 | `phase-08-post-session-scoring.md` | 8 | scoring services + metric update | 4 |
 | `phase-09-eval-tuning.md` | 9 | eval harness + tuning | 8 |
-| `phase-10-routes.md` | 10 | validations + API route wiring | per-route |
-| `phase-11-cleanup.md` | 11 | deprecation cleanup | 9 |
+| `phase-10-realtime.md` | 10 | websocket realtime architecture + transport | 9 |
+| `phase-11-routes.md` | 11 | validations + API route wiring | per-route |
+| `phase-12-cleanup.md` | 12 | deprecation cleanup | 9 |
 
 ## The invariant every prompt carries
 > Read `AGENTS.md` (pairing protocol) → read `docs/pairing-knowledge-graph.md` → read ONLY the
@@ -36,3 +37,4 @@ binding protocol, and ends by updating the memory graph.
 > pass the `docs/15 §22` checklist and the phase Done-when → update the knowledge graph → print
 > `Grounded in:`.
 </content>
+

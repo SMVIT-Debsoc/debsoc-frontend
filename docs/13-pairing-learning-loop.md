@@ -157,7 +157,7 @@ Examples:
 - `speaker_motion_type_score` needs more motion-specific observations
 - `role_score` needs enough role-specific appearances
 - `motion_type_x_role_score` needs even more specific evidence
-- `partner_dynamics_by_motion_type` needs repeated pair history in the same motion type
+- `partner_dynamics_by_motion_type` needs repeated pair observations in the same motion type
 
 That is why the system uses confidence-weighted fallback rather than trusting specific metrics too early.
 
@@ -302,7 +302,7 @@ The system must store:
 
 - session participation history
 - role assignment history
-- team and room assignment history
+- team and room assignment records
 - raw speaker scores
 - BP result points
 - chair feedback
@@ -448,3 +448,4 @@ The pairing system becomes better after each use through a structured learning l
 
 This learning loop is not just a feature detail.
 It affects the entire backend design, data model, and implementation structure.
+

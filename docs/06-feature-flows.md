@@ -63,6 +63,7 @@ After approval:
 - attendance is finalized
 - room assignments become official
 - leftover unassigned participants are visible if any exist
+- a member-safe realtime publication event may notify connected users to refresh or reconcile
 
 ## 5. User Visibility Flow
 
@@ -92,6 +93,8 @@ After the debate session:
 - chairs score the adjudicators of that room
 
 This creates a session-role-specific scoring cycle.
+
+Connected participants and admins may also receive websocket scoring-status updates, but the HTTP scoring state remains authoritative.
 
 ## 7. Dashboard Role Flow
 
@@ -155,11 +158,13 @@ That means the engine improves not only from who won or scored well, but also fr
 5. engine selects one top-band proposal probabilistically
 6. cabinet or president approves, overrides, regenerates, or rates the proposal
 7. approved pairing is published
-8. attendance is finalized automatically
-9. session runs
-10. post-session scoring happens by session role
-11. leaderboard and session history update
-12. periodic tuning uses batched evidence from multiple sessions
+8. websocket publication event notifies authorized listeners
+9. attendance is finalized automatically
+10. session runs
+11. post-session scoring happens by session role
+12. websocket scoring and leaderboard updates notify authorized listeners
+13. leaderboard and session history update
+14. periodic tuning uses batched evidence from multiple sessions
 
 ## Summary
 

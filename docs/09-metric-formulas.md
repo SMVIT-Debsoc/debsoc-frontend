@@ -348,7 +348,7 @@ objective_adjusted_weight = 0.22 * 1.20 = 0.264
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### Current Need
 
@@ -365,7 +365,7 @@ A strong team-quality aggregate should combine:
 - role fit
 - repetition penalties
 
-### Candidate Formula Direction
+### Chosen V1 Formula
 
 ```text
 team_quality_aggregate =
@@ -393,7 +393,7 @@ team_quality_aggregate =
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### Current Need
 
@@ -409,7 +409,7 @@ proposal_score =
   objective_adjustments
 ```
 
-### Candidate Layered Direction
+### Chosen V1 Formula
 
 ```text
 proposal_score =
@@ -430,7 +430,7 @@ proposal_score =
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### What It Should Mean
 
@@ -446,7 +446,7 @@ Example direction:
 consistency_score = 1.0 - normalized_score_variance
 ```
 
-or:
+Chosen V1 formula:
 
 ```text
 consistency_score = 1 / (1 + normalized_standard_deviation)
@@ -462,7 +462,7 @@ consistency_score = 1 / (1 + normalized_standard_deviation)
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### What It Should Mean
 
@@ -470,7 +470,7 @@ consistency_score = 1 / (1 + normalized_standard_deviation)
 
 ### Candidate Direction
 
-A simple V1 option:
+Chosen V1 formula:
 
 ```text
 experience_index = normalized_academic_year
@@ -498,7 +498,7 @@ experience_index =
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### What We Already Know
 
@@ -512,7 +512,7 @@ bp_result_points = 3 / 2 / 1 / 0
 
 We have not fully frozen how multiple sessions are aggregated into one pair score.
 
-### Candidate Direction
+### Chosen V1 Formula
 
 ```text
 partner_dynamics_overall = average(bp_result_points_together)
@@ -529,7 +529,7 @@ partner_dynamics_overall =
   )
 ```
 
-### Motion-Type Version
+### Chosen V1 Motion-Type Formula
 
 ```text
 partner_dynamics_by_motion_type = average(bp_result_points_together_in_motion_type)
@@ -545,13 +545,13 @@ partner_dynamics_by_motion_type = average(bp_result_points_together_in_motion_ty
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### What It Should Mean
 
 `role_score` should represent how well a speaker performs in one exact internal role such as `PM` or `OW`.
 
-### Candidate Direction
+### Chosen V1 Formula
 
 ```text
 role_score(role) = average(raw_speaker_scores_when_assigned_that_role)
@@ -669,7 +669,7 @@ average. Irregular / low-data members get a lower, less-trusted strength by desi
 
 ### Status
 
-`STILL OPEN`
+`PROPOSED V1`
 
 ### What We Already Know
 
@@ -681,18 +681,12 @@ average. Irregular / low-data members get a lower, less-trusted strength by desi
 
 We have not yet frozen the exact math for changing a metric weight.
 
-### Candidate Direction
+### Chosen V1 Direction
 
 ```text
-new_learned_adjustment =
-  old_learned_adjustment + bounded(delta_from_batch_review)
-```
-
-Possible bounded update form:
-
-```text
-delta = learning_rate * observed_metric_value_correlation_with_success
-new_learned_adjustment = clamp(old_adjustment + delta, -0.03, +0.03)
+new_learned_adjustment = old_learned_adjustment + bounded(delta_from_batch_review)
+clamp range = -0.03 to +0.03
+review-assisted only in V1
 ```
 
 ### What Still Needs Finalization
@@ -718,15 +712,7 @@ These are the formulas I would treat as ready enough for a V1 implementation unl
 
 ## 19. Highest-Priority Formula Gaps Still To Lock
 
-If we want the formula layer to feel truly complete before coding, the most important unresolved formulas are:
-
-1. `consistency_score`
-2. `experience_index`
-3. `team_quality_aggregate`
-4. `full proposal_score`
-5. `pair_dynamics aggregation`
-6. `role_score aggregation`
-7. `tuning adjustment formula`
+The highest-priority Phase 0 formula gaps are now frozen for V1 as accepted decisions. Some remain `PROPOSED V1` rather than `FINALIZED ENOUGH`, but they no longer block implementation sequencing.
 
 ## Summary
 
@@ -743,3 +729,5 @@ The engine already has clear formulas for:
 - leftover handling
 
 What remains is mostly the deeper mathematical detail for secondary and tertiary formulas rather than the overall engine structure itself.
+
+
