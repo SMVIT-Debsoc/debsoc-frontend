@@ -27,6 +27,7 @@ import {
     Menu,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import {useSession, signOut} from "next-auth/react";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -659,6 +660,14 @@ export default function CabinetDashboard() {
                         <Users size={20} />
                         <span>Members</span>
                     </a>
+                    <Link
+                        href="/dashboard/pairing"
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors hover:bg-slate-800 hover:text-white"
+                    >
+                        <Gavel size={20} />
+                        <span>Pairing</span>
+                    </Link>
                 </nav>
 
                 <div className="flex items-center gap-3 mt-auto pt-6 pb-[calc(10px+env(safe-area-inset-bottom,0px))] border-t border-slate-800 sticky bottom-0 bg-slate-900">

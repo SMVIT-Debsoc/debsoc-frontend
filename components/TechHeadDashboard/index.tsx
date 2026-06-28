@@ -14,11 +14,13 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
-  LogOut
+  LogOut,
+  Gavel
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 
 interface UserRecord {
   id: string;
@@ -204,6 +206,14 @@ export default function TechHeadDashboard() {
               />
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/pairing"
+                className="flex-1 sm:flex-none px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center gap-2 text-sm"
+                title="Pairing dashboard"
+              >
+                <Gavel size={16} />
+                <span>Pairing</span>
+              </Link>
               <button
                 onClick={fetchData}
                 className="flex-1 sm:flex-none p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center"

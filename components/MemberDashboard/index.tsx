@@ -26,8 +26,10 @@ import {
     RefreshCw,
     Inbox,
     Menu,
+    Gavel,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import {useSession, signOut} from "next-auth/react";
 
 // Types
@@ -666,6 +668,14 @@ export default function MemberDashboard() {
                             )}
                         </motion.a>
                     ))}
+                    <Link
+                        href="/dashboard/pairing"
+                        onClick={() => setIsSidebarOpen(false)}
+                        className={styles.navItem}
+                    >
+                        <Gavel className={styles.navItemIcon} size={18} />
+                        <span>Pairing</span>
+                    </Link>
                 </nav>
 
                 {/* Profile */}
