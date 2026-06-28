@@ -275,6 +275,14 @@ Some existing backend flows are expected to be removed or replaced as part of th
 - attendance-linked speaker scoring flow
 - attendance-linked manual pairing behavior
 
+Retired in backend cleanup:
+
+- anonymous feedback routes now return `410 Gone`, and the unused `AnonymousMessage` /
+  `AnonymousFeedback` tables have been retired from the active schema
+- task assignment routes now return `410 Gone`, and the unused `task` table has been retired from
+  the active schema
+
+
 ## Summary
 
 At the backend level, the pairing system is not one isolated feature. It is a coordinated state machine for debate sessions with proposal review, role-based scoring, and adaptive learning inputs.
