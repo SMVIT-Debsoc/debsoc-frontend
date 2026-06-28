@@ -1,26 +1,8 @@
-import { ok } from "@/lib/server/http";
-import { requireSessionUser } from "@/lib/server/guards";
-import { prisma } from "@/lib/server/prisma";
+import { error } from "@/lib/server/http";
 
 export async function GET() {
-  const guard = await requireSessionUser({ roles: ["cabinet", "President"], requireVerified: true });
-  if ("response" in guard) return guard.response;
-
-  const where =
-    guard.user.role === "cabinet" ? { senderCabinetId: guard.user.id } : {};
-
-  const feedbacks = await prisma.anonymousFeedback.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      feedback: true,
-      memberId: true,
-      senderType: true,
-      createdAt: true,
-      member: { select: { name: true, email: true } },
-    },
+  return error("This legacy endpoint has been retired. Use the pairing-system routes instead.", 410, {
+    replacement: "/api/progress/members/:participantId",
   });
-
-  return ok({ feedbacks });
 }
+

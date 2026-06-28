@@ -1,5 +1,14 @@
+import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { scoringRepository } from "../repositories/scoring-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
-import type { SessionMetadataView, SessionPreparationContextResponse, UpdateSessionRequest } from "../../../types/session.ts";
+import type {
+  SessionMetadataView,
+  SessionPreparationContextResponse,
+  SessionScoringStatusResponse,
+  SessionScoringTaskStatus,
+  UpdateSessionRequest,
+} from "../../../types/session.ts";
+import type { DebsocRole } from "../roles.ts";
 
 const pairingStatuses = {
   draft: "DRAFT",
@@ -29,6 +38,12 @@ export interface UpdateSessionLifecycleStateInput extends Partial<UpdateSessionR
   scoringStatus?: SessionMetadataView["scoringStatus"];
 }
 
+export interface GetSessionScoringStatusInput {
+  sessionId: string;
+  viewerId: string;
+  viewerRole: DebsocRole;
+}
+
 interface SessionRepositoryContract {
   getSessionById(sessionId: string): Promise<SessionMetadataView | null>;
   getSessionPreparationContext(sessionId: string): Promise<SessionPreparationContextResponse | null>;
@@ -54,6 +69,61 @@ interface SessionRepositoryContract {
   }>;
 }
 
+interface ScoringRepositoryContract {
+  getPublishedScoringContext(sessionId: string): Promise<{
+    proposalId: string | null;
+    publicationStatus: string;
+    roles: Array<{ participantId: string; role: string; isChair: boolean }>;
+    rooms: Array<{
+      speakers: Array<{ participantId: string }>;
+      adjudicators: Array<{ participantId: string; isChair: boolean }>;
+    }>;
+  } | null>;
+  getChairFeedbackBySession(sessionId: string): Promise<Array<{
+    speakerMemberId: string | null;
+    speakerCabinetId: string | null;
+    speakerPresidentId: string | null;
+    chairMemberId: string | null;
+    chairCabinetId: string | null;
+    chairPresidentId: string | null;
+    rating: number;
+  }>>;
+  getAdjudicatorScoreRecordsBySession(sessionId: string): Promise<Array<{
+    chairMemberId: string | null;
+    chairCabinetId: string | null;
+    chairPresidentId: string | null;
+    adjudicatorMemberId: string | null;
+    adjudicatorCabinetId: string | null;
+    adjudicatorPresidentId: string | null;
+    rating: number;
+  }>>;
+  getSpeakerScoreRecordsBySession(sessionId: string): Promise<Array<{
+    memberId: string | null;
+    cabinetId: string | null;
+    presidentId: string | null;
+    scoredByMemberId: string | null;
+    scoredByCabinetId: string | null;
+    scoredByPresidentId: string | null;
+    bpPosition: string;
+    speakingRole: string;
+    rawScore: number;
+    teamResultPoints: number;
+    session: {
+      motionType: string | null;
+      motiontype: string;
+    };
+  }>>;
+}
+
+function resolveParticipantId(ref: Record<string, string | number | null | undefined>) {
+  for (const value of Object.values(ref)) {
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+  return null;
+}
+
 function normalizePairingStatus(status: string | null | undefined): string {
   return (status ?? pairingStatuses.draft).toUpperCase();
 }
@@ -62,7 +132,7 @@ function normalizePublicationStatus(status: string | null | undefined): string {
   return (status ?? publicationStatuses.draft).toUpperCase();
 }
 
-function normalizeScoringStatus(status: string | null | undefined): SessionMetadataView["scoringStatus"] {
+function normalizeScoringStatus(status: string | null | undefined): SessionScoringStatusResponse["scoringStatus"] {
   const value = (status ?? scoringStatuses.pending).toLowerCase();
   if (value === scoringStatuses.open || value === scoringStatuses.partial || value === scoringStatuses.complete) {
     return value;
@@ -119,7 +189,7 @@ function assertLifecycleTransition(
   }
 
   if (nextPublicationStatus === publicationStatuses.published) {
-    if (!( [pairingStatuses.approved, pairingStatuses.published] as string[] ).includes(nextPairingStatus)) {
+    if (!([pairingStatuses.approved, pairingStatuses.published] as string[]).includes(nextPairingStatus)) {
       throw new Error("Cannot publish a session before a proposal reaches the approved state.");
     }
   }
@@ -152,13 +222,117 @@ function toSessionMetadataView(result: {
   };
 }
 
-export function createSessionService(repository: SessionRepositoryContract = sessionRepository) {
+export function createSessionService(
+  repository: SessionRepositoryContract = sessionRepository,
+  scoringReadRepository: ScoringRepositoryContract = scoringRepository as ScoringRepositoryContract,
+  publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
+) {
   async function getSessionPreparationContext(sessionId: string): Promise<SessionPreparationContextResponse> {
     const context = await repository.getSessionPreparationContext(sessionId);
     if (!context) {
       throw new Error(`Session ${sessionId} not found.`);
     }
     return context;
+  }
+
+  async function getSessionScoringStatus(input: GetSessionScoringStatusInput): Promise<SessionScoringStatusResponse> {
+    const [session, context, chairFeedbackRecords, adjudicatorScoreRecords, speakerScoreRecords] = await Promise.all([
+      repository.getSessionById(input.sessionId),
+      scoringReadRepository.getPublishedScoringContext(input.sessionId),
+      scoringReadRepository.getChairFeedbackBySession(input.sessionId),
+      scoringReadRepository.getAdjudicatorScoreRecordsBySession(input.sessionId),
+      scoringReadRepository.getSpeakerScoreRecordsBySession(input.sessionId),
+    ]);
+
+    if (!session) {
+      throw new Error(`Session ${input.sessionId} not found.`);
+    }
+
+    const speakerSubmittedIds = new Set(
+      chairFeedbackRecords
+        .map((record) => resolveParticipantId(record))
+        .filter((participantId): participantId is string => participantId !== null),
+    );
+
+    const adjudicatorScoresByChair = new Map<string, number>();
+    for (const record of adjudicatorScoreRecords) {
+      const chairId = resolveParticipantId({
+        chairMemberId: record.chairMemberId,
+        chairCabinetId: record.chairCabinetId,
+        chairPresidentId: record.chairPresidentId,
+      });
+      if (!chairId) continue;
+      adjudicatorScoresByChair.set(chairId, (adjudicatorScoresByChair.get(chairId) ?? 0) + 1);
+    }
+
+    const speakerScoresByChair = new Map<string, number>();
+    for (const record of speakerScoreRecords) {
+      const chairId = resolveParticipantId({
+        scoredByMemberId: record.scoredByMemberId,
+        scoredByCabinetId: record.scoredByCabinetId,
+        scoredByPresidentId: record.scoredByPresidentId,
+      });
+      if (!chairId) continue;
+      speakerScoresByChair.set(chairId, (speakerScoresByChair.get(chairId) ?? 0) + 1);
+    }
+
+    const chairRequirements = new Map<string, { speakerCount: number; adjudicatorCount: number }>();
+    for (const room of context?.rooms ?? []) {
+      const chairId = room.adjudicators.find((adjudicator) => adjudicator.isChair)?.participantId;
+      if (!chairId) continue;
+      chairRequirements.set(chairId, {
+        speakerCount: room.speakers.length,
+        adjudicatorCount: room.adjudicators.filter((adjudicator) => !adjudicator.isChair).length,
+      });
+    }
+
+    const tasks: SessionScoringTaskStatus[] = [];
+    for (const role of context?.roles ?? []) {
+      if (role.role === "speaker") {
+        tasks.push({
+          participantId: role.participantId,
+          sessionRole: "speaker",
+          hasSubmitted: speakerSubmittedIds.has(role.participantId),
+        });
+        continue;
+      }
+
+      if (role.role === "adjudicator" && role.isChair) {
+        const requirement = chairRequirements.get(role.participantId) ?? { speakerCount: 0, adjudicatorCount: 0 };
+        const hasSpeakerScores = (speakerScoresByChair.get(role.participantId) ?? 0) >= requirement.speakerCount;
+        const hasAdjudicatorScores = requirement.adjudicatorCount === 0
+          ? true
+          : (adjudicatorScoresByChair.get(role.participantId) ?? 0) >= requirement.adjudicatorCount;
+        tasks.push({
+          participantId: role.participantId,
+          sessionRole: "adjudicator",
+          hasSubmitted: hasSpeakerScores && hasAdjudicatorScores,
+        });
+      }
+    }
+
+    const visibleTasks = input.viewerRole === "Member"
+      ? tasks.filter((task) => task.participantId === input.viewerId)
+      : tasks;
+
+    if (input.viewerRole === "Member" && visibleTasks.length === 0) {
+      throw new Error("Forbidden: Members may only view their own scoring task status.");
+    }
+
+    const submittedCount = tasks.filter((task) => task.hasSubmitted).length;
+    const scoringStatus: SessionScoringStatusResponse["scoringStatus"] = tasks.length === 0
+      ? normalizeScoringStatus(session.scoringStatus)
+      : submittedCount === 0
+        ? "pending"
+        : submittedCount === tasks.length
+          ? "complete"
+          : "partial";
+
+    return {
+      sessionId: input.sessionId,
+      scoringStatus,
+      tasks: visibleTasks,
+    };
   }
 
   async function updateSessionLifecycleState(
@@ -181,13 +355,56 @@ export function createSessionService(repository: SessionRepositoryContract = ses
       scoringStatus: input.scoringStatus,
     });
 
-    return toSessionMetadataView(updated);
+    const view = toSessionMetadataView(updated);
+
+    await publishEvent(input.sessionId, {
+      eventId: `session.updated:${input.sessionId}:${Date.now()}`,
+      eventType: "session.updated",
+      occurredAt: new Date().toISOString(),
+      sessionId: input.sessionId,
+      proposalId: null,
+      visibility: "ADMIN_ONLY",
+      refetchHints: ["session_detail"],
+      entityVersion: `${view.pairingStatus}:${view.publicationStatus}:${view.scoringStatus}`,
+    });
+
+    if (view.scoringStatus === "open") {
+      await publishEvent(input.sessionId, {
+        eventId: `scoring.window.opened:${input.sessionId}:${Date.now()}`,
+        eventType: "scoring.window.opened",
+        occurredAt: new Date().toISOString(),
+        sessionId: input.sessionId,
+        proposalId: null,
+        visibility: "MEMBER_SAFE",
+        refetchHints: ["scoring_status"],
+        entityVersion: view.scoringStatus,
+      });
+    }
+
+    if (view.scoringStatus === "complete") {
+      await publishEvent(input.sessionId, {
+        eventId: `scoring.completed:${input.sessionId}:${Date.now()}`,
+        eventType: "scoring.completed",
+        occurredAt: new Date().toISOString(),
+        sessionId: input.sessionId,
+        proposalId: null,
+        visibility: "MEMBER_SAFE",
+        refetchHints: ["scoring_status", "leaderboard"],
+        entityVersion: view.scoringStatus,
+      });
+    }
+
+    return view;
   }
 
   return {
     getSessionPreparationContext,
+    getSessionScoringStatus,
     updateSessionLifecycleState,
   };
 }
 
-export const { getSessionPreparationContext, updateSessionLifecycleState } = createSessionService();
+export const { getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
+
+
+

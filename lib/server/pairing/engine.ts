@@ -5,6 +5,7 @@ import type {
   PairingProposalView,
   ParticipantKind,
 } from "../../../types/pairing.ts";
+import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { metricsRepository } from "../repositories/metrics-repository.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { generateCandidateProposals } from "./candidate-generator.ts";
@@ -148,6 +149,7 @@ export function createPairingEngine(
     scoreProposal,
     selectProposalFromTopBand,
   },
+  publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
 ) {
   async function generatePairingProposal(input: GeneratePairingProposalInput): Promise<PairingProposalResult> {
     const baseContext = await repository.getGenerationContext(input.sessionId).catch(() => null);
@@ -223,6 +225,17 @@ export function createPairingEngine(
       candidate: selection.candidate,
       participantKindsById: buildParticipantKindsById(scoringContext),
       audit,
+    });
+
+    await publishEvent(input.sessionId, {
+      eventId: `pairing.proposal.generated:${proposal.summary.proposalId}:${proposal.summary.generatedAt}`,
+      eventType: "pairing.proposal.generated",
+      occurredAt: proposal.summary.generatedAt,
+      sessionId: input.sessionId,
+      proposalId: proposal.summary.proposalId,
+      visibility: "ADMIN_ONLY",
+      refetchHints: ["session_detail"],
+      entityVersion: proposal.summary.generatedAt,
     });
 
     return {

@@ -4,6 +4,7 @@ import type {
   PairingProposalView,
   ProposalRatingPayload,
 } from "../../../types/pairing.ts";
+import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { generatePairingProposal } from "./engine.ts";
 import type { PairingProposalResult } from "./types.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
@@ -48,6 +49,7 @@ export interface ProposalRatingResult {
 }
 
 interface PairingReviewRepositoryContract {
+  getPairingProposalView?(proposalId: string): Promise<PairingProposalView | null>;
   approveProposalReviewAction(proposalId: string, reviewerId: string): Promise<PairingProposalSummary>;
   overrideProposalReviewAction(input: {
     proposalId: string;
@@ -87,10 +89,29 @@ function mapReviewError(error: unknown): PairingReviewError {
 export function createPairingReviewService(
   repository: PairingReviewRepositoryContract = pairingRepository as PairingReviewRepositoryContract,
   regenerate: typeof generatePairingProposal = generatePairingProposal,
+  publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
 ) {
+  async function getProposalView(proposalId: string): Promise<PairingProposalView> {
+    const proposal = await repository.getPairingProposalView?.(proposalId);
+    if (!proposal) {
+      throw new PairingReviewError("PROPOSAL_NOT_FOUND", `Proposal ${proposalId} not found.`);
+    }
+    return proposal;
+  }
+
   async function approveProposal(proposalId: string, reviewerId: string): Promise<ProposalApprovalResult> {
     try {
       const proposal = await repository.approveProposalReviewAction(proposalId, reviewerId);
+      await publishEvent(proposal.sessionId, {
+        eventId: `pairing.proposal.approved:${proposal.proposalId}:${proposal.approvedAt ?? proposal.generatedAt}`,
+        eventType: "pairing.proposal.approved",
+        occurredAt: proposal.approvedAt ?? proposal.generatedAt,
+        sessionId: proposal.sessionId,
+        proposalId: proposal.proposalId,
+        visibility: "ADMIN_ONLY",
+        refetchHints: ["session_detail"],
+        entityVersion: proposal.approvedAt ?? proposal.generatedAt,
+      });
       return { proposal };
     } catch (error) {
       throw mapReviewError(error);
@@ -106,6 +127,16 @@ export function createPairingReviewService(
         payload: input.payload,
         notes: input.notes,
       });
+      await publishEvent(proposal.summary.sessionId, {
+        eventId: `pairing.proposal.overridden:${proposal.summary.proposalId}:${proposal.summary.approvedAt ?? proposal.summary.generatedAt}`,
+        eventType: "pairing.proposal.overridden",
+        occurredAt: proposal.summary.approvedAt ?? proposal.summary.generatedAt,
+        sessionId: proposal.summary.sessionId,
+        proposalId: proposal.summary.proposalId,
+        visibility: "ADMIN_ONLY",
+        refetchHints: ["session_detail"],
+        entityVersion: proposal.summary.approvedAt ?? proposal.summary.generatedAt,
+      });
       return { proposal };
     } catch (error) {
       throw mapReviewError(error);
@@ -115,11 +146,24 @@ export function createPairingReviewService(
   async function regenerateProposal(input: RegenerateProposalInput): Promise<PairingProposalResult> {
     try {
       const target = await repository.recordRegenerateReviewAction(input.proposalId, input.reviewerId);
-      return regenerate({
+      const result = await regenerate({
         sessionId: target.sessionId,
         generatedBy: input.reviewerId,
         seed: input.seed,
       });
+      if (result.ok) {
+        await publishEvent(target.sessionId, {
+          eventId: `pairing.proposal.regenerated:${result.proposal.summary.proposalId}:${result.proposal.summary.generatedAt}`,
+          eventType: "pairing.proposal.regenerated",
+          occurredAt: result.proposal.summary.generatedAt,
+          sessionId: target.sessionId,
+          proposalId: result.proposal.summary.proposalId,
+          visibility: "ADMIN_ONLY",
+          refetchHints: ["session_detail"],
+          entityVersion: result.proposal.summary.generatedAt,
+        });
+      }
+      return result;
     } catch (error) {
       throw mapReviewError(error);
     }
@@ -134,6 +178,16 @@ export function createPairingReviewService(
   }): Promise<ProposalRatingResult> {
     try {
       const rating = await repository.upsertProposalRating(input);
+      await publishEvent(`proposal:${rating.proposalId}`, {
+        eventId: `pairing.proposal.rated:${rating.proposalId}:${rating.reviewerId}:${Date.now()}`,
+        eventType: "pairing.proposal.rated",
+        occurredAt: new Date().toISOString(),
+        sessionId: `proposal:${rating.proposalId}`,
+        proposalId: rating.proposalId,
+        visibility: "ADMIN_ONLY",
+        refetchHints: ["session_detail"],
+        entityVersion: rating.proposalId,
+      });
       return { rating };
     } catch (error) {
       throw mapReviewError(error);
@@ -141,6 +195,7 @@ export function createPairingReviewService(
   }
 
   return {
+    getProposalView,
     approveProposal,
     overrideProposal,
     regenerateProposal,
@@ -148,4 +203,7 @@ export function createPairingReviewService(
   };
 }
 
-export const { approveProposal, overrideProposal, regenerateProposal, rateProposal } = createPairingReviewService();
+export const { getProposalView, approveProposal, overrideProposal, regenerateProposal, rateProposal } = createPairingReviewService();
+
+
+

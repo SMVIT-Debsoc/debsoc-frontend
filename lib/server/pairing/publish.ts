@@ -1,4 +1,5 @@
 import type { PublishPairingResponse, GetPublishedPairingResponse, PublishedPairingView } from "../../../types/pairing.ts";
+import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 
 export class PairingPublishError extends Error {
@@ -44,10 +45,25 @@ function mapPublishError(error: unknown): PairingPublishError {
 
 export function createPairingPublishService(
   repository: PairingPublishRepositoryContract = pairingRepository as PairingPublishRepositoryContract,
+  publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
 ) {
   async function publishApprovedProposal(sessionId: string): Promise<PublishPairingResult> {
     try {
       const publishedPairing = await repository.publishProposalTransaction({ sessionId });
+      try {
+        await publishEvent(sessionId, {
+          eventId: `pairing.proposal.published:${publishedPairing.proposalId}:${publishedPairing.publishedAt}`,
+          eventType: "pairing.proposal.published",
+          occurredAt: publishedPairing.publishedAt,
+          sessionId,
+          proposalId: publishedPairing.proposalId,
+          visibility: "MEMBER_SAFE",
+          refetchHints: ["published_pairing", "session_detail"],
+          entityVersion: publishedPairing.publishedAt,
+        });
+      } catch (error) {
+        console.error("Realtime publish fan-out failed after commit", error);
+      }
       return { publishedPairing };
     } catch (error) {
       throw mapPublishError(error);

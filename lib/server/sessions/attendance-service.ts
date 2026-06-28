@@ -1,3 +1,4 @@
+import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
 import type { AttendancePreparationRequest, MarkAttendanceRequest, SessionPreparationContextResponse } from "../../../types/session.ts";
@@ -30,6 +31,7 @@ interface PairingRepositoryContract {
 export function createAttendanceService(
   repository: SessionRepositoryContract = sessionRepository,
   pairingRepo: PairingRepositoryContract = pairingRepository,
+  publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
 ) {
   async function prepareAttendance(
     input: AttendancePreparationRequest,
@@ -48,6 +50,17 @@ export function createAttendanceService(
     if (!context) {
       throw new Error(`Session ${input.sessionId} preparation context is unavailable.`);
     }
+
+    await publishEvent(input.sessionId, {
+      eventId: `attendance.prepared:${input.sessionId}:${Date.now()}`,
+      eventType: "attendance.prepared",
+      occurredAt: new Date().toISOString(),
+      sessionId: input.sessionId,
+      proposalId: null,
+      visibility: "ADMIN_ONLY",
+      refetchHints: ["session_detail"],
+      entityVersion: context.session.pairingStatus,
+    });
 
     return context;
   }
@@ -73,6 +86,17 @@ export function createAttendanceService(
     if (!context) {
       throw new Error(`Session ${input.sessionId} preparation context is unavailable after attendance mark.`);
     }
+
+    await publishEvent(input.sessionId, {
+      eventId: `attendance.marked:${input.sessionId}:${Date.now()}`,
+      eventType: "attendance.marked",
+      occurredAt: new Date().toISOString(),
+      sessionId: input.sessionId,
+      proposalId: null,
+      visibility: "ADMIN_ONLY",
+      refetchHints: ["session_detail"],
+      entityVersion: context.session.pairingStatus,
+    });
 
     return context;
   }

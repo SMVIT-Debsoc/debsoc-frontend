@@ -595,3 +595,70 @@ model VerificationToken {
 }
 
 
+
+model LeaderboardSnapshot {
+  id          String   @id @default(uuid())
+  memberId    String?
+  cabinetId   String?
+  presidentId String?
+  leaderboardType String
+  valueJson   Json
+  updatedAt   DateTime @updatedAt
+
+  @@index([memberId, cabinetId, presidentId])
+}
+
+model MetricAdjustmentHistory {
+  id                 String   @id @default(uuid())
+  metricDefinitionId String
+  oldAdjustment      Float
+  newAdjustment      Float
+  reason             String
+  tuningWindowId     String?
+  createdAt          DateTime @default(now())
+
+  @@index([metricDefinitionId])
+  @@index([tuningWindowId])
+}
+
+model EvalScenario {
+  id                  String   @id @default(uuid())
+  scenarioType        String
+  name                String   @unique
+  inputJson           Json
+  expectedSignalsJson Json?
+  createdAt           DateTime @default(now())
+}
+
+model EvalRun {
+  id          String   @id @default(uuid())
+  engineVersion String
+  ruleVersion String
+  runType     String
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  summaryJson Json
+  resultStatus String
+}
+
+model EvalScenarioResult {
+  id             String   @id @default(uuid())
+  evalRunId      String
+  scenarioId     String
+  validityJson   Json
+  qualityJson    Json
+  recommendation String
+
+  @@index([evalRunId])
+  @@index([scenarioId])
+}
+
+model TuningReviewWindow {
+  id                   String   @id @default(uuid())
+  windowStartSessionId String
+  windowEndSessionId   String
+  sessionCount         Int
+  analysisJson         Json
+  status               String
+  reviewedAt           DateTime?
+}

@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import {Suspense} from "react";
 import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
+import { getAppSession } from "@/lib/server/dev-session";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -75,18 +76,20 @@ export const metadata: Metadata = {
     },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const session = await getAppSession();
+
     return (
         <html
             lang="en"
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         >
             <body className="min-h-full flex flex-col" suppressHydrationWarning>
-                <Providers>
+                <Providers session={session}>
                     <Suspense fallback={null}>
                         <Navbar />
                     </Suspense>
