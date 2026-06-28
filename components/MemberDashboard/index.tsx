@@ -29,8 +29,8 @@ import {
     Gavel,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import {useSession, signOut} from "next-auth/react";
+import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 // Types
 type AttendanceRecord = {
@@ -668,14 +668,18 @@ export default function MemberDashboard() {
                             )}
                         </motion.a>
                     ))}
-                    <Link
-                        href="/dashboard/pairing"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className={styles.navItem}
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setActiveTab("Pairing");
+                            setIsSidebarOpen(false);
+                        }}
+                        className={`${styles.navItem} ${activeTab === "Pairing" ? styles.active : ""}`}
                     >
                         <Gavel className={styles.navItemIcon} size={18} />
                         <span>Pairing</span>
-                    </Link>
+                    </a>
                 </nav>
 
                 {/* Profile */}
@@ -878,6 +882,21 @@ export default function MemberDashboard() {
                             </motion.button>
                         </motion.div>
                     )}
+                    {!loading && !error && activeTab === "Pairing" && (
+                        <motion.div
+                            initial={{opacity: 0, y: 10}}
+                            animate={{opacity: 1, y: 0}}
+                            transition={{duration: 0.25}}
+                            style={{width: "100%"}}
+                        >
+                            <PairingDashboard
+                                role="Member"
+                                userName={userName}
+                                embedded
+                            />
+                        </motion.div>
+                    )}
+
                     {!loading && !error && (activeTab === "Dashboard" || activeTab === "Sessions" || activeTab === "Tasks" || activeTab === "Suggestions" || activeTab === "Feedback") && (
                         <motion.div
                             key="dashboard"

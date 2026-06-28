@@ -13,7 +13,10 @@ import type {
 type PairingDashboardProps = {
   role: string;
   userName: string;
+  embedded?: boolean;
 };
+
+type ViewAs = "Admin" | "Participant";
 
 type PairingDataState = {
   participants: Participant[];
@@ -42,9 +45,15 @@ const INITIAL_STATE: PairingDataState = {
 export default function PairingDashboard({
   role,
   userName,
+  embedded = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
-  const isAdmin = role === "cabinet" || role === "President" || role === "TechHead";
+  const defaultViewAs: ViewAs =
+    role === "cabinet" || role === "President" || role === "TechHead"
+      ? "Admin"
+      : "Participant";
+  const [viewAs, setViewAs] = useState<ViewAs>(defaultViewAs);
+  const isAdminView = viewAs === "Admin";
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +125,93 @@ export default function PairingDashboard({
     };
   }, [state.leaderboardScope]);
 
-  if (isAdmin) {
+  if (!embedded) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
+        <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
+          <div className="flex items-center gap-2 font-semibold">
+            <span>Pairing</span>
+          </div>
+        </div>
+
+        <aside className="hidden w-64 bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+          <div className="mb-8 text-white font-semibold tracking-wide">Pairing</div>
+          <div className="mb-4">
+            <label className="mb-1 block text-xs uppercase tracking-wide text-slate-400">
+              View as
+            </label>
+            <div className="overflow-hidden rounded-md border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setViewAs("Admin")}
+                className={`w-1/2 px-3 py-1.5 text-sm ${
+                  viewAs === "Admin"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-800 text-slate-300"
+                }`}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewAs("Participant")}
+                className={`w-1/2 px-3 py-1.5 text-sm ${
+                  viewAs === "Participant"
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-800 text-slate-300"
+                }`}
+              >
+                Participant
+              </button>
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-slate-500">
+              Dev preview mode is restored here so you can switch between admin and participant
+              pairing views while still using the live pairing data layer.
+            </p>
+          </div>
+        </aside>
+
+        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+          {isAdminView ? (
+            <AdminPairingDashboard
+              role={role}
+              userName={userName}
+              participants={state.participants}
+              sessions={state.sessions}
+              attendanceHistory={state.attendanceHistory}
+              leaderboard={state.leaderboard}
+              leaderboardScope={state.leaderboardScope}
+              loading={state.loading}
+              loadingLeaderboard={state.loadingLeaderboard}
+              error={state.error}
+              leaderboardError={state.leaderboardError}
+              onLeaderboardScopeChange={(scope) =>
+                setState((current) => ({ ...current, leaderboardScope: scope }))
+              }
+              embedded
+            />
+          ) : (
+            <ParticipantPairingDashboard
+              role={role}
+              sessions={state.sessions}
+              attendanceHistory={state.attendanceHistory}
+              leaderboard={state.leaderboard}
+              leaderboardScope={state.leaderboardScope}
+              loading={state.loading}
+              loadingLeaderboard={state.loadingLeaderboard}
+              error={state.error}
+              leaderboardError={state.leaderboardError}
+              onLeaderboardScopeChange={(scope) =>
+                setState((current) => ({ ...current, leaderboardScope: scope }))
+              }
+            />
+          )}
+        </main>
+      </div>
+    );
+  }
+
+  if (isAdminView) {
     return (
       <AdminPairingDashboard
         role={role}
@@ -133,6 +228,7 @@ export default function PairingDashboard({
         onLeaderboardScopeChange={(scope) =>
           setState((current) => ({ ...current, leaderboardScope: scope }))
         }
+        embedded={embedded}
       />
     );
   }

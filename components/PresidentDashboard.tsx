@@ -30,8 +30,8 @@ import {
     X,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import {useSession, signOut} from "next-auth/react";
+import PairingDashboard from "@/components/pairing/PairingDashboard";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type Member = {id: string; name: string; email: string; role: string};
@@ -173,11 +173,6 @@ export default function PresidentDashboard() {
     ];
 
     useEffect(() => {
-        loadDashboardData();
-        setSessionDate(new Date().toISOString().slice(0, 16));
-    }, []);
-
-    useEffect(() => {
         const mediaQuery = window.matchMedia("(min-width: 1024px)");
         const syncSidebarMode = () => setIsDesktopSidebar(mediaQuery.matches);
 
@@ -211,7 +206,7 @@ export default function PresidentDashboard() {
         return fallback;
     };
 
-    const loadDashboardData = async () => {
+    async function loadDashboardData() {
         setLoading(true);
         setError(null);
         try {
@@ -295,7 +290,12 @@ export default function PresidentDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }
+
+    useEffect(() => {
+        loadDashboardData();
+        setSessionDate(new Date().toISOString().slice(0, 16));
+    }, []);
 
     const loadLeaderboard = async (scope: LeaderboardScope) => {
         setLeaderboardLoading(true);
@@ -702,14 +702,18 @@ export default function PresidentDashboard() {
                         <Users size={20} />
                         <span>Members</span>
                     </a>
-                    <Link
-                        href="/dashboard/pairing"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors hover:bg-slate-800 hover:text-white"
+                    <a
+                        href="#"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            setActiveTab("Pairing");
+                            setIsSidebarOpen(false);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "Pairing" ? "bg-blue-600 text-white" : "hover:bg-slate-800 hover:text-white"}`}
                     >
                         <Gavel size={20} />
                         <span>Pairing</span>
-                    </Link>
+                    </a>
                 </nav>
 
                 <div className="flex items-center gap-3 mt-auto pt-6 border-t border-slate-800">
@@ -1365,6 +1369,22 @@ export default function PresidentDashboard() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                ) : activeTab === "Pairing" ? (
+                    <div className="max-w-6xl mx-auto space-y-4 md:space-y-6">
+                        <header className="mb-4 md:mb-8 border-b border-slate-200 pb-4 md:pb-6">
+                            <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                                Pairing System
+                            </h1>
+                            <p className="text-slate-500 text-sm">
+                                Use the restored preview mode and live pairing routes from inside the president dashboard.
+                            </p>
+                        </header>
+                        <PairingDashboard
+                            role="President"
+                            userName={userName}
+                            embedded
+                        />
                     </div>
                 ) : activeTab === "Sessions" ? (
                     <div className="max-w-6xl mx-auto">
