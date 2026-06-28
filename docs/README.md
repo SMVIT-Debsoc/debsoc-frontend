@@ -51,17 +51,21 @@ Dedicated backend API routing map covering endpoint groups, methods, access rule
 ### [15-pairing-engineering-quality-standard.md](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\15-pairing-engineering-quality-standard.md)
 Engineering quality standard for implementing the pairing system safely, with guidance on performance, scalability, type safety, state management, observability, testing, and UX responsiveness.
 
-### [16-build-plan.md](16-build-plan.md)
-Tightly-coupled, phase-by-phase build plan derived from docs 01–15. Every step cites its graph nodes, governing docs, pre-coding gate, exact deliverable files, and acceptance checks. Strict ordering; no step may be skipped.
+### [16-build-plan.md](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\16-build-plan.md)
+Tightly-coupled, phase-by-phase build plan derived from docs 01�17. Every step cites its graph nodes, governing docs, pre-coding gate, exact deliverable files, and acceptance checks. Strict ordering; no step may be skipped.
 
 ### [17-pairing-ui-concept.md](17-pairing-ui-concept.md)
 Conceptual UI for the whole pairing system — role-aware, lifecycle-driven screens and flows for admins (cabinet/president), members, and ops (TechHead/president), grounded in docs 01–15. Design thinking only; no frontend is built while the backend-only scope holds.
 
-### [pairing-knowledge-graph.md](pairing-knowledge-graph.md)
-Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, build-status table, pre-coding gates). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work, and requires updating it at the end of every phase.
+### [17-websocket-realtime-flow.md](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\17-websocket-realtime-flow.md)
+Authoritative websocket and realtime-delivery spec covering authenticated connection flow, event scopes, visibility rules, post-commit emission, reconnect recovery, and backend module boundaries.
+
+### [pairing-knowledge-graph.md](C:\Users\mobas\OneDrive\Documents\Debsoc\Debsoc-new\debsoc-frontend\docs\pairing-knowledge-graph.md)
+Single-file memory graph of the whole feature (communities C1–C11, nodes, edges, hyperedges, build-status table, pre-coding gates, progress nodes A15/A16, and realtime nodes A17/B-rt/Q16–Q18). Read this first to load the whole idea, then drill into the cited docs. `AGENTS.md` makes consulting it mandatory before any pairing work, and requires updating it at the end of every phase.
+
 
 ### [build/](build/)
-Per-phase, copy-paste build prompts (`phase-00…` to `phase-11…`) plus an index. Each prompt routes through `AGENTS.md` + the knowledge graph, enforces the backend-only scope, reads only the docs that phase needs (especially `docs/15`), and ends by updating the knowledge graph. Run one phase per conversation in order.
+Per-phase, copy-paste build prompts (`phase-00�` to `phase-12�`) plus an index. Each prompt routes through `AGENTS.md` + the knowledge graph, enforces the backend-only scope, reads only the docs that phase needs (especially `docs/15`), and ends by updating the knowledge graph. Run one phase per conversation in order.
 
 ## Reference Files
 
@@ -85,6 +89,7 @@ The system design currently assumes:
 - only cabinet and president can generate, review, rate, override, regenerate, or publish pairings
 - once published, member, cabinet, and president roles can view the official published pairing
 - engineering quality and scalability should be treated as first-class requirements for this feature
+- websocket delivery should be post-commit, role-safe, and recoverable through authoritative HTTP reads
 
 ## Documentation Style
 
@@ -94,7 +99,10 @@ Each document is organized around a single concern so future edits are safer:
 - engine logic stays separate from UI flow
 - unresolved decisions stay separate from accepted assumptions
 - detailed metric definitions stay separate from feature walkthroughs
-- formulas, eval logic, implementation mapping, data-model mapping, learning-loop design, and routing stay separate from higher-level overviews
+- formulas, eval logic, implementation mapping, data-model mapping, learning-loop design, routing, and realtime delivery stay separate from higher-level overviews
 - engineering quality standards stay separate from product rules so implementation discipline remains explicit
 
 This should keep the planning set readable as the system becomes more concrete.
+
+
+

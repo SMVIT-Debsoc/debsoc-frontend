@@ -1,6 +1,6 @@
 # Pairing System — Build Plan (Tightly Coupled, Strict)
 
-> **Authority chain.** This plan is derived from `docs/01`–`docs/15` and indexed by
+> **Authority chain.** This plan is derived from `docs/01`�`docs/17` and indexed by
 > `docs/pairing-knowledge-graph.md`. Where a numbered doc and this plan disagree, the doc wins.
 > Follow `AGENTS.md` → "Pairing System: mandatory context-extraction protocol" before every step.
 >
@@ -165,7 +165,7 @@ until the gate it depends on is resolved.**
   `leaderboard-service.ts` (derive from raw, never sole truth; speaker = cumulative total,
   adjudicator = average-only ranking with participation counts shown as context, not a ranking
   factor), `metric-update-service.ts` (`updateLearnedMetricsFromSession`,
-  `updatePairHistoryFromSession`, `updateRolePerformanceFromSession`), and
+  `updatePairMetricSnapshotsFromSession`, `updateRolePerformanceFromSession`), and
   `member-progress-service.ts` (B-progress) producing the per-participant **verdict** (strengths /
   weaknesses / gaps / role-aptitude / compatibility, confidence-gated) for A15/A16. Progress
   interprets existing metrics only — NO new scoring.
@@ -188,9 +188,23 @@ until the gate it depends on is resolved.**
 
 ---
 
-## Phase 10 — Validations + route wiring  ·  `B-val, C8 / A1–A14`
+## Phase 10 — Realtime websocket integration  ·  `B-rt, C8 / A17`
 
-- **Graph nodes:** B-val, A1–A14. **Governing docs:** `14` (route contracts), `11 §Route→Service`,
+- **Graph nodes:** B-rt, A17. **Governing docs:** `17` (realtime flow authoritative), `14 §Realtime Routes`,
+  `11 §Realtime Module File Map`, `15 §24`.
+- **Gate:** Phase 9 done.
+- **Deliverables:** `types/realtime.ts`, `lib/server/realtime/{websocket-hub,event-publisher,channel-auth,types}.ts`,
+  `app/api/realtime/socket/route.ts`, and any minimal post-commit service hooks needed so earlier
+  phases can publish websocket events through the realtime publisher.
+- **Done-when:** websocket delivery is authenticated, role-safe, session-aware, post-commit only,
+  and recoverable through HTTP refetch; realtime tests pass; members never receive unpublished
+  proposal events.
+
+---
+
+## Phase 11 — Validations + route wiring  ·  `B-val, C8 / A1–A16`
+
+- **Graph nodes:** B-val, A1–A16. **Governing docs:** `14` (route contracts), `11 §Route-to-Service Mapping`,
   `15 §2,§16` (thin routes, security).
 - **Gate:** the service each route calls exists and its phase's Done-when passed.
 - **Deliverables:** `lib/server/validations/{pairing,scoring,session}-validation.ts` (zod), then the
@@ -204,16 +218,17 @@ until the gate it depends on is resolved.**
   7. `app/api/scoring/{speaker,chair}/route.ts` (A12,A13)
   8. `app/api/leaderboard/{speakers,adjudicators}/route.ts` (A13b)
   9. `app/api/eval/{replay,compare}/route.ts` (A14)
-- **Access (via `requireSessionUser`):** A1–A10 → `["cabinet","President"]`; A11 →
-  `["Member","cabinet","President"]`; A12/A13 → authenticated + **session-role** check in service;
-  A14 → `["TechHead","President"]`.
+  10. `app/api/progress/members/route.ts` and `app/api/progress/members/[participantId]/route.ts` (A15,A16)
+- **Access (via `requireSessionUser`):** A1–A10 → `['cabinet','President']`; A11 →
+  `['Member','cabinet','President']`; A12/A13 → authenticated + **session-role** check in service;
+  A14 → `['TechHead','President']`; A15/A16 → progress access rules from docs/14.
 - **Done-when:** each route only guards/validates/calls-one-service/formats; no logic leaks;
   integration tests in `15 §18` pass (cabinet/president can generate+publish, member cannot, member
   reads published, speaker sees correct scoring route, double-publish blocked, duplicate score safe).
 
 ---
 
-## Phase 11 — Deprecation cleanup  ·  governs: `02 §12`, `11 §Existing Areas`, `07 §9`
+## Phase 12 — Deprecation cleanup  ·  governs: `02 §13`, `11 §Existing Areas`, `07 §9`
 
 - **Gate:** Gate 9 (cleanup scope confirmed) + the replacement flow live and tested.
 - **Scope (confirm each before removal):** anonymous feedback flow, task assignment flow,
@@ -230,3 +245,7 @@ auditable; one official published source; session-role routing correct; concurre
 guarded; errors follow the `15 §15` taxonomy; observability hooks present (`15 §17`); and the phase's
 required tests (`15 §18`) pass. End each change with the `AGENTS.md` Rule 7 "Grounded in" citation.
 </content>
+
+
+
+
