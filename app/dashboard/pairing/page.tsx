@@ -21,5 +21,10 @@ export default async function PairingDashboardPage() {
     redirect("/unverified");
   }
 
-  return <PairingDashboard role={session.user.role} />;
+  return (
+    <PairingDashboard
+      role={session.user.role}
+      userName={session.user.name ?? ""}
+    />
+  );
 }

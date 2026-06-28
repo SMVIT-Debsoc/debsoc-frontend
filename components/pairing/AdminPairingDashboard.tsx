@@ -18,6 +18,12 @@ import Leaderboards from "./Leaderboards";
 import Roster from "./Roster";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
+import type {
+  AttendanceHistoryItem,
+  LeaderboardRow,
+  Participant,
+  SessionRow,
+} from "./types";
 
 type Tab =
   | "Workspace"
@@ -26,6 +32,21 @@ type Tab =
   | "Leaderboards"
   | "MyPairing"
   | "MyScoring";
+
+type AdminPairingDashboardProps = {
+  role: string;
+  userName: string;
+  participants: Participant[];
+  sessions: SessionRow[];
+  attendanceHistory: AttendanceHistoryItem[];
+  leaderboard: LeaderboardRow[];
+  leaderboardScope: "all" | "bi-monthly";
+  loading: boolean;
+  loadingLeaderboard: boolean;
+  error: string | null;
+  leaderboardError: string | null;
+  onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
+};
 
 const ADMIN_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "Workspace", label: "Session Workspace", icon: <LayoutDashboard size={18} /> },
@@ -36,16 +57,28 @@ const ADMIN_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
 ];
 
-export default function AdminPairingDashboard() {
+export default function AdminPairingDashboard({
+  role,
+  userName,
+  participants,
+  sessions,
+  attendanceHistory,
+  leaderboard,
+  leaderboardScope,
+  loading,
+  loadingLeaderboard,
+  error,
+  leaderboardError,
+  onLeaderboardScopeChange,
+}: AdminPairingDashboardProps) {
   const [tab, setTab] = useState<Tab>("Workspace");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const activeTab = ADMIN_TABS.find((t) => t.key === tab)?.key ?? ADMIN_TABS[0].key;
+  const activeTab = ADMIN_TABS.find((entry) => entry.key === tab)?.key ?? ADMIN_TABS[0].key;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-      {/* mobile topbar */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-slate-900 text-white sticky top-0 z-40">
+      <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
         <div className="flex items-center gap-2 font-semibold">
           <Gavel size={18} />
           <span>Pairing (Admin)</span>
@@ -53,59 +86,92 @@ export default function AdminPairingDashboard() {
         <button
           type="button"
           aria-label="Toggle menu"
-          onClick={() => setSidebarOpen((v) => !v)}
+          onClick={() => setSidebarOpen((value) => !value)}
           className="p-2 -mr-2"
         >
           {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* sidebar */}
       <aside
         className={`${
           sidebarOpen ? "block" : "hidden"
-        } lg:block lg:sticky lg:top-0 lg:h-screen w-full lg:w-64 bg-slate-900 text-slate-300 lg:flex flex-col p-5`}
+        } w-full bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:flex-col`}
       >
-        <div className="hidden lg:flex items-center gap-2 text-white font-semibold tracking-wide mb-8">
+        <div className="mb-8 hidden items-center gap-2 font-semibold tracking-wide text-white lg:flex">
           <Gavel size={18} />
           <span>Pairing (Admin)</span>
         </div>
 
         <nav className="flex flex-col gap-1">
-          {ADMIN_TABS.map((t) => (
+          {ADMIN_TABS.map((entry) => (
             <button
-              key={t.key}
+              key={entry.key}
               type="button"
               onClick={() => {
-                setTab(t.key);
+                setTab(entry.key);
                 setSidebarOpen(false);
               }}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium ${
-                activeTab === t.key
+              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                activeTab === entry.key
                   ? "bg-blue-600 text-white"
                   : "hover:bg-slate-800 hover:text-white"
               }`}
             >
-              {t.icon}
-              <span>{t.label}</span>
+              {entry.icon}
+              <span>{entry.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="mt-auto pt-6 text-[11px] text-slate-500 leading-snug">
-          Data is mocked — backend per docs/01..15 is not built yet.
+        <div className="mt-auto pt-6 text-[11px] leading-snug text-slate-500">
+          Pairing UI now reads live roster, sessions, attendance history, and leaderboard data from
+          the current backend. Proposal generation and published pairing routes are still pending.
         </div>
       </aside>
 
-      {/* main */}
-      <main className="flex-1 min-w-0">
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-          {activeTab === "Workspace" && <SessionWorkspace />}
-          {activeTab === "Sessions" && <Sessions />}
-          {activeTab === "Roster" && <Roster />}
-          {activeTab === "Leaderboards" && <Leaderboards />}
-          {activeTab === "MyPairing" && <MyPairing />}
-          {activeTab === "MyScoring" && <MyScoring />}
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+          {activeTab === "Workspace" && (
+            <SessionWorkspace
+              userName={userName}
+              participants={participants}
+              sessions={sessions}
+              loading={loading}
+              error={error}
+            />
+          )}
+          {activeTab === "Sessions" && (
+            <Sessions
+              mode="admin"
+              sessions={sessions}
+              loading={loading}
+              error={error}
+            />
+          )}
+          {activeTab === "Roster" && (
+            <Roster
+              participants={participants}
+              loading={loading}
+              error={error}
+            />
+          )}
+          {activeTab === "Leaderboards" && (
+            <Leaderboards
+              leaderboard={leaderboard}
+              scope={leaderboardScope}
+              loading={loadingLeaderboard}
+              error={leaderboardError}
+              onScopeChange={onLeaderboardScopeChange}
+            />
+          )}
+          {activeTab === "MyPairing" && (
+            <MyPairing
+              role={role}
+              attendanceHistory={attendanceHistory}
+            />
+          )}
+          {activeTab === "MyScoring" && <MyScoring role={role} />}
         </div>
       </main>
     </div>
