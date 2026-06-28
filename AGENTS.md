@@ -15,21 +15,55 @@ docs — touching pairing, attendance, sessions, scoring, leaderboards, metrics,
 publication, tuning, or the eval harness. If you cannot satisfy a rule, STOP and ask; do not
 proceed on assumption.
 
-## SCOPE LOCK — BACKEND ONLY (current stage)
-We are building the **backend only** right now. You MUST NOT create, edit, or scaffold:
+## SCOPE MODES — choose the active mode before any pairing work
+The pairing system now has **two explicit implementation modes**. You MUST identify which mode the
+task is in before planning or editing anything, and you MUST obey that mode's boundaries.
+
+### Mode A — Backend Pairing System Build
+Use this mode for pairing backend architecture, schema, repositories, engine logic, scoring,
+leaderboards, eval, tuning, and API routes.
+
+In this mode, you MUST NOT create, edit, or scaffold:
 - React components, pages, layouts, or anything under `app/**` that renders UI
   (`page.tsx`, `layout.tsx`, `*.css`, client components, hooks for UI state).
 - Anything under `components/`, styling, or design work.
-The ONLY things under `app/` you may touch are **API route handlers** (`app/api/**/route.ts`),
-and only in Phase 10 when the plan says so. Everything else lives in `lib/server/**`,
-`types/**`, and `prisma/**`. If a task seems to require frontend, STOP and tell the user it is
-out of scope for the current backend stage.
+
+The ONLY things under `app/` you may touch in this mode are **API route handlers**
+(`app/api/**/route.ts`), and only in Phase 10 when the plan says so. Everything else lives in
+`lib/server/**`, `types/**`, and `prisma/**`.
+
+### Mode B — Frontend Pairing System + Backend Integration
+Use this mode only when the user explicitly asks for pairing frontend work, pairing UI flows, or
+backend integration into the pairing UI.
+
+In this mode, you MAY work in:
+- `app/**` pairing pages, layouts, client/server components, and route-adjacent UI helpers.
+- `components/**` that support the pairing lifecycle, review, publication, scoring, progress, or
+  leaderboard flows.
+- Supporting frontend utilities/types that consume the pairing backend contracts.
+
+In this mode, you MUST:
+- Treat `docs/17-pairing-ui-concept.md` as the primary frontend concept guide, while keeping
+  `docs/14-api-routing-map.md`, `docs/11-backend-implementation-map.md`, and `docs/15-pairing-engineering-quality-standard.md`
+  authoritative for contracts, boundaries, and quality.
+- Integrate only against documented or verified backend routes/services/types. NEVER invent a
+  backend contract to make the UI work.
+- Keep `app/api/**/route.ts` transport-only even when wiring frontend and backend together. No
+  formulas, no orchestration, no Prisma in routes.
+- Preserve the lifecycle/state-machine model in the UI: proposal review is distinct from published
+  output, and member-visible views must read only from the published source of truth.
+
+If the task spans both modes, do the minimum cross-boundary work necessary and keep backend rules,
+frontend rules, and transport boundaries explicitly separated.
 
 ## DOCUMENT MAP — where everything lives (never guess a path)
 - `docs/pairing-knowledge-graph.md` — **the memory graph.** Communities C1–C11, typed nodes,
   edges, hyperedges, pre-coding gates. The index you load first.
 - `docs/16-build-plan.md` — the master phase plan (Phase 0–11), ordering, gates, deliverables.
 - `docs/build/` — one ready-to-run prompt per phase (`phase-00…` to `phase-11…`) + `README.md`.
+- `docs/17-pairing-ui-concept.md` — frontend pairing lifecycle concepts, UX rules, state-aware
+  surfaces, and backend-integration expectations. Conceptual guidance only; never overrides the
+  numbered backend docs.
 - `docs/01-overview.md` — product intent, access-control direction, philosophy.
 - `docs/02-backend-changes.md` — backend behavior, lifecycle, removals/deprecations.
 - `docs/03-database-design.md` — DB design direction and conceptual model changes.
@@ -57,17 +91,22 @@ Before planning or writing ANYTHING you MUST, in this order:
 1. Read this protocol (the whole `pairing-context-rules` block).
 2. Read `docs/pairing-knowledge-graph.md` in full.
 3. Identify the exact community (C1–C11) and node IDs your task touches.
-4. Open the phase prompt in `docs/build/` for the phase you are on.
-5. Read ONLY the governing docs cited by those nodes/phase — plus the relevant section(s) of
+4. Identify the active scope mode: **Mode A backend build** or **Mode B frontend pairing +
+   backend integration**.
+5. Open the phase prompt in `docs/build/` for the phase you are on if the task is in Mode A. If
+   the task is in Mode B, open `docs/17-pairing-ui-concept.md` first, then the governing numbered
+   docs for the contracts and lifecycle rules you touch.
+6. Read ONLY the governing docs cited by those nodes/phase/mode — plus the relevant section(s) of
    `docs/15`. Do NOT load the whole `docs/` folder (context discipline, `15 §21`).
 You may not write a single line for a node before reading the doc that node cites.
 
 ## Rule 2 — Authority order (resolve conflicts, never silently pick)
 Authority, highest first: **(a) the numbered doc that owns the concept** (see the "authoritative"
-tags above) → (b) `docs/16-build-plan.md` → (c) `docs/pairing-knowledge-graph.md` → (d) existing
-code/schema. If a higher source conflicts with a lower one, the higher wins and you must fix the
-lower in the same change. If a numbered doc conflicts with existing code/schema, or two
-authoritative docs conflict, **STOP and ask the user** — do not guess.
+tags above) → (b) `docs/16-build-plan.md` for Mode A or `docs/17-pairing-ui-concept.md` for Mode B
+concept flow → (c) `docs/pairing-knowledge-graph.md` → (d) existing code/schema. If a higher
+source conflicts with a lower one, the higher wins and you must fix the lower in the same change.
+If a numbered doc conflicts with existing code/schema, or two authoritative docs conflict,
+**STOP and ask the user** — do not guess.
 
 ## Rule 3 — Status discipline: LOCKED / PROPOSED-V1 / OPEN
 Every formula and decision carries a status in `docs/09` (legend) and the graph (C5).
@@ -87,6 +126,9 @@ and ask. Never invent a field, formula, weight, route, or access rule to keep mo
 - `app/api/**/route.ts` = transport only: auth-guard → zod-validate → call ONE `lib/server`
   service → shape response. NO formulas, NO orchestration, NO Prisma in routes.
 - ALL Prisma access lives in `lib/server/repositories/*`. Nowhere else.
+- Frontend components/pages in Mode B may consume pairing services/routes/types, but they may NOT
+  bypass route/service boundaries, duplicate backend formulas, or introduce a second source of
+  truth for lifecycle state, publication status, scoring status, or progress metrics.
 - The engine consumes a pre-shaped `PairingGenerationContext` (Maps), never raw tables, and
   issues NO database queries inside candidate or scoring loops (front-load all reads, `15 §6`).
 - Keep the three layers physically separate: runtime generation / post-session metric update /
@@ -110,7 +152,8 @@ gated on **session role** (the `SessionRoleAssignment` record), NOT permanent ac
 ## Rule 7 — Anti-hallucination (hard stops)
 - NEVER invent a model name, field, route path, function/export name, weight, formula, or enum
   value. Every such identifier must be copied from `docs/11`, `docs/12`, `docs/14`, `docs/05`,
-  or `docs/09`. If it is not in a doc, it does not exist — stop and ask.
+  `docs/09`, or for Mode B UI behavior, grounded in `docs/17` plus those contract docs. If it is
+  not in a doc, it does not exist — stop and ask.
 - NEVER assume an API of this Next.js/Prisma version from memory. This is a customized Next 16 —
   read `node_modules/next/dist/docs/` for any Next API, and the installed Prisma 7 docs/types for
   Prisma. zod is v4.

@@ -1,46 +1,88 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Card, SectionHeader, StateBadge } from "./ui";
-import { sessions, type SessionRow, sampleProposal, findParticipant } from "./mock";
-import { Calendar, X, FileText, Users, Activity, Crown, AlertTriangle } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useMemo, useState } from "react";
+import { Calendar, Crown, Users } from "lucide-react";
+import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
+import type { AttendanceHistoryItem, LegacySessionAttendance, SessionRow } from "./types";
 
-export default function Sessions() {
-  const [viewSession, setViewSession] = useState<SessionRow | null>(null);
+type SessionsProps = {
+  mode: "admin" | "participant";
+  sessions: SessionRow[];
+  attendanceHistory?: AttendanceHistoryItem[];
+  loading: boolean;
+  error: string | null;
+};
+
+export default function Sessions({
+  mode,
+  sessions,
+  attendanceHistory = [],
+  loading,
+  error,
+}: SessionsProps) {
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  const selectedSession = useMemo(
+    () => sessions.find((session) => session.id === selectedSessionId) ?? null,
+    [selectedSessionId, sessions],
+  );
+
+  if (loading) {
+    return <EmptyState title="Loading sessions" body="Fetching live session history." />;
+  }
+
+  if (error) {
+    return <EmptyState title="Sessions unavailable" body={error} />;
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <EmptyState
+        title="No sessions yet"
+        body="Once sessions or attendance records exist in the backend, they will appear here automatically."
+      />
+    );
+  }
 
   return (
     <div>
       <SectionHeader
-        title="Sessions"
-        subtitle="History of sessions and their lifecycle state."
+        title={mode === "admin" ? "Sessions" : "Session History"}
+        subtitle={
+          mode === "admin"
+            ? "Live session rows from the current backend."
+            : "Your attendance history from the current backend."
+        }
       />
+
       <Card>
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-slate-600 text-left">
+          <thead className="bg-slate-50 text-left text-slate-600">
             <tr>
-              <th className="py-2 px-4 font-medium">Date</th>
-              <th className="py-2 px-4 font-medium">Motion type</th>
-              <th className="py-2 px-4 font-medium">State</th>
-              <th className="py-2 px-4 font-medium"></th>
+              <th className="px-4 py-2 font-medium">Date</th>
+              <th className="px-4 py-2 font-medium">Motion type</th>
+              <th className="px-4 py-2 font-medium">Chair</th>
+              <th className="px-4 py-2 font-medium">State</th>
+              <th className="px-4 py-2 font-medium" />
             </tr>
           </thead>
           <tbody>
-            {sessions.map((s) => (
-              <tr key={s.id} className="border-t border-slate-100">
-                <td className="py-3 px-4 flex items-center gap-2">
+            {sessions.map((session) => (
+              <tr key={session.id} className="border-t border-slate-100">
+                <td className="flex items-center gap-2 px-4 py-3">
                   <Calendar size={14} className="text-slate-400" />
-                  {s.date}
+                  {session.date}
                 </td>
-                <td className="py-3 px-4">{s.motionType}</td>
-                <td className="py-3 px-4">
-                  <StateBadge state={s.state} />
+                <td className="px-4 py-3">{session.motionType}</td>
+                <td className="px-4 py-3">{session.chair ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <StateBadge state={session.state} />
                 </td>
-                <td className="py-3 px-4 text-right">
+                <td className="px-4 py-3 text-right">
                   <button
                     type="button"
-                    className="text-blue-700 hover:underline text-sm font-medium"
-                    onClick={() => setViewSession(s)}
+                    onClick={() => setSelectedSessionId(session.id)}
+                    className="text-sm font-medium text-blue-700 hover:underline"
                   >
                     View
                   </button>
@@ -50,202 +92,172 @@ export default function Sessions() {
           </tbody>
         </table>
       </Card>
-      
-      <SessionDetailModal 
-        session={viewSession} 
-        onClose={() => setViewSession(null)} 
-      />
+
+      {selectedSession && (
+        <div className="mt-6">
+          <SessionDetails
+            mode={mode}
+            session={selectedSession}
+            attendanceHistory={attendanceHistory}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function SessionDetailModal({
+function SessionDetails({
+  mode,
   session,
-  onClose,
+  attendanceHistory,
 }: {
-  session: SessionRow | null;
-  onClose: () => void;
+  mode: "admin" | "participant";
+  session: SessionRow;
+  attendanceHistory: AttendanceHistoryItem[];
 }) {
-  useEffect(() => {
-    if (session) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [session]);
+  const presentCount =
+    session.attendance?.filter((entry) => entry.status === "Present").length ?? 0;
+  const legacyGroups = buildLegacyGroups(session.attendance ?? []);
+  const myAttendance =
+    attendanceHistory.find((item) => item.session.id === session.id) ?? null;
 
   return (
-    <AnimatePresence>
-      {session && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, y: "100%", scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: "100%", scale: 0.95 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-            className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col relative z-10 overflow-hidden"
-          >
-            <div className="flex items-center justify-between p-5 border-b border-slate-200 bg-white">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <Calendar size={20} className="text-blue-600" />
-                  {session.date}
-                </h2>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-sm text-slate-500 font-medium">Session Details</span>
-                  <span className="text-slate-300">•</span>
-                  <StateBadge state={session.state} />
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-100 hover:bg-slate-200 rounded-full p-2 self-start"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto overscroll-contain p-5 bg-slate-50/50">
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                <Card className="p-4 border-slate-200 shadow-sm flex items-center gap-4 bg-white">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
-                    <FileText size={24} />
-                  </div>
+    <Card className="p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">{session.date}</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Motion type: {session.motionType}
+            {session.chair ? ` · Chair: ${session.chair}` : ""}
+          </p>
+        </div>
+        <StateBadge state={session.state} />
+      </div>
+
+      {mode === "admin" ? (
+        <div className="mt-5 space-y-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            <SummaryTile label="Present" value={presentCount} icon={<Users size={18} />} />
+            <SummaryTile label="Legacy pair groups" value={legacyGroups.length} icon={<Users size={18} />} />
+            <SummaryTile label="Chair" value={session.chair ?? "—"} icon={<Crown size={18} />} />
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-sm font-semibold text-slate-900">Legacy attendance view</h4>
+            {session.attendance && session.attendance.length > 0 ? (
+              <div className="space-y-3">
+                {legacyGroups.length > 0 && (
                   <div>
-                    <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">Motion Type</div>
-                    <div className="text-base font-bold text-slate-900">{session.motionType}</div>
-                  </div>
-                </Card>
-                <Card className="p-4 border-slate-200 shadow-sm flex items-center gap-4 bg-white">
-                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-                    <Users size={24} />
-                  </div>
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-0.5">Attendance</div>
-                    <div className="text-base font-bold text-slate-900">23 Present</div>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                    <Activity size={16} className="text-slate-500" />
-                    Lifecycle Status
-                  </h4>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    This session is currently in the <strong className="text-slate-800">{session.state}</strong> state. 
-                    {session.state === "Generated" && " An admin is reviewing the engine's pairings."}
-                    {session.state === "Scored" && " The session is complete and feedback has been recorded."}
-                    {session.state === "Published" && " The official pairing is live and visible to all participants."}
-                  </p>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-amber-800">
-                  <strong className="font-semibold block mb-1">Concept UI Note</strong>
-                  This is a mocked view for the frontend layout. In the real system, this modal will display the exact motion text, comprehensive historical data, and provide direct links to the pairing workspace or leaderboards.
-                </div>
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <h4 className="text-sm font-semibold text-slate-900 mb-2">
-                    Motion
-                  </h4>
-                  <p className="text-sm text-slate-800 italic">
-                    "This House would tax large language model providers per query."
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <h3 className="font-bold text-slate-900 mb-3">Full Pairing ({sampleProposal.rooms.length} Rooms)</h3>
-                  <div className="grid lg:grid-cols-2 gap-4">
-                    {sampleProposal.rooms.map((room) => (
-                      <Card key={room.index} className="p-4 bg-white shadow-sm border-slate-200">
-                        <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-                          <div className="font-bold text-slate-800">Room {room.index}</div>
+                    <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                      Pairing groups from `pairingCode`
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {legacyGroups.map((group) => (
+                        <div
+                          key={group.code}
+                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                        >
+                          <div className="font-medium text-slate-900">{group.code}</div>
+                          <div className="mt-1">{group.names.join(" · ")}</div>
                         </div>
-                        <div className="space-y-2 text-sm">
-                          {room.teams.map((team) => (
-                            <div
-                              key={team.bench}
-                              className="border border-slate-200 rounded-md p-2 bg-slate-50/50"
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="font-semibold text-[13px]">{team.bench}</div>
-                              </div>
-                              <div className="text-slate-700 text-xs">
-                                {team.speakers
-                                  .map(
-                                    (s) =>
-                                      `${findParticipant(s.participantId)?.name} (${s.role})`
-                                  )
-                                  .join(" · ")}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-slate-100 text-[13px]">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <Crown size={14} className="text-amber-600" />
-                            <span className="font-semibold text-slate-800">Chair:</span>
-                            {(() => {
-                              const chair = room.adjudicators.find((a) => a.isChair);
-                              if (!chair) return " —";
-                              return ` ${findParticipant(chair.participantId)?.name}`;
-                            })()}
-                          </div>
-                          <div className="text-slate-700 flex items-start gap-2">
-                            <span className="font-semibold text-slate-800 mt-0.5">Panel:</span>{" "}
-                            <span className="leading-snug">
-                              {room.adjudicators
-                                .filter((a) => !a.isChair)
-                                .map((a) => findParticipant(a.participantId)?.name)
-                                .join(", ") || "—"}
-                            </span>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
-                  <div className="flex items-start gap-2 mb-3">
-                    <AlertTriangle size={16} className="text-amber-600 mt-0.5" />
-                    <div className="text-sm">
-                      <div className="font-semibold text-slate-900">
-                        Leftovers (Not Assigned)
-                      </div>
-                      <div className="text-slate-500 mt-0.5">
-                        {sampleProposal.unassigned.length} participants could not be placed in this round.
-                      </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="text-sm">
-                    <ul className="text-slate-700 grid sm:grid-cols-2 gap-2 mt-2">
-                      {sampleProposal.unassigned.map((u) => (
-                        <li key={u.participantId} className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
-                          <span className="font-medium text-slate-800">{findParticipant(u.participantId)?.name}</span>{" "}
-                          <span className="text-xs text-slate-400">({u.reason})</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                )}
+
+                <div className="grid gap-2 md:grid-cols-2">
+                  {session.attendance.map((entry) => {
+                    const name = entry.member?.name ?? entry.cabinet?.name ?? "Unknown participant";
+                    return (
+                      <div
+                        key={entry.id}
+                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      >
+                        <div className="font-medium text-slate-900">{name}</div>
+                        <div className="mt-1 text-slate-600">
+                          Status: {entry.status}
+                          {entry.pairingCode ? ` · Pair: ${entry.pairingCode}` : ""}
+                          {entry.debatedAlone ? " · Debated alone" : ""}
+                          {entry.speakerScore !== null && entry.speakerScore !== undefined
+                            ? ` · Score: ${entry.speakerScore}`
+                            : ""}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            ) : (
+              <EmptyState
+                title="No attendance records"
+                body="This session exists, but no attendance rows have been saved for it yet."
+              />
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-5">
+          {myAttendance ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <SummaryTile label="Status" value={myAttendance.status} icon={<Users size={18} />} />
+              <SummaryTile
+                label="Speaker score"
+                value={myAttendance.speakerScore ?? "—"}
+                icon={<Users size={18} />}
+              />
+              <SummaryTile
+                label="Pair code"
+                value={myAttendance.pairingCode ?? "—"}
+                icon={<Users size={18} />}
+              />
+              <SummaryTile
+                label="Paired with"
+                value={myAttendance.pairedWith?.join(", ") || "Solo / unavailable"}
+                icon={<Users size={18} />}
+              />
             </div>
-          </motion.div>
+          ) : (
+            <EmptyState
+              title="No personal attendance record"
+              body="This session is visible in your history, but your current backend role has no linked attendance row for it."
+            />
+          )}
         </div>
       )}
-    </AnimatePresence>
+    </Card>
   );
+}
+
+function SummaryTile({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-2 flex items-center gap-2 text-slate-500">{icon}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+function buildLegacyGroups(attendance: LegacySessionAttendance[]) {
+  const groups = new Map<string, string[]>();
+
+  for (const entry of attendance) {
+    if (!entry.pairingCode || entry.debatedAlone) continue;
+    const name = entry.member?.name ?? entry.cabinet?.name ?? "Unknown participant";
+    const current = groups.get(entry.pairingCode) ?? [];
+    current.push(name);
+    groups.set(entry.pairingCode, current);
+  }
+
+  return Array.from(groups.entries())
+    .map(([code, names]) => ({ code, names }))
+    .sort((left, right) => left.code.localeCompare(right.code));
 }

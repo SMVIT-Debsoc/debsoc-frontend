@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { LifecycleState } from "./mock";
+import type { LifecycleState } from "./types";
 
 export function Card({
   children,
@@ -147,5 +147,22 @@ export function Field({
       {children}
       {hint && <span className="block text-[11px] text-slate-500 mt-1">{hint}</span>}
     </label>
+  );
+}
+
+export function EmptyState({
+  title,
+  body,
+}: {
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
+      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+        {body}
+      </p>
+    </div>
   );
 }
