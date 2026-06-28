@@ -156,60 +156,26 @@ export default function PairingDashboard({
 }
 
 async function fetchPrimaryData(role: string) {
-  if (role === "cabinet") {
-    const [roster, sessions, attendance] = await Promise.all([
+  if (role === "cabinet" || role === "President" || role === "TechHead") {
+    const [bootstrap, attendance] = await Promise.all([
       fetchJson<{
         members: ApiMember[];
         cabinet: ApiCabinet[];
         presidents?: ApiPresident[];
-      }>("/api/cabinet/dashboard"),
-      fetchJson<{ sessions: ApiAdminSession[] }>("/api/cabinet/sessions"),
-      fetchJson<{ attendance: ApiAttendanceHistory[] }>("/api/cabinet/attendance/my"),
+        sessions: ApiAdminSession[];
+      }>("/api/pairing/bootstrap"),
+      fetchJson<{ attendance: ApiAttendanceHistory[] }>("/api/pairing/attendance/self"),
     ]);
 
     return {
-      participants: normalizeParticipants(roster),
-      sessions: sessions.sessions.map(normalizeAdminSession),
+      participants: normalizeParticipants(bootstrap),
+      sessions: bootstrap.sessions.map(normalizeAdminSession),
       attendanceHistory: (attendance.attendance ?? []).map(normalizeAttendanceHistory),
     };
   }
 
-  if (role === "President") {
-    const [roster, sessions] = await Promise.all([
-      fetchJson<{
-        members: ApiMember[];
-        cabinet: ApiCabinet[];
-        presidents?: ApiPresident[];
-      }>("/api/cabinet/dashboard"),
-      fetchJson<{ sessions: ApiAdminSession[] }>("/api/president/sessions"),
-    ]);
-
-    return {
-      participants: normalizeParticipants(roster),
-      sessions: sessions.sessions.map(normalizeAdminSession),
-      attendanceHistory: [],
-    };
-  }
-
-  if (role === "TechHead") {
-    const [roster, sessions] = await Promise.all([
-      fetchJson<{
-        members: ApiMember[];
-        cabinet: ApiCabinet[];
-        presidents?: ApiPresident[];
-      }>("/api/cabinet/dashboard"),
-      fetchJson<{ sessions: ApiAdminSession[] }>("/api/cabinet/sessions"),
-    ]);
-
-    return {
-      participants: normalizeParticipants(roster),
-      sessions: sessions.sessions.map(normalizeAdminSession),
-      attendanceHistory: [],
-    };
-  }
-
   const attendance = await fetchJson<{ attendance: ApiAttendanceHistory[] }>(
-    "/api/member/attendance",
+    "/api/pairing/attendance/self",
   );
   const attendanceHistory = (attendance.attendance ?? []).map(normalizeAttendanceHistory);
 

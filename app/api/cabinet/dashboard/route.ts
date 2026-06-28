@@ -3,10 +3,7 @@ import { requireSessionUser } from "@/lib/server/guards";
 import { prisma } from "@/lib/server/prisma";
 
 export async function GET() {
-  const guard = await requireSessionUser({
-    roles: ["cabinet", "President", "TechHead"],
-    requireVerified: true,
-  });
+  const guard = await requireSessionUser({ roles: ["cabinet", "President"], requireVerified: true });
   if ("response" in guard) return guard.response;
 
   const [members, cabinet, presidents] = await Promise.all([
