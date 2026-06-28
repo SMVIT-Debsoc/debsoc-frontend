@@ -7,6 +7,7 @@ import type {
   AttendanceHistoryItem,
   LeaderboardRow,
   Participant,
+  ProgressSummary,
   SessionRow,
 } from "./types";
 
@@ -23,6 +24,7 @@ type PairingDataState = {
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   leaderboard: LeaderboardRow[];
+  progressSummaries: ProgressSummary[];
   loading: boolean;
   loadingLeaderboard: boolean;
   error: string | null;
@@ -35,6 +37,7 @@ const INITIAL_STATE: PairingDataState = {
   sessions: [],
   attendanceHistory: [],
   leaderboard: [],
+  progressSummaries: [],
   loading: true,
   loadingLeaderboard: true,
   error: null,
@@ -180,6 +183,7 @@ export default function PairingDashboard({
               sessions={state.sessions}
               attendanceHistory={state.attendanceHistory}
               leaderboard={state.leaderboard}
+              progressSummaries={state.progressSummaries}
               leaderboardScope={state.leaderboardScope}
               loading={state.loading}
               loadingLeaderboard={state.loadingLeaderboard}
@@ -220,6 +224,7 @@ export default function PairingDashboard({
         sessions={state.sessions}
         attendanceHistory={state.attendanceHistory}
         leaderboard={state.leaderboard}
+        progressSummaries={state.progressSummaries}
         leaderboardScope={state.leaderboardScope}
         loading={state.loading}
         loadingLeaderboard={state.loadingLeaderboard}
@@ -253,7 +258,7 @@ export default function PairingDashboard({
 
 async function fetchPrimaryData(role: string) {
   if (role === "cabinet" || role === "President" || role === "TechHead") {
-    const [bootstrap, attendance] = await Promise.all([
+    const [bootstrap, attendance, progress] = await Promise.all([
       fetchJson<{
         members: ApiMember[];
         cabinet: ApiCabinet[];
@@ -261,12 +266,16 @@ async function fetchPrimaryData(role: string) {
         sessions: ApiAdminSession[];
       }>("/api/pairing/bootstrap"),
       fetchJson<{ attendance: ApiAttendanceHistory[] }>("/api/pairing/attendance/self"),
+      role === "TechHead"
+        ? Promise.resolve({ participants: [] as ApiProgressSummary[] })
+        : fetchJson<{ participants: ApiProgressSummary[] }>("/api/progress/members"),
     ]);
 
     return {
       participants: normalizeParticipants(bootstrap),
       sessions: bootstrap.sessions.map(normalizeAdminSession),
       attendanceHistory: (attendance.attendance ?? []).map(normalizeAttendanceHistory),
+      progressSummaries: (progress.participants ?? []).map(normalizeProgressSummary),
     };
   }
 
@@ -279,15 +288,23 @@ async function fetchPrimaryData(role: string) {
     participants: [],
     sessions: deriveSessionsFromAttendance(attendanceHistory),
     attendanceHistory,
+    progressSummaries: [],
   };
 }
 
 async function fetchLeaderboard(scope: "all" | "bi-monthly") {
   const suffix = scope === "bi-monthly" ? "?type=bi-monthly" : "";
-  const data = await fetchJson<{ leaderboard: LeaderboardRow[] }>(
-    `/api/leaderboard${suffix}`,
+  const data = await fetchJson<{ leaderboard: ApiSpeakerLeaderboardEntry[] }>(
+    `/api/leaderboard/speakers${suffix}`,
   );
-  return data.leaderboard ?? [];
+  return (data.leaderboard ?? []).map((entry) => ({
+    id: entry.participantId,
+    name: entry.name,
+    type: "Participant",
+    score: entry.score,
+    sessions: entry.sessionsCount,
+    rank: entry.rank,
+  }));
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -352,16 +369,9 @@ function normalizeAdminSession(session: ApiAdminSession): SessionRow {
   return {
     id: session.id,
     date: formatDate(session.sessionDate),
-    motionType: session.motiontype,
+    motionType: session.motionType ?? session.motiontype,
     chair: session.Chair,
-    state: deriveLifecycleState(
-      (session.attendance ?? []).map((entry) => ({
-        status: entry.status,
-        pairingCode: entry.pairingCode,
-        debatedAlone: entry.debatedAlone,
-        speakerScore: entry.speakerScore ?? null,
-      })),
-    ),
+    state: deriveLifecycleState(session),
     attendance: session.attendance ?? [],
   };
 }
@@ -393,35 +403,56 @@ function deriveSessionsFromAttendance(attendanceHistory: AttendanceHistoryItem[]
   }));
 }
 
-function deriveLifecycleState(
-  attendance: Array<{
+function deriveLifecycleState(session: {
+  pairingStatus?: string | null;
+  publicationStatus?: string | null;
+  scoringStatus?: string | null;
+  attendance?: Array<{
     status: string;
     pairingCode?: string | null;
     debatedAlone?: boolean;
     speakerScore?: number | null;
-  }>,
-): SessionRow["state"] {
-  const present = attendance.filter((entry) => entry.status === "Present");
+  }>;
+}): SessionRow["state"] {
+  const pairingStatus = session.pairingStatus?.toUpperCase();
+  const publicationStatus = session.publicationStatus?.toUpperCase();
+  const scoringStatus = session.scoringStatus?.toLowerCase();
 
-  if (present.length === 0) {
-    return "Preparation";
-  }
-
-  if (present.some((entry) => entry.speakerScore !== null && entry.speakerScore !== undefined)) {
+  if (scoringStatus === "complete") {
     return "Scored";
   }
 
-  if (
-    present.some(
-      (entry) =>
-        Boolean(entry.debatedAlone) ||
-        Boolean(entry.pairingCode && entry.pairingCode.trim().length > 0),
-    )
-  ) {
+  if (publicationStatus === "PUBLISHED" || pairingStatus === "PUBLISHED") {
     return "Published";
   }
 
+  if (pairingStatus === "APPROVED") {
+    return "Approved";
+  }
+
+  if (pairingStatus === "GENERATED") {
+    return "Generated";
+  }
+
+  const attendance = session.attendance ?? [];
+  const present = attendance.filter((entry) => entry.status === "Present");
+  if (present.some((entry) => entry.speakerScore !== null && entry.speakerScore !== undefined)) {
+    return "Scored";
+  }
   return "Preparation";
+}
+
+function normalizeProgressSummary(summary: ApiProgressSummary): ProgressSummary {
+  return {
+    participantId: summary.participantId,
+    speakerTotalScore: summary.speakerTotalScore,
+    speakerStrength: summary.speakerStrength,
+    confidence: summary.confidence,
+    sessionsSpoken: summary.sessionsSpoken,
+    sessionsAdjudicated: summary.sessionsAdjudicated,
+    sessionsChaired: summary.sessionsChaired,
+    dataMaturity: summary.dataMaturity,
+  };
 }
 
 function formatDate(value: string | Date) {
@@ -458,6 +489,12 @@ type ApiAdminSession = {
   id: string;
   sessionDate: string;
   motiontype: string;
+  motionType?: string | null;
+  motionText?: string | null;
+  pairingObjective?: string | null;
+  pairingStatus?: string | null;
+  publicationStatus?: string | null;
+  scoringStatus?: string | null;
   Chair: string;
   attendance?: Array<{
     id: string;
@@ -483,4 +520,23 @@ type ApiAttendanceHistory = {
     motiontype: string;
     Chair: string;
   };
+};
+
+type ApiProgressSummary = {
+  participantId: string;
+  speakerTotalScore: number;
+  speakerStrength: number;
+  confidence: number;
+  sessionsSpoken: number;
+  sessionsAdjudicated: number;
+  sessionsChaired: number;
+  dataMaturity: "LOW" | "MEDIUM" | "HIGH";
+};
+
+type ApiSpeakerLeaderboardEntry = {
+  participantId: string;
+  name: string;
+  score: number;
+  rank: number;
+  sessionsCount: number;
 };

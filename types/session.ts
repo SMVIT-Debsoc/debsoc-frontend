@@ -54,6 +54,7 @@ export interface UpdateSessionRequest {
   motionType: MotionType;
   motionText: string;
   pairingObjective: PairingObjective;
+  pairingStatus?: string;
 }
 
 export interface SessionScoringTaskStatus {

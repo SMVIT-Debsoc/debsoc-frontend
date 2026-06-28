@@ -21,7 +21,17 @@ export async function GET() {
     }),
     prisma.debateSession.findMany({
       orderBy: { sessionDate: "desc" },
-      include: {
+      select: {
+        id: true,
+        sessionDate: true,
+        motiontype: true,
+        motionType: true,
+        motionText: true,
+        pairingObjective: true,
+        pairingStatus: true,
+        publicationStatus: true,
+        scoringStatus: true,
+        Chair: true,
         attendance: {
           select: {
             id: true,
