@@ -39,6 +39,7 @@ type AdminPairingDashboardProps = {
   userName: string;
   participants: Participant[];
   sessions: SessionRow[];
+  onSessionsChange: (sessions: SessionRow[]) => void;
   attendanceHistory: AttendanceHistoryItem[];
   leaderboard: LeaderboardRow[];
   progressSummaries: ProgressSummary[];
@@ -65,6 +66,7 @@ export default function AdminPairingDashboard({
   userName,
   participants,
   sessions,
+  onSessionsChange,
   attendanceHistory,
   leaderboard,
   progressSummaries,
@@ -106,6 +108,7 @@ export default function AdminPairingDashboard({
           userName={userName}
           participants={participants}
           sessions={sessions}
+          onSessionsChange={onSessionsChange}
           loading={loading}
           error={error}
         />

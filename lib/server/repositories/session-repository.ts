@@ -46,6 +46,51 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     return map;
   }
 
+
+  async function createSession(input: {
+    sessionDate: Date;
+    motionType: string;
+    motionText: string;
+    pairingObjective: string;
+    chair: string;
+  }): Promise<SessionMetadataView> {
+    const created = await client.debateSession.create({
+      data: {
+        sessionDate: input.sessionDate,
+        motiontype: input.motionType,
+        motionType: input.motionType,
+        motionText: input.motionText,
+        pairingObjective: input.pairingObjective,
+        pairingStatus: "DRAFT",
+        publicationStatus: "DRAFT",
+        scoringStatus: "pending",
+        Chair: input.chair,
+      },
+      select: {
+        id: true,
+        motionType: true,
+        motiontype: true,
+        motionText: true,
+        pairingObjective: true,
+        pairingStatus: true,
+        publicationStatus: true,
+        scoringStatus: true,
+        acceptedProposalId: true,
+        publishedProposalId: true,
+      },
+    });
+
+    return {
+      sessionId: created.id,
+      motionType: created.motionType ?? created.motiontype,
+      motionText: created.motionText ?? "",
+      pairingObjective: (created.pairingObjective ?? "BALANCED") as SessionMetadataView["pairingObjective"],
+      pairingStatus: created.pairingStatus ?? "DRAFT",
+      publicationStatus: created.publicationStatus ?? "DRAFT",
+      scoringStatus: created.scoringStatus ?? "pending",
+    };
+  }
+
   async function getSessionById(sessionId: string): Promise<SessionMetadataView | null> {
     const session = await client.debateSession.findUnique({
       where: { id: sessionId },
@@ -58,6 +103,8 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         pairingStatus: true,
         publicationStatus: true,
         scoringStatus: true,
+        acceptedProposalId: true,
+        publishedProposalId: true,
       },
     });
 
@@ -90,6 +137,8 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         pairingStatus: true,
         publicationStatus: true,
         scoringStatus: true,
+        acceptedProposalId: true,
+        publishedProposalId: true,
         attendance: {
           select: {
             memberId: true,
@@ -128,6 +177,8 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         pairingStatus: session.pairingStatus ?? "draft",
         publicationStatus: session.publicationStatus ?? "draft",
         scoringStatus: session.scoringStatus ?? "pending",
+        acceptedProposalId: session.acceptedProposalId ?? null,
+        publishedProposalId: session.publishedProposalId ?? null,
       },
       attendance: session.attendance
         .map((record: { memberId: string | null; cabinetId: string | null; presidentId: string | null; isPresent: boolean; isFinalized: boolean; wasAssigned: boolean; wasUnassigned: boolean; unassignedReason: string | null }) => {
@@ -172,34 +223,31 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
       entries.map((entry) => entry.participantId),
     );
 
-    return client.$transaction(
-      entries.map((entry) => {
+    await client.attendance.deleteMany({ where: { sessionId } });
+
+    if (entries.length === 0) {
+      return { count: 0 };
+    }
+
+    return client.attendance.createMany({
+      data: entries.map((entry) => {
         const participantType = participantTypes.get(entry.participantId) ?? entry.participantType;
-        return client.attendance.upsert({
-          where: {
-            id: `${sessionId}:${participantType}:${entry.participantId}`,
-          },
-          create: {
-            id: `${sessionId}:${participantType}:${entry.participantId}`,
-            sessionId,
-            status: entry.isPresent ? "present" : "absent",
-            isPresent: entry.isPresent,
-            memberId: participantType === "member" ? entry.participantId : null,
-            cabinetId: participantType === "cabinet" ? entry.participantId : null,
-            presidentId: participantType === "president" ? entry.participantId : null,
-          },
-          update: {
-            status: entry.isPresent ? "present" : "absent",
-            isPresent: entry.isPresent,
-          },
-        });
+        return {
+          id: `${sessionId}:${participantType}:${entry.participantId}`,
+          sessionId,
+          status: entry.isPresent ? "present" : "absent",
+          isPresent: entry.isPresent,
+          memberId: participantType === "member" ? entry.participantId : null,
+          cabinetId: participantType === "cabinet" ? entry.participantId : null,
+          presidentId: participantType === "president" ? entry.participantId : null,
+        };
       }),
-    );
+    });
   }
 
   async function replaceSessionRoles(sessionId: string, entries: SessionRoleAssignmentEntry[]) {
     const participantTypes = await resolveParticipantTypesById(
-      entries.map((entry) => entry.memberId),
+      entries.map((entry) => entry.participantId),
     );
 
     await client.$transaction(async (tx: PrismaClient) => {
@@ -211,15 +259,15 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
 
       await tx.sessionRoleAssignment.createMany({
         data: entries.map((entry) => {
-          const participantType = participantTypes.get(entry.memberId) ?? "member";
+          const participantType = participantTypes.get(entry.participantId) ?? "member";
           return {
             sessionId,
             role: entry.sessionRole,
             isChair: false,
             roleAssignedAt: new Date(),
-            memberId: participantType === "member" ? entry.memberId : null,
-            cabinetId: participantType === "cabinet" ? entry.memberId : null,
-            presidentId: participantType === "president" ? entry.memberId : null,
+            memberId: participantType === "member" ? entry.participantId : null,
+            cabinetId: participantType === "cabinet" ? entry.participantId : null,
+            presidentId: participantType === "president" ? entry.participantId : null,
           };
         }),
       });
@@ -249,11 +297,14 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         pairingStatus: true,
         publicationStatus: true,
         scoringStatus: true,
+        acceptedProposalId: true,
+        publishedProposalId: true,
       },
     });
   }
 
   return {
+    createSession,
     getSessionById,
     getSessionPreparationContext,
     upsertAttendanceEntries,

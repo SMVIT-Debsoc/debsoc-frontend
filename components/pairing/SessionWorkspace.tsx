@@ -37,6 +37,7 @@ type SessionWorkspaceProps = {
   userName: string;
   participants: Participant[];
   sessions: SessionRow[];
+  onSessionsChange: (sessions: SessionRow[]) => void;
   loading: boolean;
   error: string | null;
 };
@@ -62,10 +63,34 @@ type AttendanceDraft = Record<
   { isPresent: boolean; sessionRole: "speaker" | "adjudicator" }
 >;
 
+type OverrideSpeakerSlotDraft = {
+  slotKey: string;
+  bpPosition: "OG" | "OO" | "CG" | "CO";
+  speakingRole: "PM" | "DPM" | "LO" | "DLO" | "MG" | "GW" | "MO" | "OW";
+  participantId: string;
+};
+
+type OverrideAdjudicatorSlotDraft = {
+  slotKey: string;
+  participantId: string;
+  isChair: boolean;
+};
+
+type OverrideRoomDraft = {
+  roomIndex: number;
+  speakerSlots: OverrideSpeakerSlotDraft[];
+  adjudicatorSlots: OverrideAdjudicatorSlotDraft[];
+};
+
+type ManualOverrideDraft = {
+  rooms: OverrideRoomDraft[];
+};
+
 export default function SessionWorkspace({
   userName,
   participants,
   sessions,
+  onSessionsChange,
   loading,
   error,
 }: SessionWorkspaceProps) {
@@ -84,12 +109,16 @@ export default function SessionWorkspace({
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideDraft, setOverrideDraft] = useState<ManualOverrideDraft | null>(null);
+  const [overrideNotes, setOverrideNotes] = useState("");
 
   useEffect(() => {
     if (!selectedSessionId && sessions.length > 0) {
       setSelectedSessionId(sessions[0].id);
     }
   }, [selectedSessionId, sessions]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -121,6 +150,12 @@ export default function SessionWorkspace({
           publishedPairing: null,
           scoringStatus: null,
         };
+
+        if (context.session.pairingStatus.toUpperCase() === "APPROVED" && context.session.acceptedProposalId) {
+          nextState.proposal = await fetchJson<PairingProposalView>(
+            `/api/pairing/proposal/${context.session.acceptedProposalId}`,
+          );
+        }
 
         if (context.session.publicationStatus.toUpperCase() === "PUBLISHED") {
           nextState.publishedPairing = (
@@ -158,6 +193,10 @@ export default function SessionWorkspace({
     };
   }, [participants, selectedSessionId]);
 
+  useEffect(() => {
+    setOverrideDraft(workspace.proposal ? createManualOverrideDraft(workspace.proposal) : null);
+  }, [workspace.proposal]);
+
   const selectedSession = sessions.find((session) => session.id === selectedSessionId) ?? null;
   const counts = useMemo(() => {
     const entries = Object.values(attendanceDraft);
@@ -190,10 +229,31 @@ export default function SessionWorkspace({
 
   if (!selectedSessionId) {
     return (
-      <EmptyState
-        title="No sessions available"
-        body="Create or load a session before using the pairing workspace."
-      />
+      <div className="space-y-4">
+        <EmptyState
+          title="No sessions available"
+          body="Create a new session to start the pairing workflow."
+        />
+        <div className="flex justify-center">
+          <PrimaryButton
+            type="button"
+            disabled={busyAction !== null}
+            onClick={() =>
+              void createInitialSession(
+                userName,
+                sessions,
+                onSessionsChange,
+                setSelectedSessionId,
+                setFeedback,
+                setActionError,
+                setBusyAction,
+              )
+            }
+          >
+            Create session
+          </PrimaryButton>
+        </div>
+      </div>
     );
   }
 
@@ -284,48 +344,53 @@ export default function SessionWorkspace({
                 return (
                   <div
                     key={participant.id}
-                    className="grid gap-3 rounded-lg border border-slate-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_120px_160px]"
+                    className="grid gap-3 rounded-lg border border-slate-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_160px_120px]"
                   >
                     <div>
                       <div className="font-medium text-slate-900">{participant.name}</div>
                       <div className="text-sm text-slate-500">
                         {participant.account}
-                        {participant.position ? ` · ${participant.position}` : ""}
+                        {participant.position ? ` - ${participant.position}` : ""}
                       </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <div className="space-y-1">
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Session role
+                      </div>
+                      <select
+                        value={draft.sessionRole}
+                        onChange={(event) => {
+                          setAttendanceDraft((current) => ({
+                            ...current,
+                            [participant.id]: {
+                              ...draft,
+                              isPresent: true,
+                              sessionRole: event.target.value as "speaker" | "adjudicator",
+                            },
+                          }));
+                        }}
+                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      >
+                        <option value="speaker">Speaker</option>
+                        <option value="adjudicator">Adjudicator</option>
+                      </select>
+                    </div>
+                    <label className="flex items-center gap-2 self-end text-sm text-slate-700">
                       <input
                         type="checkbox"
                         checked={draft.isPresent}
-                        onChange={(event) =>
+                        onChange={(event) => {
                           setAttendanceDraft((current) => ({
                             ...current,
                             [participant.id]: {
                               ...draft,
                               isPresent: event.target.checked,
                             },
-                          }))
-                        }
+                          }));
+                        }}
                       />
                       Present
                     </label>
-                    <select
-                      value={draft.sessionRole}
-                      disabled={!draft.isPresent}
-                      onChange={(event) =>
-                        setAttendanceDraft((current) => ({
-                          ...current,
-                          [participant.id]: {
-                            ...draft,
-                            sessionRole: event.target.value as "speaker" | "adjudicator",
-                          },
-                        }))
-                      }
-                      className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-100"
-                    >
-                      <option value="speaker">Speaker</option>
-                      <option value="adjudicator">Adjudicator</option>
-                    </select>
                   </div>
                 );
               })}
@@ -396,11 +461,43 @@ export default function SessionWorkspace({
             <Wand2 size={16} /> Generate & Review
           </h3>
           {workspace.proposal ? (
-            <ProposalView proposal={workspace.proposal} />
+            <>
+              <ProposalView proposal={workspace.proposal} participants={participants} />
+              <OverridePanel
+                open={overrideOpen}
+                onToggle={() => setOverrideOpen((current) => !current)}
+                proposal={workspace.proposal}
+                participants={participants}
+                presentParticipantIds={
+                  workspace.context?.attendance
+                    .filter((entry) => entry.isPresent)
+                    .map((entry) => entry.participantId) ?? []
+                }
+                draft={overrideDraft}
+                onDraftChange={setOverrideDraft}
+                overrideNotes={overrideNotes}
+                onOverrideNotesChange={setOverrideNotes}
+                disabled={busyAction !== null}
+                onSubmit={() => {
+                  const proposalId = workspace.proposal?.summary.proposalId;
+                  if (!proposalId || !overrideDraft) return Promise.resolve();
+                  return submitProposalOverride(
+                    proposalId,
+                    selectedSessionId,
+                    buildManualOverridePayload(overrideDraft),
+                    overrideNotes,
+                    setWorkspace,
+                    setFeedback,
+                    setActionError,
+                    setBusyAction,
+                  );
+                }}
+              />
+            </>
           ) : (
             <EmptyState
               title="No proposal generated yet"
-              body="Save attendance and session setup, then generate a proposal to review it here."
+              body="Finish attendance and session setup, then generate a proposal to review it here."
             />
           )}
         </Card>
@@ -412,7 +509,7 @@ export default function SessionWorkspace({
             <Send size={16} /> Publish
           </h3>
           {workspace.publishedPairing ? (
-            <PublishedView publishedPairing={workspace.publishedPairing} />
+            <PublishedView publishedPairing={workspace.publishedPairing} participants={participants} />
           ) : workspace.proposal ? (
             <EmptyState
               title="Approved proposal ready for publish"
@@ -463,41 +560,24 @@ export default function SessionWorkspace({
         </Card>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
-        <SecondaryButton
-          type="button"
-          onClick={() => setStep(previousStep(step))}
-          disabled={STEP_INDEX[step] === 0 || busyAction !== null}
-        >
-          <ArrowLeft size={16} />
-          Previous
-        </SecondaryButton>
+      <div className="sticky bottom-4 z-10 mt-6 rounded-xl border border-slate-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur">
+        <div className="mb-3 text-xs text-slate-500">
+          Step navigation
+          {busyAction === null && !canAdvance(step, stepAvailability) && step !== "post"
+            ? " - complete the current step action to unlock the next stage."
+            : " - use Previous or Next to move through the workflow."}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+          <SecondaryButton
+            type="button"
+            onClick={() => setStep(previousStep(step))}
+            disabled={STEP_INDEX[step] === 0 || busyAction !== null}
+          >
+            <ArrowLeft size={16} />
+            Previous
+          </SecondaryButton>
 
-        <div className="flex flex-wrap gap-3">
-          {step === "prepare" && (
-            <PrimaryButton
-              type="button"
-              disabled={busyAction !== null}
-              onClick={() =>
-                void savePreparation(
-                  selectedSessionId,
-                  attendanceDraft,
-                  setWorkspace,
-                  setAttendanceDraft,
-                  setFeedback,
-                  setActionError,
-                  setBusyAction,
-                  participants,
-                  setMotionType,
-                  setMotionText,
-                  setObjective,
-                  setStep,
-                )
-              }
-            >
-              Save attendance
-            </PrimaryButton>
-          )}
+          <div className="flex flex-wrap gap-3">
           {step === "setup" && (
             <PrimaryButton
               type="button"
@@ -536,6 +616,13 @@ export default function SessionWorkspace({
                     }}
                   >
                     Approve
+                  </SecondaryButton>
+                  <SecondaryButton
+                    type="button"
+                    disabled={busyAction !== null}
+                    onClick={() => setOverrideOpen((current) => !current)}
+                  >
+                    Override
                   </SecondaryButton>
                   <SecondaryButton
                     type="button"
@@ -580,15 +667,79 @@ export default function SessionWorkspace({
           <PrimaryButton
             type="button"
             disabled={!canAdvance(step, stepAvailability) || busyAction !== null}
-            onClick={() => setStep(nextStep(step))}
+            onClick={() => {
+              if (step === "prepare") {
+                void savePreparation(
+                  selectedSessionId,
+                  attendanceDraft,
+                  setWorkspace,
+                  setAttendanceDraft,
+                  setFeedback,
+                  setActionError,
+                  setBusyAction,
+                  participants,
+                  setMotionType,
+                  setMotionText,
+                  setObjective,
+                  setStep,
+                  true,
+                );
+                return;
+              }
+              setStep(nextStep(step));
+            }}
           >
             Next
             <ArrowRight size={16} />
           </PrimaryButton>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+async function createInitialSession(
+  userName: string,
+  sessions: SessionRow[],
+  onSessionsChange: (sessions: SessionRow[]) => void,
+  setSelectedSessionId: React.Dispatch<React.SetStateAction<string>>,
+  setFeedback: React.Dispatch<React.SetStateAction<string | null>>,
+  setActionError: React.Dispatch<React.SetStateAction<string | null>>,
+  setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  setBusyAction("Creating session");
+  setActionError(null);
+  setFeedback(null);
+  try {
+    const created = await fetchJson<{
+      sessionId: string;
+      motionType: string;
+      pairingStatus: string;
+      publicationStatus: string;
+      scoringStatus: string;
+    }>("/api/sessions", {
+      method: "POST",
+      body: JSON.stringify({ chair: userName }),
+    });
+
+    const nextSession: SessionRow = {
+      id: created.sessionId,
+      date: new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date()),
+      motionType: created.motionType,
+      chair: userName,
+      state: "Preparation",
+      attendance: [],
+    };
+
+    onSessionsChange([nextSession, ...sessions]);
+    setSelectedSessionId(created.sessionId);
+    setFeedback("New session created. Continue with attendance and setup.");
+  } catch (caught) {
+    setActionError(caught instanceof Error ? caught.message : "Session creation failed.");
+  } finally {
+    setBusyAction(null);
+  }
 }
 
 function hydrateFormState(
@@ -677,18 +828,14 @@ async function savePreparation(
   setMotionText: React.Dispatch<React.SetStateAction<string>>,
   setObjective: React.Dispatch<React.SetStateAction<string>>,
   setStep: React.Dispatch<React.SetStateAction<StepKey>>,
+  advanceToSetup = true,
 ) {
   setBusyAction("Saving attendance");
   setActionError(null);
   setFeedback(null);
   try {
-    await fetchJson("/api/attendance/prepare", {
-      method: "POST",
-      body: JSON.stringify({ sessionId }),
-    });
-
-    const entries = Object.entries(attendanceDraft).map(([memberId, value]) => ({
-      memberId,
+    const entries = Object.entries(attendanceDraft).map(([participantId, value]) => ({
+      participantId,
       isPresent: value.isPresent,
       sessionRole: value.sessionRole,
     }));
@@ -707,8 +854,10 @@ async function savePreparation(
       setMotionText,
       setObjective,
     );
-    setFeedback("Attendance and session roles saved.");
-    setStep("setup");
+    setFeedback(advanceToSetup ? "Attendance and session roles saved." : "Attendance updated.");
+    if (advanceToSetup) {
+      setStep("setup");
+    }
   } catch (caught) {
     setActionError(caught instanceof Error ? caught.message : "Attendance save failed.");
   } finally {
@@ -798,11 +947,9 @@ async function approveCurrentProposal(
       method: "POST",
     });
     const context = await fetchJson<SessionPreparationContextResponse>(`/api/sessions/${sessionId}`);
-    const proposal = (
-      await fetchJson<{ proposal: PairingProposalView }>(
-        `/api/pairing/proposal/${proposalId}`,
-      )
-    ).proposal;
+    const proposal = await fetchJson<PairingProposalView>(
+      `/api/pairing/proposal/${proposalId}`,
+    );
     setWorkspace((current) => ({ ...current, context, proposal }));
     setFeedback("Proposal approved.");
     setStep("publish");
@@ -835,6 +982,47 @@ async function regenerateCurrentProposal(
     setFeedback("Fresh proposal generated.");
   } catch (caught) {
     setActionError(caught instanceof Error ? caught.message : "Proposal regeneration failed.");
+  } finally {
+    setBusyAction(null);
+  }
+}
+
+async function submitProposalOverride(
+  proposalId: string,
+  sessionId: string,
+  payload: Record<string, unknown>,
+  overrideNotes: string,
+  setWorkspace: React.Dispatch<React.SetStateAction<WorkspaceSessionData>>,
+  setFeedback: React.Dispatch<React.SetStateAction<string | null>>,
+  setActionError: React.Dispatch<React.SetStateAction<string | null>>,
+  setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  setBusyAction("Submitting override");
+  setActionError(null);
+  setFeedback(null);
+
+  try {
+    const result = await fetchJson<{ proposal: PairingProposalView }>(
+      `/api/pairing/proposal/${proposalId}/override`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          overrideType: "MANUAL_ASSIGNMENT",
+          payload,
+          notes: overrideNotes.trim() ? overrideNotes.trim() : null,
+        }),
+      },
+    );
+
+    const context = await fetchJson<SessionPreparationContextResponse>(`/api/sessions/${sessionId}`);
+    setWorkspace((current) => ({
+      ...current,
+      context,
+      proposal: result.proposal,
+    }));
+    setFeedback("Override submitted and proposal updated.");
+  } catch (caught) {
+    setActionError(caught instanceof Error ? caught.message : "Proposal override failed.");
   } finally {
     setBusyAction(null);
   }
@@ -923,19 +1111,19 @@ function MetricRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
-function ProposalView({ proposal }: { proposal: PairingProposalView }) {
+function ProposalView({ proposal, participants }: { proposal: PairingProposalView; participants: Participant[] }) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
         <div className="text-sm text-slate-600">
-          Proposal v{proposal.summary.version} · Score{" "}
+          Proposal v{proposal.summary.version} ?? Score{" "}
           <span className="font-semibold text-slate-900">
             {proposal.summary.proposalScore.toFixed(2)}
           </span>
         </div>
         <div className="mt-2 text-sm text-slate-600">
-          Status: {proposal.summary.status} · Top-band rank:{" "}
-          {proposal.summary.topBandRank ?? "—"}
+          Status: {proposal.summary.status} ?? Top-band rank:{" "}
+          {proposal.summary.topBandRank ?? "???"}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -943,34 +1131,446 @@ function ProposalView({ proposal }: { proposal: PairingProposalView }) {
           <div key={room.roomIndex} className="rounded-lg border border-slate-200 p-4">
             <div className="font-semibold text-slate-900">Room {room.roomIndex}</div>
             <div className="mt-2 text-sm text-slate-600">
-              Balance {room.roomBalanceScore?.toFixed(2) ?? "—"} · Difficulty{" "}
-              {room.roomDifficultyScore?.toFixed(2) ?? "—"}
+              Balance {room.roomBalanceScore?.toFixed(2) ?? "???"} ?? Difficulty{" "}
+              {room.roomDifficultyScore?.toFixed(2) ?? "???"}
             </div>
             <div className="mt-3 space-y-2 text-sm">
               {room.teams.map((team) => (
                 <div key={team.bpPosition}>
-                  <span className="font-medium text-slate-900">{team.bpPosition}</span>:{" "}
-                  {team.speakers.map((speaker) => `${speaker.participantId} (${speaker.speakingRole})`).join(", ")}
+                  <span className="font-medium text-slate-900">{team.bpPosition}</span>: {" "}
+                  {team.speakers
+                    .map((speaker) => `${findParticipantName(participants, speaker.participantId)} (${speaker.speakingRole})`)
+                    .join(", ")}
                 </div>
               ))}
               <div>
-                <span className="font-medium text-slate-900">Adjudicators</span>:{" "}
+                <span className="font-medium text-slate-900">Adjudicators</span>: {" "}
                 {room.adjudicators
-                  .map((adjudicator) => `${adjudicator.participantId}${adjudicator.isChair ? " (Chair)" : ""}`)
+                  .map(
+                    (adjudicator) =>
+                      `${findParticipantName(participants, adjudicator.participantId)}${adjudicator.isChair ? " (Chair)" : ""}`,
+                  )
                   .join(", ")}
               </div>
             </div>
           </div>
         ))}
       </div>
+      {proposal.unassignedParticipants.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="font-semibold">Unassigned speakers: {proposal.unassignedParticipants.length}</div>
+          <div className="mt-2 space-y-1">
+            {proposal.unassignedParticipants.map((participant) => (
+              <div key={participant.participantId}>
+                {findParticipantName(participants, participant.participantId)} - {formatLeftoverReason(participant.reason)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+function formatLeftoverReason(reason: string) {
+  switch (reason) {
+    case "INSUFFICIENT_SPEAKERS_FOR_FULL_ROOM":
+      return "Not enough speakers to fill another full BP room";
+    case "ROLE_MISMATCH":
+      return "Role split did not fit room construction";
+    case "ADMIN_EXCLUDED":
+      return "Excluded by admin decision";
+    case "CONSTRAINT_CONFLICT":
+      return "Blocked by active pairing constraints";
+    default:
+      return reason;
+  }
+}
+
+const OVERRIDE_TEAM_LAYOUT = [
+  { bpPosition: "OG", roles: ["PM", "DPM"] },
+  { bpPosition: "OO", roles: ["LO", "DLO"] },
+  { bpPosition: "CG", roles: ["MG", "GW"] },
+  { bpPosition: "CO", roles: ["MO", "OW"] },
+] as const;
+
+function createManualOverrideDraft(proposal: PairingProposalView): ManualOverrideDraft {
+  return {
+    rooms: proposal.rooms.map((room) => ({
+      roomIndex: room.roomIndex,
+      speakerSlots: OVERRIDE_TEAM_LAYOUT.flatMap(({ bpPosition, roles }) => {
+        const team = room.teams.find((entry) => entry.bpPosition === bpPosition);
+        return roles.map((role, roleIndex) => ({
+          slotKey: `${room.roomIndex}-${bpPosition}-${role}`,
+          bpPosition,
+          speakingRole: role,
+          participantId: team?.speakers[roleIndex]?.participantId ?? "",
+        }));
+      }),
+      adjudicatorSlots:
+        room.adjudicators.length > 0
+          ? room.adjudicators.map((adjudicator, index) => ({
+              slotKey: `${room.roomIndex}-adj-${index}`,
+              participantId: adjudicator.participantId,
+              isChair: adjudicator.isChair,
+            }))
+          : [{ slotKey: `${room.roomIndex}-chair-0`, participantId: "", isChair: true }],
+    })),
+  };
+}
+
+function buildManualOverridePayload(draft: ManualOverrideDraft): Record<string, unknown> {
+  const assignedParticipantIds = new Set<string>();
+
+  return {
+    rooms: draft.rooms.map((room) => ({
+      roomIndex: room.roomIndex,
+      teams: OVERRIDE_TEAM_LAYOUT.map(({ bpPosition, roles }) => ({
+        bpPosition,
+        speakers: roles.map((role) => {
+          const slot = room.speakerSlots.find(
+            (entry) => entry.bpPosition === bpPosition && entry.speakingRole === role,
+          );
+          if (!slot?.participantId) {
+            throw new Error(`${bpPosition} ${role} must have a participant.`);
+          }
+          assignedParticipantIds.add(slot.participantId);
+          return {
+            participantId: slot.participantId,
+            speakingRole: role,
+          };
+        }),
+      })),
+      adjudicators: room.adjudicatorSlots.map((slot) => {
+        if (!slot.participantId) {
+          throw new Error(`Room ${room.roomIndex} has an empty adjudicator slot.`);
+        }
+        assignedParticipantIds.add(slot.participantId);
+        return {
+          participantId: slot.participantId,
+          isChair: slot.isChair,
+        };
+      }),
+    })),
+    assignedParticipantIds: [...assignedParticipantIds],
+  };
+}
+
+function deriveManualOverrideState(draft: ManualOverrideDraft, presentParticipantIds: string[]) {
+  const assignmentCounts = new Map<string, number>();
+
+  for (const room of draft.rooms) {
+    for (const slot of room.speakerSlots) {
+      if (!slot.participantId) continue;
+      assignmentCounts.set(slot.participantId, (assignmentCounts.get(slot.participantId) ?? 0) + 1);
+    }
+    for (const slot of room.adjudicatorSlots) {
+      if (!slot.participantId) continue;
+      assignmentCounts.set(slot.participantId, (assignmentCounts.get(slot.participantId) ?? 0) + 1);
+    }
+  }
+
+  return {
+    duplicateParticipantIds: [...assignmentCounts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([participantId]) => participantId),
+    unassignedParticipantIds: presentParticipantIds.filter(
+      (participantId) => !assignmentCounts.has(participantId),
+    ),
+  };
+}
+
+function OverridePanel({
+  open,
+  onToggle,
+  proposal,
+  participants,
+  presentParticipantIds,
+  draft,
+  onDraftChange,
+  overrideNotes,
+  onOverrideNotesChange,
+  disabled,
+  onSubmit,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  proposal: PairingProposalView | null;
+  participants: Participant[];
+  presentParticipantIds: string[];
+  draft: ManualOverrideDraft | null;
+  onDraftChange: React.Dispatch<React.SetStateAction<ManualOverrideDraft | null>>;
+  overrideNotes: string;
+  onOverrideNotesChange: (value: string) => void;
+  disabled: boolean;
+  onSubmit: () => Promise<void>;
+}) {
+  if (!proposal || !draft) {
+    return null;
+  }
+
+  const options = presentParticipantIds
+    .map((participantId) => ({
+      id: participantId,
+      name: findParticipantName(participants, participantId),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+
+  const derived = deriveManualOverrideState(draft, presentParticipantIds);
+  const canSubmit =
+    !disabled &&
+    derived.duplicateParticipantIds.length === 0 &&
+    draft.rooms.every(
+      (room) =>
+        room.speakerSlots.every((slot) => !!slot.participantId) &&
+        room.adjudicatorSlots.length > 0 &&
+        room.adjudicatorSlots.every((slot) => !!slot.participantId) &&
+        room.adjudicatorSlots.filter((slot) => slot.isChair).length === 1,
+    );
+
+  return (
+    <Card className="mt-4 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h4 className="font-semibold text-slate-900">Manual override editor</h4>
+          <p className="mt-1 text-sm text-slate-500">
+            Reassign speakers, change speaking positions, move people into adjudication, and set the chair directly here.
+          </p>
+        </div>
+        <SecondaryButton type="button" onClick={onToggle} disabled={disabled}>
+          {open ? "Hide override" : "Open override"}
+        </SecondaryButton>
+      </div>
+      {open && (
+        <div className="mt-4 space-y-4">
+          {derived.duplicateParticipantIds.length > 0 && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+              Resolve duplicate assignments before submitting: {derived.duplicateParticipantIds.map((participantId) => findParticipantName(participants, participantId)).join(", ")}
+            </div>
+          )}
+          <div className="grid gap-4 xl:grid-cols-2">
+            {draft.rooms.map((room) => (
+              <div key={room.roomIndex} className="rounded-lg border border-slate-200 p-4">
+                <div className="font-semibold text-slate-900">Room {room.roomIndex}</div>
+                <div className="mt-4 space-y-3">
+                  {OVERRIDE_TEAM_LAYOUT.map(({ bpPosition, roles }) => (
+                    <div key={`${room.roomIndex}-${bpPosition}`} className="rounded-md border border-slate-100 p-3">
+                      <div className="mb-2 text-sm font-semibold text-slate-900">{bpPosition}</div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {roles.map((role) => {
+                          const slot = room.speakerSlots.find(
+                            (entry) => entry.bpPosition === bpPosition && entry.speakingRole === role,
+                          );
+                          return (
+                            <Field key={slot?.slotKey ?? `${room.roomIndex}-${bpPosition}-${role}`} label={role}>
+                              <select
+                                value={slot?.participantId ?? ""}
+                                onChange={(event) =>
+                                  onDraftChange((current) =>
+                                    current
+                                      ? {
+                                          ...current,
+                                          rooms: current.rooms.map((entry) =>
+                                            entry.roomIndex !== room.roomIndex
+                                              ? entry
+                                              : {
+                                                  ...entry,
+                                                  speakerSlots: entry.speakerSlots.map((speakerSlot) =>
+                                                    speakerSlot.slotKey === slot?.slotKey
+                                                      ? { ...speakerSlot, participantId: event.target.value }
+                                                      : speakerSlot,
+                                                  ),
+                                                },
+                                          ),
+                                        }
+                                      : current,
+                                  )
+                                }
+                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                              >
+                                <option value="">Select participant</option>
+                                {options.map((option) => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-md border border-slate-100 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="text-sm font-semibold text-slate-900">Adjudicators</div>
+                    <SecondaryButton
+                      type="button"
+                      disabled={disabled || room.adjudicatorSlots.length >= 3}
+                      onClick={() =>
+                        onDraftChange((current) =>
+                          current
+                            ? {
+                                ...current,
+                                rooms: current.rooms.map((entry) =>
+                                  entry.roomIndex !== room.roomIndex
+                                    ? entry
+                                    : {
+                                        ...entry,
+                                        adjudicatorSlots: [
+                                          ...entry.adjudicatorSlots,
+                                          {
+                                            slotKey: `${room.roomIndex}-adj-${entry.adjudicatorSlots.length}`,
+                                            participantId: "",
+                                            isChair: false,
+                                          },
+                                        ],
+                                      },
+                                ),
+                              }
+                            : current,
+                        )
+                      }
+                    >
+                      Add panel slot
+                    </SecondaryButton>
+                  </div>
+                  <div className="space-y-3">
+                    {room.adjudicatorSlots.map((slot, slotIndex) => (
+                      <div key={slot.slotKey} className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_120px] md:items-end">
+                        <Field label={slot.isChair ? "Chair" : `Panel ${slotIndex}`}>
+                          <select
+                            value={slot.participantId}
+                            onChange={(event) =>
+                              onDraftChange((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      rooms: current.rooms.map((entry) =>
+                                        entry.roomIndex !== room.roomIndex
+                                          ? entry
+                                          : {
+                                              ...entry,
+                                              adjudicatorSlots: entry.adjudicatorSlots.map((adjudicatorSlot) =>
+                                                adjudicatorSlot.slotKey === slot.slotKey
+                                                  ? { ...adjudicatorSlot, participantId: event.target.value }
+                                                  : adjudicatorSlot,
+                                              ),
+                                            },
+                                      ),
+                                    }
+                                  : current,
+                              )
+                            }
+                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                          >
+                            <option value="">Select participant</option>
+                            {options.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.name}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                          <input
+                            type="radio"
+                            name={`chair-${room.roomIndex}`}
+                            checked={slot.isChair}
+                            onChange={() =>
+                              onDraftChange((current) =>
+                                current
+                                  ? {
+                                      ...current,
+                                      rooms: current.rooms.map((entry) =>
+                                        entry.roomIndex !== room.roomIndex
+                                          ? entry
+                                          : {
+                                              ...entry,
+                                              adjudicatorSlots: entry.adjudicatorSlots.map((adjudicatorSlot) => ({
+                                                ...adjudicatorSlot,
+                                                isChair: adjudicatorSlot.slotKey === slot.slotKey,
+                                              })),
+                                            },
+                                      ),
+                                    }
+                                  : current,
+                              )
+                            }
+                          />
+                          Chair
+                        </label>
+                        <SecondaryButton
+                          type="button"
+                          disabled={disabled || room.adjudicatorSlots.length === 1}
+                          onClick={() =>
+                            onDraftChange((current) =>
+                              current
+                                ? {
+                                    ...current,
+                                    rooms: current.rooms.map((entry) => {
+                                      if (entry.roomIndex !== room.roomIndex) {
+                                        return entry;
+                                      }
+                                      const nextSlots = entry.adjudicatorSlots.filter(
+                                        (adjudicatorSlot) => adjudicatorSlot.slotKey !== slot.slotKey,
+                                      );
+                                      if (nextSlots.length > 0 && !nextSlots.some((adjudicatorSlot) => adjudicatorSlot.isChair)) {
+                                        nextSlots[0] = { ...nextSlots[0], isChair: true };
+                                      }
+                                      return {
+                                        ...entry,
+                                        adjudicatorSlots: nextSlots,
+                                      };
+                                    }),
+                                  }
+                                : current,
+                            )
+                          }
+                        >
+                          Remove
+                        </SecondaryButton>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="font-semibold">Will stay unassigned after override: {derived.unassignedParticipantIds.length}</div>
+            <div className="mt-2">
+              {derived.unassignedParticipantIds.length > 0
+                ? derived.unassignedParticipantIds.map((participantId) => findParticipantName(participants, participantId)).join(", ")
+                : "Everyone present is assigned in the edited proposal."}
+            </div>
+          </div>
+          <Field label="Notes">
+            <textarea
+              value={overrideNotes}
+              onChange={(event) => onOverrideNotesChange(event.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              placeholder="Why you are overriding this proposal"
+            />
+          </Field>
+          <div className="flex justify-end">
+            <PrimaryButton type="button" disabled={!canSubmit} onClick={() => void onSubmit()}>
+              Apply manual override
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 
 function PublishedView({
   publishedPairing,
+  participants,
 }: {
   publishedPairing: NonNullable<WorkspaceSessionData["publishedPairing"]>;
+  participants: Participant[];
 }) {
   return (
     <div className="space-y-4">
@@ -985,7 +1585,7 @@ function PublishedView({
               {room.teams.map((team) => (
                 <div key={team.bpPosition}>
                   <span className="font-medium text-slate-900">{team.bpPosition}</span>:{" "}
-                  {team.speakers.map((speaker) => `${speaker.participantId} (${speaker.speakingRole})`).join(", ")}
+                  {team.speakers.map((speaker) => `${findParticipantName(participants, speaker.participantId)} (${speaker.speakingRole})`).join(", ")}
                 </div>
               ))}
             </div>

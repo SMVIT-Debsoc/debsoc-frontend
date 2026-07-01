@@ -15,7 +15,7 @@ interface SessionRepositoryContract {
   } | null>;
   replaceSessionRoles(
     sessionId: string,
-    entries: Array<{ memberId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
+    entries: Array<{ participantId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
   ): Promise<void>;
 }
 
@@ -52,8 +52,8 @@ export function createSessionRoleService(repository: SessionRepositoryContract =
 
     await repository.replaceSessionRoles(
       input.sessionId,
-      [...roleAssignments.entries()].map(([memberId, sessionRole]) => ({
-        memberId,
+      [...roleAssignments.entries()].map(([participantId, sessionRole]) => ({
+        participantId,
         isPresent: true,
         sessionRole,
       })),

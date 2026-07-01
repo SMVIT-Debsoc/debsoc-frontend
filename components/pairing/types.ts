@@ -37,6 +37,7 @@ export type LegacySessionAttendance = {
   speakerScore?: number | null;
   member?: { id: string; name: string } | null;
   cabinet?: { id: string; name: string } | null;
+  president?: { id: string; name: string } | null;
 };
 
 export type SessionRow = {
@@ -44,6 +45,8 @@ export type SessionRow = {
   date: string;
   motionType: string;
   chair?: string;
+  assignedChairLabel?: string;
+  participantAssignmentLabels?: Record<string, string>;
   state: LifecycleState;
   attendance?: LegacySessionAttendance[];
 };

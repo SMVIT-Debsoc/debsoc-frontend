@@ -2,6 +2,7 @@ import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
 import type {
+  CreateSessionRequest,
   SessionMetadataView,
   SessionPreparationContextResponse,
   SessionScoringStatusResponse,
@@ -31,6 +32,10 @@ const scoringStatuses = {
   complete: "complete",
 } as const;
 
+
+export interface CreateSessionInput extends CreateSessionRequest {
+  chair: string;
+}
 export interface UpdateSessionLifecycleStateInput extends Partial<UpdateSessionRequest> {
   sessionId: string;
   pairingStatus?: string;
@@ -45,6 +50,13 @@ export interface GetSessionScoringStatusInput {
 }
 
 interface SessionRepositoryContract {
+  createSession(input: {
+    sessionDate: Date;
+    motionType: string;
+    motionText: string;
+    pairingObjective: string;
+    chair: string;
+  }): Promise<SessionMetadataView>;
   getSessionById(sessionId: string): Promise<SessionMetadataView | null>;
   getSessionPreparationContext(sessionId: string): Promise<SessionPreparationContextResponse | null>;
   updateSessionState(
@@ -227,6 +239,29 @@ export function createSessionService(
   scoringReadRepository: ScoringRepositoryContract = scoringRepository as ScoringRepositoryContract,
   publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
 ) {
+  async function createSession(input: CreateSessionInput): Promise<SessionMetadataView> {
+    const created = await repository.createSession({
+      sessionDate: input.sessionDate ? new Date(input.sessionDate) : new Date(),
+      motionType: input.motionType ?? "TBD",
+      motionText: input.motionText ?? "To be announced",
+      pairingObjective: input.pairingObjective ?? "BALANCED",
+      chair: input.chair,
+    });
+
+    await publishEvent(created.sessionId, {
+      eventId: `session.created:${created.sessionId}:${Date.now()}`,
+      eventType: "session.updated",
+      occurredAt: new Date().toISOString(),
+      sessionId: created.sessionId,
+      proposalId: null,
+      visibility: "ADMIN_ONLY",
+      refetchHints: ["session_detail"],
+      entityVersion: `${created.pairingStatus}:${created.publicationStatus}:${created.scoringStatus}`,
+    });
+
+    return created;
+  }
+
   async function getSessionPreparationContext(sessionId: string): Promise<SessionPreparationContextResponse> {
     const context = await repository.getSessionPreparationContext(sessionId);
     if (!context) {
@@ -398,13 +433,14 @@ export function createSessionService(
   }
 
   return {
+    createSession,
     getSessionPreparationContext,
     getSessionScoringStatus,
     updateSessionLifecycleState,
   };
 }
 
-export const { getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
+export const { createSession, getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
 
 
 

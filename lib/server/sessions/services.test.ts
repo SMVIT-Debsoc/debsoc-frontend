@@ -80,11 +80,11 @@ function createInMemorySessionRepo() {
     },
     async replaceSessionRoles(
       sessionId: string,
-      entries: Array<{ memberId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
+      entries: Array<{ participantId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
     ) {
       assert.equal(sessionId, session.sessionId);
       sessionRoles = entries.map((entry) => ({
-        participantId: entry.memberId,
+        participantId: entry.participantId,
         role: entry.sessionRole,
         isChair: false,
         roleAssignedAt: "2026-01-01T00:00:00.000Z",
@@ -108,8 +108,8 @@ test("prepare -> mark -> assign-role flow stays in session-role space", async ()
   const marked = await attendanceService.markAttendance({
     sessionId: "session-1",
     entries: [
-      { memberId: "member-1", isPresent: true, sessionRole: "speaker" },
-      { memberId: "member-2", isPresent: true, sessionRole: "adjudicator" },
+      { participantId: "member-1", isPresent: true, sessionRole: "speaker" },
+      { participantId: "member-2", isPresent: true, sessionRole: "adjudicator" },
     ],
   });
   assert.equal(marked.attendance.length, 2);

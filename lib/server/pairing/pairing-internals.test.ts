@@ -5,6 +5,7 @@ import { computeConfidence, resolveMetricWithFallback } from "./fallback.ts";
 import { computeRoomPlan, buildUnassignedParticipants } from "./leftovers.ts";
 import { computeChairAssignmentScore, assignChairsToRooms } from "./chair-assignment.ts";
 import { selectProposalFromTopBand } from "./proposal-selector.ts";
+import { generateCandidateProposals } from "./candidate-generator.ts";
 import type { ParticipantContext, ProposalScoreBreakdown } from "../../../types/pairing.ts";
 
 test("Fo2 and Fo3 confidence fallback handles zero observation and target saturation", () => {
@@ -94,4 +95,54 @@ test("Fo8 top-band selection normalizes probabilities and is deterministic by se
   assert.equal(first.candidate.proposalScore, second.candidate.proposalScore);
   assert.ok(first.audit.selectedProbability > 0);
   assert.ok(first.audit.selectedProbability <= 1);
+});
+
+test("candidate generation keeps OG/OO/CG/CO order with correct role labels", () => {
+  const candidates = generateCandidateProposals({
+    session: {
+      sessionId: "session-1",
+      motionType: "IR",
+      motionText: "THBT test motion",
+      pairingObjective: "BALANCED",
+    },
+    participants: [
+      { participantId: "speaker-1", participantKind: "member", name: "S1", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-2", participantKind: "member", name: "S2", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-3", participantKind: "member", name: "S3", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-4", participantKind: "member", name: "S4", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-5", participantKind: "member", name: "S5", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-6", participantKind: "member", name: "S6", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-7", participantKind: "member", name: "S7", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "speaker-8", participantKind: "member", name: "S8", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+      { participantId: "adj-1", participantKind: "member", name: "A1", academicYear: null, sessionRole: "adjudicator", isChairEligible: true },
+    ],
+    memberMetricsById: new Map(),
+    pairMetricsByKey: new Map(),
+    roleHistoryByMemberId: new Map(),
+    motionTypeHistoryByMemberId: new Map(),
+    adjudicatorMetricsById: new Map([
+      ["adj-1", { participantId: "adj-1", adjudicatorAverageScore: 5, chairScore: 7, confidence: 1 }],
+    ]),
+    rules: {
+      timeConstraintParticipantIds: [],
+      forcedTeamUps: [],
+      forcedSeparations: [],
+      forcedChairParticipantId: null,
+      forcedRoomCount: null,
+    },
+  });
+
+  assert.equal(candidates.length > 0, true);
+  assert.deepEqual(
+    candidates[0].rooms[0].teams.map((team) => ({
+      bpPosition: team.bpPosition,
+      roles: team.speakers.map((speaker) => speaker.speakingRole),
+    })),
+    [
+      { bpPosition: "OG", roles: ["PM", "DPM"] },
+      { bpPosition: "OO", roles: ["LO", "DLO"] },
+      { bpPosition: "CG", roles: ["MG", "GW"] },
+      { bpPosition: "CO", roles: ["MO", "OW"] },
+    ],
+  );
 });

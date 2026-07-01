@@ -143,6 +143,9 @@ export default function PairingDashboard({
               userName={userName}
               participants={state.participants}
               sessions={state.sessions}
+              onSessionsChange={(sessions) =>
+                setState((current) => ({ ...current, sessions }))
+              }
               attendanceHistory={state.attendanceHistory}
               leaderboard={state.leaderboard}
               progressSummaries={state.progressSummaries}
@@ -184,6 +187,9 @@ export default function PairingDashboard({
         userName={userName}
         participants={state.participants}
         sessions={state.sessions}
+        onSessionsChange={(sessions) =>
+          setState((current) => ({ ...current, sessions }))
+        }
         attendanceHistory={state.attendanceHistory}
         leaderboard={state.leaderboard}
         progressSummaries={state.progressSummaries}
@@ -333,6 +339,8 @@ function normalizeAdminSession(session: ApiAdminSession): SessionRow {
     date: formatDate(session.sessionDate),
     motionType: session.motionType ?? session.motiontype,
     chair: session.Chair,
+    assignedChairLabel: deriveAssignedChairLabel(session),
+    participantAssignmentLabels: deriveParticipantAssignmentLabels(session),
     state: deriveLifecycleState(session),
     attendance: session.attendance ?? [],
   };
@@ -353,6 +361,50 @@ function normalizeAttendanceHistory(item: ApiAttendanceHistory): AttendanceHisto
       Chair: item.session.Chair,
     },
   };
+}
+
+function deriveAssignedChairLabel(session: ApiAdminSession) {
+  const proposal = session.publishedProposal ?? session.acceptedProposal;
+  const chairNames = proposal?.roomAssignments
+    .flatMap((room) => room.adjudicatorAssignments)
+    .filter((adjudicator) => adjudicator.isChair)
+    .map((adjudicator) => adjudicator.member?.name ?? adjudicator.cabinet?.name ?? adjudicator.president?.name ?? null)
+    .filter((name): name is string => Boolean(name)) ?? [];
+
+  if (chairNames.length === 0) {
+    return session.Chair;
+  }
+
+  return chairNames.join(", ");
+}
+
+function deriveParticipantAssignmentLabels(session: ApiAdminSession) {
+  const proposal = session.publishedProposal ?? session.acceptedProposal;
+  const labels: Record<string, string> = {};
+
+  proposal?.roomAssignments.forEach((room) => {
+    room.teamAssignments.forEach((team) => {
+      team.speakerAssignments.forEach((speaker) => {
+        const participantId = speaker.member?.id ?? speaker.cabinet?.id ?? speaker.president?.id;
+        if (!participantId) {
+          return;
+        }
+
+        labels[participantId] = speaker.speakingRole;
+      });
+    });
+
+    room.adjudicatorAssignments.forEach((adjudicator) => {
+      const participantId = adjudicator.member?.id ?? adjudicator.cabinet?.id ?? adjudicator.president?.id;
+      if (!participantId) {
+        return;
+      }
+
+      labels[participantId] = adjudicator.isChair ? "Chair" : "Panel";
+    });
+  });
+
+  return labels;
 }
 
 function deriveSessionsFromAttendance(attendanceHistory: AttendanceHistoryItem[]): SessionRow[] {
@@ -466,7 +518,46 @@ type ApiAdminSession = {
     speakerScore?: number | null;
     member?: { id: string; name: string } | null;
     cabinet?: { id: string; name: string } | null;
+    president?: { id: string; name: string } | null;
   }>;
+  acceptedProposal?: {
+    roomAssignments: Array<{
+      teamAssignments: Array<{
+        bpPosition: string;
+        speakerAssignments: Array<{
+          speakingRole: string;
+          member?: { id: string; name: string } | null;
+          cabinet?: { id: string; name: string } | null;
+          president?: { id: string; name: string } | null;
+        }>;
+      }>;
+      adjudicatorAssignments: Array<{
+        isChair: boolean;
+        member?: { id: string; name: string } | null;
+        cabinet?: { id: string; name: string } | null;
+        president?: { id: string; name: string } | null;
+      }>;
+    }>;
+  } | null;
+  publishedProposal?: {
+    roomAssignments: Array<{
+      teamAssignments: Array<{
+        bpPosition: string;
+        speakerAssignments: Array<{
+          speakingRole: string;
+          member?: { id: string; name: string } | null;
+          cabinet?: { id: string; name: string } | null;
+          president?: { id: string; name: string } | null;
+        }>;
+      }>;
+      adjudicatorAssignments: Array<{
+        isChair: boolean;
+        member?: { id: string; name: string } | null;
+        cabinet?: { id: string; name: string } | null;
+        president?: { id: string; name: string } | null;
+      }>;
+    }>;
+  } | null;
 };
 
 type ApiAttendanceHistory = {

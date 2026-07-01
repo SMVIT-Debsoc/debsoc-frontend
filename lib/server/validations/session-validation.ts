@@ -7,11 +7,19 @@ export const attendancePreparationSchema = z.object({
   sessionId: z.string().min(1),
 });
 
+export const createSessionSchema = z.object({
+  sessionDate: z.string().datetime().optional(),
+  motionType: z.string().min(1).optional(),
+  motionText: z.string().min(1).optional(),
+  pairingObjective: z.enum(pairingObjectives).optional(),
+  chair: z.string().min(1).optional(),
+});
+
 export const markAttendanceSchema = z.object({
   sessionId: z.string().min(1),
   entries: z.array(
     z.object({
-      memberId: z.string().min(1),
+      participantId: z.string().min(1),
       isPresent: z.boolean(),
       sessionRole: z.enum(sessionRoles),
     }),

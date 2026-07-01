@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { Calendar, Crown, Users } from "lucide-react";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
-import type { AttendanceHistoryItem, LegacySessionAttendance, SessionRow } from "./types";
+import type { AttendanceHistoryItem, SessionRow } from "./types";
 
 type SessionsProps = {
   mode: "admin" | "participant";
@@ -74,7 +74,7 @@ export default function Sessions({
                   {session.date}
                 </td>
                 <td className="px-4 py-3">{session.motionType}</td>
-                <td className="px-4 py-3">{session.chair ?? "—"}</td>
+                <td className="px-4 py-3">{session.assignedChairLabel ?? session.chair ?? "N/A"}</td>
                 <td className="px-4 py-3">
                   <StateBadge state={session.state} />
                 </td>
@@ -115,9 +115,9 @@ function SessionDetails({
   session: SessionRow;
   attendanceHistory: AttendanceHistoryItem[];
 }) {
-  const presentCount =
-    session.attendance?.filter((entry) => entry.status === "Present").length ?? 0;
-  const legacyGroups = buildLegacyGroups(session.attendance ?? []);
+  const attendanceEntries = session.attendance ?? [];
+  const presentEntries = attendanceEntries.filter((entry) => isPresentStatus(entry.status));
+  const presentCount = presentEntries.length;
   const myAttendance =
     attendanceHistory.find((item) => item.session.id === session.id) ?? null;
 
@@ -128,7 +128,7 @@ function SessionDetails({
           <h3 className="text-lg font-semibold text-slate-900">{session.date}</h3>
           <p className="mt-1 text-sm text-slate-500">
             Motion type: {session.motionType}
-            {session.chair ? ` · Chair: ${session.chair}` : ""}
+            {(session.assignedChairLabel ?? session.chair) ? ` | Chair: ${session.assignedChairLabel ?? session.chair}` : ""}
           </p>
         </div>
         <StateBadge state={session.state} />
@@ -136,57 +136,39 @@ function SessionDetails({
 
       {mode === "admin" ? (
         <div className="mt-5 space-y-5">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2">
             <SummaryTile label="Present" value={presentCount} icon={<Users size={18} />} />
-            <SummaryTile label="Legacy pair groups" value={legacyGroups.length} icon={<Users size={18} />} />
-            <SummaryTile label="Chair" value={session.chair ?? "—"} icon={<Crown size={18} />} />
+            <SummaryTile label="Chair" value={session.assignedChairLabel ?? session.chair ?? "N/A"} icon={<Crown size={18} />} />
           </div>
 
           <div>
-            <h4 className="mb-2 text-sm font-semibold text-slate-900">Legacy attendance view</h4>
-            {session.attendance && session.attendance.length > 0 ? (
-              <div className="space-y-3">
-                {legacyGroups.length > 0 && (
-                  <div>
-                    <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">
-                      Pairing groups from `pairingCode`
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      {legacyGroups.map((group) => (
-                        <div
-                          key={group.code}
-                          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                        >
-                          <div className="font-medium text-slate-900">{group.code}</div>
-                          <div className="mt-1">{group.names.join(" · ")}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
+            <h4 className="mb-2 text-sm font-semibold text-slate-900">Present participants</h4>
+            {attendanceEntries.length > 0 ? (
+              presentEntries.length > 0 ? (
                 <div className="grid gap-2 md:grid-cols-2">
-                  {session.attendance.map((entry) => {
-                    const name = entry.member?.name ?? entry.cabinet?.name ?? "Unknown participant";
+                  {presentEntries.map((entry) => {
+                    const participantId = entry.member?.id ?? entry.cabinet?.id ?? entry.president?.id ?? null;
+                    const name =
+                      entry.member?.name ?? entry.cabinet?.name ?? entry.president?.name ?? "Unknown participant";
+                    const assignmentLabel =
+                      (participantId ? session.participantAssignmentLabels?.[participantId] : null) ?? "Present";
                     return (
                       <div
                         key={entry.id}
                         className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                       >
                         <div className="font-medium text-slate-900">{name}</div>
-                        <div className="mt-1 text-slate-600">
-                          Status: {entry.status}
-                          {entry.pairingCode ? ` · Pair: ${entry.pairingCode}` : ""}
-                          {entry.debatedAlone ? " · Debated alone" : ""}
-                          {entry.speakerScore !== null && entry.speakerScore !== undefined
-                            ? ` · Score: ${entry.speakerScore}`
-                            : ""}
-                        </div>
+                        <div className="mt-1 text-slate-600">{assignmentLabel}</div>
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              ) : (
+                <EmptyState
+                  title="No present participants"
+                  body="Attendance has been marked for this session, but no one is currently marked present."
+                />
+              )
             ) : (
               <EmptyState
                 title="No attendance records"
@@ -202,12 +184,12 @@ function SessionDetails({
               <SummaryTile label="Status" value={myAttendance.status} icon={<Users size={18} />} />
               <SummaryTile
                 label="Speaker score"
-                value={myAttendance.speakerScore ?? "—"}
+                value={myAttendance.speakerScore ?? "N/A"}
                 icon={<Users size={18} />}
               />
               <SummaryTile
                 label="Pair code"
-                value={myAttendance.pairingCode ?? "—"}
+                value={myAttendance.pairingCode ?? "N/A"}
                 icon={<Users size={18} />}
               />
               <SummaryTile
@@ -246,18 +228,6 @@ function SummaryTile({
   );
 }
 
-function buildLegacyGroups(attendance: LegacySessionAttendance[]) {
-  const groups = new Map<string, string[]>();
-
-  for (const entry of attendance) {
-    if (!entry.pairingCode || entry.debatedAlone) continue;
-    const name = entry.member?.name ?? entry.cabinet?.name ?? "Unknown participant";
-    const current = groups.get(entry.pairingCode) ?? [];
-    current.push(name);
-    groups.set(entry.pairingCode, current);
-  }
-
-  return Array.from(groups.entries())
-    .map(([code, names]) => ({ code, names }))
-    .sort((left, right) => left.code.localeCompare(right.code));
+function isPresentStatus(status: string | null | undefined) {
+  return status?.trim().toLowerCase() === "present";
 }

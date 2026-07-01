@@ -27,10 +27,15 @@ function rotateArray<T>(items: T[], offset: number): T[] {
   return items.slice(normalizedOffset).concat(items.slice(0, normalizedOffset));
 }
 
-function toSpeakerAssignments(participants: SessionSpeaker[]): PairingRoomSpeakerCandidate[] {
+function toSpeakerAssignments(
+  participants: SessionSpeaker[],
+  benchIndex: number,
+): PairingRoomSpeakerCandidate[] {
+  const rolePair = speakingRoles[benchIndex];
+
   return participants.map((participant, index) => ({
     participantId: participant.participantId,
-    speakingRole: speakingRoles[Math.floor(index / 2)][index % 2],
+    speakingRole: rolePair[index] ?? rolePair[rolePair.length - 1],
   }));
 }
 
@@ -71,7 +76,7 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
         return {
           bpPosition,
           teamScore: null,
-          speakers: toSpeakerAssignments(teamParticipants),
+          speakers: toSpeakerAssignments(teamParticipants, teamIndex),
         };
       });
 

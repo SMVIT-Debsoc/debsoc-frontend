@@ -16,7 +16,7 @@ interface SessionRepositoryContract {
   ): Promise<unknown>;
   replaceSessionRoles(
     sessionId: string,
-    entries: Array<{ memberId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
+    entries: Array<{ participantId: string; isPresent: boolean; sessionRole: "speaker" | "adjudicator" }>,
   ): Promise<void>;
   updateSessionState(
     sessionId: string,
@@ -71,7 +71,7 @@ export function createAttendanceService(
     await repository.upsertAttendanceEntries(
       input.sessionId,
       input.entries.map((entry) => ({
-        participantId: entry.memberId,
+        participantId: entry.participantId,
         participantType: "member",
         isPresent: entry.isPresent,
       })),

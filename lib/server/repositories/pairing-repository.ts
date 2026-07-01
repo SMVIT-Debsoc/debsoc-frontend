@@ -47,6 +47,18 @@ interface RoomAssignmentSummary {
   unassignedParticipants: UnassignedParticipantView[];
 }
 
+interface ManualAssignmentPayload {
+  rooms: Array<{
+    roomIndex: number;
+    teams: Array<{
+      bpPosition: string;
+      speakers: Array<{ participantId: string; speakingRole: string }>;
+    }>;
+    adjudicators: Array<{ participantId: string; isChair: boolean }>;
+  }>;
+  assignedParticipantIds?: string[];
+}
+
 function participantKindFromProjection(participant: ParticipantProjection): ParticipantKind {
   if (participant.memberId) return "member";
   if (participant.cabinetId) return "cabinet";
@@ -206,6 +218,15 @@ function buildMotionTypeHistoryMap(
   return grouped;
 }
 
+const BENCH_POSITION_ORDER = ["OG", "OO", "CG", "CO"] as const;
+const SPEAKING_ROLES_BY_BENCH = {
+  OG: ["PM", "DPM"],
+  OO: ["LO", "DLO"],
+  CG: ["MG", "GW"],
+  CO: ["MO", "OW"],
+} as const;
+const PAIRING_WRITE_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 20_000 } as const;
+
 function buildRoomViews(
   proposal: {
     roomAssignments: Array<{
@@ -230,14 +251,21 @@ function buildRoomViews(
       roomScore: room.roomScore,
       roomBalanceScore: room.roomBalanceScore,
       roomDifficultyScore: room.roomDifficultyScore,
-      teams: room.teamAssignments.map((team) => ({
-        bpPosition: team.bpPosition as PairingRoomView["teams"][number]["bpPosition"],
-        teamScore: team.teamScore,
-        speakers: team.speakerAssignments.map((speaker) => ({
-          participantId: participantIdFromProjection(speaker),
-          speakingRole: speaker.speakingRole as PairingRoomView["teams"][number]["speakers"][number]["speakingRole"],
+      teams: room.teamAssignments
+        .slice()
+        .sort(
+          (left, right) =>
+            BENCH_POSITION_ORDER.indexOf(left.bpPosition as (typeof BENCH_POSITION_ORDER)[number]) -
+            BENCH_POSITION_ORDER.indexOf(right.bpPosition as (typeof BENCH_POSITION_ORDER)[number]),
+        )
+        .map((team) => ({
+          bpPosition: team.bpPosition as PairingRoomView["teams"][number]["bpPosition"],
+          teamScore: team.teamScore,
+          speakers: team.speakerAssignments.map((speaker) => ({
+            participantId: participantIdFromProjection(speaker),
+            speakingRole: speaker.speakingRole as PairingRoomView["teams"][number]["speakers"][number]["speakingRole"],
+          })),
         })),
-      })),
       adjudicators: room.adjudicatorAssignments.map((adjudicator) => ({
         participantId: participantIdFromProjection(adjudicator),
         isChair: adjudicator.isChair,
@@ -253,6 +281,139 @@ function buildUnassignedParticipants(
     participantId: participantIdFromProjection(participant),
     reason: participant.reason as UnassignedParticipantView["reason"],
   }));
+}
+
+function buildParticipantKindMap(assignments: SessionRoleAssignmentProjection[]): Map<MemberId, ParticipantKind> {
+  return new Map(
+    assignments.map((assignment) => {
+      const participantId = resolveParticipantId(assignment);
+      const participantKind = assignment.memberId
+        ? "member"
+        : assignment.cabinetId
+          ? "cabinet"
+          : "president";
+      return [participantId, participantKind satisfies ParticipantKind];
+    }),
+  );
+}
+
+function parseManualAssignmentPayload(payload: Record<string, unknown>): ManualAssignmentPayload {
+  if (!Array.isArray(payload.rooms)) {
+    throw new Error("Manual override payload must include rooms.");
+  }
+
+  return {
+    rooms: payload.rooms.map((room, roomIndex) => {
+      if (!room || typeof room !== "object") {
+        throw new Error(`Manual override room ${roomIndex + 1} is invalid.`);
+      }
+      const roomRecord = room as Record<string, unknown>;
+      if (!Array.isArray(roomRecord.teams) || !Array.isArray(roomRecord.adjudicators)) {
+        throw new Error(`Manual override room ${roomIndex + 1} must include teams and adjudicators.`);
+      }
+      return {
+        roomIndex: Number(roomRecord.roomIndex ?? roomIndex + 1),
+        teams: roomRecord.teams.map((team, teamIndex) => {
+          if (!team || typeof team !== "object") {
+            throw new Error(`Manual override team ${teamIndex + 1} in room ${roomIndex + 1} is invalid.`);
+          }
+          const teamRecord = team as Record<string, unknown>;
+          if (!Array.isArray(teamRecord.speakers)) {
+            throw new Error(`Manual override team ${teamIndex + 1} in room ${roomIndex + 1} must include speakers.`);
+          }
+          return {
+            bpPosition: String(teamRecord.bpPosition ?? ""),
+            speakers: teamRecord.speakers.map((speaker, speakerIndex) => {
+              if (!speaker || typeof speaker !== "object") {
+                throw new Error(`Manual override speaker ${speakerIndex + 1} in room ${roomIndex + 1} is invalid.`);
+              }
+              const speakerRecord = speaker as Record<string, unknown>;
+              return {
+                participantId: String(speakerRecord.participantId ?? ""),
+                speakingRole: String(speakerRecord.speakingRole ?? ""),
+              };
+            }),
+          };
+        }),
+        adjudicators: roomRecord.adjudicators.map((adjudicator, adjudicatorIndex) => {
+          if (!adjudicator || typeof adjudicator !== "object") {
+            throw new Error(`Manual override adjudicator ${adjudicatorIndex + 1} in room ${roomIndex + 1} is invalid.`);
+          }
+          const adjudicatorRecord = adjudicator as Record<string, unknown>;
+          return {
+            participantId: String(adjudicatorRecord.participantId ?? ""),
+            isChair: Boolean(adjudicatorRecord.isChair),
+          };
+        }),
+      };
+    }),
+    assignedParticipantIds: Array.isArray(payload.assignedParticipantIds)
+      ? payload.assignedParticipantIds.map((participantId) => String(participantId))
+      : undefined,
+  };
+}
+
+function validateManualAssignmentPayload(
+  payload: ManualAssignmentPayload,
+  participantKindsById: Map<MemberId, ParticipantKind>,
+): { assignedParticipantIds: Set<MemberId>; unassignedParticipantIds: MemberId[] } {
+  const assignedParticipantIds = new Set<MemberId>();
+
+  if (payload.rooms.length === 0) {
+    throw new Error("Manual override must include at least one room.");
+  }
+
+  for (const room of payload.rooms) {
+    if (room.teams.length != BENCH_POSITION_ORDER.length) {
+      throw new Error(`Room ${room.roomIndex} must include OG, OO, CG, and CO.`);
+    }
+
+    for (const bpPosition of BENCH_POSITION_ORDER) {
+      const team = room.teams.find((entry) => entry.bpPosition === bpPosition);
+      if (!team) {
+        throw new Error(`Room ${room.roomIndex} is missing ${bpPosition}.`);
+      }
+      const expectedRoles = SPEAKING_ROLES_BY_BENCH[bpPosition];
+      if (team.speakers.length != expectedRoles.length) {
+        throw new Error(`Room ${room.roomIndex} ${bpPosition} must contain exactly two speakers.`);
+      }
+      for (let index = 0; index < expectedRoles.length; index++) {
+        const speaker = team.speakers[index];
+        if (!speaker.participantId || !participantKindsById.has(speaker.participantId)) {
+          throw new Error(`Room ${room.roomIndex} ${bpPosition} contains an unknown participant.`);
+        }
+        if (speaker.speakingRole !== expectedRoles[index]) {
+          throw new Error(`Room ${room.roomIndex} ${bpPosition} must use roles ${expectedRoles.join(" / ")}.`);
+        }
+        if (assignedParticipantIds.has(speaker.participantId)) {
+          throw new Error(`Participant ${speaker.participantId} is assigned more than once in the manual override.`);
+        }
+        assignedParticipantIds.add(speaker.participantId);
+      }
+    }
+
+    if (room.adjudicators.length === 0 || room.adjudicators.length > 3) {
+      throw new Error(`Room ${room.roomIndex} must contain between one and three adjudicators.`);
+    }
+    if (room.adjudicators.filter((adjudicator) => adjudicator.isChair).length !== 1) {
+      throw new Error(`Room ${room.roomIndex} must contain exactly one chair.`);
+    }
+    for (const adjudicator of room.adjudicators) {
+      if (!adjudicator.participantId || !participantKindsById.has(adjudicator.participantId)) {
+        throw new Error(`Room ${room.roomIndex} contains an unknown adjudicator.`);
+      }
+      if (assignedParticipantIds.has(adjudicator.participantId)) {
+        throw new Error(`Participant ${adjudicator.participantId} is assigned more than once in the manual override.`);
+      }
+      assignedParticipantIds.add(adjudicator.participantId);
+    }
+  }
+
+  const unassignedParticipantIds = [...participantKindsById.keys()].filter(
+    (participantId) => !assignedParticipantIds.has(participantId),
+  );
+
+  return { assignedParticipantIds, unassignedParticipantIds };
 }
 
 async function loadProposalForView(client: PairingRepositoryClient | TransactionClient, proposalId: string) {
@@ -485,7 +646,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
   }
 
   async function saveGeneratedProposal(input: PersistGeneratedProposalInput): Promise<PairingProposalView> {
-    return client.$transaction(async (tx: TransactionClient) => {
+    const createdProposalId = await client.$transaction(async (tx: TransactionClient) => {
       const latestProposal = await tx.pairingProposal.findFirst({
         where: { sessionId: input.sessionId },
         orderBy: { proposalVersion: "desc" },
@@ -547,18 +708,22 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
               },
             })),
           },
-          unassignedParticipants: {
-            create: input.candidate.unassignedParticipants.map((participant) => ({
-              ...buildParticipantReferenceData(
-                participant.participantId,
-                input.participantKindsById.get(participant.participantId) ?? "member",
-              ),
-              reason: participant.reason,
-            })),
-          },
         },
         select: { id: true },
       });
+
+      if (input.candidate.unassignedParticipants.length > 0) {
+        await tx.unassignedParticipant.createMany({
+          data: input.candidate.unassignedParticipants.map((participant) => ({
+            proposalId: createdProposal.id,
+            ...buildParticipantReferenceData(
+              participant.participantId,
+              input.participantKindsById.get(participant.participantId) ?? "member",
+            ),
+            reason: participant.reason,
+          })),
+        });
+      }
 
       await tx.debateSession.update({
         where: { id: input.sessionId },
@@ -568,19 +733,20 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         },
       });
 
-      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
-      const proposal = await txBackedRepository.getPairingProposalView(createdProposal.id);
-      if (!proposal) {
-        throw new Error(`Generated proposal ${createdProposal.id} could not be materialized.`);
-      }
+      return createdProposal.id;
+    }, PAIRING_WRITE_TRANSACTION_OPTIONS);
 
-      return proposal;
-    });
+    const proposal = await getPairingProposalView(createdProposalId);
+    if (!proposal) {
+      throw new Error(`Generated proposal ${createdProposalId} could not be materialized.`);
+    }
+
+    return proposal;
   }
 
 
   async function approveProposalReviewAction(proposalId: string, reviewerId: string): Promise<PairingProposalSummary> {
-    return client.$transaction(async (tx: TransactionClient) => {
+    const approvedProposalId = await client.$transaction(async (tx: TransactionClient) => {
       const proposal = await tx.pairingProposal.findUnique({
         where: { id: proposalId },
         select: {
@@ -635,14 +801,15 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         });
       }
 
-      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
-      const approvedProposal = await txBackedRepository.getPairingProposalView(proposalId);
-      if (!approvedProposal) {
-        throw new Error(`Approved proposal ${proposalId} could not be materialized.`);
-      }
+      return proposalId;
+    }, PAIRING_WRITE_TRANSACTION_OPTIONS);
 
-      return approvedProposal.summary;
-    });
+    const approvedProposal = await getPairingProposalView(approvedProposalId);
+    if (!approvedProposal) {
+      throw new Error(`Approved proposal ${approvedProposalId} could not be materialized.`);
+    }
+
+    return approvedProposal.summary;
   }
 
   async function overrideProposalReviewAction(input: {
@@ -652,7 +819,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
     payload: Record<string, unknown>;
     notes: string | null;
   }): Promise<PairingProposalView> {
-    return client.$transaction(async (tx: TransactionClient) => {
+    const overriddenProposalId = await client.$transaction(async (tx: TransactionClient) => {
       const proposal = await tx.pairingProposal.findUnique({
         where: { id: input.proposalId },
         select: {
@@ -661,9 +828,70 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
           status: true,
           isPublishedOfficially: true,
           scoreBreakdownJson: true,
+          roomAssignments: {
+            select: {
+              roomIndex: true,
+              roomScore: true,
+              roomBalanceScore: true,
+              roomDifficultyScore: true,
+              teamAssignments: {
+                select: {
+                  bpPosition: true,
+                  teamScore: true,
+                  speakerAssignments: {
+                    select: {
+                      memberId: true,
+                      cabinetId: true,
+                      presidentId: true,
+                      member: { select: { id: true, name: true } },
+                      cabinet: { select: { id: true, name: true } },
+                      president: { select: { id: true, name: true } },
+                      speakingRole: true,
+                    },
+                    orderBy: { speakerOrder: "asc" },
+                  },
+                },
+                orderBy: { bpPosition: "asc" },
+              },
+              adjudicatorAssignments: {
+                select: {
+                  memberId: true,
+                  cabinetId: true,
+                  presidentId: true,
+                  member: { select: { id: true, name: true } },
+                  cabinet: { select: { id: true, name: true } },
+                  president: { select: { id: true, name: true } },
+                  isChair: true,
+                  chairAssignmentScore: true,
+                },
+                orderBy: [{ isChair: "desc" }, { memberId: "asc" }],
+              },
+            },
+            orderBy: { roomIndex: "asc" },
+          },
+          unassignedParticipants: {
+            select: {
+              memberId: true,
+              cabinetId: true,
+              presidentId: true,
+              member: { select: { id: true, name: true } },
+              cabinet: { select: { id: true, name: true } },
+              president: { select: { id: true, name: true } },
+              reason: true,
+            },
+          },
           session: {
             select: {
               publishedProposalId: true,
+              sessionRoleAssignments: {
+                select: {
+                  memberId: true,
+                  cabinetId: true,
+                  presidentId: true,
+                  role: true,
+                  isChair: true,
+                },
+              },
             },
           },
         },
@@ -677,14 +905,147 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         throw new Error(`Proposal ${input.proposalId} can no longer be overridden because the session is already published.`);
       }
 
+      const participantKindsById = buildParticipantKindMap(proposal.session.sessionRoleAssignments);
+      const manualPayload = parseManualAssignmentPayload(input.payload);
+      const { unassignedParticipantIds } = validateManualAssignmentPayload(manualPayload, participantKindsById);
       const existingBreakdown = (proposal.scoreBreakdownJson ?? {}) as Record<string, unknown>;
+      const originalProposalState = {
+        rooms: buildRoomViews(proposal),
+        unassignedParticipants: buildUnassignedParticipants(proposal.unassignedParticipants),
+      };
       const manualOverrideAudit = {
         overrideType: input.overrideType,
-        payload: input.payload,
+        payload: {
+          ...manualPayload,
+          unassignedParticipantIds,
+        },
+        originalProposalState,
         notes: input.notes,
         reviewerId: input.reviewerId,
         overriddenAt: new Date().toISOString(),
       };
+
+      await tx.teamSpeakerAssignment.deleteMany({
+        where: {
+          teamAssignment: {
+            roomAssignment: {
+              proposalId: input.proposalId,
+            },
+          },
+        },
+      });
+      await tx.roomAdjudicatorAssignment.deleteMany({
+        where: {
+          roomAssignment: {
+            proposalId: input.proposalId,
+          },
+        },
+      });
+      await tx.debateTeamAssignment.deleteMany({
+        where: {
+          roomAssignment: {
+            proposalId: input.proposalId,
+          },
+        },
+      });
+      await tx.debateRoomAssignment.deleteMany({
+        where: {
+          proposalId: input.proposalId,
+        },
+      });
+      await tx.unassignedParticipant.deleteMany({ where: { proposalId: input.proposalId } });
+
+      for (const room of manualPayload.rooms) {
+        const createdRoom = await tx.debateRoomAssignment.create({
+          data: {
+            proposalId: input.proposalId,
+            roomIndex: room.roomIndex,
+            roomScore: null,
+            roomBalanceScore: null,
+            roomDifficultyScore: null,
+          },
+          select: { id: true },
+        });
+
+        for (const team of room.teams) {
+          const createdTeam = await tx.debateTeamAssignment.create({
+            data: {
+              roomAssignmentId: createdRoom.id,
+              bpPosition: team.bpPosition,
+              teamScore: null,
+            },
+            select: { id: true },
+          });
+
+          await tx.teamSpeakerAssignment.createMany({
+            data: team.speakers.map((speaker, index) => ({
+              teamAssignmentId: createdTeam.id,
+              ...buildParticipantReferenceData(
+                speaker.participantId,
+                participantKindsById.get(speaker.participantId) ?? "member",
+              ),
+              speakingRole: speaker.speakingRole,
+              speakerOrder: index + 1,
+            })),
+          });
+        }
+
+        await tx.roomAdjudicatorAssignment.createMany({
+          data: room.adjudicators.map((adjudicator) => ({
+            roomAssignmentId: createdRoom.id,
+            ...buildParticipantReferenceData(
+              adjudicator.participantId,
+              participantKindsById.get(adjudicator.participantId) ?? "member",
+            ),
+            isChair: adjudicator.isChair,
+            chairAssignmentScore: null,
+          })),
+        });
+      }
+
+      if (unassignedParticipantIds.length > 0) {
+        await tx.unassignedParticipant.createMany({
+          data: unassignedParticipantIds.map((participantId) => ({
+            proposalId: input.proposalId,
+            ...buildParticipantReferenceData(
+              participantId,
+              participantKindsById.get(participantId) ?? "member",
+            ),
+            reason: "ADMIN_EXCLUDED",
+          })),
+        });
+      }
+
+      const roleAssignments = manualPayload.rooms.flatMap((room) => [
+        ...room.teams.flatMap((team) =>
+          team.speakers.map((speaker) => ({
+            participantId: speaker.participantId,
+            role: "speaker" as const,
+            isChair: false,
+          })),
+        ),
+        ...room.adjudicators.map((adjudicator) => ({
+          participantId: adjudicator.participantId,
+          role: "adjudicator" as const,
+          isChair: adjudicator.isChair,
+        })),
+      ]);
+
+      await tx.sessionRoleAssignment.deleteMany({ where: { sessionId: proposal.sessionId } });
+      if (roleAssignments.length > 0) {
+        await tx.sessionRoleAssignment.createMany({
+          data: roleAssignments.map((assignment) => ({
+            sessionId: proposal.sessionId,
+            role: assignment.role,
+            isChair: assignment.isChair,
+            roleAssignedAt: new Date(),
+            ...buildParticipantReferenceData(
+              assignment.participantId,
+              participantKindsById.get(assignment.participantId) ?? "member",
+            ),
+          })),
+        });
+      }
 
       await tx.pairingProposal.update({
         where: { id: input.proposalId },
@@ -716,14 +1077,15 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         },
       });
 
-      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
-      const overriddenProposal = await txBackedRepository.getPairingProposalView(input.proposalId);
-      if (!overriddenProposal) {
-        throw new Error(`Overridden proposal ${input.proposalId} could not be materialized.`);
-      }
+      return input.proposalId;
+    }, PAIRING_WRITE_TRANSACTION_OPTIONS);
 
-      return overriddenProposal;
-    });
+    const overriddenProposal = await getPairingProposalView(overriddenProposalId);
+    if (!overriddenProposal) {
+      throw new Error(`Overridden proposal ${overriddenProposalId} could not be materialized.`);
+    }
+
+    return overriddenProposal;
   }
 
   async function recordRegenerateReviewAction(proposalId: string, reviewerId: string): Promise<{ sessionId: string }> {
@@ -909,7 +1271,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
   }
 
   async function publishProposalTransaction(input: PublishPairingRequest): Promise<PublishedPairingView> {
-    return client.$transaction(async (tx: TransactionClient) => {
+    const publishedSessionId = await client.$transaction(async (tx: TransactionClient) => {
       const publishedSession = await tx.debateSession.findUnique({
         where: { id: input.sessionId },
         select: {
@@ -919,12 +1281,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
       });
 
       if (publishedSession?.publishedProposalId && publishedSession.publishedAt) {
-        const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
-        const existingPublishedPairing = await txBackedRepository.getPublishedPairing(input.sessionId);
-        if (!existingPublishedPairing) {
-          throw new Error(`Published pairing could not be materialized for session ${input.sessionId}.`);
-        }
-        return existingPublishedPairing;
+        return input.sessionId;
       }
 
       const approvedProposal = await tx.pairingProposal.findFirst({
@@ -971,15 +1328,15 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         },
       });
 
-      const txBackedRepository = createPairingRepository(tx as unknown as PairingRepositoryClient);
-      const publishedPairing = await txBackedRepository.getPublishedPairing(input.sessionId);
+      return input.sessionId;
+    }, PAIRING_WRITE_TRANSACTION_OPTIONS);
 
-      if (!publishedPairing) {
-        throw new Error(`Published pairing could not be materialized for session ${input.sessionId}.`);
-      }
+    const publishedPairing = await getPublishedPairing(publishedSessionId);
+    if (!publishedPairing) {
+      throw new Error(`Published pairing could not be materialized for session ${publishedSessionId}.`);
+    }
 
-      return publishedPairing;
-    });
+    return publishedPairing;
   }
 
   return {

@@ -8,7 +8,7 @@ export interface AttendancePreparationRequest {
 }
 
 export interface SessionRoleAssignmentEntry {
-  memberId: MemberId;
+  participantId: MemberId;
   isPresent: boolean;
   sessionRole: SessionRole;
 }
@@ -42,12 +42,22 @@ export interface SessionMetadataView {
   pairingStatus: string;
   publicationStatus: string;
   scoringStatus: string;
+  acceptedProposalId?: string | null;
+  publishedProposalId?: string | null;
 }
 
 export interface SessionPreparationContextResponse {
   session: SessionMetadataView;
   attendance: AttendanceRecordView[];
   sessionRoles: SessionRoleAssignmentView[];
+}
+
+export interface CreateSessionRequest {
+  sessionDate?: string;
+  motionType?: MotionType;
+  motionText?: string;
+  pairingObjective?: PairingObjective;
+  chair?: string;
 }
 
 export interface UpdateSessionRequest {

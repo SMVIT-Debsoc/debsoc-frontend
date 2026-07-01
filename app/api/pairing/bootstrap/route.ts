@@ -41,6 +41,69 @@ export async function GET() {
             debatedAlone: true,
             member: { select: { id: true, name: true } },
             cabinet: { select: { id: true, name: true } },
+            president: { select: { id: true, name: true } },
+          },
+        },
+        acceptedProposal: {
+          select: {
+            roomAssignments: {
+              orderBy: { roomIndex: "asc" },
+              select: {
+                teamAssignments: {
+                  select: {
+                    bpPosition: true,
+                    speakerAssignments: {
+                      orderBy: { speakerOrder: "asc" },
+                      select: {
+                        speakingRole: true,
+                        member: { select: { id: true, name: true } },
+                        cabinet: { select: { id: true, name: true } },
+                        president: { select: { id: true, name: true } },
+                      },
+                    },
+                  },
+                },
+                adjudicatorAssignments: {
+                  select: {
+                    isChair: true,
+                    member: { select: { id: true, name: true } },
+                    cabinet: { select: { id: true, name: true } },
+                    president: { select: { id: true, name: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
+        publishedProposal: {
+          select: {
+            roomAssignments: {
+              orderBy: { roomIndex: "asc" },
+              select: {
+                teamAssignments: {
+                  select: {
+                    bpPosition: true,
+                    speakerAssignments: {
+                      orderBy: { speakerOrder: "asc" },
+                      select: {
+                        speakingRole: true,
+                        member: { select: { id: true, name: true } },
+                        cabinet: { select: { id: true, name: true } },
+                        president: { select: { id: true, name: true } },
+                      },
+                    },
+                  },
+                },
+                adjudicatorAssignments: {
+                  select: {
+                    isChair: true,
+                    member: { select: { id: true, name: true } },
+                    cabinet: { select: { id: true, name: true } },
+                    president: { select: { id: true, name: true } },
+                  },
+                },
+              },
+            },
           },
         },
       },
