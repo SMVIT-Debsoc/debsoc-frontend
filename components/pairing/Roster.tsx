@@ -2,16 +2,25 @@
 
 import React, { useMemo, useState } from "react";
 import { Card, EmptyState, Pill, SectionHeader } from "./ui";
-import type { Participant } from "./types";
+import type { Participant, ProgressSummary } from "./types";
 
 type RosterProps = {
   participants: Participant[];
+  progressSummaries: ProgressSummary[];
   loading: boolean;
   error: string | null;
 };
 
-export default function Roster({ participants, loading, error }: RosterProps) {
+export default function Roster({
+  participants,
+  progressSummaries,
+  loading,
+  error,
+}: RosterProps) {
   const [filter, setFilter] = useState("");
+  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(
+    null,
+  );
 
   const filteredParticipants = useMemo(
     () =>
@@ -20,6 +29,15 @@ export default function Roster({ participants, loading, error }: RosterProps) {
       ),
     [filter, participants],
   );
+
+  const progressByParticipantId = useMemo(
+    () => new Map(progressSummaries.map((summary) => [summary.participantId, summary])),
+    [progressSummaries],
+  );
+
+  const selectedProgress = selectedParticipantId
+    ? progressByParticipantId.get(selectedParticipantId) ?? null
+    : null;
 
   if (loading) {
     return <EmptyState title="Loading roster" body="Fetching live members, cabinet, and president records." />;
@@ -33,7 +51,7 @@ export default function Roster({ participants, loading, error }: RosterProps) {
     <div>
       <SectionHeader
         title="Members & Cabinet"
-        subtitle="Live participant roster from the current backend. Pairing progress verdicts will replace this fallback summary once the progress endpoints exist."
+        subtitle="Live participant roster with progress summaries from the pairing backend."
         right={
           <input
             value={filter}
@@ -54,6 +72,7 @@ export default function Roster({ participants, loading, error }: RosterProps) {
                 <th className="px-4 py-2 font-medium">Name</th>
                 <th className="px-4 py-2 font-medium">Account</th>
                 <th className="px-4 py-2 font-medium">Email</th>
+                <th className="px-4 py-2 font-medium">Progress</th>
                 <th className="px-4 py-2 font-medium">Verified</th>
               </tr>
             </thead>
@@ -76,6 +95,19 @@ export default function Roster({ participants, loading, error }: RosterProps) {
                   </td>
                   <td className="px-4 py-3 text-slate-700">{participant.email ?? "—"}</td>
                   <td className="px-4 py-3">
+                    {progressByParticipantId.has(participant.id) ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedParticipantId(participant.id)}
+                        className="text-sm font-medium text-blue-700 hover:underline"
+                      >
+                        View progress
+                      </button>
+                    ) : (
+                      <span className="text-slate-400">No data yet</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
                     <Pill tone={participant.isVerified ? "emerald" : "red"}>
                       {participant.isVerified ? "Verified" : "Pending"}
                     </Pill>
@@ -86,6 +118,63 @@ export default function Roster({ participants, loading, error }: RosterProps) {
           </table>
         </Card>
       )}
+
+      {selectedParticipantId && (
+        <div className="mt-6">
+          <Card className="p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Progress snapshot</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Read-only pairing progress summary from the backend profile service.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedParticipantId(null)}
+                className="text-sm font-medium text-slate-500 hover:text-slate-800"
+              >
+                Close
+              </button>
+            </div>
+
+            {selectedProgress ? (
+              <div className="grid gap-4 md:grid-cols-4">
+                <SummaryStat label="Speaker total" value={selectedProgress.speakerTotalScore} />
+                <SummaryStat label="Strength" value={selectedProgress.speakerStrength.toFixed(2)} />
+                <SummaryStat label="Confidence" value={selectedProgress.confidence.toFixed(2)} />
+                <SummaryStat label="Data maturity" value={selectedProgress.dataMaturity} />
+                <SummaryStat label="Sessions spoken" value={selectedProgress.sessionsSpoken} />
+                <SummaryStat
+                  label="Sessions adjudicated"
+                  value={selectedProgress.sessionsAdjudicated}
+                />
+                <SummaryStat label="Sessions chaired" value={selectedProgress.sessionsChaired} />
+              </div>
+            ) : (
+              <EmptyState
+                title="No progress summary"
+                body="This participant does not have enough backend progress data yet."
+              />
+            )}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-slate-900">{value}</div>
     </div>
   );
 }

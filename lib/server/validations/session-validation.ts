@@ -22,6 +22,7 @@ export const updateSessionSchema = z.object({
   motionType: z.string().min(1),
   motionText: z.string().min(1),
   pairingObjective: z.enum(pairingObjectives),
+  pairingStatus: z.string().min(1).optional(),
 });
 
 export const sessionIdParamSchema = z.object({

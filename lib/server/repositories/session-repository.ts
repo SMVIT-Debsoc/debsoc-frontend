@@ -11,12 +11,41 @@ import type { MemberId } from "../../../types/pairing.ts";
 import { resolveParticipantId } from "./metrics-repository.ts";
 
 type SessionRepositoryClient = PrismaClient;
+type ParticipantType = "member" | "cabinet" | "president";
 
 function toSessionRole(role: string): SessionRoleAssignmentView["role"] {
   return role === "adjudicator" ? "adjudicator" : "speaker";
 }
 
 export function createSessionRepository(client: SessionRepositoryClient = prisma) {
+  async function resolveParticipantTypesById(participantIds: string[]) {
+    const uniqueIds = [...new Set(participantIds)];
+    if (uniqueIds.length === 0) {
+      return new Map<string, ParticipantType>();
+    }
+
+    const [members, cabinet, presidents] = await Promise.all([
+      client.member.findMany({
+        where: { id: { in: uniqueIds } },
+        select: { id: true },
+      }),
+      client.cabinet.findMany({
+        where: { id: { in: uniqueIds } },
+        select: { id: true },
+      }),
+      client.president.findMany({
+        where: { id: { in: uniqueIds } },
+        select: { id: true },
+      }),
+    ]);
+
+    const map = new Map<string, ParticipantType>();
+    members.forEach((record: { id: string }) => map.set(record.id, "member"));
+    cabinet.forEach((record: { id: string }) => map.set(record.id, "cabinet"));
+    presidents.forEach((record: { id: string }) => map.set(record.id, "president"));
+    return map;
+  }
+
   async function getSessionById(sessionId: string): Promise<SessionMetadataView | null> {
     const session = await client.debateSession.findUnique({
       where: { id: sessionId },
@@ -139,31 +168,40 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     sessionId: string,
     entries: Array<{ participantId: MemberId; participantType: "member" | "cabinet" | "president"; isPresent: boolean }>,
   ) {
+    const participantTypes = await resolveParticipantTypesById(
+      entries.map((entry) => entry.participantId),
+    );
+
     return client.$transaction(
-      entries.map((entry) =>
-        client.attendance.upsert({
+      entries.map((entry) => {
+        const participantType = participantTypes.get(entry.participantId) ?? entry.participantType;
+        return client.attendance.upsert({
           where: {
-            id: `${sessionId}:${entry.participantType}:${entry.participantId}`,
+            id: `${sessionId}:${participantType}:${entry.participantId}`,
           },
           create: {
-            id: `${sessionId}:${entry.participantType}:${entry.participantId}`,
+            id: `${sessionId}:${participantType}:${entry.participantId}`,
             sessionId,
             status: entry.isPresent ? "present" : "absent",
             isPresent: entry.isPresent,
-            memberId: entry.participantType === "member" ? entry.participantId : null,
-            cabinetId: entry.participantType === "cabinet" ? entry.participantId : null,
-            presidentId: entry.participantType === "president" ? entry.participantId : null,
+            memberId: participantType === "member" ? entry.participantId : null,
+            cabinetId: participantType === "cabinet" ? entry.participantId : null,
+            presidentId: participantType === "president" ? entry.participantId : null,
           },
           update: {
             status: entry.isPresent ? "present" : "absent",
             isPresent: entry.isPresent,
           },
-        }),
-      ),
+        });
+      }),
     );
   }
 
   async function replaceSessionRoles(sessionId: string, entries: SessionRoleAssignmentEntry[]) {
+    const participantTypes = await resolveParticipantTypesById(
+      entries.map((entry) => entry.memberId),
+    );
+
     await client.$transaction(async (tx: PrismaClient) => {
       await tx.sessionRoleAssignment.deleteMany({ where: { sessionId } });
 
@@ -172,13 +210,18 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
       }
 
       await tx.sessionRoleAssignment.createMany({
-        data: entries.map((entry) => ({
-          sessionId,
-          role: entry.sessionRole,
-          isChair: false,
-          roleAssignedAt: new Date(),
-          memberId: entry.memberId,
-        })),
+        data: entries.map((entry) => {
+          const participantType = participantTypes.get(entry.memberId) ?? "member";
+          return {
+            sessionId,
+            role: entry.sessionRole,
+            isChair: false,
+            roleAssignedAt: new Date(),
+            memberId: participantType === "member" ? entry.memberId : null,
+            cabinetId: participantType === "cabinet" ? entry.memberId : null,
+            presidentId: participantType === "president" ? entry.memberId : null,
+          };
+        }),
       });
     });
   }

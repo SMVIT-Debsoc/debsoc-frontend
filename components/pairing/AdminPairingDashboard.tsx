@@ -22,6 +22,7 @@ import type {
   AttendanceHistoryItem,
   LeaderboardRow,
   Participant,
+  ProgressSummary,
   SessionRow,
 } from "./types";
 
@@ -40,6 +41,7 @@ type AdminPairingDashboardProps = {
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   leaderboard: LeaderboardRow[];
+  progressSummaries: ProgressSummary[];
   leaderboardScope: "all" | "bi-monthly";
   loading: boolean;
   loadingLeaderboard: boolean;
@@ -65,6 +67,7 @@ export default function AdminPairingDashboard({
   sessions,
   attendanceHistory,
   leaderboard,
+  progressSummaries,
   leaderboardScope,
   loading,
   loadingLeaderboard,
@@ -118,6 +121,7 @@ export default function AdminPairingDashboard({
       {activeTab === "Roster" && (
         <Roster
           participants={participants}
+          progressSummaries={progressSummaries}
           loading={loading}
           error={error}
         />

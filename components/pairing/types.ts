@@ -1,5 +1,14 @@
 "use client";
 
+import type {
+  PairingProposalView,
+  PublishedPairingView,
+} from "@/types/pairing";
+import type {
+  SessionPreparationContextResponse,
+  SessionScoringStatusResponse,
+} from "@/types/session";
+
 export type AccountType = "Member" | "Cabinet" | "President";
 
 export type LifecycleState =
@@ -61,4 +70,22 @@ export type LeaderboardRow = {
   score: number;
   sessions: number;
   rank: number;
+};
+
+export type ProgressSummary = {
+  participantId: string;
+  speakerTotalScore: number;
+  speakerStrength: number;
+  confidence: number;
+  sessionsSpoken: number;
+  sessionsAdjudicated: number;
+  sessionsChaired: number;
+  dataMaturity: "LOW" | "MEDIUM" | "HIGH";
+};
+
+export type WorkspaceSessionData = {
+  context: SessionPreparationContextResponse | null;
+  proposal: PairingProposalView | null;
+  publishedPairing: PublishedPairingView | null;
+  scoringStatus: SessionScoringStatusResponse | null;
 };
