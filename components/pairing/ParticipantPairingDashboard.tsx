@@ -118,7 +118,7 @@ export default function ParticipantPairingDashboard({
               attendanceHistory={attendanceHistory}
             />
           )}
-          {activeTab === "MyScoring" && <MyScoring role={role} />}
+          {activeTab === "MyScoring" && <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} />}
           {activeTab === "Leaderboards" && (
             <Leaderboards
               leaderboard={leaderboard}

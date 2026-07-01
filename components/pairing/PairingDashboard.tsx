@@ -349,6 +349,7 @@ function normalizeAdminSession(session: ApiAdminSession): SessionRow {
 function normalizeAttendanceHistory(item: ApiAttendanceHistory): AttendanceHistoryItem {
   return {
     id: item.id,
+    participantId: item.memberId ?? item.cabinetId ?? item.presidentId ?? undefined,
     status: item.status,
     speakerScore: item.speakerScore ?? null,
     pairingCode: item.pairingCode ?? null,
@@ -562,6 +563,9 @@ type ApiAdminSession = {
 
 type ApiAttendanceHistory = {
   id: string;
+  memberId?: string | null;
+  cabinetId?: string | null;
+  presidentId?: string | null;
   status: string;
   speakerScore: number | null;
   pairingCode: string | null;

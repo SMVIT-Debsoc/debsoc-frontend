@@ -6,6 +6,7 @@ type AttendanceItem = {
   id: string;
   memberId?: string | null;
   cabinetId?: string | null;
+  presidentId?: string | null;
   status: string;
   speakerScore: number | null;
   pairingCode: string | null;
@@ -16,9 +17,21 @@ type AttendanceItem = {
 type AttendancePeer = {
   memberId?: string | null;
   cabinetId?: string | null;
+  presidentId?: string | null;
   member: { name: string } | null;
   cabinet: { name: string } | null;
+  president: { name: string } | null;
 };
+
+function matchesViewer(peer: AttendancePeer, role: string, viewerId: string) {
+  if (role === "cabinet") {
+    return peer.cabinetId === viewerId;
+  }
+  if (role === "President") {
+    return peer.presidentId === viewerId;
+  }
+  return peer.memberId === viewerId;
+}
 
 export async function GET() {
   const guard = await requireSessionUser({
@@ -27,14 +40,16 @@ export async function GET() {
   });
   if ("response" in guard) return guard.response;
 
-  if (guard.user.role === "President" || guard.user.role === "TechHead") {
+  if (guard.user.role === "TechHead") {
     return ok({ attendance: [] });
   }
 
   const where =
     guard.user.role === "cabinet"
       ? { cabinetId: guard.user.id }
-      : { memberId: guard.user.id };
+      : guard.user.role === "President"
+        ? { presidentId: guard.user.id }
+        : { memberId: guard.user.id };
 
   const attendance = await prisma.attendance.findMany({
     where,
@@ -42,6 +57,7 @@ export async function GET() {
       id: true,
       memberId: true,
       cabinetId: true,
+      presidentId: true,
       status: true,
       speakerScore: true,
       pairingCode: true,
@@ -81,18 +97,16 @@ export async function GET() {
         select: {
           memberId: true,
           cabinetId: true,
+          presidentId: true,
           member: { select: { name: true } },
           cabinet: { select: { name: true } },
+          president: { select: { name: true } },
         },
       });
 
       const pairedWith = (peers as AttendancePeer[])
-        .filter((peer) =>
-          guard.user.role === "cabinet"
-            ? peer.cabinetId !== guard.user.id
-            : peer.memberId !== guard.user.id,
-        )
-        .map((peer) => peer.member?.name ?? peer.cabinet?.name ?? null)
+        .filter((peer) => !matchesViewer(peer, guard.user.role, guard.user.id))
+        .map((peer) => peer.member?.name ?? peer.cabinet?.name ?? peer.president?.name ?? null)
         .filter((name): name is string => Boolean(name));
 
       return {

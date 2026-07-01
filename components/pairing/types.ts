@@ -53,6 +53,7 @@ export type SessionRow = {
 
 export type AttendanceHistoryItem = {
   id: string;
+  participantId?: string;
   status: string;
   speakerScore: number | null;
   pairingCode: string | null;
