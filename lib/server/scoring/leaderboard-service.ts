@@ -4,7 +4,6 @@ import type {
   ParticipantProgressSummary,
   SpeakerLeaderboardResponse,
 } from "../../../types/scoring.ts";
-import { publishRealtimeEvent } from "../realtime/event-publisher.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
 
 interface LeaderboardRepositoryContract {
@@ -17,35 +16,14 @@ interface LeaderboardRepositoryContract {
 
 export function createLeaderboardService(
   repository: LeaderboardRepositoryContract = scoringRepository as LeaderboardRepositoryContract,
-  publishEvent: typeof publishRealtimeEvent = publishRealtimeEvent,
 ) {
   async function recomputeSpeakerLeaderboard(): Promise<SpeakerLeaderboardResponse> {
     const leaderboard = await repository.getSpeakerLeaderboardRawData();
-    await publishEvent({
-      eventId: `leaderboard.updated:speakers:${Date.now()}`,
-      eventType: "leaderboard.updated",
-      occurredAt: new Date().toISOString(),
-      sessionId: null,
-      proposalId: null,
-      visibility: "MEMBER_SAFE",
-      refetchHints: ["leaderboard"],
-      entityVersion: `${leaderboard.length}`,
-    });
     return { leaderboard };
   }
 
   async function recomputeAdjudicatorLeaderboard(): Promise<AdjudicatorLeaderboardResponse> {
     const leaderboard = await repository.getAdjudicatorLeaderboardRawData();
-    await publishEvent({
-      eventId: `leaderboard.updated:adjudicators:${Date.now()}`,
-      eventType: "leaderboard.updated",
-      occurredAt: new Date().toISOString(),
-      sessionId: null,
-      proposalId: null,
-      visibility: "MEMBER_SAFE",
-      refetchHints: ["leaderboard"],
-      entityVersion: `${leaderboard.length}`,
-    });
     return { leaderboard };
   }
 

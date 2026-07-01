@@ -14,7 +14,7 @@ type MyScoringProps = {
 type TaskStatusResponse = {
   sessionId: string;
   scoringStatus: "pending" | "open" | "partial" | "complete";
-  tasks: Array<{
+  tasks?: Array<{
     participantId: string;
     sessionRole: "speaker" | "adjudicator";
     hasSubmitted: boolean;
@@ -22,13 +22,7 @@ type TaskStatusResponse = {
 };
 
 type PublishedPairingResponse = {
-  sessionId: string;
-  proposalId: string;
-  publishedAt: string;
-  motionType: string;
-  motionText: string;
-  rooms: PublishedPairingView["rooms"];
-  unassignedParticipants: PublishedPairingView["unassignedParticipants"];
+  publishedPairing: PublishedPairingView;
 };
 
 type ScoringTaskView = {
@@ -53,7 +47,7 @@ function participantNameMap(session: SessionRow) {
     (session.attendance ?? []).flatMap((entry) => {
       const participantId = entry.member?.id ?? entry.cabinet?.id ?? entry.president?.id ?? null;
       const name = entry.member?.name ?? entry.cabinet?.name ?? entry.president?.name ?? null;
-      return participantId && name ? [[participantId, name]] : [];
+      return participantId && name ? [[participantId, name]] : []
     }),
   ) as Record<string, string>;
 }
@@ -105,7 +99,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
     error: null,
   });
 
-  const currentParticipantId = attendanceHistory[0]?.participantId ?? null;
+  const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -124,22 +118,23 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
         const candidateSessions = sessions.filter(isPublishedLike);
         const loaded = await Promise.all(
           candidateSessions.map(async (session): Promise<ScoringTaskView | null> => {
-            const [publishedPairing, scoringStatus] = await Promise.all([
-              fetchJson<PublishedPairingResponse | null>(`/api/pairing/published/${session.id}`),
+            const [publishedResponse, scoringStatus] = await Promise.all([
+              fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`),
               fetchJson<TaskStatusResponse>(`/api/sessions/${session.id}/scoring-status`),
             ]);
 
+            const publishedPairing = publishedResponse?.publishedPairing;
             if (!publishedPairing) {
               return null;
             }
 
-            const visibleTask = scoringStatus.tasks.find((task) => task.participantId === currentParticipantId);
+            const visibleTask = (scoringStatus.tasks ?? []).find((task) => task.participantId === currentParticipantId);
             if (!visibleTask) {
               return null;
             }
 
             const names = participantNameMap(session);
-            const room = publishedPairing.rooms.find(
+            const room = (publishedPairing.rooms ?? []).find(
               (entry) =>
                 entry.teams.some((team) => team.speakers.some((speaker) => speaker.participantId === currentParticipantId)) ||
                 entry.adjudicators.some((adjudicator) => adjudicator.participantId === currentParticipantId),
@@ -430,23 +425,26 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
 
               <div>
                 <h4 className="mb-3 text-sm font-semibold text-slate-900">Speaker scores</h4>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {selectedTask.speakers.map((entry) => (
                     <div key={entry.participantId} className="rounded-lg border border-slate-200 p-4">
-                      <div className="mb-3 text-sm font-medium text-slate-900">{entry.name} | {entry.bpPosition} | {entry.speakingRole}</div>
-                      <div className="grid gap-3 md:grid-cols-2">
+                      <div className="mb-3 text-sm font-medium text-slate-900">
+                        {entry.name} | {entry.bpPosition} | {entry.speakingRole}
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
                         <Field label="Raw score">
                           <input
                             type="number"
                             min={0}
+                            max={100}
                             value={chairForm.speakerScores[entry.participantId]?.rawScore ?? ""}
                             onChange={(event) => setChairForm((current) => ({
                               ...current,
                               speakerScores: {
                                 ...current.speakerScores,
                                 [entry.participantId]: {
-                                  ...current.speakerScores[entry.participantId],
                                   rawScore: event.target.value,
+                                  teamResultPoints: current.speakerScores[entry.participantId]?.teamResultPoints ?? "",
                                 },
                               },
                             }))}
@@ -454,7 +452,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                             disabled={selectedTask.hasSubmitted || submitState.saving}
                           />
                         </Field>
-                        <Field label="Team result points (0-3)">
+                        <Field label="Team result points">
                           <input
                             type="number"
                             min={0}
@@ -465,7 +463,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                               speakerScores: {
                                 ...current.speakerScores,
                                 [entry.participantId]: {
-                                  ...current.speakerScores[entry.participantId],
+                                  rawScore: current.speakerScores[entry.participantId]?.rawScore ?? "",
                                   teamResultPoints: event.target.value,
                                 },
                               },
@@ -482,15 +480,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
 
               <PrimaryButton
                 type="button"
-                disabled={
-                  selectedTask.hasSubmitted ||
-                  submitState.saving ||
-                  selectedTask.panel.some((entry) => !chairForm.adjudicatorScores[entry.participantId]) ||
-                  selectedTask.speakers.some((entry) => {
-                    const values = chairForm.speakerScores[entry.participantId];
-                    return !values?.rawScore || !values?.teamResultPoints;
-                  })
-                }
+                disabled={selectedTask.hasSubmitted || submitState.saving}
                 onClick={handleChairSubmit}
               >
                 Submit chair form

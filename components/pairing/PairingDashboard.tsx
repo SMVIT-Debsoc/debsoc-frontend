@@ -276,17 +276,31 @@ async function fetchLeaderboard(scope: "all" | "bi-monthly") {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    credentials: "same-origin",
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) {
-    const fallback = `Request failed for ${url}`;
-    throw new Error(await readApiError(response, fallback));
+  try {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const fallback = `Request failed for ${url}`;
+      throw new Error(await readApiError(response, fallback));
+    }
+
+    return (await response.json()) as T;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(`Request timed out for ${url}`);
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
   }
-
-  return (await response.json()) as T;
 }
 
 async function readApiError(response: Response, fallback: string) {

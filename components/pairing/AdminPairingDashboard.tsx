@@ -141,6 +141,7 @@ export default function AdminPairingDashboard({
       {activeTab === "MyPairing" && (
         <MyPairing
           role={role}
+          sessions={sessions}
           attendanceHistory={attendanceHistory}
         />
       )}

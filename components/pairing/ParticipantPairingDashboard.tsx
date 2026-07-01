@@ -115,6 +115,7 @@ export default function ParticipantPairingDashboard({
           {activeTab === "MyPairing" && (
             <MyPairing
               role={role}
+              sessions={sessions}
               attendanceHistory={attendanceHistory}
             />
           )}
