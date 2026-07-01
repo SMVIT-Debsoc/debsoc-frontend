@@ -1,11 +1,10 @@
 import React from "react";
 import PresidentDashboard from "@/components/PresidentDashboard";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import { getAppSession } from "@/lib/server/dev-session";
 
 export default async function PresidentDashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   
   if (!session?.user) {
     redirect("/login");

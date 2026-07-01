@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
 import { error } from "@/lib/server/http";
+import { getAppSession } from "@/lib/server/dev-session";
 import type { DebsocRole, SessionUser } from "@/lib/server/roles";
 
 type GuardOptions = {
@@ -12,7 +11,7 @@ export async function requireSessionUser(options: GuardOptions = {}): Promise<
   | { user: SessionUser }
   | { response: Response }
 > {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
   const user = session?.user;
 
   if (!user?.id || !user.role) {

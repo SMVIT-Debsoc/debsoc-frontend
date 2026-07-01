@@ -1,10 +1,9 @@
 import MemberDashboard from '@/components/MemberDashboard';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import { getAppSession } from "@/lib/server/dev-session";
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = await getAppSession();
 
   if (!session?.user) {
     redirect("/login");
@@ -26,6 +25,5 @@ export default async function DashboardPage() {
     redirect("/dashboard/president");
   }
 
-  // Currently defaults to MemberDashboard for others
   return <MemberDashboard />;
 }
