@@ -6,35 +6,48 @@ const DEMO_PASSWORD = "demo1234";
 const LEFTOVER_REASON = "Not enough speakers to fill another full BP room";
 const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
-const ref = (p) => ({
+type ParticipantSeedReference = {
+  kind: "member" | "cabinet" | "president";
+  id: string;
+};
+
+type NumericBucket = {
+  sum: number;
+  count: number;
+};
+
+const ref = (p: ParticipantSeedReference) => ({
   memberId: p.kind === "member" ? p.id : null,
   cabinetId: p.kind === "cabinet" ? p.id : null,
   presidentId: p.kind === "president" ? p.id : null,
 });
 
-const bucket = (map, key, value) => {
+const bucket = <K>(map: Map<K, NumericBucket>, key: K, value: number) => {
   const current = map.get(key) ?? { sum: 0, count: 0 };
   current.sum += value;
   current.count += 1;
   map.set(key, current);
 };
 
-const nested = (map, outerKey, innerKey, value) => {
-  const current = map.get(outerKey) ?? new Map();
+const nested = <K, L>(map: Map<K, Map<L, NumericBucket>>, outerKey: K, innerKey: L, value: number) => {
+  const current = map.get(outerKey) ?? new Map<L, NumericBucket>();
   bucket(current, innerKey, value);
   map.set(outerKey, current);
 };
 
-const pairKey = (a, b) => [a, b].sort().join("|");
-const safeDelete = async (op) => {
+const pairKey = (a: string, b: string) => [a, b].sort().join("|");
+const safeDelete = async (op: () => Promise<unknown>) => {
   try {
     await op();
-  } catch (error) {
-    if (error?.code !== "P2021") throw error;
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code !== "P2021") {
+      throw error;
+    }
   }
 };
-const average = (bucketValue) => (bucketValue && bucketValue.count ? Number((bucketValue.sum / bucketValue.count).toFixed(2)) : 0);
-const score = (value) => Number(value.toFixed(2));
+const average = (bucketValue: NumericBucket | undefined | null) =>
+  bucketValue && bucketValue.count ? Number((bucketValue.sum / bucketValue.count).toFixed(2)) : 0;
+const score = (value: number) => Number(value.toFixed(2));
 
 async function clearDemoData() {
   await safeDelete(() => prisma.pairingMetricAdjustment.deleteMany());
