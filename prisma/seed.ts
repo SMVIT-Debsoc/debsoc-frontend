@@ -9,11 +9,46 @@ const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
 type ParticipantSeedReference = {
   kind: "member" | "cabinet" | "president";
   id: string;
+  name: string;
+  email: string;
 };
 
 type NumericBucket = {
   sum: number;
   count: number;
+};
+
+type SessionSpecSpeaker = [string, string, string, number, number];
+type SessionSpecAdjudicator = [string, boolean, number, number];
+
+type SessionSpec = {
+  sessionDate: Date;
+  motiontype: string;
+  motionType: string;
+  motionText: string;
+  pairingObjective: string;
+  chairName: string;
+  status: string;
+  pairingStatus: string;
+  publicationStatus: string;
+  scoringStatus: string;
+  proposalStatus: string;
+  topBandRank: number;
+  proposalScore: number;
+  roomBalanceScore: number;
+  adjudicatorAverageScore: number;
+  chairScore: number;
+  teamQualityAggregate: number;
+  experienceDistributionAggregate: number;
+  roomDifficultyScore: number;
+  generatedBy: string;
+  approvedBy: string;
+  publishedBy: string;
+  reviewNotes: string;
+  rating: number;
+  speakers: SessionSpecSpeaker[];
+  adjudicators: SessionSpecAdjudicator[];
+  leftovers: string[];
 };
 
 const ref = (p: ParticipantSeedReference) => ({
@@ -129,30 +164,32 @@ async function createRoles() {
     ["Kripa Chhajer", "kripachhajer26@gmail.com"],
   ];
 
-  const members = [];
+  const members: ParticipantSeedReference[] = [];
   for (const [name, email] of memberSeeds) {
     const member = await prisma.member.create({ data: { name, email, password: hash, isVerified: true, verifiedByTechHeadId: techHead.id } });
     members.push({ id: member.id, kind: "member", name: member.name, email: member.email });
   }
 
-  const rolesByName = new Map([
+  const rolesByName = new Map<string, ParticipantSeedReference>([
     [techHead.name, { id: techHead.id, kind: "member", name: techHead.name, email: techHead.email }],
     [president.name, { id: president.id, kind: "president", name: president.name, email: president.email }],
     [localCabinet.name, { id: localCabinet.id, kind: "cabinet", name: localCabinet.name, email: localCabinet.email }],
     [strategyCabinet.name, { id: strategyCabinet.id, kind: "cabinet", name: strategyCabinet.name, email: strategyCabinet.email }],
-    ...members.map((member) => [member.name, member]),
+    ...members.map((member) => [member.name, member] as const),
   ]);
 
   return { techHead, president, localCabinet, strategyCabinet, members, rolesByName };
 }
 
-const requiredRole = (rolesByName, name) => {
+type RequiredRoleMap = Map<string, ParticipantSeedReference>;
+
+const requiredRole = (rolesByName: RequiredRoleMap, name: string): ParticipantSeedReference => {
   const role = rolesByName.get(name);
   if (!role) throw new Error(`Missing role: ${name}`);
   return role;
 };
 
-const sessionSpecs = [
+const sessionSpecs: SessionSpec[] = [
   {
     sessionDate: new Date("2026-06-21T09:00:00.000Z"),
     motiontype: "Policy",
@@ -282,19 +319,30 @@ async function main() {
     const generatedBy = requiredRole(roles.rolesByName, spec.generatedBy);
     const approvedBy = requiredRole(roles.rolesByName, spec.approvedBy);
     const publishedBy = requiredRole(roles.rolesByName, spec.publishedBy);
-    const speakers = spec.speakers.map(([name, bpPosition, speakingRole, rawScore, teamResultPoints]) => ({
-      participant: requiredRole(roles.rolesByName, name),
-      bpPosition,
-      speakingRole,
-      rawScore,
-      teamResultPoints,
-    }));
-    const adjudicators = spec.adjudicators.map(([name, isChair, chairAssignmentScore, rating]) => ({
-      participant: requiredRole(roles.rolesByName, name),
-      isChair,
-      chairAssignmentScore,
-      rating,
-    }));
+    const speakers = spec.speakers.map(([
+    name,
+    bpPosition,
+    speakingRole,
+    rawScore,
+    teamResultPoints,
+  ]: [string, string, string, number, number]) => ({
+    participant: requiredRole(roles.rolesByName, name),
+    bpPosition,
+    speakingRole,
+    rawScore,
+    teamResultPoints,
+  }));
+  const adjudicators = spec.adjudicators.map(([
+    name,
+    isChair,
+    chairAssignmentScore,
+    rating,
+  ]: [string, boolean, number, number]) => ({
+    participant: requiredRole(roles.rolesByName, name),
+    isChair,
+    chairAssignmentScore,
+    rating,
+  }));
     const leftovers = spec.leftovers.map((name) => requiredRole(roles.rolesByName, name));
 
     const session = await prisma.debateSession.create({
@@ -535,7 +583,8 @@ async function main() {
 try {
   await main();
 } finally {
-  await prisma.$disconnect();
+  const prismaClient = prisma as unknown as { $disconnect(): Promise<void> };
+  await prismaClient.$disconnect();
 }
 
 
