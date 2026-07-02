@@ -13,6 +13,10 @@ export default async function DashboardPage() {
     redirect("/unverified");
   }
 
+  if (session.user.role === "TechHead") {
+    redirect("/dashboard/techhead");
+  }
+
   return (
     <PairingDashboard
       role={session.user.role}
