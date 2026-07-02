@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, Menu, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import ThemeToggle from "./ThemeToggle";
 import AdminPairingDashboard, {
   ADMIN_TABS,
   type AdminTab,
@@ -37,6 +39,16 @@ type PairingDataState = {
   error: string | null;
   leaderboardError: string | null;
   leaderboardScope: "all" | "bi-monthly";
+};
+
+// Compact labels for the mobile bottom bar (full labels stay in the drawer).
+const BOTTOM_NAV_LABELS: Record<string, string> = {
+  Home: "Home",
+  Workspace: "Workspace",
+  Sessions: "Sessions",
+  SpeakerLeaderboard: "Ranks",
+  MyPairing: "Pairing",
+  MyScoring: "Scoring",
 };
 
 const INITIAL_STATE: PairingDataState = {
@@ -142,30 +154,55 @@ export default function PairingDashboard({
   );
   const activeTab = isAdminView ? adminTab : participantTab;
 
-  const nav = (
+  const selectTab = (key: string) => {
+    if (isAdminView) {
+      setAdminTab(key as AdminTab);
+    } else {
+      setParticipantTab(key as ParticipantTab);
+    }
+    setSidebarOpen(false);
+  };
+
+  // The most-used destinations, surfaced in the mobile bottom bar so common
+  // navigation is a single tap (no drawer). Rest of the tabs live in the drawer.
+  const primaryTabs = useMemo(() => {
+    const primaryKeys = isAdminView
+      ? ["Home", "Workspace", "Sessions", "SpeakerLeaderboard"]
+      : ["Home", "MyPairing", "MyScoring", "SpeakerLeaderboard"];
+    return primaryKeys
+      .map((key) => navTabs.find((tab) => tab.key === key))
+      .filter((tab): tab is (typeof navTabs)[number] => Boolean(tab));
+  }, [isAdminView, navTabs]);
+
+  const renderNav = (pillId: string) => (
     <nav className="flex flex-col gap-1">
-      {navTabs.map((entry) => (
-        <button
-          key={entry.key}
-          type="button"
-          onClick={() => {
-            if (isAdminView) {
-              setAdminTab(entry.key as AdminTab);
-            } else {
-              setParticipantTab(entry.key as ParticipantTab);
-            }
-            setSidebarOpen(false);
-          }}
-          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-            activeTab === entry.key
-              ? "bg-blue-600 text-white"
-              : "hover:bg-slate-800 hover:text-white"
-          }`}
-        >
-          {entry.icon}
-          <span>{entry.label}</span>
-        </button>
-      ))}
+      {navTabs.map((entry) => {
+        const isActive = activeTab === entry.key;
+        return (
+          <button
+            key={entry.key}
+            type="button"
+            onClick={() => selectTab(entry.key)}
+            className={`relative flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+              isActive
+                ? "text-white"
+                : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+            }`}
+          >
+            {isActive && (
+              <motion.span
+                layoutId={pillId}
+                className="absolute inset-0 rounded-xl bg-indigo-600 shadow-sm shadow-indigo-600/30"
+                transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-3">
+              {entry.icon}
+              <span>{entry.label}</span>
+            </span>
+          </button>
+        );
+      })}
     </nav>
   );
 
@@ -223,46 +260,143 @@ export default function PairingDashboard({
     />
   );
 
+  const contentRef = useRef<HTMLElement | null>(null);
+
+  // Replay the content entrance on tab change without remounting the tab
+  // subtree (remounting would drop in-tab state like the selected session).
+  useEffect(() => {
+    const element = contentRef.current;
+    if (!element) return;
+    element.classList.remove("content-enter");
+    void element.offsetWidth;
+    element.classList.add("content-enter");
+  }, [activeTab]);
+
   if (embedded) {
     return content;
   }
 
+  const brand = isAdminView ? "Pairing (Admin)" : "Pairing";
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-      <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
-        <div className="flex items-center gap-2 font-semibold">
-          <Gavel size={18} />
-          <span>{isAdminView ? "Pairing (Admin)" : "Pairing"}</span>
-        </div>
+    <div className="pairing-shell min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
+      {/* Mobile top bar */}
+      <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
         <button
           type="button"
-          aria-label="Toggle menu"
-          onClick={() => setSidebarOpen((value) => !value)}
-          className="p-2 -mr-2"
+          aria-label="Open menu"
+          onClick={() => setSidebarOpen(true)}
+          className="-ml-2 flex items-center gap-2 rounded-lg p-2 font-semibold tracking-tight transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
         >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+            <Menu size={16} />
+          </span>
+          <span className="truncate">{brand}</span>
         </button>
+        <ThemeToggle />
       </div>
 
-      <aside
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } w-full bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-72 lg:flex-col`}
-      >
-        <div className="mb-8 hidden items-center gap-2 font-semibold tracking-wide text-white lg:flex">
-          <Gavel size={18} />
-          <span>{isAdminView ? "Pairing (Admin)" : "Pairing"}</span>
+      {/* Desktop sidebar */}
+      <aside className="glass-sidebar hidden w-72 flex-col p-5 lg:sticky lg:top-0 lg:flex lg:h-screen">
+        <div className="mb-8 flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+            <Gavel size={17} />
+          </span>
+          <span>{brand}</span>
         </div>
 
-        {nav}
+        {renderNav("pairing-nav-pill-desktop")}
 
-        <div className="mt-auto pt-6 text-[11px] leading-snug text-slate-500">
-          Pairing UI now reads live roster, sessions, attendance history, and leaderboard data from
-          the current backend.
+        <div className="mt-auto pt-6">
+          <ThemeToggle />
+          <div className="mt-4 text-[11px] leading-snug text-slate-500 dark:text-slate-500">
+            Pairing UI now reads live roster, sessions, attendance history, and leaderboard data
+            from the current backend.
+          </div>
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{content}</main>
+      {/* Mobile off-canvas drawer */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <div className="lg:hidden">
+            <motion.div
+              className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.aside
+              className="glass-drawer fixed inset-y-0 left-0 z-50 flex w-[82%] max-w-xs flex-col p-4"
+              initial={{ transform: "translateX(-100%)" }}
+              animate={{ transform: "translateX(0%)" }}
+              exit={{ transform: "translateX(-100%)" }}
+              transition={{ type: "spring", duration: 0.4, bounce: 0.08 }}
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+                    <Gavel size={17} />
+                  </span>
+                  <span>{brand}</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close menu"
+                  onClick={() => setSidebarOpen(false)}
+                  className="rounded-lg p-2 transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {renderNav("pairing-nav-pill-drawer")}
+              </div>
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <main
+        ref={contentRef}
+        className="content-enter min-w-0 flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8"
+      >
+        {content}
+      </main>
+
+      {/* Mobile bottom navigation — one-tap access to primary destinations */}
+      <nav className="glass-topbar fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-900/[0.06] px-1 pb-[env(safe-area-inset-bottom)] dark:border-white/[0.06] lg:hidden">
+        {primaryTabs.map((entry) => {
+          const isActive = activeTab === entry.key;
+          return (
+            <button
+              key={entry.key}
+              type="button"
+              onClick={() => selectTab(entry.key)}
+              aria-current={isActive ? "page" : undefined}
+              className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 pt-1.5 text-[10px] font-medium transition-colors ${
+                isActive
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              <span
+                className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
+                  isActive ? "bg-indigo-600/10 dark:bg-indigo-400/15" : ""
+                }`}
+              >
+                {entry.icon}
+              </span>
+              <span className="max-w-full truncate leading-none">
+                {BOTTOM_NAV_LABELS[entry.key] ?? entry.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }

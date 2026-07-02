@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { ArrowRight, BarChart3, Calendar, Gauge, Trophy, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, Trophy, Users } from "lucide-react";
 import { Card, EmptyState, Pill, PrimaryButton, SectionHeader } from "./ui";
 import type {
   AdjudicatorLeaderboardRow,
@@ -101,7 +101,7 @@ export default function HomeDashboard({
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="stagger-children grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <SummaryCard
           icon={<Gauge size={18} />}
           label="Your attendance"
@@ -130,15 +130,15 @@ export default function HomeDashboard({
         />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card className="p-5">
-          <div className="mb-4 flex items-center gap-2 text-slate-900">
+      <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <Card className="p-4 sm:p-5">
+          <div className="mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 sm:mb-4">
             <Calendar size={18} />
-            <h3 className="text-lg font-semibold">Last session you did</h3>
+            <h3 className="text-base font-semibold sm:text-lg">Last session you did</h3>
           </div>
 
           {lastSession ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Info label="Date" value={lastSession.session.sessionDate} />
               <Info label="Motion type" value={lastSession.session.motiontype} />
               <Info label="Chair" value={lastSession.session.Chair} />
@@ -160,23 +160,23 @@ export default function HomeDashboard({
           )}
         </Card>
 
-        <Card className="p-5">
-          <div className="mb-4 flex items-center gap-2 text-slate-900">
+        <Card className="p-4 sm:p-5">
+          <div className="mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100 sm:mb-4">
             <BarChart3 size={18} />
-            <h3 className="text-lg font-semibold">Motion-type performance</h3>
+            <h3 className="text-base font-semibold sm:text-lg">Motion-type performance</h3>
           </div>
 
           {bestMotion ? (
             <div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Best current motion type
                 </div>
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="text-2xl font-semibold text-slate-900">{bestMotion.motionType}</div>
+                  <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{bestMotion.motionType}</div>
                   <Pill tone="blue">Avg {bestMotion.averageScore}</Pill>
                 </div>
-                <div className="mt-2 text-sm text-slate-600">
+                <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                   Based on {bestMotion.sessions} scored session{bestMotion.sessions === 1 ? "" : "s"}.
                 </div>
               </div>
@@ -185,11 +185,11 @@ export default function HomeDashboard({
                 {motionPerformance.slice(0, 4).map((entry) => (
                   <div
                     key={entry.motionType}
-                    className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"
+                    className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2"
                   >
                     <div>
-                      <div className="font-medium text-slate-900">{entry.motionType}</div>
-                      <div className="text-xs text-slate-500">{entry.sessions} session{entry.sessions === 1 ? "" : "s"}</div>
+                      <div className="font-medium text-slate-900 dark:text-slate-100">{entry.motionType}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{entry.sessions} session{entry.sessions === 1 ? "" : "s"}</div>
                     </div>
                     <Pill tone="emerald">{entry.averageScore}</Pill>
                   </div>
@@ -220,11 +220,17 @@ function SummaryCard({
   helper: string;
 }) {
   return (
-    <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-slate-500">{icon}</div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-2 text-3xl font-semibold text-slate-900">{value}</div>
-      <div className="mt-2 text-sm text-slate-500">{helper}</div>
+    <Card className="glass-card-hover p-4 sm:p-5">
+      <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+        <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>
+        <span className="text-[11px] font-semibold uppercase leading-tight tracking-wide sm:text-xs">
+          {label}
+        </span>
+      </div>
+      <div className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:mt-2 sm:text-3xl">
+        {value}
+      </div>
+      <div className="mt-1.5 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">{helper}</div>
     </Card>
   );
 }
@@ -243,20 +249,31 @@ function RankCard({
   onClick: () => void;
 }) {
   return (
-    <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-slate-500">{icon}</div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <div className="text-3xl font-semibold text-slate-900">{rank ? `#${rank}` : "--"}</div>
-        <button
-          type="button"
-          onClick={onClick}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          View leaderboard
-        </button>
-      </div>
-      <div className="mt-2 text-sm text-slate-500">{helper}</div>
+    <Card className="glass-card-hover p-0">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex h-full w-full flex-col rounded-2xl p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 sm:p-5"
+      >
+        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+          <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>
+          <span className="text-[11px] font-semibold uppercase leading-tight tracking-wide sm:text-xs">
+            {label}
+          </span>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-2 sm:mt-2">
+          <span className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+            {rank ? `#${rank}` : "--"}
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+            <span className="hidden sm:inline">View</span>
+            <ChevronRight size={16} />
+          </span>
+        </div>
+        <span className="mt-1.5 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">
+          {helper}
+        </span>
+      </button>
     </Card>
   );
 }
@@ -264,8 +281,8 @@ function RankCard({
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-base font-medium text-slate-900">{value}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 text-base font-medium text-slate-900 dark:text-slate-100">{value}</div>
     </div>
   );
 }

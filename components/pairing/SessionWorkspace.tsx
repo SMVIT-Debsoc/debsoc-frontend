@@ -314,7 +314,7 @@ export default function SessionWorkspace({
             <select
               value={selectedSessionId}
               onChange={(event) => setSelectedSessionId(event.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
             >
               {sessions.map((session) => (
                 <option key={session.id} value={session.id}>
@@ -323,8 +323,8 @@ export default function SessionWorkspace({
               ))}
             </select>
           </Field>
-          <div className="text-sm text-slate-500">
-            Chair default: <span className="font-medium text-slate-900">{userName}</span>
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            Chair default: <span className="font-medium text-slate-900 dark:text-slate-100">{userName}</span>
           </div>
         </div>
       </Card>
@@ -338,15 +338,15 @@ export default function SessionWorkspace({
               type="button"
               onClick={() => enabled && setStep(entry.key)}
               disabled={!enabled}
-              className={`rounded-lg border px-4 py-3 text-left text-sm ${
+              className={`rounded-xl border px-4 py-3 text-left text-sm ${
                 step === entry.key
-                  ? "border-blue-600 bg-blue-50 text-blue-900"
+                  ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-400/10 text-indigo-900 dark:text-indigo-200"
                   : enabled
-                    ? "border-slate-200 bg-white text-slate-600"
-                    : "border-slate-200 bg-slate-100 text-slate-400"
+                    ? "border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.06] text-slate-600 dark:text-slate-400"
+                    : "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500"
               }`}
             >
-              <div className="text-[11px] uppercase tracking-wide text-slate-500">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Step
               </div>
               <div className="mt-1 font-semibold">{entry.label}</div>
@@ -356,17 +356,17 @@ export default function SessionWorkspace({
       </div>
 
       {busyAction && (
-        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+        <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
           {busyAction}…
         </div>
       )}
       {feedback && (
-        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-400/25 bg-emerald-50 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-200">
           {feedback}
         </div>
       )}
       {actionError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="mb-4 rounded-xl border border-red-200 dark:border-red-400/25 bg-red-50 dark:bg-red-400/10 px-4 py-3 text-sm text-red-900 dark:text-red-200">
           {actionError}
         </div>
       )}
@@ -387,17 +387,17 @@ export default function SessionWorkspace({
                 return (
                   <div
                     key={participant.id}
-                    className="grid gap-3 rounded-lg border border-slate-200 px-4 py-3 md:grid-cols-[minmax(0,1fr)_160px_120px]"
+                    className="grid gap-3 rounded-xl border border-slate-200 dark:border-white/10 px-4 py-3 md:grid-cols-[minmax(0,1fr)_160px_120px]"
                   >
                     <div>
-                      <div className="font-medium text-slate-900">{participant.name}</div>
-                      <div className="text-sm text-slate-500">
+                      <div className="font-medium text-slate-900 dark:text-slate-100">{participant.name}</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
                         {participant.account}
                         {participant.position ? ` - ${participant.position}` : ""}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         Session role
                       </div>
                       <select
@@ -412,13 +412,13 @@ export default function SessionWorkspace({
                             },
                           }));
                         }}
-                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                       >
                         <option value="speaker">Speaker</option>
                         <option value="adjudicator">Adjudicator</option>
                       </select>
                     </div>
-                    <label className="flex items-center gap-2 self-end text-sm text-slate-700">
+                    <label className="flex items-center gap-2 self-end text-sm text-slate-700 dark:text-slate-300">
                       <input
                         type="checkbox"
                         checked={draft.isPresent}
@@ -469,14 +469,14 @@ export default function SessionWorkspace({
                 value={motionType}
                 onChange={(event) => setMotionType(event.target.value)}
                 placeholder="IR / Policy / Moral / ..."
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
               />
             </Field>
             <Field label="Pairing objective">
               <select
                 value={objective}
                 onChange={(event) => setObjective(event.target.value)}
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
               >
                 <option value="DEVELOPMENT">Development</option>
                 <option value="BALANCED">Balanced</option>
@@ -490,7 +490,7 @@ export default function SessionWorkspace({
                   onChange={(event) => setMotionText(event.target.value)}
                   rows={4}
                   placeholder="Enter the session motion."
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                 />
               </Field>
             </div>
@@ -574,9 +574,9 @@ export default function SessionWorkspace({
           </h3>
           {workspace.scoringStatus ? (
             <div className="space-y-4">
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-slate-600 dark:text-slate-400">
                 Scoring status:{" "}
-                <span className="font-semibold text-slate-900">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   {workspace.scoringStatus.scoringStatus}
                 </span>
               </div>
@@ -584,10 +584,10 @@ export default function SessionWorkspace({
                 {workspace.scoringStatus.tasks.map((task) => (
                   <div
                     key={task.participantId}
-                    className="rounded-lg border border-slate-200 px-4 py-3 text-sm"
+                    className="rounded-xl border border-slate-200 dark:border-white/10 px-4 py-3 text-sm"
                   >
-                    <div className="font-medium text-slate-900">{findParticipantName(participants, task.participantId)}</div>
-                    <div className="mt-1 text-slate-600">
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{findParticipantName(participants, task.participantId)}</div>
+                    <div className="mt-1 text-slate-600 dark:text-slate-400">
                       Role: {task.sessionRole} · {task.hasSubmitted ? "Submitted" : "Pending"}
                     </div>
                   </div>
@@ -603,14 +603,14 @@ export default function SessionWorkspace({
         </Card>
       )}
 
-      <div className="sticky bottom-4 z-10 mt-6 rounded-xl border border-slate-200 bg-white/95 px-4 py-4 shadow-lg backdrop-blur">
-        <div className="mb-3 text-xs text-slate-500">
+      <div className="sticky bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-4 py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
+        <div className="mb-3 text-xs text-slate-500 dark:text-slate-400">
           Step navigation
           {busyAction === null && !canAdvance(step, stepAvailability) && step !== "post"
             ? " - complete the current step action to unlock the next stage."
             : " - use Previous or Next to move through the workflow."}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-white/10 pt-4">
           <SecondaryButton
             type="button"
             onClick={() => setStep(previousStep(step))}
@@ -1143,8 +1143,8 @@ function nextStep(step: StepKey): StepKey {
 function MetricRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span className="font-medium text-slate-900 dark:text-slate-100">{value}</span>
     </div>
   );
 }
@@ -1152,37 +1152,37 @@ function MetricRow({ label, value }: { label: string; value: React.ReactNode }) 
 function ProposalView({ proposal, participants }: { proposal: PairingProposalView; participants: Participant[] }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <div className="text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
+        <div className="text-sm text-slate-600 dark:text-slate-400">
           Proposal v{proposal.summary.version} ?? Score{" "}
-          <span className="font-semibold text-slate-900">
+          <span className="font-semibold text-slate-900 dark:text-slate-100">
             {proposal.summary.proposalScore.toFixed(2)}
           </span>
         </div>
-        <div className="mt-2 text-sm text-slate-600">
+        <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
           Status: {proposal.summary.status} ?? Top-band rank:{" "}
           {proposal.summary.topBandRank ?? "???"}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {proposal.rooms.map((room) => (
-          <div key={room.roomIndex} className="rounded-lg border border-slate-200 p-4">
-            <div className="font-semibold text-slate-900">Room {room.roomIndex}</div>
-            <div className="mt-2 text-sm text-slate-600">
+          <div key={room.roomIndex} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+            <div className="font-semibold text-slate-900 dark:text-slate-100">Room {room.roomIndex}</div>
+            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Balance {room.roomBalanceScore?.toFixed(2) ?? "???"} ?? Difficulty{" "}
               {room.roomDifficultyScore?.toFixed(2) ?? "???"}
             </div>
             <div className="mt-3 space-y-2 text-sm">
               {room.teams.map((team) => (
                 <div key={team.bpPosition}>
-                  <span className="font-medium text-slate-900">{team.bpPosition}</span>: {" "}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{team.bpPosition}</span>: {" "}
                   {team.speakers
                     .map((speaker) => `${findParticipantName(participants, speaker.participantId)} (${speaker.speakingRole})`)
                     .join(", ")}
                 </div>
               ))}
               <div>
-                <span className="font-medium text-slate-900">Adjudicators</span>: {" "}
+                <span className="font-medium text-slate-900 dark:text-slate-100">Adjudicators</span>: {" "}
                 {room.adjudicators
                   .map(
                     (adjudicator) =>
@@ -1195,7 +1195,7 @@ function ProposalView({ proposal, participants }: { proposal: PairingProposalVie
         ))}
       </div>
       {proposal.unassignedParticipants.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-xl border border-amber-200 dark:border-amber-400/25 bg-amber-50 dark:bg-amber-400/10 p-4 text-sm text-amber-900 dark:text-amber-200">
           <div className="font-semibold">Unassigned speakers: {proposal.unassignedParticipants.length}</div>
           <div className="mt-2 space-y-1">
             {proposal.unassignedParticipants.map((participant) => (
@@ -1369,8 +1369,8 @@ function OverridePanel({
     <Card className="mt-4 p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h4 className="font-semibold text-slate-900">Manual override editor</h4>
-          <p className="mt-1 text-sm text-slate-500">
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100">Manual override editor</h4>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Reassign speakers, change speaking positions, move people into adjudication, and set the chair directly here.
           </p>
         </div>
@@ -1381,18 +1381,18 @@ function OverridePanel({
       {open && (
         <div className="mt-4 space-y-4">
           {derived.duplicateParticipantIds.length > 0 && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <div className="rounded-xl border border-red-200 dark:border-red-400/25 bg-red-50 dark:bg-red-400/10 px-4 py-3 text-sm text-red-900 dark:text-red-200">
               Resolve duplicate assignments before submitting: {derived.duplicateParticipantIds.map((participantId) => findParticipantName(participants, participantId)).join(", ")}
             </div>
           )}
           <div className="grid gap-4 xl:grid-cols-2">
             {draft.rooms.map((room) => (
-              <div key={room.roomIndex} className="rounded-lg border border-slate-200 p-4">
-                <div className="font-semibold text-slate-900">Room {room.roomIndex}</div>
+              <div key={room.roomIndex} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+                <div className="font-semibold text-slate-900 dark:text-slate-100">Room {room.roomIndex}</div>
                 <div className="mt-4 space-y-3">
                   {OVERRIDE_TEAM_LAYOUT.map(({ bpPosition, roles }) => (
-                    <div key={`${room.roomIndex}-${bpPosition}`} className="rounded-md border border-slate-100 p-3">
-                      <div className="mb-2 text-sm font-semibold text-slate-900">{bpPosition}</div>
+                    <div key={`${room.roomIndex}-${bpPosition}`} className="rounded-md border border-slate-100 dark:border-white/[0.06] p-3">
+                      <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{bpPosition}</div>
                       <div className="grid gap-3 md:grid-cols-2">
                         {roles.map((role) => {
                           const slot = room.speakerSlots.find(
@@ -1423,7 +1423,7 @@ function OverridePanel({
                                       : current,
                                   )
                                 }
-                                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                                className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                               >
                                 <option value="">Select participant</option>
                                 {options.map((option) => (
@@ -1439,9 +1439,9 @@ function OverridePanel({
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 rounded-md border border-slate-100 p-3">
+                <div className="mt-4 rounded-md border border-slate-100 dark:border-white/[0.06] p-3">
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900">Adjudicators</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Adjudicators</div>
                     <SecondaryButton
                       type="button"
                       disabled={disabled || room.adjudicatorSlots.length >= 3}
@@ -1500,7 +1500,7 @@ function OverridePanel({
                                   : current,
                               )
                             }
-                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                           >
                             <option value="">Select participant</option>
                             {options.map((option) => (
@@ -1510,7 +1510,7 @@ function OverridePanel({
                             ))}
                           </select>
                         </Field>
-                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                           <input
                             type="radio"
                             name={`chair-${room.roomIndex}`}
@@ -1575,7 +1575,7 @@ function OverridePanel({
               </div>
             ))}
           </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="rounded-xl border border-amber-200 dark:border-amber-400/25 bg-amber-50 dark:bg-amber-400/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
             <div className="font-semibold">Will stay unassigned after override: {derived.unassignedParticipantIds.length}</div>
             <div className="mt-2">
               {derived.unassignedParticipantIds.length > 0
@@ -1588,7 +1588,7 @@ function OverridePanel({
               value={overrideNotes}
               onChange={(event) => onOverrideNotesChange(event.target.value)}
               rows={3}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
               placeholder="Why you are overriding this proposal"
             />
           </Field>
@@ -1612,17 +1612,17 @@ function PublishedView({
 }) {
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+      <div className="rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 p-4 text-sm text-indigo-900 dark:text-indigo-200">
         Official published pairing · {publishedPairing.motionType} · {publishedPairing.publishedAt}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {publishedPairing.rooms.map((room) => (
-          <div key={room.roomIndex} className="rounded-lg border border-slate-200 p-4">
-            <div className="font-semibold text-slate-900">Room {room.roomIndex}</div>
+          <div key={room.roomIndex} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+            <div className="font-semibold text-slate-900 dark:text-slate-100">Room {room.roomIndex}</div>
             <div className="mt-3 space-y-2 text-sm">
               {room.teams.map((team) => (
                 <div key={team.bpPosition}>
-                  <span className="font-medium text-slate-900">{team.bpPosition}</span>:{" "}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{team.bpPosition}</span>:{" "}
                   {team.speakers.map((speaker) => `${findParticipantName(participants, speaker.participantId)} (${speaker.speakingRole})`).join(", ")}
                 </div>
               ))}

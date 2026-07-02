@@ -170,7 +170,7 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
               key={entry.session.id}
               type="button"
               onClick={() => setSelectedSessionId(entry.session.id)}
-              className={`rounded-md border px-3 py-1.5 text-sm ${selected.session.id === entry.session.id ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"}`}
+              className={`rounded-md border px-3 py-1.5 text-sm ${selected.session.id === entry.session.id ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-white/15 bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06]"}`}
             >
               {entry.session.date}
             </button>
@@ -188,13 +188,13 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
           <Info label="Panel adjudicators" value={room.panel.length > 0 ? room.panel.join(", ") : "None"} />
         </div>
 
-        <div className="border-t border-slate-200 pt-5">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Full room pairing</h3>
+        <div className="border-t border-slate-200 dark:border-white/10 pt-5">
+          <h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">Full room pairing</h3>
           <div className="space-y-3">
             {room.teams.map((team) => (
-              <div key={team.bpPosition} className="rounded-lg border border-slate-200 p-4">
-                <div className="mb-2 text-sm font-semibold text-slate-900">{team.bpPosition}</div>
-                <div className="text-sm text-slate-700">
+              <div key={team.bpPosition} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+                <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{team.bpPosition}</div>
+                <div className="text-sm text-slate-700 dark:text-slate-300">
                   {team.speakers.map((speaker) => `${speaker.name} (${speaker.speakingRole})`).join(", ")}
                 </div>
               </div>
@@ -258,8 +258,8 @@ function bpPositionOrder(position: string) {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="mb-0.5 text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-sm font-medium leading-snug text-slate-900">{value}</div>
+      <div className="mb-0.5 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="text-sm font-medium leading-snug text-slate-900 dark:text-slate-100">{value}</div>
     </div>
   );
 }
