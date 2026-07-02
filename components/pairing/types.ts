@@ -147,3 +147,4 @@ export type WorkspaceSessionData = {
   publishedPairing: PublishedPairingView | null;
   scoringStatus: SessionScoringStatusResponse | null;
 };
+
