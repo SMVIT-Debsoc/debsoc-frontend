@@ -1,7 +1,10 @@
 ﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, EmptyState, Pill, SectionHeader } from "./ui";
+import { createPortal } from "react-dom";
+import { motion, useReducedMotion } from "framer-motion";
+import { Crown, ShieldCheck, User } from "lucide-react";
+import { EmptyState, SectionHeader } from "./ui";
 import type { Participant, ProgressProfile, ProgressSummary } from "./types";
 
 type RosterProps = {
@@ -22,11 +25,18 @@ export default function Roster({
   const [selectedProfile, setSelectedProfile] = useState<ProgressProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [modalTab, setModalTab] = useState<"overview" | "insights" | "metrics">("overview");
+  const reduce = useReducedMotion();
+
+  useEffect(() => setMounted(true), []);
 
   const filteredParticipants = useMemo(
     () =>
-      participants.filter((participant) =>
-        participant.name.toLowerCase().includes(filter.toLowerCase()),
+      participants.filter(
+        (participant) =>
+          participant.isVerified &&
+          participant.name.toLowerCase().includes(filter.toLowerCase()),
       ),
     [filter, participants],
   );
@@ -105,6 +115,20 @@ export default function Roster({
     setSelectedParticipantId(null);
   }
 
+  useEffect(() => {
+    if (!selectedParticipantId) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedParticipantId(null);
+    };
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedParticipantId]);
+
   if (loading) {
     return (
       <EmptyState
@@ -136,84 +160,129 @@ export default function Roster({
       {filteredParticipants.length === 0 ? (
         <EmptyState title="No matching participants" body="Try a different search term." />
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
-              <tr>
-                <th className="px-4 py-2 font-medium">Name</th>
-                <th className="px-4 py-2 font-medium">Account</th>
-                <th className="px-4 py-2 font-medium">Email</th>
-                <th className="px-4 py-2 font-medium">Progress</th>
-                <th className="px-4 py-2 font-medium">Verified</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredParticipants.map((participant) => (
-                <tr key={participant.id} className="border-t border-slate-100 dark:border-white/[0.06]">
-                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{participant.name}</td>
-                  <td className="px-4 py-3">
-                    <Pill
-                      tone={
-                        participant.account === "President"
-                          ? "blue"
-                          : participant.account === "Cabinet"
-                            ? "amber"
-                            : "slate"
-                      }
-                    >
-                      {participant.account}
-                    </Pill>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{participant.email ?? "-"}</td>
-                  <td className="px-4 py-3">
-                    {progressByParticipantId.has(participant.id) ? (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedParticipantId(participant.id)}
-                        className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                      >
-                        View progress
-                      </button>
-                    ) : (
-                      <span className="text-slate-400 dark:text-slate-500">No data yet</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Pill tone={participant.isVerified ? "emerald" : "red"}>
-                      {participant.isVerified ? "Verified" : "Pending"}
-                    </Pill>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredParticipants.map((participant, index) => (
+            <motion.div
+              key={participant.id}
+              initial={reduce ? false : { opacity: 0, y: 22, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.5,
+                delay: Math.min(index * 0.04, 0.4),
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              whileHover={reduce ? undefined : { y: -3 }}
+              className="lg-tile flex flex-col gap-5 p-5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_16px_-6px_rgba(79,70,229,0.5)]"
+                    aria-hidden
+                  >
+                    {getInitials(participant.name)}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                      {participant.name}
+                    </div>
+                  </div>
+                </div>
+                <AccountBadge account={participant.account} />
+              </div>
+              {progressByParticipantId.has(participant.id) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalTab("overview");
+                    setSelectedParticipantId(participant.id);
+                  }}
+                  className="lg-button group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium active:scale-[0.98]"
+                >
+                  View progress
+                  <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+                    →
+                  </span>
+                </button>
+              ) : (
+                <span className="mt-auto rounded-xl border border-dashed border-zinc-300/70 px-3 py-2.5 text-center text-sm text-zinc-400 dark:border-white/10 dark:text-zinc-500">
+                  No progress data yet
+                </span>
+              )}
+            </motion.div>
+          ))}
+        </div>
       )}
 
-      {selectedParticipantId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm overlay-fade">
-          <div className="absolute inset-0" onClick={closeProfile} />
-          <Card className="modal-pop relative max-h-[85vh] w-full max-w-6xl overflow-y-auto p-5 shadow-2xl">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                  Progress snapshot{selectedParticipant ? ` - ${selectedParticipant.name}` : ""}
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Read-only pairing progress profile from the backend profile service.
-                </p>
+      {mounted && selectedParticipantId
+        ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="overlay-fade absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+            onClick={closeProfile}
+          />
+          <div className="lg-panel modal-pop relative flex max-h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl">
+            <div className="relative shrink-0 border-b border-zinc-900/5 px-6 py-5 dark:border-white/10">
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {selectedParticipant ? (
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-base font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_16px_-6px_rgba(79,70,229,0.5)]">
+                      {getInitials(selectedParticipant.name)}
+                    </span>
+                  ) : null}
+                  <div>
+                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                      {selectedParticipant ? selectedParticipant.name : "Progress snapshot"}
+                    </h3>
+                    <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                      Read-only pairing progress profile
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeProfile}
+                  aria-label="Close"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-600 transition hover:bg-white/90 active:scale-95 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300 dark:hover:bg-white/[0.12]"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={closeProfile}
-                className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              >
-                Close
-              </button>
             </div>
 
+            {selectedProfile && !profileLoading && !profileError ? (
+              <div className="flex shrink-0 gap-1 border-b border-zinc-900/5 px-4 pt-3 dark:border-white/10">
+                {([
+                  ["overview", "Overview"],
+                  ["insights", "Insights"],
+                  ["metrics", "Metrics"],
+                ] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setModalTab(key)}
+                    className={`relative rounded-t-lg px-3.5 py-2 text-sm font-medium transition-colors ${
+                      modalTab === key
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    }`}
+                  >
+                    {label}
+                    {modalTab === key && (
+                      <motion.span
+                        layoutId="roster-modal-tab"
+                        className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-indigo-600 dark:bg-indigo-400"
+                        transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="h-[60vh] overflow-y-auto p-5 sm:p-6">
             {profileLoading ? (
               <EmptyState
                 title="Loading progress profile"
@@ -222,18 +291,18 @@ export default function Roster({
             ) : profileError ? (
               <EmptyState title="Progress profile unavailable" body={profileError} />
             ) : selectedProfile ? (
-              <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-4">
+              modalTab === "overview" ? (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
                   <SummaryStat
                     label="Attendance"
                     value={`${selectedProfile.attendance.attendancePercentage}%`}
                   />
                   <SummaryStat
-                    label="Present sessions"
+                    label="Present"
                     value={selectedProfile.attendance.presentCount}
                   />
                   <SummaryStat
-                    label="Tracked sessions"
+                    label="Tracked"
                     value={selectedProfile.attendance.totalCount}
                   />
                   <SummaryStat
@@ -253,20 +322,20 @@ export default function Roster({
                     value={selectedProfile.summary.confidence.toFixed(2)}
                   />
                   <SummaryStat
-                    label="Sessions spoken"
+                    label="Spoken"
                     value={selectedProfile.summary.sessionsSpoken}
                   />
                   <SummaryStat
-                    label="Sessions adjudicated"
+                    label="Adjudicated"
                     value={selectedProfile.summary.sessionsAdjudicated}
                   />
                   <SummaryStat
-                    label="Sessions chaired"
+                    label="Chaired"
                     value={selectedProfile.summary.sessionsChaired}
                   />
                 </div>
-
-                <div className="grid gap-6 lg:grid-cols-2">
+              ) : modalTab === "insights" ? (
+                <div className="grid gap-4 lg:grid-cols-2">
                   <ProgressList
                     title="Verdict strengths"
                     items={selectedProfile.verdict.strengths}
@@ -288,8 +357,8 @@ export default function Roster({
                     emptyMessage="No role aptitude insights yet."
                   />
                 </div>
-
-                <div className="grid gap-6 lg:grid-cols-3">
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-3">
                   <MetricTable
                     title="Motion-type scores"
                     emptyMessage="No motion-type metrics yet."
@@ -318,7 +387,7 @@ export default function Roster({
                     }))}
                   />
                 </div>
-              </div>
+              )
             ) : (
               <EmptyState
                 title="No progress summary"
@@ -329,11 +398,51 @@ export default function Roster({
                 }
               />
             )}
-          </Card>
-        </div>
-      )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )
+        : null}
     </div>
   );
+}
+
+function AccountBadge({ account }: { account: string }) {
+  const config =
+    account === "President"
+      ? {
+          Icon: Crown,
+          className:
+            "border-zinc-900/15 bg-zinc-900/[0.06] text-zinc-800 dark:border-white/20 dark:bg-white/10 dark:text-zinc-100",
+        }
+      : account === "Cabinet"
+        ? {
+            Icon: ShieldCheck,
+            className:
+              "border-indigo-400/30 bg-indigo-400/10 text-indigo-700 dark:text-indigo-300",
+          }
+        : {
+            Icon: User,
+            className:
+              "border-zinc-400/20 bg-zinc-400/[0.08] text-zinc-500 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-zinc-400",
+          };
+  const { Icon, className } = config;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${className}`}
+    >
+      <Icon size={12} strokeWidth={2} />
+      {account}
+    </span>
+  );
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function ProgressList({
@@ -402,9 +511,13 @@ function SummaryStat({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{value}</div>
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="truncate text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        {label}
+      </div>
+      <div className="mt-0.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+        {value}
+      </div>
     </div>
   );
 }

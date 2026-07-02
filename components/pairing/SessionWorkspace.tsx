@@ -1,14 +1,20 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   ArrowRight,
   ClipboardList,
+  Gavel,
   ListChecks,
+  Mic,
+  Plus,
+  Search,
   Send,
   Users,
   Wand2,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -113,6 +119,26 @@ export default function SessionWorkspace({
   const [overrideDraft, setOverrideDraft] = useState<ManualOverrideDraft | null>(null);
   const [overrideNotes, setOverrideNotes] = useState("");
   const [autoGeneratingSessionId, setAutoGeneratingSessionId] = useState<string | null>(null);
+  const [rolePicker, setRolePicker] = useState<null | "speaker" | "adjudicator">(null);
+  const [pickerFilter, setPickerFilter] = useState("");
+  const [wsMounted, setWsMounted] = useState(false);
+
+  useEffect(() => setWsMounted(true), []);
+
+  useEffect(() => {
+    if (!rolePicker) return;
+    setPickerFilter("");
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setRolePicker(null);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [rolePicker]);
 
   useEffect(() => {
     if (!selectedSessionId && sessions.length > 0) {
@@ -262,6 +288,28 @@ export default function SessionWorkspace({
 
   const stepAvailability = computeStepAvailability(workspace.context, workspace.proposal, workspace.publishedPairing);
 
+  const isInRole = (id: string, role: "speaker" | "adjudicator") => {
+    const draft = attendanceDraft[id];
+    return Boolean(draft?.isPresent && draft.sessionRole === role);
+  };
+  const assignedSpeakers = participants.filter((p) => isInRole(p.id, "speaker"));
+  const assignedAdjudicators = participants.filter((p) => isInRole(p.id, "adjudicator"));
+  const addToRole = (id: string, role: "speaker" | "adjudicator") => {
+    setAttendanceDraft((current) => ({
+      ...current,
+      [id]: { isPresent: true, sessionRole: role },
+    }));
+  };
+  const removeFromRole = (id: string) => {
+    setAttendanceDraft((current) => ({
+      ...current,
+      [id]: {
+        isPresent: false,
+        sessionRole: current[id]?.sessionRole ?? "speaker",
+      },
+    }));
+  };
+
   if (loading) {
     return <EmptyState title="Loading workspace" body="Fetching live session and roster data." />;
   }
@@ -377,66 +425,23 @@ export default function SessionWorkspace({
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
               <Users size={16} /> Attendance and roles
             </h3>
-            <div className="space-y-3">
-              {participants.map((participant) => {
-                const draft = attendanceDraft[participant.id] ?? {
-                  isPresent: false,
-                  sessionRole: "speaker" as const,
-                };
-
-                return (
-                  <div
-                    key={participant.id}
-                    className="grid gap-3 rounded-xl border border-slate-200 dark:border-white/10 px-4 py-3 md:grid-cols-[minmax(0,1fr)_160px_120px]"
-                  >
-                    <div>
-                      <div className="font-medium text-slate-900 dark:text-slate-100">{participant.name}</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {participant.account}
-                        {participant.position ? ` - ${participant.position}` : ""}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        Session role
-                      </div>
-                      <select
-                        value={draft.sessionRole}
-                        onChange={(event) => {
-                          setAttendanceDraft((current) => ({
-                            ...current,
-                            [participant.id]: {
-                              ...draft,
-                              isPresent: true,
-                              sessionRole: event.target.value as "speaker" | "adjudicator",
-                            },
-                          }));
-                        }}
-                        className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                      >
-                        <option value="speaker">Speaker</option>
-                        <option value="adjudicator">Adjudicator</option>
-                      </select>
-                    </div>
-                    <label className="flex items-center gap-2 self-end text-sm text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={draft.isPresent}
-                        onChange={(event) => {
-                          setAttendanceDraft((current) => ({
-                            ...current,
-                            [participant.id]: {
-                              ...draft,
-                              isPresent: event.target.checked,
-                            },
-                          }));
-                        }}
-                      />
-                      Present
-                    </label>
-                  </div>
-                );
-              })}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <RoleColumn
+                title="Speakers"
+                icon={<Mic size={16} />}
+                accent="indigo"
+                assigned={assignedSpeakers}
+                onAdd={() => setRolePicker("speaker")}
+                onRemove={removeFromRole}
+              />
+              <RoleColumn
+                title="Adjudicators"
+                icon={<Gavel size={16} />}
+                accent="blue"
+                assigned={assignedAdjudicators}
+                onAdd={() => setRolePicker("adjudicator")}
+                onRemove={removeFromRole}
+              />
             </div>
           </Card>
 
@@ -457,6 +462,23 @@ export default function SessionWorkspace({
           </Card>
         </div>
       )}
+
+      {wsMounted && rolePicker
+        ? createPortal(
+            <RolePickerModal
+              role={rolePicker}
+              participants={participants}
+              filter={pickerFilter}
+              onFilter={setPickerFilter}
+              isInRole={isInRole}
+              onToggle={(id) =>
+                isInRole(id, rolePicker) ? removeFromRole(id) : addToRole(id, rolePicker)
+              }
+              onClose={() => setRolePicker(null)}
+            />,
+            document.body,
+          )
+        : null}
 
       {step === "setup" && (
         <Card className="p-4">
@@ -1145,6 +1167,221 @@ function MetricRow({ label, value }: { label: string; value: React.ReactNode }) 
     <div className="flex items-center justify-between gap-3">
       <span className="text-slate-500 dark:text-slate-400">{label}</span>
       <span className="font-medium text-slate-900 dark:text-slate-100">{value}</span>
+    </div>
+  );
+}
+
+function roleInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function RoleColumn({
+  title,
+  icon,
+  accent,
+  assigned,
+  onAdd,
+  onRemove,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  accent: "indigo" | "blue";
+  assigned: Participant[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+}) {
+  const ring =
+    accent === "indigo"
+      ? "from-indigo-500 to-blue-600"
+      : "from-blue-500 to-sky-600";
+  return (
+    <div className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br ${ring} text-white`}
+          >
+            {icon}
+          </span>
+          {title}
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-300">
+            {assigned.length}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 bg-indigo-50 px-2.5 py-1.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 active:scale-95 dark:border-indigo-400/30 dark:bg-indigo-400/10 dark:text-indigo-300 dark:hover:bg-indigo-400/20"
+        >
+          <Plus size={14} /> Add
+        </button>
+      </div>
+      {assigned.length === 0 ? (
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 py-8 text-sm text-slate-400 transition hover:border-indigo-300 hover:text-indigo-500 dark:border-white/10 dark:text-slate-500"
+        >
+          <Plus size={18} />
+          Add {title.toLowerCase()}
+        </button>
+      ) : (
+        <ul className="space-y-2">
+          {assigned.map((p) => (
+            <li
+              key={p.id}
+              className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-white/10 dark:bg-white/[0.04]"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
+                {roleInitials(p.name)}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                  {p.name}
+                </div>
+                <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  {p.account}
+                  {p.position ? ` · ${p.position}` : ""}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRemove(p.id)}
+                aria-label={`Remove ${p.name}`}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-400/10"
+              >
+                <X size={15} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function RolePickerModal({
+  role,
+  participants,
+  filter,
+  onFilter,
+  isInRole,
+  onToggle,
+  onClose,
+}: {
+  role: "speaker" | "adjudicator";
+  participants: Participant[];
+  filter: string;
+  onFilter: (value: string) => void;
+  isInRole: (id: string, role: "speaker" | "adjudicator") => boolean;
+  onToggle: (id: string) => void;
+  onClose: () => void;
+}) {
+  const label = role === "speaker" ? "Speakers" : "Adjudicators";
+  const other = role === "speaker" ? "adjudicator" : "speaker";
+  const filtered = participants.filter((p) =>
+    p.name.toLowerCase().includes(filter.toLowerCase()),
+  );
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+      <div
+        className="overlay-fade absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <div className="lg-panel modal-pop relative flex max-h-[82vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-900/5 px-5 py-4 dark:border-white/10">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              Add {label.toLowerCase()}
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Tap a member to add or remove them from {label.toLowerCase()}.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-600 transition hover:bg-white/90 active:scale-95 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="shrink-0 px-5 pt-3">
+          <div className="relative">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              autoFocus
+              value={filter}
+              onChange={(event) => onFilter(event.target.value)}
+              placeholder="Search members..."
+              className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm dark:border-white/15"
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex-1 overflow-y-auto px-5 pb-5">
+          {filtered.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-400">No members found.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {filtered.map((p) => {
+                const selected = isInRole(p.id, role);
+                const inOther = isInRole(p.id, other);
+                return (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() => onToggle(p.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition ${
+                        selected
+                          ? "border-indigo-400 bg-indigo-50 dark:border-indigo-400/40 dark:bg-indigo-400/10"
+                          : "border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white">
+                        {roleInitials(p.name)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {p.name}
+                        </div>
+                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+                          {p.account}
+                          {inOther ? ` · currently ${other}` : ""}
+                        </div>
+                      </div>
+                      <span
+                        className={`flex h-6 w-6 items-center justify-center rounded-full border ${
+                          selected
+                            ? "border-indigo-500 bg-indigo-500 text-white"
+                            : "border-slate-300 text-transparent dark:border-white/20"
+                        }`}
+                      >
+                        <Plus size={14} className={selected ? "rotate-45" : ""} />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+        <div className="shrink-0 border-t border-zinc-900/5 px-5 py-3 dark:border-white/10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg-button w-full rounded-xl px-3 py-2.5 text-sm font-medium"
+          >
+            Done
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

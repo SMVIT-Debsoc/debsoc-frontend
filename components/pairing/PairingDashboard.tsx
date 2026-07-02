@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import ThemeToggle from "./ThemeToggle";
+import PairingBackdrop from "./PairingBackdrop";
 import AdminPairingDashboard, {
   ADMIN_TABS,
   type AdminTab,
@@ -192,7 +193,7 @@ export default function PairingDashboard({
             {isActive && (
               <motion.span
                 layoutId={pillId}
-                className="absolute inset-0 rounded-xl bg-indigo-600 shadow-sm shadow-indigo-600/30"
+                className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 shadow-sm shadow-indigo-600/30"
                 transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
               />
             )}
@@ -279,7 +280,8 @@ export default function PairingDashboard({
   const brand = isAdminView ? "Pairing (Admin)" : "Pairing";
 
   return (
-    <div className="pairing-shell min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
+    <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
+      <PairingBackdrop />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
         <button
@@ -288,7 +290,7 @@ export default function PairingDashboard({
           onClick={() => setSidebarOpen(true)}
           className="-ml-2 flex items-center gap-2 rounded-lg p-2 font-semibold tracking-tight transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
             <Menu size={16} />
           </span>
           <span className="truncate">{brand}</span>
@@ -297,9 +299,9 @@ export default function PairingDashboard({
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="glass-sidebar hidden w-72 flex-col p-5 lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <aside className="glass-sidebar relative z-10 hidden w-72 flex-col p-5 lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="mb-8 flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
             <Gavel size={17} />
           </span>
           <span>{brand}</span>
@@ -337,7 +339,7 @@ export default function PairingDashboard({
             >
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/30">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
                     <Gavel size={17} />
                   </span>
                   <span>{brand}</span>
@@ -362,7 +364,7 @@ export default function PairingDashboard({
 
       <main
         ref={contentRef}
-        className="content-enter min-w-0 flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8"
+        className="content-enter relative z-10 min-w-0 flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8"
       >
         {content}
       </main>

@@ -10,6 +10,7 @@ import TeamSection from "./TeamSection";
 import AlumniSection from "./AlumniSection";
 import AchievementSection from "./AchievementSection";
 import Footer from "./Footer";
+import {ElegantShape} from "./ui/shape-landing-hero";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -365,7 +366,38 @@ export default function HomeClient() {
                 className="bg-[#000000] text-zinc-100 font-sans min-h-[calc(var(--hero-vh,1vh)*100)] h-[calc(var(--hero-vh,1vh)*100)] w-full overflow-hidden selection:bg-white/20 selection:text-white"
                 ref={containerRef}
             >
-                <div className="w-full h-[calc(var(--hero-vh,1vh)*100)] overflow-hidden">
+                <div className="w-full h-[calc(var(--hero-vh,1vh)*100)] overflow-hidden relative">
+                    {/* ── Shared liquid-glass ambience (matches dashboard + /session) ── */}
+                    <div
+                        aria-hidden
+                        className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-[radial-gradient(60rem_42rem_at_8%_-10%,rgba(79,70,229,0.2),transparent_60%),radial-gradient(52rem_36rem_at_112%_10%,rgba(37,99,235,0.16),transparent_60%),radial-gradient(46rem_40rem_at_50%_120%,rgba(99,102,241,0.14),transparent_62%)]" />
+                        <ElegantShape
+                            delay={0.3}
+                            width={560}
+                            height={130}
+                            rotate={12}
+                            gradient="from-indigo-500/[0.16]"
+                            className="left-[-12%] top-[10%]"
+                        />
+                        <ElegantShape
+                            delay={0.5}
+                            width={440}
+                            height={110}
+                            rotate={-16}
+                            gradient="from-blue-500/[0.14]"
+                            className="right-[-8%] top-[60%]"
+                        />
+                        <ElegantShape
+                            delay={0.45}
+                            width={260}
+                            height={72}
+                            rotate={-8}
+                            gradient="from-sky-500/[0.14]"
+                            className="left-[6%] bottom-[8%]"
+                        />
+                    </div>
                     {/* ── Main mic (GSAP moves this to centre) ───────────────── */}
                     {/*
               FIX: positioned at bottom-0, left-[10%] to start.
@@ -391,8 +423,8 @@ export default function HomeClient() {
                     <div className="right-content-panel absolute inset-y-0 right-0 hidden md:flex md:w-[50%] h-full flex-col justify-center items-end p-8 md:pr-12 z-0">
                         <div className="flex flex-col md:flex-row items-start justify-end gap-12 w-full mt-24">
                             {/* Mission card */}
-                            <div className="hidden md:block bg-black/30 backdrop-blur-sm border border-white/10 rounded-sm p-6 max-w-55">
-                                <p className="text-xs text-zinc-400 uppercase tracking-[0.2em] mb-3 font-light">
+                            <div className="hidden md:block bg-white/[0.04] backdrop-blur-xl border border-white/15 rounded-xl p-6 max-w-55 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_18px_44px_-18px_rgba(0,0,0,0.5)]">
+                                <p className="text-xs uppercase tracking-[0.2em] mb-3 font-medium text-zinc-300">
                                     Mission
                                 </p>
                                 <p className="text-sm text-zinc-200 font-light leading-relaxed">
@@ -480,7 +512,7 @@ export default function HomeClient() {
                         </p>
                         <button
                             onClick={openExplore}
-                            className="mt-8 px-12 py-3.5 text-[11px] font-medium text-white/95 uppercase tracking-[0.2em] border border-white/60 rounded-xl bg-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.2),0_0_18px_rgba(255,255,255,0.14),0_0_36px_rgba(255,255,255,0.14)] backdrop-blur-md transition-all pointer-events-auto"
+                            className="mt-8 px-12 py-3.5 text-[11px] font-medium text-zinc-900 uppercase tracking-[0.2em] border border-white/40 rounded-xl bg-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_10px_28px_-8px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all pointer-events-auto active:scale-[0.98]"
                         >
                             Explore
                         </button>
