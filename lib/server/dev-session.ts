@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/auth";
+import { prisma } from "@/lib/server/prisma";
 import type { DebsocRole } from "@/lib/server/roles";
 
 const allowedRoles: DebsocRole[] = ["TechHead", "President", "cabinet", "Member"];
@@ -15,7 +16,62 @@ function getDevBypassRole(): DebsocRole {
   return "TechHead";
 }
 
-export function getDevBypassSession(): Session | null {
+async function resolveDevBypassId(role: DebsocRole) {
+  const configuredId = process.env.DEV_AUTH_BYPASS_ID;
+  if (configuredId && configuredId.trim()) {
+    return configuredId;
+  }
+
+  const configuredEmail = process.env.DEV_AUTH_BYPASS_EMAIL?.trim();
+  const configuredName = process.env.DEV_AUTH_BYPASS_NAME?.trim();
+
+  if (role === "cabinet") {
+    const match = await prisma.cabinet.findFirst({
+      where: {
+        OR: [
+          ...(configuredEmail ? [{ email: configuredEmail }] : []),
+          ...(configuredName ? [{ name: configuredName }] : []),
+          { email: "mobasshirkhan9931@gmail.com" },
+        ],
+      },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return match?.id ?? "dev-user";
+  }
+
+  if (role === "Member") {
+    const match = await prisma.member.findFirst({
+      where: {
+        OR: [
+          ...(configuredEmail ? [{ email: configuredEmail }] : []),
+          ...(configuredName ? [{ name: configuredName }] : []),
+        ],
+      },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return match?.id ?? "dev-user";
+  }
+
+  if (role === "President") {
+    const match = await prisma.president.findFirst({
+      where: {
+        OR: [
+          ...(configuredEmail ? [{ email: configuredEmail }] : []),
+          ...(configuredName ? [{ name: configuredName }] : []),
+        ],
+      },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return match?.id ?? "dev-user";
+  }
+
+  return configuredId ?? "dev-user";
+}
+
+export async function getDevBypassSession(): Promise<Session | null> {
   if (process.env.NODE_ENV !== "development") {
     return null;
   }
@@ -25,10 +81,11 @@ export function getDevBypassSession(): Session | null {
   }
 
   const role = getDevBypassRole();
+  const resolvedId = await resolveDevBypassId(role);
 
   return {
     user: {
-      id: process.env.DEV_AUTH_BYPASS_ID ?? "dev-user",
+      id: resolvedId,
       name: process.env.DEV_AUTH_BYPASS_NAME ?? `Local ${role}`,
       email: process.env.DEV_AUTH_BYPASS_EMAIL ?? "local-dev@smvitdebsoc.com",
       role,

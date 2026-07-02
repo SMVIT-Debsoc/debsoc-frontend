@@ -66,15 +66,50 @@ export interface ParticipantProgressSummary {
   dataMaturity: "LOW" | "MEDIUM" | "HIGH";
 }
 
+export interface ParticipantMetricDetail {
+  metricKey: string;
+  contextKey: string | null;
+  value: number;
+  observationCount: number;
+  confidence: number;
+}
+
+export interface ParticipantAttendanceProfile {
+  presentCount: number;
+  totalCount: number;
+  attendancePercentage: number;
+}
+
+export interface ParticipantMotionTypeScore {
+  motionType: string;
+  score: number;
+  observationCount: number;
+  confidence: number;
+}
+
+export interface ParticipantRoleScore {
+  role: string;
+  score: number;
+  observationCount: number;
+  confidence: number;
+}
+
+export interface ParticipantCompatibilityProfile {
+  participantId: MemberId;
+  name: string;
+  score: number;
+  observationCount: number;
+  confidence: number;
+}
+
 export interface ParticipantProgressProfile {
   participantId: MemberId;
-  rawMetrics: Array<{
-    metricKey: string;
-    contextKey: string | null;
-    value: number;
-    observationCount: number;
-    confidence: number;
-  }>;
+  attendance: ParticipantAttendanceProfile;
+  summary: ParticipantProgressSummary;
+  motionTypeScores: ParticipantMotionTypeScore[];
+  roleScores: ParticipantRoleScore[];
+  compatibilityProfiles: ParticipantCompatibilityProfile[];
+  rawMetrics: ParticipantMetricDetail[];
   verdict: {
     strengths: string[];
     weaknesses: string[];

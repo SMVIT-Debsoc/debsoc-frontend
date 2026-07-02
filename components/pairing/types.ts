@@ -67,12 +67,23 @@ export type AttendanceHistoryItem = {
   };
 };
 
-export type LeaderboardRow = {
+export type SpeakerLeaderboardRow = {
   id: string;
   name: string;
   type: string;
   score: number;
   sessions: number;
+  rank: number;
+};
+
+export type AdjudicatorLeaderboardRow = {
+  id: string;
+  name: string;
+  type: string;
+  score: number;
+  sessions: number;
+  chairedCount: number;
+  adjudicatedCount: number;
   rank: number;
 };
 
@@ -85,6 +96,49 @@ export type ProgressSummary = {
   sessionsAdjudicated: number;
   sessionsChaired: number;
   dataMaturity: "LOW" | "MEDIUM" | "HIGH";
+};
+
+export type ProgressProfile = {
+  participantId: string;
+  attendance: {
+    presentCount: number;
+    totalCount: number;
+    attendancePercentage: number;
+  };
+  summary: ProgressSummary;
+  motionTypeScores: Array<{
+    motionType: string;
+    score: number;
+    observationCount: number;
+    confidence: number;
+  }>;
+  roleScores: Array<{
+    role: string;
+    score: number;
+    observationCount: number;
+    confidence: number;
+  }>;
+  compatibilityProfiles: Array<{
+    participantId: string;
+    name: string;
+    score: number;
+    observationCount: number;
+    confidence: number;
+  }>;
+  rawMetrics: Array<{
+    metricKey: string;
+    contextKey: string | null;
+    value: number;
+    observationCount: number;
+    confidence: number;
+  }>;
+  verdict: {
+    strengths: string[];
+    weaknesses: string[];
+    gaps: string[];
+    roleAptitude: string[];
+    compatibility: string[];
+  };
 };
 
 export type WorkspaceSessionData = {

@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
+  House,
   LayoutDashboard,
   Calendar,
-  Trophy,
+  Mic2,
+  Scale,
   Users,
   ClipboardCheck,
   UserCircle,
-  Gavel,
-  Menu,
-  X,
 } from "lucide-react";
+import HomeDashboard from "./HomeDashboard";
 import SessionWorkspace from "./SessionWorkspace";
 import Sessions from "./Sessions";
 import Leaderboards from "./Leaderboards";
@@ -19,20 +19,34 @@ import Roster from "./Roster";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
 import type {
+  AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
-  LeaderboardRow,
   Participant,
   ProgressSummary,
   SessionRow,
+  SpeakerLeaderboardRow,
 } from "./types";
 
-type Tab =
+export type AdminTab =
+  | "Home"
   | "Workspace"
   | "Sessions"
   | "Roster"
-  | "Leaderboards"
+  | "SpeakerLeaderboard"
+  | "AdjudicatorLeaderboard"
   | "MyPairing"
   | "MyScoring";
+
+export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
+  { key: "Home", label: "Home", icon: <House size={18} /> },
+  { key: "Workspace", label: "Session Workspace", icon: <LayoutDashboard size={18} /> },
+  { key: "Sessions", label: "Sessions", icon: <Calendar size={18} /> },
+  { key: "Roster", label: "Members & Cabinet", icon: <Users size={18} /> },
+  { key: "SpeakerLeaderboard", label: "Leaderboards", icon: <Mic2 size={18} /> },
+  { key: "AdjudicatorLeaderboard", label: "Adj Leaderboard", icon: <Scale size={18} /> },
+  { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={18} /> },
+  { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
+];
 
 type AdminPairingDashboardProps = {
   role: string;
@@ -41,7 +55,8 @@ type AdminPairingDashboardProps = {
   sessions: SessionRow[];
   onSessionsChange: (sessions: SessionRow[]) => void;
   attendanceHistory: AttendanceHistoryItem[];
-  leaderboard: LeaderboardRow[];
+  speakerLeaderboard: SpeakerLeaderboardRow[];
+  adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   progressSummaries: ProgressSummary[];
   leaderboardScope: "all" | "bi-monthly";
   loading: boolean;
@@ -49,17 +64,10 @@ type AdminPairingDashboardProps = {
   error: string | null;
   leaderboardError: string | null;
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
-  embedded?: boolean;
+  onOpenWorkspace: () => void;
+  onOpenLeaderboards: () => void;
+  activeTab?: AdminTab;
 };
-
-const ADMIN_TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: "Workspace", label: "Session Workspace", icon: <LayoutDashboard size={18} /> },
-  { key: "Sessions", label: "Sessions", icon: <Calendar size={18} /> },
-  { key: "Roster", label: "Members & Cabinet", icon: <Users size={18} /> },
-  { key: "Leaderboards", label: "Leaderboards", icon: <Trophy size={18} /> },
-  { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={18} /> },
-  { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
-];
 
 export default function AdminPairingDashboard({
   role,
@@ -68,7 +76,8 @@ export default function AdminPairingDashboard({
   sessions,
   onSessionsChange,
   attendanceHistory,
-  leaderboard,
+  speakerLeaderboard,
+  adjudicatorLeaderboard,
   progressSummaries,
   leaderboardScope,
   loading,
@@ -76,33 +85,24 @@ export default function AdminPairingDashboard({
   error,
   leaderboardError,
   onLeaderboardScopeChange,
-  embedded = false,
+  onOpenWorkspace,
+  onOpenLeaderboards,
+  activeTab = "Home",
 }: AdminPairingDashboardProps) {
-  const [tab, setTab] = useState<Tab>("Workspace");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const activeTab = ADMIN_TABS.find((entry) => entry.key === tab)?.key ?? ADMIN_TABS[0].key;
-
-  const content = (
+  return (
     <div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
-        {ADMIN_TABS.map((entry) => (
-          <button
-            key={entry.key}
-            type="button"
-            onClick={() => setTab(entry.key)}
-            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              activeTab === entry.key
-                ? "bg-blue-600 text-white"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            }`}
-          >
-            {entry.icon}
-            <span>{entry.label}</span>
-          </button>
-        ))}
-      </div>
-
+      {activeTab === "Home" && (
+        <HomeDashboard
+          role={role}
+          userName={userName}
+          sessions={sessions}
+          attendanceHistory={attendanceHistory}
+          speakerLeaderboard={speakerLeaderboard}
+          adjudicatorLeaderboard={adjudicatorLeaderboard}
+          onOpenLeaderboards={onOpenLeaderboards}
+          onOpenWorkspace={onOpenWorkspace}
+        />
+      )}
       {activeTab === "Workspace" && (
         <SessionWorkspace
           userName={userName}
@@ -114,12 +114,7 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "Sessions" && (
-        <Sessions
-          mode="admin"
-          sessions={sessions}
-          loading={loading}
-          error={error}
-        />
+        <Sessions mode="admin" sessions={sessions} loading={loading} error={error} />
       )}
       {activeTab === "Roster" && (
         <Roster
@@ -129,87 +124,34 @@ export default function AdminPairingDashboard({
           error={error}
         />
       )}
-      {activeTab === "Leaderboards" && (
+      {activeTab === "SpeakerLeaderboard" && (
         <Leaderboards
-          leaderboard={leaderboard}
+          speakerLeaderboard={speakerLeaderboard}
+          adjudicatorLeaderboard={adjudicatorLeaderboard}
           scope={leaderboardScope}
           loading={loadingLeaderboard}
           error={leaderboardError}
           onScopeChange={onLeaderboardScopeChange}
+          view="speakers"
+        />
+      )}
+      {activeTab === "AdjudicatorLeaderboard" && (
+        <Leaderboards
+          speakerLeaderboard={speakerLeaderboard}
+          adjudicatorLeaderboard={adjudicatorLeaderboard}
+          scope={leaderboardScope}
+          loading={loadingLeaderboard}
+          error={leaderboardError}
+          onScopeChange={onLeaderboardScopeChange}
+          view="adjudicators"
         />
       )}
       {activeTab === "MyPairing" && (
-        <MyPairing
-          role={role}
-          sessions={sessions}
-          attendanceHistory={attendanceHistory}
-        />
+        <MyPairing role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
       )}
-      {activeTab === "MyScoring" && <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} />}
-    </div>
-  );
-
-  if (embedded) {
-    return content;
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-      <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
-        <div className="flex items-center gap-2 font-semibold">
-          <Gavel size={18} />
-          <span>Pairing (Admin)</span>
-        </div>
-        <button
-          type="button"
-          aria-label="Toggle menu"
-          onClick={() => setSidebarOpen((value) => !value)}
-          className="p-2 -mr-2"
-        >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      <aside
-        className={`${
-          sidebarOpen ? "block" : "hidden"
-        } w-full bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-64 lg:flex-col`}
-      >
-        <div className="mb-8 hidden items-center gap-2 font-semibold tracking-wide text-white lg:flex">
-          <Gavel size={18} />
-          <span>Pairing (Admin)</span>
-        </div>
-
-        <nav className="flex flex-col gap-1">
-          {ADMIN_TABS.map((entry) => (
-            <button
-              key={entry.key}
-              type="button"
-              onClick={() => {
-                setTab(entry.key);
-                setSidebarOpen(false);
-              }}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                activeTab === entry.key
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-slate-800 hover:text-white"
-              }`}
-            >
-              {entry.icon}
-              <span>{entry.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="mt-auto pt-6 text-[11px] leading-snug text-slate-500">
-          Pairing UI now reads live roster, sessions, attendance history, and leaderboard data from
-          the current backend. Proposal generation and published pairing routes are still pending.
-        </div>
-      </aside>
-
-      <main className="min-w-0 flex-1">
-        <div className="p-4 sm:p-6 lg:p-8">{content}</div>
-      </main>
+      {activeTab === "MyScoring" && (
+        <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
+      )}
     </div>
   );
 }

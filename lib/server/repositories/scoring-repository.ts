@@ -4,8 +4,12 @@ import { prisma } from "../prisma.ts";
 import type {
   AdjudicatorLeaderboardEntry,
   LeaderboardEntry,
+  ParticipantCompatibilityProfile,
+  ParticipantMetricDetail,
+  ParticipantMotionTypeScore,
   ParticipantProgressProfile,
   ParticipantProgressSummary,
+  ParticipantRoleScore,
 } from "../../../types/scoring.ts";
 import type { MemberId } from "../../../types/pairing.ts";
 import { resolveParticipantId } from "./metrics-repository.ts";
@@ -23,6 +27,39 @@ function buildParticipantRef(participantId: MemberId, participantType: Participa
 }
 
 export function createScoringRepository(client: ScoringRepositoryClient = prisma) {
+  async function loadProgressSummaryMetrics(participantId: MemberId) {
+    return client.memberMetricSnapshot.findMany({
+      where: {
+        OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
+      },
+      select: {
+        metricKey: true,
+        value: true,
+        confidence: true,
+        observationCount: true,
+      },
+    });
+  }
+
+  function buildProgressSummaryFromMetrics(
+    participantId: MemberId,
+    metrics: Array<{ metricKey: string; value: number; confidence: number; observationCount: number }>,
+  ): ParticipantProgressSummary {
+    const byMetric = new Map(metrics.map((metric: (typeof metrics)[number]) => [metric.metricKey, metric]));
+    const speakerStrengthConfidence = byMetric.get("speaker_strength")?.confidence ?? 0;
+
+    return {
+      participantId,
+      speakerTotalScore: byMetric.get("speaker_total_score")?.value ?? 0,
+      speakerStrength: byMetric.get("speaker_strength")?.value ?? 0,
+      confidence: speakerStrengthConfidence,
+      sessionsSpoken: byMetric.get("speaker_total_score")?.observationCount ?? 0,
+      sessionsAdjudicated: byMetric.get("adjudicator_average_score")?.observationCount ?? 0,
+      sessionsChaired: byMetric.get("chair_score")?.observationCount ?? 0,
+      dataMaturity: speakerStrengthConfidence >= 0.8 ? "HIGH" : speakerStrengthConfidence >= 0.4 ? "MEDIUM" : "LOW",
+    };
+  }
+
   async function getPublishedScoringContext(sessionId: string) {
     const session = await client.debateSession.findUnique({
       where: { id: sessionId },
@@ -494,21 +531,93 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }
 
   async function getSpeakerLeaderboardRawData(): Promise<LeaderboardEntry[]> {
-    const rows = await client.speakerScoreRecord.findMany({
-      select: {
-        memberId: true,
-        cabinetId: true,
-        presidentId: true,
-        rawScore: true,
-        member: { select: { name: true } },
-        cabinet: { select: { name: true } },
-        president: { select: { name: true } },
-      },
-    });
+    const [publishedSpeakerRows, scoreRows, legacyRows] = await Promise.all([
+      client.teamSpeakerAssignment.findMany({
+        where: {
+          teamAssignment: {
+            roomAssignment: {
+              proposal: {
+                publishedForSessions: {
+                  some: {},
+                },
+              },
+            },
+          },
+        },
+        select: {
+          memberId: true,
+          cabinetId: true,
+          presidentId: true,
+          member: { select: { name: true } },
+          cabinet: { select: { name: true } },
+          president: { select: { name: true } },
+          teamAssignment: {
+            select: {
+              roomAssignment: {
+                select: {
+                  proposal: {
+                    select: {
+                      publishedForSessions: {
+                        select: { id: true },
+                        take: 1,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      client.speakerScoreRecord.findMany({
+        select: {
+          memberId: true,
+          cabinetId: true,
+          presidentId: true,
+          rawScore: true,
+          sessionId: true,
+          member: { select: { name: true } },
+          cabinet: { select: { name: true } },
+          president: { select: { name: true } },
+        },
+      }),
+      client.attendance.findMany({
+        where: {
+          speakerScore: { not: null },
+          status: { equals: "present", mode: "insensitive" },
+        },
+        select: {
+          sessionId: true,
+          memberId: true,
+          cabinetId: true,
+          presidentId: true,
+          speakerScore: true,
+          member: { select: { name: true } },
+          cabinet: { select: { name: true } },
+          president: { select: { name: true } },
+        },
+      }),
+    ]);
 
-    const aggregate = new Map<MemberId, { name: string; score: number; sessionsCount: number }>();
+    const aggregate = new Map<MemberId, { name: string; score: number; sessionIds: Set<string> }>();
 
-    for (const row of rows) {
+    for (const row of publishedSpeakerRows) {
+      const participantId = resolveParticipantId(row);
+      const sessionId = row.teamAssignment.roomAssignment.proposal.publishedForSessions[0]?.id;
+      if (!participantId || !sessionId) {
+        continue;
+      }
+
+      const current = aggregate.get(participantId) ?? {
+        name: row.member?.name ?? row.cabinet?.name ?? row.president?.name ?? "Unknown Participant",
+        score: 0,
+        sessionIds: new Set<string>(),
+      };
+      current.sessionIds.add(sessionId);
+      aggregate.set(participantId, current);
+    }
+
+    for (const row of scoreRows) {
       const participantId = resolveParticipantId(row);
       if (!participantId) {
         continue;
@@ -517,16 +626,44 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       const current = aggregate.get(participantId) ?? {
         name: row.member?.name ?? row.cabinet?.name ?? row.president?.name ?? "Unknown Participant",
         score: 0,
-        sessionsCount: 0,
+        sessionIds: new Set<string>(),
       };
       current.score += row.rawScore;
-      current.sessionsCount += 1;
+      current.sessionIds.add(row.sessionId);
+      aggregate.set(participantId, current);
+    }
+
+    for (const row of legacyRows) {
+      const participantId = resolveParticipantId(row);
+      if (!participantId || row.speakerScore === null) {
+        continue;
+      }
+
+      const current = aggregate.get(participantId) ?? {
+        name: row.member?.name ?? row.cabinet?.name ?? row.president?.name ?? "Unknown Participant",
+        score: 0,
+        sessionIds: new Set<string>(),
+      };
+
+      if (scoreRows.length === 0) {
+        current.score += row.speakerScore;
+      }
+
+      current.sessionIds.add(row.sessionId);
       aggregate.set(participantId, current);
     }
 
     return [...aggregate.entries()]
-      .map(([participantId, entry]) => ({ participantId, ...entry }))
-      .sort((left, right) => right.score - left.score)
+      .map(([participantId, entry]) => ({ participantId, name: entry.name, score: entry.score, sessionsCount: entry.sessionIds.size }))
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+        if (right.sessionsCount !== left.sessionsCount) {
+          return right.sessionsCount - left.sessionsCount;
+        }
+        return left.name.localeCompare(right.name);
+      })
       .map((entry, index) => ({
         participantId: entry.participantId,
         name: entry.name,
@@ -618,30 +755,201 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }
 
   async function getParticipantProgressProfile(participantId: MemberId): Promise<ParticipantProgressProfile> {
-    const rawMetrics = await client.memberMetricSnapshot.findMany({
-      where: {
-        OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
-      },
-      select: {
-        metricKey: true,
-        contextKey: true,
-        value: true,
-        observationCount: true,
-        confidence: true,
-      },
-      orderBy: [{ metricKey: "asc" }, { contextKey: "asc" }],
-    });
+    const [rawMetrics, attendanceRows, pairMetrics] = await Promise.all([
+      client.memberMetricSnapshot.findMany({
+        where: {
+          OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
+        },
+        select: {
+          metricKey: true,
+          contextKey: true,
+          value: true,
+          observationCount: true,
+          confidence: true,
+        },
+        orderBy: [{ metricKey: "asc" }, { contextKey: "asc" }],
+      }),
+      client.attendance.findMany({
+        where: {
+          OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
+        },
+        select: {
+          status: true,
+          sessionId: true,
+        },
+      }),
+      client.pairMetricSnapshot.findMany({
+        where: {
+          OR: [
+            { memberAId: participantId },
+            { cabinetAId: participantId },
+            { presidentAId: participantId },
+            { memberBId: participantId },
+            { cabinetBId: participantId },
+            { presidentBId: participantId },
+          ],
+        },
+        select: {
+          memberAId: true,
+          cabinetAId: true,
+          presidentAId: true,
+          memberBId: true,
+          cabinetBId: true,
+          presidentBId: true,
+          metricKey: true,
+          contextKey: true,
+          value: true,
+          observationCount: true,
+          confidence: true,
+        },
+      }),
+    ]);
+
+    const summary = buildProgressSummaryFromMetrics(
+      participantId,
+      rawMetrics.map((metric) => ({
+        metricKey: metric.metricKey,
+        value: metric.value,
+        confidence: metric.confidence,
+        observationCount: metric.observationCount,
+      })),
+    );
+
+    const presentCount = attendanceRows.filter((row) => row.status.toLowerCase() === "present").length;
+    const totalCount = attendanceRows.length;
+    const attendancePercentage = totalCount === 0 ? 0 : Number(((presentCount / totalCount) * 100).toFixed(1));
+
+    const motionTypeScores: ParticipantMotionTypeScore[] = rawMetrics
+      .filter((metric) => metric.metricKey === "speaker_motion_type_score" && metric.contextKey)
+      .map((metric) => ({
+        motionType: metric.contextKey ?? "Unknown",
+        score: metric.value,
+        observationCount: metric.observationCount,
+        confidence: metric.confidence,
+      }))
+      .sort((left, right) => right.score - left.score);
+
+    const roleScores: ParticipantRoleScore[] = rawMetrics
+      .filter((metric) => metric.metricKey === "role_score" && metric.contextKey)
+      .map((metric) => ({
+        role: metric.contextKey ?? "Unknown",
+        score: metric.value,
+        observationCount: metric.observationCount,
+        confidence: metric.confidence,
+      }))
+      .sort((left, right) => right.score - left.score);
+
+    const partnerIds = new Set<MemberId>();
+    for (const metric of pairMetrics) {
+      const firstId = resolveParticipantId({
+        memberId: metric.memberAId,
+        cabinetId: metric.cabinetAId,
+        presidentId: metric.presidentAId,
+      });
+      const secondId = resolveParticipantId({
+        memberId: metric.memberBId,
+        cabinetId: metric.cabinetBId,
+        presidentId: metric.presidentBId,
+      });
+      const partnerId = firstId === participantId ? secondId : secondId === participantId ? firstId : "";
+      if (partnerId) {
+        partnerIds.add(partnerId);
+      }
+    }
+
+    const [partnerMembers, partnerCabinets, partnerPresidents] = partnerIds.size === 0
+      ? [[], [], []]
+      : await Promise.all([
+          client.member.findMany({ where: { id: { in: [...partnerIds] } }, select: { id: true, name: true } }),
+          client.cabinet.findMany({ where: { id: { in: [...partnerIds] } }, select: { id: true, name: true } }),
+          client.president.findMany({ where: { id: { in: [...partnerIds] } }, select: { id: true, name: true } }),
+        ]);
+
+    const partnerNames = new Map<MemberId, string>();
+    for (const partner of partnerMembers) partnerNames.set(partner.id, partner.name);
+    for (const partner of partnerCabinets) partnerNames.set(partner.id, partner.name);
+    for (const partner of partnerPresidents) partnerNames.set(partner.id, partner.name);
+
+    const compatibilityProfiles: ParticipantCompatibilityProfile[] = pairMetrics
+      .filter((metric) => metric.metricKey === "partner_dynamics_overall")
+      .map((metric) => {
+        const firstId = resolveParticipantId({
+          memberId: metric.memberAId,
+          cabinetId: metric.cabinetAId,
+          presidentId: metric.presidentAId,
+        });
+        const secondId = resolveParticipantId({
+          memberId: metric.memberBId,
+          cabinetId: metric.cabinetBId,
+          presidentId: metric.presidentBId,
+        });
+        const partnerId = firstId === participantId ? secondId : secondId === participantId ? firstId : "";
+        if (!partnerId) {
+          return null;
+        }
+
+        return {
+          participantId: partnerId,
+          name: partnerNames.get(partnerId) ?? "Unknown Participant",
+          score: metric.value,
+          observationCount: metric.observationCount,
+          confidence: metric.confidence,
+        } satisfies ParticipantCompatibilityProfile;
+      })
+      .filter((profile): profile is ParticipantCompatibilityProfile => profile !== null)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 5);
+
+    const strongestMotion = motionTypeScores[0];
+    const weakestMotion = motionTypeScores.at(-1);
+    const bestRole = roleScores[0];
+    const weakestRole = roleScores.at(-1);
+    const lowConfidenceMotions = motionTypeScores.filter((metric) => metric.observationCount < 2 || metric.confidence < 0.4);
+    const bestPartner = compatibilityProfiles[0];
+    const weakestPartner = compatibilityProfiles.at(-1);
+
+    const verdict = {
+      strengths: [
+        ...(strongestMotion ? [`Strongest motion type: ${strongestMotion.motionType}`] : []),
+        ...(summary.speakerStrength > 0 ? [`Speaker strength is ${summary.speakerStrength.toFixed(2)}`] : []),
+      ],
+      weaknesses: [
+        ...(weakestMotion && motionTypeScores.length > 1 ? [`Needs improvement in ${weakestMotion.motionType}`] : []),
+        ...(weakestRole && roleScores.length > 1 ? [`Lowest current role fit: ${weakestRole.role}`] : []),
+      ],
+      gaps: [
+        ...(attendanceRows.length > 0 ? [`Attendance: ${attendancePercentage}% across ${totalCount} tracked sessions`] : ["No attendance history yet"]),
+        ...lowConfidenceMotions.map((metric) => `Needs more data for ${metric.motionType}`),
+      ],
+      roleAptitude: [
+        ...(bestRole ? [`Best current role fit: ${bestRole.role}`] : []),
+        ...(roleScores.length === 0 ? ["Role-specific progress has not been established yet"] : []),
+      ],
+      compatibility: [
+        ...(bestPartner ? [`Pairs well with ${bestPartner.name}`] : []),
+        ...(weakestPartner && compatibilityProfiles.length > 1 ? [`Watch pairing friction with ${weakestPartner.name}`] : []),
+      ],
+    };
 
     return {
       participantId,
-      rawMetrics,
-      verdict: {
-        strengths: [],
-        weaknesses: [],
-        gaps: [],
-        roleAptitude: [],
-        compatibility: [],
+      attendance: {
+        presentCount,
+        totalCount,
+        attendancePercentage,
       },
+      summary,
+      motionTypeScores,
+      roleScores,
+      compatibilityProfiles,
+      rawMetrics: rawMetrics.map((metric) => ({
+        metricKey: metric.metricKey,
+        contextKey: metric.contextKey,
+        value: metric.value,
+        observationCount: metric.observationCount,
+        confidence: metric.confidence,
+      })) satisfies ParticipantMetricDetail[],
+      verdict,
     };
   }
 
@@ -658,31 +966,8 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }
 
   async function getParticipantProgressSummary(participantId: MemberId): Promise<ParticipantProgressSummary> {
-    const metrics: Array<{ metricKey: string; value: number; confidence: number; observationCount: number }> = await client.memberMetricSnapshot.findMany({
-      where: {
-        OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
-      },
-      select: {
-        metricKey: true,
-        value: true,
-        confidence: true,
-        observationCount: true,
-      },
-    });
-
-    const byMetric = new Map(metrics.map((metric: (typeof metrics)[number]) => [metric.metricKey, metric]));
-    const speakerStrengthConfidence = byMetric.get("speaker_strength")?.confidence ?? 0;
-
-    return {
-      participantId,
-      speakerTotalScore: byMetric.get("speaker_total_score")?.value ?? 0,
-      speakerStrength: byMetric.get("speaker_strength")?.value ?? 0,
-      confidence: speakerStrengthConfidence,
-      sessionsSpoken: byMetric.get("speaker_total_score")?.observationCount ?? 0,
-      sessionsAdjudicated: byMetric.get("adjudicator_average_score")?.observationCount ?? 0,
-      sessionsChaired: byMetric.get("chair_score")?.observationCount ?? 0,
-      dataMaturity: speakerStrengthConfidence >= 0.8 ? "HIGH" : speakerStrengthConfidence >= 0.4 ? "MEDIUM" : "LOW",
-    };
+    const metrics = await loadProgressSummaryMetrics(participantId);
+    return buildProgressSummaryFromMetrics(participantId, metrics);
   }
 
   return {

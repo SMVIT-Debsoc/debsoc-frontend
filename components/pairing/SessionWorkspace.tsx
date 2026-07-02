@@ -112,6 +112,7 @@ export default function SessionWorkspace({
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideDraft, setOverrideDraft] = useState<ManualOverrideDraft | null>(null);
   const [overrideNotes, setOverrideNotes] = useState("");
+  const [autoGeneratingSessionId, setAutoGeneratingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedSessionId && sessions.length > 0) {
@@ -142,7 +143,6 @@ export default function SessionWorkspace({
           scoringStatus: null,
         });
         hydrateFormState(context, participants, setAttendanceDraft, setMotionType, setMotionText, setObjective);
-        setStep(deriveStepFromContext(context));
 
         const nextState: WorkspaceSessionData = {
           context,
@@ -151,13 +151,13 @@ export default function SessionWorkspace({
           scoringStatus: null,
         };
 
-        if (context.session.pairingStatus.toUpperCase() === "APPROVED" && context.session.acceptedProposalId) {
+        if (context.session.acceptedProposalId) {
           nextState.proposal = await fetchJson<PairingProposalView>(
             `/api/pairing/proposal/${context.session.acceptedProposalId}`,
           );
         }
 
-        if (context.session.publicationStatus.toUpperCase() === "PUBLISHED") {
+        if (context.session.publishedProposalId || context.session.publicationStatus.toUpperCase() === "PUBLISHED") {
           nextState.publishedPairing = (
             await fetchJson<{
               publishedPairing: NonNullable<WorkspaceSessionData["publishedPairing"]>;
@@ -170,6 +170,7 @@ export default function SessionWorkspace({
 
         if (!cancelled) {
           setWorkspace(nextState);
+          setStep(deriveStepFromWorkspace(nextState, context));
         }
       } catch (caught) {
         if (!cancelled) {
@@ -196,6 +197,48 @@ export default function SessionWorkspace({
   useEffect(() => {
     setOverrideDraft(workspace.proposal ? createManualOverrideDraft(workspace.proposal) : null);
   }, [workspace.proposal]);
+
+  useEffect(() => {
+    const pairingStatus = workspace.context?.session.pairingStatus?.toUpperCase();
+    const publicationStatus = workspace.context?.session.publicationStatus?.toUpperCase();
+
+    if (step !== "review" || !selectedSessionId || !workspace.context) {
+      return;
+    }
+
+    if (workspace.proposal || publicationStatus === "PUBLISHED") {
+      return;
+    }
+
+    if (pairingStatus !== "READY" && pairingStatus != "GENERATED") {
+      return;
+    }
+
+    if (busyAction !== null || autoGeneratingSessionId === selectedSessionId) {
+      return;
+    }
+
+    setAutoGeneratingSessionId(selectedSessionId);
+    void generateProposal(
+      selectedSessionId,
+      setWorkspace,
+      setFeedback,
+      setActionError,
+      setBusyAction,
+    ).finally(() => {
+      setAutoGeneratingSessionId((current) => current === selectedSessionId ? null : current);
+    });
+  }, [
+    autoGeneratingSessionId,
+    busyAction,
+    selectedSessionId,
+    setActionError,
+    setFeedback,
+    setWorkspace,
+    step,
+    workspace.context,
+    workspace.proposal,
+  ]);
 
   const selectedSession = sessions.find((session) => session.id === selectedSessionId) ?? null;
   const counts = useMemo(() => {
@@ -497,7 +540,7 @@ export default function SessionWorkspace({
           ) : (
             <EmptyState
               title="No proposal generated yet"
-              body="Finish attendance and session setup, then generate a proposal to review it here."
+              body="Generating the proposal automatically for review. If it does not appear, use Regenerate once the first pass completes."
             />
           )}
         </Card>
@@ -578,72 +621,24 @@ export default function SessionWorkspace({
           </SecondaryButton>
 
           <div className="flex flex-wrap gap-3">
-          {step === "setup" && (
-            <PrimaryButton
+          {step === "review" && workspace.proposal && (
+            <SecondaryButton
               type="button"
               disabled={busyAction !== null}
-              onClick={() => void saveSetup(selectedSessionId, motionType, motionText, objective, setWorkspace, setFeedback, setActionError, setBusyAction, setStep)}
+              onClick={() => {
+                const proposalId = workspace.proposal?.summary.proposalId;
+                if (!proposalId) return;
+                void regenerateCurrentProposal(
+                  proposalId,
+                  setWorkspace,
+                  setFeedback,
+                  setActionError,
+                  setBusyAction,
+                );
+              }}
             >
-              Save setup
-            </PrimaryButton>
-          )}
-          {step === "review" && (
-            <>
-              <PrimaryButton
-                type="button"
-                disabled={busyAction !== null}
-                onClick={() => void generateProposal(selectedSessionId, setWorkspace, setFeedback, setActionError, setBusyAction)}
-              >
-                Generate proposal
-              </PrimaryButton>
-              {workspace.proposal && (
-                <>
-                  <SecondaryButton
-                    type="button"
-                    disabled={busyAction !== null}
-                    onClick={() => {
-                      const proposalId = workspace.proposal?.summary.proposalId;
-                      if (!proposalId) return;
-                      void approveCurrentProposal(
-                        proposalId,
-                        selectedSessionId,
-                        setWorkspace,
-                        setFeedback,
-                        setActionError,
-                        setBusyAction,
-                        setStep,
-                      );
-                    }}
-                  >
-                    Approve
-                  </SecondaryButton>
-                  <SecondaryButton
-                    type="button"
-                    disabled={busyAction !== null}
-                    onClick={() => setOverrideOpen((current) => !current)}
-                  >
-                    Override
-                  </SecondaryButton>
-                  <SecondaryButton
-                    type="button"
-                    disabled={busyAction !== null}
-                    onClick={() => {
-                      const proposalId = workspace.proposal?.summary.proposalId;
-                      if (!proposalId) return;
-                      void regenerateCurrentProposal(
-                        proposalId,
-                        setWorkspace,
-                        setFeedback,
-                        setActionError,
-                        setBusyAction,
-                      );
-                    }}
-                  >
-                    Regenerate
-                  </SecondaryButton>
-                </>
-              )}
-            </>
+              Regenerate
+            </SecondaryButton>
           )}
           {step === "publish" && (
             <PrimaryButton
@@ -683,6 +678,36 @@ export default function SessionWorkspace({
                   setObjective,
                   setStep,
                   true,
+                );
+                return;
+              }
+              if (step === "setup") {
+                void saveSetup(
+                  selectedSessionId,
+                  motionType,
+                  motionText,
+                  objective,
+                  setWorkspace,
+                  setFeedback,
+                  setActionError,
+                  setBusyAction,
+                  setStep,
+                );
+                return;
+              }
+              if (step === "review") {
+                const proposalId = workspace.proposal?.summary.proposalId;
+                if (!proposalId) {
+                  return;
+                }
+                void approveCurrentProposal(
+                  proposalId,
+                  selectedSessionId,
+                  setWorkspace,
+                  setFeedback,
+                  setActionError,
+                  setBusyAction,
+                  setStep,
                 );
                 return;
               }
@@ -775,12 +800,25 @@ function deriveStepFromContext(context: SessionPreparationContextResponse): Step
   const pairingStatus = context.session.pairingStatus.toUpperCase();
   const publicationStatus = context.session.publicationStatus.toUpperCase();
 
-  if (publicationStatus === "PUBLISHED") return "post";
-  if (pairingStatus === "APPROVED") return "publish";
+  if (context.session.publishedProposalId || publicationStatus === "PUBLISHED") return "post";
+  if (context.session.acceptedProposalId || pairingStatus === "APPROVED") return "publish";
   if (pairingStatus === "GENERATED") return "review";
   if (pairingStatus === "READY") return "review";
   if (pairingStatus === "PREPARATION") return "setup";
   return "prepare";
+}
+
+function deriveStepFromWorkspace(
+  workspace: WorkspaceSessionData,
+  context: SessionPreparationContextResponse,
+): StepKey {
+  if (workspace.publishedPairing || workspace.scoringStatus || context.session.publishedProposalId) {
+    return "post";
+  }
+  if (workspace.proposal || context.session.acceptedProposalId) {
+    return "publish";
+  }
+  return deriveStepFromContext(context);
 }
 
 function computeStepAvailability(
@@ -809,7 +847,7 @@ function deriveUiState(
   const publicationStatus = workspace.context?.session.publicationStatus.toUpperCase();
 
   if (scoringStatus === "complete") return "Scored";
-  if (publicationStatus === "PUBLISHED") return "Published";
+  if (workspace.publishedPairing || publicationStatus === "PUBLISHED") return "Published";
   if (pairingStatus === "APPROVED") return "Approved";
   if (pairingStatus === "GENERATED") return "Generated";
   return fallback ?? "Preparation";

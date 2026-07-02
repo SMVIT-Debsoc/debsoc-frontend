@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import AdminPairingDashboard from "./AdminPairingDashboard";
-import ParticipantPairingDashboard from "./ParticipantPairingDashboard";
+import React, { useEffect, useMemo, useState } from "react";
+import { Gavel, Menu, X } from "lucide-react";
+import AdminPairingDashboard, {
+  ADMIN_TABS,
+  type AdminTab,
+} from "./AdminPairingDashboard";
+import ParticipantPairingDashboard, {
+  PARTICIPANT_TABS,
+  type ParticipantTab,
+} from "./ParticipantPairingDashboard";
 import type {
+  AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
-  LeaderboardRow,
   Participant,
   ProgressSummary,
   SessionRow,
+  SpeakerLeaderboardRow,
 } from "./types";
 
 type PairingDashboardProps = {
@@ -17,12 +25,12 @@ type PairingDashboardProps = {
   embedded?: boolean;
 };
 
-
 type PairingDataState = {
   participants: Participant[];
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
-  leaderboard: LeaderboardRow[];
+  speakerLeaderboard: SpeakerLeaderboardRow[];
+  adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   progressSummaries: ProgressSummary[];
   loading: boolean;
   loadingLeaderboard: boolean;
@@ -35,7 +43,8 @@ const INITIAL_STATE: PairingDataState = {
   participants: [],
   sessions: [],
   attendanceHistory: [],
-  leaderboard: [],
+  speakerLeaderboard: [],
+  adjudicatorLeaderboard: [],
   progressSummaries: [],
   loading: true,
   loadingLeaderboard: true,
@@ -50,6 +59,9 @@ export default function PairingDashboard({
   embedded = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [adminTab, setAdminTab] = useState<AdminTab>("Home");
+  const [participantTab, setParticipantTab] = useState<ParticipantTab>("Home");
   const isAdminView =
     role === "cabinet" || role === "President" || role === "TechHead";
 
@@ -96,11 +108,11 @@ export default function PairingDashboard({
       }));
 
       try {
-        const leaderboard = await fetchLeaderboard(state.leaderboardScope);
+        const leaderboard = await fetchLeaderboards(state.leaderboardScope);
         if (cancelled) return;
         setState((current) => ({
           ...current,
-          leaderboard,
+          ...leaderboard,
           loadingLeaderboard: false,
           leaderboardError: null,
         }));
@@ -108,7 +120,8 @@ export default function PairingDashboard({
         if (cancelled) return;
         setState((current) => ({
           ...current,
-          leaderboard: [],
+          speakerLeaderboard: [],
+          adjudicatorLeaderboard: [],
           loadingLeaderboard: false,
           leaderboardError:
             error instanceof Error ? error.message : "Failed to load leaderboard.",
@@ -123,95 +136,60 @@ export default function PairingDashboard({
     };
   }, [state.leaderboardScope]);
 
-  if (!embedded) {
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-        <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
-          <div className="flex items-center gap-2 font-semibold">
-            <span>Pairing</span>
-          </div>
-        </div>
+  const navTabs = useMemo(
+    () => (isAdminView ? ADMIN_TABS : PARTICIPANT_TABS),
+    [isAdminView],
+  );
+  const activeTab = isAdminView ? adminTab : participantTab;
 
-        <aside className="hidden w-64 bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
-          <div className="mb-8 text-white font-semibold tracking-wide">Pairing</div>
-        </aside>
+  const nav = (
+    <nav className="flex flex-col gap-1">
+      {navTabs.map((entry) => (
+        <button
+          key={entry.key}
+          type="button"
+          onClick={() => {
+            if (isAdminView) {
+              setAdminTab(entry.key as AdminTab);
+            } else {
+              setParticipantTab(entry.key as ParticipantTab);
+            }
+            setSidebarOpen(false);
+          }}
+          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+            activeTab === entry.key
+              ? "bg-blue-600 text-white"
+              : "hover:bg-slate-800 hover:text-white"
+          }`}
+        >
+          {entry.icon}
+          <span>{entry.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
 
-        <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          {isAdminView ? (
-            <AdminPairingDashboard
-              role={role}
-              userName={userName}
-              participants={state.participants}
-              sessions={state.sessions}
-              onSessionsChange={(sessions) =>
-                setState((current) => ({ ...current, sessions }))
-              }
-              attendanceHistory={state.attendanceHistory}
-              leaderboard={state.leaderboard}
-              progressSummaries={state.progressSummaries}
-              leaderboardScope={state.leaderboardScope}
-              loading={state.loading}
-              loadingLeaderboard={state.loadingLeaderboard}
-              error={state.error}
-              leaderboardError={state.leaderboardError}
-              onLeaderboardScopeChange={(scope) =>
-                setState((current) => ({ ...current, leaderboardScope: scope }))
-              }
-              embedded
-            />
-          ) : (
-            <ParticipantPairingDashboard
-              role={role}
-              sessions={state.sessions}
-              attendanceHistory={state.attendanceHistory}
-              leaderboard={state.leaderboard}
-              leaderboardScope={state.leaderboardScope}
-              loading={state.loading}
-              loadingLeaderboard={state.loadingLeaderboard}
-              error={state.error}
-              leaderboardError={state.leaderboardError}
-              onLeaderboardScopeChange={(scope) =>
-                setState((current) => ({ ...current, leaderboardScope: scope }))
-              }
-            />
-          )}
-        </main>
-      </div>
-    );
-  }
+  const openLeaderboards = () => {
+    if (isAdminView) {
+      setAdminTab("SpeakerLeaderboard");
+    } else {
+      setParticipantTab("SpeakerLeaderboard");
+    }
+  };
 
-  if (isAdminView) {
-    return (
-      <AdminPairingDashboard
-        role={role}
-        userName={userName}
-        participants={state.participants}
-        sessions={state.sessions}
-        onSessionsChange={(sessions) =>
-          setState((current) => ({ ...current, sessions }))
-        }
-        attendanceHistory={state.attendanceHistory}
-        leaderboard={state.leaderboard}
-        progressSummaries={state.progressSummaries}
-        leaderboardScope={state.leaderboardScope}
-        loading={state.loading}
-        loadingLeaderboard={state.loadingLeaderboard}
-        error={state.error}
-        leaderboardError={state.leaderboardError}
-        onLeaderboardScopeChange={(scope) =>
-          setState((current) => ({ ...current, leaderboardScope: scope }))
-        }
-        embedded={embedded}
-      />
-    );
-  }
-
-  return (
-    <ParticipantPairingDashboard
+  const content = isAdminView ? (
+    <AdminPairingDashboard
       role={role}
+      userName={userName}
+      participants={state.participants}
       sessions={state.sessions}
+      onSessionsChange={(sessions) =>
+        setState((current) => ({ ...current, sessions }))
+      }
       attendanceHistory={state.attendanceHistory}
-      leaderboard={state.leaderboard}
+      speakerLeaderboard={state.speakerLeaderboard}
+      adjudicatorLeaderboard={state.adjudicatorLeaderboard}
+      progressSummaries={state.progressSummaries}
       leaderboardScope={state.leaderboardScope}
       loading={state.loading}
       loadingLeaderboard={state.loadingLeaderboard}
@@ -220,7 +198,72 @@ export default function PairingDashboard({
       onLeaderboardScopeChange={(scope) =>
         setState((current) => ({ ...current, leaderboardScope: scope }))
       }
+      onOpenWorkspace={() => setAdminTab("Workspace")}
+      onOpenLeaderboards={openLeaderboards}
+      activeTab={adminTab}
     />
+  ) : (
+    <ParticipantPairingDashboard
+      role={role}
+      userName={userName}
+      sessions={state.sessions}
+      attendanceHistory={state.attendanceHistory}
+      speakerLeaderboard={state.speakerLeaderboard}
+      adjudicatorLeaderboard={state.adjudicatorLeaderboard}
+      leaderboardScope={state.leaderboardScope}
+      loading={state.loading}
+      loadingLeaderboard={state.loadingLeaderboard}
+      error={state.error}
+      leaderboardError={state.leaderboardError}
+      onLeaderboardScopeChange={(scope) =>
+        setState((current) => ({ ...current, leaderboardScope: scope }))
+      }
+      onOpenLeaderboards={openLeaderboards}
+      activeTab={participantTab}
+    />
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
+      <div className="sticky top-0 z-40 flex items-center justify-between bg-slate-900 px-4 py-3 text-white lg:hidden">
+        <div className="flex items-center gap-2 font-semibold">
+          <Gavel size={18} />
+          <span>{isAdminView ? "Pairing (Admin)" : "Pairing"}</span>
+        </div>
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          onClick={() => setSidebarOpen((value) => !value)}
+          className="p-2 -mr-2"
+        >
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </div>
+
+      <aside
+        className={`${
+          sidebarOpen ? "block" : "hidden"
+        } w-full bg-slate-900 p-5 text-slate-300 lg:sticky lg:top-0 lg:block lg:h-screen lg:w-72 lg:flex-col`}
+      >
+        <div className="mb-8 hidden items-center gap-2 font-semibold tracking-wide text-white lg:flex">
+          <Gavel size={18} />
+          <span>{isAdminView ? "Pairing (Admin)" : "Pairing"}</span>
+        </div>
+
+        {nav}
+
+        <div className="mt-auto pt-6 text-[11px] leading-snug text-slate-500">
+          Pairing UI now reads live roster, sessions, attendance history, and leaderboard data from
+          the current backend.
+        </div>
+      </aside>
+
+      <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{content}</main>
+    </div>
   );
 }
 
@@ -260,19 +303,37 @@ async function fetchPrimaryData(role: string) {
   };
 }
 
-async function fetchLeaderboard(scope: "all" | "bi-monthly") {
+async function fetchLeaderboards(scope: "all" | "bi-monthly") {
   const suffix = scope === "bi-monthly" ? "?type=bi-monthly" : "";
-  const data = await fetchJson<{ leaderboard: ApiSpeakerLeaderboardEntry[] }>(
-    `/api/leaderboard/speakers${suffix}`,
-  );
-  return (data.leaderboard ?? []).map((entry) => ({
-    id: entry.participantId,
-    name: entry.name,
-    type: "Participant",
-    score: entry.score,
-    sessions: entry.sessionsCount,
-    rank: entry.rank,
-  }));
+  const [speakerData, adjudicatorData] = await Promise.all([
+    fetchJson<{ leaderboard: ApiSpeakerLeaderboardEntry[] }>(
+      `/api/leaderboard/speakers${suffix}`,
+    ),
+    fetchJson<{ leaderboard: ApiAdjudicatorLeaderboardEntry[] }>(
+      `/api/leaderboard/adjudicators${suffix}`,
+    ),
+  ]);
+
+  return {
+    speakerLeaderboard: (speakerData.leaderboard ?? []).map((entry) => ({
+      id: entry.participantId,
+      name: entry.name,
+      type: "Participant",
+      score: entry.score,
+      sessions: entry.sessionsCount,
+      rank: entry.rank,
+    })),
+    adjudicatorLeaderboard: (adjudicatorData.leaderboard ?? []).map((entry) => ({
+      id: entry.participantId,
+      name: entry.name,
+      type: "Participant",
+      score: entry.score,
+      sessions: entry.sessionsCount,
+      chairedCount: entry.chairedCount,
+      adjudicatedCount: entry.adjudicatedCount,
+      rank: entry.rank,
+    })),
+  };
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -436,6 +497,8 @@ function deriveLifecycleState(session: {
   pairingStatus?: string | null;
   publicationStatus?: string | null;
   scoringStatus?: string | null;
+  publishedProposal?: { roomAssignments: Array<unknown> } | null;
+  acceptedProposal?: { roomAssignments: Array<unknown> } | null;
   attendance?: Array<{
     status: string;
     pairingCode?: string | null;
@@ -451,11 +514,11 @@ function deriveLifecycleState(session: {
     return "Scored";
   }
 
-  if (publicationStatus === "PUBLISHED" || pairingStatus === "PUBLISHED") {
+  if (session.publishedProposal || publicationStatus === "PUBLISHED" || pairingStatus === "PUBLISHED") {
     return "Published";
   }
 
-  if (pairingStatus === "APPROVED") {
+  if (session.acceptedProposal || pairingStatus === "APPROVED") {
     return "Approved";
   }
 
@@ -610,4 +673,14 @@ type ApiSpeakerLeaderboardEntry = {
   score: number;
   rank: number;
   sessionsCount: number;
+};
+
+type ApiAdjudicatorLeaderboardEntry = {
+  participantId: string;
+  name: string;
+  score: number;
+  rank: number;
+  sessionsCount: number;
+  chairedCount: number;
+  adjudicatedCount: number;
 };
