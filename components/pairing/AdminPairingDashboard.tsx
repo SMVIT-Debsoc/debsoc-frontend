@@ -66,6 +66,7 @@ type AdminPairingDashboardProps = {
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
   onOpenWorkspace: () => void;
   onOpenLeaderboards: () => void;
+  onRefresh?: () => void;
   activeTab?: AdminTab;
 };
 
@@ -87,6 +88,7 @@ export default function AdminPairingDashboard({
   onLeaderboardScopeChange,
   onOpenWorkspace,
   onOpenLeaderboards,
+  onRefresh,
   activeTab = "Home",
 }: AdminPairingDashboardProps) {
   return (
@@ -151,7 +153,7 @@ export default function AdminPairingDashboard({
         <MyPairing role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
       )}
       {activeTab === "MyScoring" && (
-        <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
+        <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}
     </div>
   );

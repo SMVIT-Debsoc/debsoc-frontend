@@ -116,6 +116,25 @@ export default function PairingDashboard({
     };
   }, [role, primaryDataVersion]);
 
+  // Keep the dashboard live: refetch when the tab regains focus and every 30s
+  // while it's visible. Pauses when the tab is hidden so we don't hammer the
+  // backend from background tabs.
+  useEffect(() => {
+    const onFocus = () => {
+      if (document.visibilityState === "visible") refreshPrimaryData();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshPrimaryData();
+    }, 30_000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.clearInterval(interval);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -566,9 +585,13 @@ function normalizeAdminSession(session: ApiAdminSession): SessionRow {
 }
 
 function normalizeAttendanceHistory(item: ApiAttendanceHistory): AttendanceHistoryItem {
+  const participantIds = [item.memberId, item.cabinetId, item.presidentId].filter(
+    (id): id is string => Boolean(id),
+  );
   return {
     id: item.id,
     participantId: item.memberId ?? item.cabinetId ?? item.presidentId ?? undefined,
+    participantIds,
     status: item.status,
     speakerScore: item.speakerScore ?? null,
     pairingCode: item.pairingCode ?? null,

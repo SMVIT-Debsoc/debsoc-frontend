@@ -54,6 +54,7 @@ type ParticipantPairingDashboardProps = {
   leaderboardError: string | null;
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
   onOpenLeaderboards: () => void;
+  onRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
 
@@ -72,6 +73,7 @@ export default function ParticipantPairingDashboard({
   leaderboardError,
   onLeaderboardScopeChange,
   onOpenLeaderboards,
+  onRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
   return (

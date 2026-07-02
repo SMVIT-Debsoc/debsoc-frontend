@@ -54,6 +54,12 @@ export type SessionRow = {
 export type AttendanceHistoryItem = {
   id: string;
   participantId?: string;
+  /**
+   * Every non-null identity id (memberId / cabinetId / presidentId) attached
+   * to this attendance row. Used to match against room / task participantIds
+   * when a user may be represented by more than one identity id.
+   */
+  participantIds?: string[];
   status: string;
   speakerScore: number | null;
   pairingCode: string | null;

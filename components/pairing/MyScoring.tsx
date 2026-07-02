@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Card, EmptyState, Field, PrimaryButton, SectionHeader, SecondaryButton } from "./ui";
 import type { AttendanceHistoryItem, SessionRow } from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
@@ -9,6 +10,7 @@ type MyScoringProps = {
   role: string;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
+  onRefresh?: () => void;
 };
 
 type TaskStatusResponse = {
@@ -83,7 +85,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export default function MyScoring({ role, sessions, attendanceHistory }: MyScoringProps) {
+export default function MyScoring({ role, sessions, attendanceHistory, onRefresh }: MyScoringProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ScoringTaskView[]>([]);
@@ -99,7 +101,19 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
     error: null,
   });
 
-  const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
+  // Collect every identity id the current user is known by (memberId,
+  // cabinetId, presidentId) so we can match against a task/room/adjudicator
+  // even when the pairing engine uses a different identity than the one that
+  // shows up in the user's attendance history.
+  const currentParticipantIds = useMemo(() => {
+    const set = new Set<string>();
+    attendanceHistory.forEach((item) => {
+      if (item.participantId) set.add(item.participantId);
+      item.participantIds?.forEach((id) => set.add(id));
+    });
+    return set;
+  }, [attendanceHistory]);
+  const hasIdentity = currentParticipantIds.size > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -108,7 +122,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
       setLoading(true);
       setError(null);
 
-      if (!currentParticipantId) {
+      if (!hasIdentity) {
         setTasks([]);
         setLoading(false);
         return;
@@ -128,7 +142,9 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
               return null;
             }
 
-            const visibleTask = (scoringStatus.tasks ?? []).find((task) => task.participantId === currentParticipantId);
+            const visibleTask = (scoringStatus.tasks ?? []).find((task) =>
+              currentParticipantIds.has(task.participantId),
+            );
             if (!visibleTask) {
               return null;
             }
@@ -136,8 +152,14 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
             const names = participantNameMap(session);
             const room = (publishedPairing.rooms ?? []).find(
               (entry) =>
-                entry.teams.some((team) => team.speakers.some((speaker) => speaker.participantId === currentParticipantId)) ||
-                entry.adjudicators.some((adjudicator) => adjudicator.participantId === currentParticipantId),
+                entry.teams.some((team) =>
+                  team.speakers.some((speaker) =>
+                    currentParticipantIds.has(speaker.participantId),
+                  ),
+                ) ||
+                entry.adjudicators.some((adjudicator) =>
+                  currentParticipantIds.has(adjudicator.participantId),
+                ),
             );
 
             if (!room) {
@@ -167,7 +189,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
             }
 
             const chairId = room.adjudicators.find((adjudicator) => adjudicator.isChair)?.participantId;
-            if (chairId !== currentParticipantId) {
+            if (!chairId || !currentParticipantIds.has(chairId)) {
               return null;
             }
 
@@ -215,7 +237,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId, sessions]);
+  }, [currentParticipantIds, hasIdentity, sessions]);
 
   const selectedTask = useMemo(
     () => tasks.find((task) => task.sessionId === selectedSessionId) ?? tasks[0] ?? null,
@@ -302,12 +324,23 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
     );
   }
 
+  const refreshButton = onRefresh ? (
+    <SecondaryButton
+      type="button"
+      onClick={onRefresh}
+      className="inline-flex items-center gap-1.5"
+    >
+      <RefreshCw size={14} /> Refresh
+    </SecondaryButton>
+  ) : undefined;
+
   if (tasks.length === 0) {
     return (
       <div>
         <SectionHeader
           title="My Scoring Tasks"
           subtitle="Only published sessions where you are a speaker or assigned chair appear here."
+          right={refreshButton}
         />
         <EmptyState
           title="No scoring tasks right now"
@@ -326,6 +359,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
       <SectionHeader
         title="My Scoring Tasks"
         subtitle="Submit the real role-based scoring form for your published session assignment."
+        right={refreshButton}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
