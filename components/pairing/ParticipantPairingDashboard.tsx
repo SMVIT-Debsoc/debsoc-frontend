@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import {
@@ -17,6 +17,7 @@ import MyScoring from "./MyScoring";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
+  Participant,
   SessionRow,
   SpeakerLeaderboardRow,
 } from "./types";
@@ -43,6 +44,7 @@ type ParticipantPairingDashboardProps = {
   userName: string;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
+  participants: Participant[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   leaderboardScope: "all" | "bi-monthly";
@@ -60,6 +62,7 @@ export default function ParticipantPairingDashboard({
   userName,
   sessions,
   attendanceHistory,
+  participants,
   speakerLeaderboard,
   adjudicatorLeaderboard,
   leaderboardScope,
@@ -79,6 +82,7 @@ export default function ParticipantPairingDashboard({
           userName={userName}
           sessions={sessions}
           attendanceHistory={attendanceHistory}
+          participants={participants}
           speakerLeaderboard={speakerLeaderboard}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}

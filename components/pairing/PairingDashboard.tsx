@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, Menu, X } from "lucide-react";
@@ -246,6 +246,7 @@ export default function PairingDashboard({
       userName={userName}
       sessions={state.sessions}
       attendanceHistory={state.attendanceHistory}
+      participants={state.participants}
       speakerLeaderboard={state.speakerLeaderboard}
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
       leaderboardScope={state.leaderboardScope}
@@ -369,7 +370,7 @@ export default function PairingDashboard({
         {content}
       </main>
 
-      {/* Mobile bottom navigation — one-tap access to primary destinations */}
+      {/* Mobile bottom navigation â€” one-tap access to primary destinations */}
       <nav className="glass-topbar fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-900/[0.06] px-1 pb-[env(safe-area-inset-bottom)] dark:border-white/[0.06] lg:hidden">
         {primaryTabs.map((entry) => {
           const isActive = activeTab === entry.key;
@@ -820,3 +821,8 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
+
+
+
+
+
