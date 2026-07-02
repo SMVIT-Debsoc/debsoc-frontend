@@ -807,7 +807,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
 
     const summary = buildProgressSummaryFromMetrics(
       participantId,
-      rawMetrics.map((metric) => ({
+      rawMetrics.map((metric: { metricKey: string; value: number; confidence: number; observationCount: number }) => ({
         metricKey: metric.metricKey,
         value: metric.value,
         confidence: metric.confidence,
@@ -815,29 +815,29 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       })),
     );
 
-    const presentCount = attendanceRows.filter((row) => row.status.toLowerCase() === "present").length;
+    const presentCount = attendanceRows.filter((row: { status: string }) => row.status.toLowerCase() === "present").length;
     const totalCount = attendanceRows.length;
     const attendancePercentage = totalCount === 0 ? 0 : Number(((presentCount / totalCount) * 100).toFixed(1));
 
     const motionTypeScores: ParticipantMotionTypeScore[] = rawMetrics
-      .filter((metric) => metric.metricKey === "speaker_motion_type_score" && metric.contextKey)
-      .map((metric) => ({
+      .filter((metric: { metricKey: string; contextKey: string | null }) => metric.metricKey === "speaker_motion_type_score" && metric.contextKey)
+      .map((metric: { contextKey: string | null; value: number; observationCount: number; confidence: number }) => ({
         motionType: metric.contextKey ?? "Unknown",
         score: metric.value,
         observationCount: metric.observationCount,
         confidence: metric.confidence,
       }))
-      .sort((left, right) => right.score - left.score);
+      .sort((left: { score: number }, right: { score: number }) => right.score - left.score);
 
     const roleScores: ParticipantRoleScore[] = rawMetrics
-      .filter((metric) => metric.metricKey === "role_score" && metric.contextKey)
-      .map((metric) => ({
+      .filter((metric: { metricKey: string; contextKey: string | null }) => metric.metricKey === "role_score" && metric.contextKey)
+      .map((metric: { contextKey: string | null; value: number; observationCount: number; confidence: number }) => ({
         role: metric.contextKey ?? "Unknown",
         score: metric.value,
         observationCount: metric.observationCount,
         confidence: metric.confidence,
       }))
-      .sort((left, right) => right.score - left.score);
+      .sort((left: { score: number }, right: { score: number }) => right.score - left.score);
 
     const partnerIds = new Set<MemberId>();
     for (const metric of pairMetrics) {
@@ -871,8 +871,18 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     for (const partner of partnerPresidents) partnerNames.set(partner.id, partner.name);
 
     const compatibilityProfiles: ParticipantCompatibilityProfile[] = pairMetrics
-      .filter((metric) => metric.metricKey === "partner_dynamics_overall")
-      .map((metric) => {
+      .filter((metric: { metricKey: string }) => metric.metricKey === "partner_dynamics_overall")
+      .map((metric: {
+        memberAId: string | null;
+        cabinetAId: string | null;
+        presidentAId: string | null;
+        memberBId: string | null;
+        cabinetBId: string | null;
+        presidentBId: string | null;
+        value: number;
+        observationCount: number;
+        confidence: number;
+      }) => {
         const firstId = resolveParticipantId({
           memberId: metric.memberAId,
           cabinetId: metric.cabinetAId,
@@ -896,8 +906,8 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
           confidence: metric.confidence,
         } satisfies ParticipantCompatibilityProfile;
       })
-      .filter((profile): profile is ParticipantCompatibilityProfile => profile !== null)
-      .sort((left, right) => right.score - left.score)
+      .filter((profile: ParticipantCompatibilityProfile | null): profile is ParticipantCompatibilityProfile => profile !== null)
+      .sort((left: ParticipantCompatibilityProfile, right: ParticipantCompatibilityProfile) => right.score - left.score)
       .slice(0, 5);
 
     const strongestMotion = motionTypeScores[0];
@@ -942,7 +952,13 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       motionTypeScores,
       roleScores,
       compatibilityProfiles,
-      rawMetrics: rawMetrics.map((metric) => ({
+      rawMetrics: rawMetrics.map((metric: {
+        metricKey: string;
+        contextKey: string | null;
+        value: number;
+        observationCount: number;
+        confidence: number;
+      }) => ({
         metricKey: metric.metricKey,
         contextKey: metric.contextKey,
         value: metric.value,
