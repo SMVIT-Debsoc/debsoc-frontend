@@ -328,7 +328,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
             key={task.sessionId}
             type="button"
             onClick={() => setSelectedSessionId(task.sessionId)}
-            className={selectedTask?.sessionId === task.sessionId ? "border-blue-600 text-blue-700" : ""}
+            className={selectedTask?.sessionId === task.sessionId ? "border-indigo-600 text-indigo-600 dark:text-indigo-400" : ""}
           >
             {task.sessionLabel}
           </SecondaryButton>
@@ -337,25 +337,25 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
 
       {selectedTask && (
         <Card className="p-5">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">{selectedTask.sessionLabel}</h3>
-              <p className="mt-1 text-sm text-slate-500">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{selectedTask.sessionLabel}</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Motion type: {selectedTask.motionType} | Role: {selectedTask.role === "speaker" ? "Speaker" : "Chair"}
               </p>
             </div>
-            <div className={`rounded-full px-3 py-1 text-xs font-medium ${selectedTask.hasSubmitted ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+            <div className={`rounded-full px-3 py-1 text-xs font-medium ${selectedTask.hasSubmitted ? "bg-emerald-100 dark:bg-emerald-400/15 text-emerald-800 dark:text-emerald-300" : "bg-amber-100 dark:bg-amber-400/15 text-amber-800 dark:text-amber-300"}`}>
               {selectedTask.hasSubmitted ? "Submitted" : "Pending"}
             </div>
           </div>
 
-          {submitState.message && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{submitState.message}</div>}
-          {submitState.error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{submitState.error}</div>}
+          {submitState.message && <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-400/25 bg-emerald-50 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">{submitState.message}</div>}
+          {submitState.error && <div className="mb-4 rounded-xl border border-red-200 dark:border-red-400/25 bg-red-50 dark:bg-red-400/10 px-4 py-3 text-sm text-red-800 dark:text-red-300">{submitState.error}</div>}
 
           {selectedTask.role === "speaker" ? (
             <div className="space-y-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                Assigned chair: <span className="font-medium text-slate-900">{selectedTask.chairName ?? "N/A"}</span>
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4 text-sm text-slate-700 dark:text-slate-300">
+                Assigned chair: <span className="font-medium text-slate-900 dark:text-slate-100">{selectedTask.chairName ?? "N/A"}</span>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Chair score (0-10)">
@@ -365,7 +365,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                     max={10}
                     value={speakerForm.chairScore}
                     onChange={(event) => setSpeakerForm((current) => ({ ...current, chairScore: event.target.value }))}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                     disabled={selectedTask.hasSubmitted || submitState.saving}
                   />
                 </Field>
@@ -376,7 +376,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                     max={10}
                     value={speakerForm.teamDynamicsRating}
                     onChange={(event) => setSpeakerForm((current) => ({ ...current, teamDynamicsRating: event.target.value }))}
-                    className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                     disabled={selectedTask.hasSubmitted || submitState.saving}
                   />
                 </Field>
@@ -385,7 +385,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                 <textarea
                   value={speakerForm.notes}
                   onChange={(event) => setSpeakerForm((current) => ({ ...current, notes: event.target.value }))}
-                  className="min-h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  className="min-h-28 w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                   disabled={selectedTask.hasSubmitted || submitState.saving}
                 />
               </Field>
@@ -400,10 +400,10 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
           ) : (
             <div className="space-y-6">
               <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-900">Adjudicator scores</h4>
+                <h4 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Adjudicator scores</h4>
                 <div className="grid gap-3 md:grid-cols-2">
                   {selectedTask.panel.length === 0 ? (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">No panel adjudicators in this room.</div>
+                    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] px-4 py-3 text-sm text-slate-600 dark:text-slate-400">No panel adjudicators in this room.</div>
                   ) : selectedTask.panel.map((entry) => (
                     <Field key={entry.participantId} label={entry.name}>
                       <input
@@ -415,7 +415,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                           ...current,
                           adjudicatorScores: { ...current.adjudicatorScores, [entry.participantId]: event.target.value },
                         }))}
-                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                        className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                         disabled={selectedTask.hasSubmitted || submitState.saving}
                       />
                     </Field>
@@ -424,11 +424,11 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
               </div>
 
               <div>
-                <h4 className="mb-3 text-sm font-semibold text-slate-900">Speaker scores</h4>
+                <h4 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Speaker scores</h4>
                 <div className="space-y-4">
                   {selectedTask.speakers.map((entry) => (
-                    <div key={entry.participantId} className="rounded-lg border border-slate-200 p-4">
-                      <div className="mb-3 text-sm font-medium text-slate-900">
+                    <div key={entry.participantId} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+                      <div className="mb-3 text-sm font-medium text-slate-900 dark:text-slate-100">
                         {entry.name} | {entry.bpPosition} | {entry.speakingRole}
                       </div>
                       <div className="grid gap-4 md:grid-cols-2">
@@ -448,7 +448,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                                 },
                               },
                             }))}
-                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                             disabled={selectedTask.hasSubmitted || submitState.saving}
                           />
                         </Field>
@@ -468,7 +468,7 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
                                 },
                               },
                             }))}
-                            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                            className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
                             disabled={selectedTask.hasSubmitted || submitState.saving}
                           />
                         </Field>
