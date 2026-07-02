@@ -56,8 +56,9 @@ export default function Sessions({
       />
 
       <Card>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-slate-600">
+          <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
             <tr>
               <th className="px-4 py-2 font-medium">Date</th>
               <th className="px-4 py-2 font-medium">Motion type</th>
@@ -68,9 +69,9 @@ export default function Sessions({
           </thead>
           <tbody>
             {sessions.map((session) => (
-              <tr key={session.id} className="border-t border-slate-100">
+              <tr key={session.id} className="border-t border-slate-100 dark:border-white/[0.06]">
                 <td className="flex items-center gap-2 px-4 py-3">
-                  <Calendar size={14} className="text-slate-400" />
+                  <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
                   {session.date}
                 </td>
                 <td className="px-4 py-3">{session.motionType}</td>
@@ -82,7 +83,7 @@ export default function Sessions({
                   <button
                     type="button"
                     onClick={() => setSelectedSessionId(session.id)}
-                    className="text-sm font-medium text-blue-700 hover:underline"
+                    className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
                   >
                     View
                   </button>
@@ -91,6 +92,7 @@ export default function Sessions({
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {selectedSession && (
@@ -123,10 +125,10 @@ function SessionDetails({
 
   return (
     <Card className="p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 dark:border-white/[0.06] pb-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">{session.date}</h3>
-          <p className="mt-1 text-sm text-slate-500">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{session.date}</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Motion type: {session.motionType}
             {(session.assignedChairLabel ?? session.chair) ? ` | Chair: ${session.assignedChairLabel ?? session.chair}` : ""}
           </p>
@@ -142,7 +144,7 @@ function SessionDetails({
           </div>
 
           <div>
-            <h4 className="mb-2 text-sm font-semibold text-slate-900">Present participants</h4>
+            <h4 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">Present participants</h4>
             {attendanceEntries.length > 0 ? (
               presentEntries.length > 0 ? (
                 <div className="grid gap-2 md:grid-cols-2">
@@ -155,10 +157,10 @@ function SessionDetails({
                     return (
                       <div
                         key={entry.id}
-                        className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                        className="rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2 text-sm"
                       >
-                        <div className="font-medium text-slate-900">{name}</div>
-                        <div className="mt-1 text-slate-600">{assignmentLabel}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{name}</div>
+                        <div className="mt-1 text-slate-600 dark:text-slate-400">{assignmentLabel}</div>
                       </div>
                     );
                   })}
@@ -220,10 +222,10 @@ function SummaryTile({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="mb-2 flex items-center gap-2 text-slate-500">{icon}</div>
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold text-slate-900">{value}</div>
+    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
+      <div className="mb-2 flex items-center gap-2 text-slate-500 dark:text-slate-400">{icon}</div>
+      <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
+      <div className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{value}</div>
     </div>
   );
 }
