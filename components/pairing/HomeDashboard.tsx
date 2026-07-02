@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, Trophy, Users } from "lucide-react";
 import { Card, EmptyState, Pill, PrimaryButton, SectionHeader } from "./ui";
 import type {
@@ -9,6 +9,7 @@ import type {
   SessionRow,
   SpeakerLeaderboardRow,
 } from "./types";
+import type { PublishedPairingView } from "@/types/pairing";
 
 type HomeDashboardProps = {
   role: string;
@@ -27,6 +28,12 @@ type MotionPerformance = {
   sessions: number;
 };
 
+type LastSessionDetails = {
+  motionType: string;
+  chair: string;
+  pairingLabel: string;
+};
+
 export default function HomeDashboard({
   role,
   userName,
@@ -37,6 +44,7 @@ export default function HomeDashboard({
   onOpenLeaderboards,
   onOpenWorkspace,
 }: HomeDashboardProps) {
+  const [lastSessionDetails, setLastSessionDetails] = useState<LastSessionDetails | null>(null);
   const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
   const totalSessions = sessions.length;
   const attendedSessions = attendanceHistory.filter((item) => isPresentStatus(item.status)).length;
@@ -58,6 +66,54 @@ export default function HomeDashboard({
           new Date(right.session.sessionDate).getTime() - new Date(left.session.sessionDate).getTime(),
       )[0] ?? null;
   }, [attendanceHistory]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLastSessionDetails() {
+      if (!lastSession?.session.id || !currentParticipantId) {
+        setLastSessionDetails(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/pairing/published/${lastSession.session.id}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          if (!cancelled) {
+            setLastSessionDetails(null);
+          }
+          return;
+        }
+
+        const data = (await response.json()) as { publishedPairing?: PublishedPairingView };
+        const publishedPairing = data.publishedPairing;
+        if (!publishedPairing) {
+          if (!cancelled) {
+            setLastSessionDetails(null);
+          }
+          return;
+        }
+
+        const details = deriveLastSessionDetails(publishedPairing, currentParticipantId);
+        if (!cancelled) {
+          setLastSessionDetails(details);
+        }
+      } catch {
+        if (!cancelled) {
+          setLastSessionDetails(null);
+        }
+      }
+    }
+
+    void loadLastSessionDetails();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentParticipantId, lastSession?.session.id]);
 
   const motionPerformance = useMemo(() => {
     const buckets = new Map<string, { total: number; sessions: number }>();
@@ -140,8 +196,11 @@ export default function HomeDashboard({
           {lastSession ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <Info label="Date" value={lastSession.session.sessionDate} />
-              <Info label="Motion type" value={lastSession.session.motiontype} />
-              <Info label="Chair" value={lastSession.session.Chair} />
+              <Info
+                label="Motion type"
+                value={lastSessionDetails?.motionType ?? lastSession.session.motiontype}
+              />
+              <Info label="Chair" value={lastSessionDetails?.chair ?? lastSession.session.Chair} />
               <Info label="Status" value={lastSession.status} />
               <Info
                 label="Speaker score"
@@ -149,7 +208,10 @@ export default function HomeDashboard({
               />
               <Info
                 label="Pairing"
-                value={lastSession.pairedWith?.length ? lastSession.pairedWith.join(", ") : "No pair saved"}
+                value={
+                  lastSessionDetails?.pairingLabel ??
+                  (lastSession.pairedWith?.length ? lastSession.pairedWith.join(", ") : "No pair saved")
+                }
               />
             </div>
           ) : (
@@ -290,3 +352,58 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 function isPresentStatus(status: string | null | undefined) {
   return status?.trim().toLowerCase() === "present";
 }
+
+
+function deriveLastSessionDetails(
+  publishedPairing: PublishedPairingView,
+  participantId: string,
+): LastSessionDetails | null {
+  const room = publishedPairing.rooms.find(
+    (entry) =>
+      entry.teams.some((team) => team.speakers.some((speaker) => speaker.participantId === participantId)) ||
+      entry.adjudicators.some((adjudicator) => adjudicator.participantId === participantId),
+  );
+
+  if (!room) {
+    return {
+      motionType: publishedPairing.motionType,
+      chair: "TBD",
+      pairingLabel: "No pair saved",
+    };
+  }
+
+  const myTeam =
+    room.teams.find((team) => team.speakers.some((speaker) => speaker.participantId === participantId)) ?? null;
+  const myAdjudicator =
+    room.adjudicators.find((adjudicator) => adjudicator.participantId === participantId) ?? null;
+  const chair = room.adjudicators.find((adjudicator) => adjudicator.isChair) ?? null;
+
+  const chairLabel = chair ? chair.participantName : "TBD";
+
+  if (myTeam) {
+    const teammates = myTeam.speakers
+      .filter((speaker) => speaker.participantId !== participantId)
+      .map((speaker) => `${speaker.participantName} (${speaker.speakingRole})`);
+
+    return {
+      motionType: publishedPairing.motionType,
+      chair: chairLabel,
+      pairingLabel: teammates.length > 0 ? teammates.join(", ") : `${myTeam.bpPosition} solo`,
+    };
+  }
+
+  if (myAdjudicator) {
+    return {
+      motionType: publishedPairing.motionType,
+      chair: myAdjudicator.isChair ? myAdjudicator.participantName : chairLabel,
+      pairingLabel: myAdjudicator.isChair ? `Chair - Room ${room.roomIndex}` : `Panel - Room ${room.roomIndex}`,
+    };
+  }
+
+  return {
+    motionType: publishedPairing.motionType,
+    chair: chairLabel,
+    pairingLabel: `Room ${room.roomIndex}`,
+  };
+}
+
