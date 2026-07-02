@@ -2,130 +2,55 @@
 
 **Analysis Date:** 2026-07-02
 
-## Test Framework
+## Verification Status
 
-**Runner:**
-- Node.js Native Test Runner (`node --test`).
-- Executes TypeScript test files directly using the `--experimental-strip-types` flag, bypassing manual build steps.
+- Overall status: `Mostly verified`
+- Trust level: good for testing orientation, but command coverage must always be checked in `package.json`
+- Use rule:
+  - trust the patterns here
+  - trust `package.json` for exact runnable commands
 
-**Assertion Library:**
-- Node.js strict assertion library (`node:assert/strict`).
-- Common Matchers:
-  - `assert.ok(value)` - Asserts truthiness.
-  - `assert.equal(actual, expected)` - Strict equality checking.
-  - `assert.deepEqual(actual, expected)` - Deep object equality checking.
-  - `assert.rejects(promise, error)` - Asserts async promise rejection.
+## Verified Runner Setup
 
-**Run Commands:**
-```bash
-npm run test:repositories       # Run repository database access tests
-npm run test:services           # Run session and attendance service tests
-npm run test:pairing-internals  # Run core pairing engine and scoring tests
-```
+- Test runner: Node native test runner
+- Execution mode: `node --experimental-strip-types --test`
+- Assertion library: `node:assert/strict`
+- No dedicated Jest/Vitest-style mocking framework is present in the repo
 
-## Test File Organization
+## Verified Package Scripts
 
-**Location:**
-- Test files are collocated directly inside their domain folders under `lib/server/`.
-- No separate global `tests/` directory is used.
+- `npm run test:repositories`
+- `npm run test:services`
+- `npm run test:pairing-internals`
 
-**Naming:**
-- Feature/folder unit tests: `*.test.ts` (e.g., `repositories.test.ts`, `services.test.ts`, `pairing-internals.test.ts`, `realtime.test.ts`).
+## Verified Test File Areas
 
-**Structure:**
-```
-lib/
-  server/
-    repositories/
-      pairing-repository.ts
-      repositories.test.ts      # Tests all repositories
-    pairing/
-      engine.ts
-      pairing-engine.test.ts    # Tests pairing engine flows
-```
+- `lib/server/repositories/repositories.test.ts`
+- `lib/server/sessions/services.test.ts`
+- `lib/server/pairing/pairing-engine.test.ts`
+- `lib/server/scoring/scoring-services.test.ts`
+- `lib/server/realtime/realtime.test.ts`
 
-## Test Structure
+## Testing Style
 
-**Suite Organization:**
-Tests use the native `test()` wrapper exported by `node:test`.
+- Tests are colocated near the server domain they cover
+- Mocks are generally plain objects and manual stubs
+- Call verification is often done with local arrays and explicit assertions
+- Test data is usually created inline or with small helper factories
 
-```typescript
-import test from "node:test";
-import assert from "node:assert/strict";
+## Known Caveats
 
-test("descriptive test case name", async () => {
-  // 1. Arrange
-  const input = { id: "test-id" };
+- Package scripts do not currently cover every existing test area automatically
+- Sandbox or restricted environments may behave differently when spawning test processes
+- Exact coverage should be verified before assuming a domain is included in a script
 
-  // 2. Act
-  const result = processInput(input);
+## Working Rule
 
-  // 3. Assert
-  assert.equal(result.status, "success");
-});
-```
-
-## Mocking
-
-**Approach:**
-- **No Mocking Framework:** Mocking libraries (like Sinon, Jest mocks, or Vitest vi) are NOT used.
-- **Manual Stubbing:** Mocks are written as plain JavaScript objects matching the expected interface (e.g. mock Prisma client).
-- **Call Verification:** To verify function calls or arguments, tests push call signatures or call parameters into a local `calls` array and assert on that array.
-
-**Mocking Example (Prisma client stub):**
-```typescript
-test("gets generation context correctly", async () => {
-  const calls: string[] = [];
-
-  const mockClient = {
-    debateSession: {
-      findUnique: async (args: any) => {
-        calls.push("findUnique");
-        assert.ok(args.select);
-        return { id: "session-1", motionText: "This house would..." };
-      }
-    }
-  };
-
-  const repository = createPairingRepository(mockClient as any);
-  await repository.getGenerationContext("session-1");
-
-  assert.deepEqual(calls, ["findUnique"]);
-});
-```
-
-## Fixtures and Factories
-
-**Data Preparation:**
-- Test data is created in-line inside the test files.
-- Mock objects and configurations are generated on-the-fly using simple helper factory functions or in-test declarations.
-
-**Factory Pattern:**
-```typescript
-function createTestProposal(overrides?: Partial<PersistGeneratedProposalInput>) {
-  return {
-    sessionId: "session-1",
-    proposalVersion: 1,
-    proposalScore: 82.5,
-    scoreBreakdownJson: {},
-    roomAssignments: [],
-    unassignedParticipants: [],
-    ...overrides
-  };
-}
-```
-
-## Test Types
-
-**Unit Tests:**
-- Tests internal logic (e.g. `fallback.ts`, `objectives.ts`, `leftovers.ts`) by supplying mock context.
-- Fast execution (< 50ms per test).
-
-**Integration Tests:**
-- Tests interactions between repositories, services, and stubs (e.g. `repositories.test.ts` mock-integrating with Prisma models).
-- Tests session and scoring services state transitions.
+When using this file:
+- open `package.json` first for exact commands
+- use this file to remember test layout and style
+- re-check real test filenames before adding or moving suites
 
 ---
 
-*Testing analysis: 2026-07-02*
-*Update when test patterns change*
+*Trimmed to verified runner, script, file-location, and style facts.*

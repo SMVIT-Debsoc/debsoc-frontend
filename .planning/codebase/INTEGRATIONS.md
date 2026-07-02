@@ -2,6 +2,22 @@
 
 **Analysis Date:** 2026-07-02
 
+## Verification Status
+
+- Overall status: Mostly verified
+- Trust level: good for integration awareness, but env-backed details should still be checked at use time
+- Verified from repo:
+  - NextAuth usage
+  - Google OAuth environment dependence
+  - database via Prisma/PostgreSQL
+  - env-driven public integrations are referenced
+- Needs re-check:
+  - exact deployment target assumptions
+  - exact current usage pattern of each external URL or iframe integration
+- Use rule:
+  - safe as an integration map
+  - confirm current consuming file before editing an integration path
+
 ## APIs & External Services
 
 **Outbound Webhooks / Form Pipelines:**
@@ -60,4 +76,6 @@
 ---
 
 *Integration audit: 2026-07-02*
-*Update when adding/removing external services*
+*Update when adding/removing external services or changing env-backed integrations*
+
+

@@ -2,6 +2,21 @@
 
 **Analysis Date:** 2026-07-02
 
+## Verification Status
+
+- Overall status: Mostly verified
+- Trust level: safe for general working style, still not authoritative over AGENTS.md
+- Verified from repo:
+  - TypeScript/React naming style
+  - @/* path alias in 	sconfig.json
+  - Next + ESLint + TypeScript setup exists
+- Needs re-check:
+  - lphabetical sorting within each group unless enforced by tooling
+  - any convention not explicitly enforced by linting or reviewed code patterns
+- Use rule:
+  - good as a style baseline
+  - if AGENTS.md or real file style conflicts, those win
+
 ## Naming Patterns
 
 **Files:**
@@ -37,7 +52,7 @@
 
 **Order:**
 1. Built-in Node modules (`node:test`, `node:assert/strict`).
-2. External package dependencies (`react`, `next-auth`, `zod`).
+2. External package dependencies (eact`, `next-auth`, `zod`).
 3. Path alias imports (`@/lib/server/...`, `@/types/...`).
 4. Relative imports (`./types`, `../guards`).
 
@@ -75,4 +90,6 @@
 ---
 
 *Convention analysis: 2026-07-02*
-*Update when patterns change*
+*Update when patterns change or when lint/tooling rules change*
+
+

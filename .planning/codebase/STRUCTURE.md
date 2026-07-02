@@ -2,115 +2,74 @@
 
 **Analysis Date:** 2026-07-02
 
-## Directory Layout
+## Verification Status
 
-```
-debsoc-frontend/
-├── app/                  # Next.js App Router (pages and API routes)
-│   ├── (auth)/           # Auth flow pages (e.g., login)
-│   ├── api/              # API Route Handlers (transport only)
-│   ├── dashboard/        # User and admin dashboards
-│   ├── debate-timer/     # Debate timer views
-│   ├── equity/           # Equity policy views
-│   ├── gallery/          # Club gallery views
-│   ├── session/          # Session coordination pages
-│   └── unverified/       # Landing page for unverified registrations
-├── components/           # Reusable React components
-│   ├── TechHeadDashboard/# Tech Head admin component
-│   ├── pairing/          # Pairing lifecycle client components
-│   └── ui/               # Standard design system components (buttons, input)
-├── lib/                  # Application shared services and helpers
-│   └── server/           # Backend server-only logic
-│       ├── eval/         # Engine evaluation and synthetic replays
-│       ├── pairing/      # Core pairing generation and scoring modules
-│       ├── realtime/     # Realtime WebSocket distribution layer
-│       ├── repositories/ # Prisma database access abstractions
-│       ├── scoring/      # Post-session scoring and updates
-│       ├── sessions/     # Session operations and attendance logic
-│       └── validations/  # Zod schema definitions
-├── prisma/               # Database definitions
-│   ├── migrations/       # SQL migration logs
-│   └── schema.prisma     # Prisma database schema definition
-├── types/                # Shared TypeScript type definitions
-└── public/               # Static assets (images, icons)
-```
+- Overall status: `Mostly verified`
+- Trust level: safe for orientation, but exact file paths should still be re-checked before edits
+- Use rule:
+  - use this file to quickly find the right area
+  - verify exact files with the repo before changing code
 
-## Directory Purposes
+## Top-Level Layout
 
-**app/api/**
-- Purpose: HTTP request entry points (thin transport layer).
-- Contains: `route.ts` files mapping URLs to services.
-- Key files: `app/api/pairing/generate/route.ts`, `app/api/realtime/socket/route.ts`.
+- `app/` - Next.js app router pages, layouts, and API routes
+- `components/` - reusable frontend components
+- `components/pairing/` - pairing dashboard, workspace, leaderboard, and participant-facing pairing UI
+- `lib/server/` - server-side logic grouped by domain
+- `prisma/` - schema and migrations
+- `types/` - shared TypeScript contracts
+- `docs/` - product, architecture, and pairing specs
+- `.planning/` - lightweight working memory and repo summaries
 
-**components/pairing/**
-- Purpose: Frontend views and flows managing the pairing workflow.
-- Contains: React components (*.tsx) for dashboards, panels, and rosters.
-- Key files: `SessionWorkspace.tsx`, `MyScoring.tsx`, `Leaderboards.tsx`.
+## Verified App Areas
 
-**lib/server/pairing/**
-- Purpose: The core logic of the pairing system and engine.
-- Contains: Scoring formulas, rule checks, selection logic, and state management.
-- Key files: `engine.ts`, `proposal-scorer.ts`, `candidate-generator.ts`.
+- `app/(auth)/`
+- `app/api/`
+- `app/dashboard/`
+- `app/debate-timer/`
+- `app/equity/`
+- `app/gallery/`
+- `app/session/`
+- `app/unverified/`
 
-**lib/server/repositories/**
-- Purpose: Eagerly encapsulates database access for all server domains.
-- Contains: Repository functions implementing database calls.
-- Key files: `pairing-repository.ts`, `scoring-repository.ts`.
+## Verified Component Areas
 
-**prisma/**
-- Purpose: Declares the database structure and tracks changes.
-- Contains: Schema configuration and SQL migrations.
-- Key files: `schema.prisma`.
+- `components/pairing/`
+- `components/TechHeadDashboard/`
+- `components/ui/`
+- shared landing-page sections like `Navbar.tsx`, `Footer.tsx`, `Home.tsx`
 
-## Key File Locations
+## Verified Server Areas
 
-**Entry Points:**
-- `app/page.tsx` - Root landing page.
-- `app/api/realtime/socket/route.ts` - WebSocket initialization handler.
-- `auth.ts` - NextAuth configuration entry.
+- `lib/server/eval/`
+- `lib/server/pairing/`
+- `lib/server/realtime/`
+- `lib/server/repositories/`
+- `lib/server/scoring/`
+- `lib/server/sessions/`
+- `lib/server/validations/`
+- shared server helpers like `guards.ts`, `http.ts`, `roles.ts`, `prisma.ts`
 
-**Configuration:**
-- `tsconfig.json` - Compiler configuration.
-- `package.json` - Dependencies and task scripts.
-- `eslint.config.mjs` - Lint rules.
+## Useful Verified Files
 
-**Testing:**
-- Unit/Integration tests are placed directly inside their respective server folders.
-- `lib/server/repositories/repositories.test.ts`
-- `lib/server/sessions/services.test.ts`
-- `lib/server/pairing/pairing-engine.test.ts`
-- `lib/server/scoring/scoring-services.test.ts`
+- `components/pairing/SessionWorkspace.tsx`
+- `components/pairing/Leaderboards.tsx`
+- `components/pairing/MyScoring.tsx`
+- `lib/server/repositories/pairing-repository.ts`
+- `prisma/schema.prisma`
+- `auth.ts`
+- `package.json`
+- `tsconfig.json`
 
-## Naming Conventions
+## Add-New-Code Guidance
 
-**Files:**
-- PascalCase for React components (`SessionWorkspace.tsx`, `Navbar.tsx`).
-- kebab-case for TypeScript files (`session-service.ts`, `pairing-validation.ts`).
-- `*.test.ts` for test suites.
-- `route.ts` for API route definitions.
-
-**Directories:**
-- kebab-case for all folders (`debate-timer`, `lib/server/pairing`).
-- Kebab-case and dynamic route parameters inside bracket names for App Router folders (`[sessionId]`, `[proposalId]`).
-
-## Where to Add New Code
-
-**New Frontend UI Component:**
-- Place in `components/pairing/` if specific to pairing/scoring flows, or `components/` for general views.
-
-**New Backend API Endpoint:**
-- Define under `app/api/{domain}/[id]/route.ts`. Keep handlers thin.
-
-**New Business Logic / Service:**
-- Place in a service file under `lib/server/{domain}/{feature}-service.ts`.
-
-**New Database Entity/Field:**
-- Edit `prisma/schema.prisma`, then run `npx prisma migrate dev` to create a new migration.
-
-**Shared Types:**
-- Define inside `types/{domain}.ts`.
+- Pairing UI work: usually `components/pairing/`
+- General app pages: `app/**`
+- API routes: `app/api/**/route.ts`
+- Server business logic: `lib/server/{domain}/`
+- Database changes: `prisma/schema.prisma` plus migrations
+- Shared contracts: `types/**`
 
 ---
 
-*Structure analysis: 2026-07-02*
-*Update when directory structure changes*
+*Trimmed to verified structure facts and working guidance.*

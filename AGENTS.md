@@ -176,3 +176,38 @@ End every pairing response with a "Grounded in:" line citing the exact graph nod
 sections you used (e.g. `Grounded in: C7/D4, C9/B1, docs/11 engine.ts, docs/14 §3, docs/15 §11`).
 No citation = you did not follow the protocol = the work is not acceptable.
 <!-- END:pairing-context-rules -->
+<!-- BEGIN:planning-workspace-rules -->
+# Planning Workspace Usage
+
+Use `.planning/` as a lightweight working-memory layer to reduce repeated context loading, but NEVER treat it as the source of truth.
+
+## Required planning workflow
+
+Before doing normal repo work:
+1. Read `.planning/current-focus.md`.
+2. Read only the minimum relevant file(s) from `.planning/codebase/` for orientation.
+3. Use `.planning` to narrow search scope and reduce token usage.
+4. Verify exact files, routes, scripts, exports, and implementation details from the real repo before making decisions.
+5. If `.planning` conflicts with `AGENTS.md`, `docs/**`, real code, schema, or package scripts, the real source wins.
+
+## Authority order for planning usage
+
+Highest first:
+1. `AGENTS.md`
+2. authoritative `docs/**`
+3. real code, schema, scripts, and config
+4. `.planning/current-focus.md`
+5. `.planning/codebase/*.md`
+
+## Update rule
+
+Update `.planning/` only when one of these materially changes:
+- active task or phase
+- verified repo structure
+- known blocker or risk
+- stable architectural boundary
+- real script or tooling behavior
+
+Keep `.planning` short, high-signal, and verification-labeled (`Verified`, `Derived`, `Expected`, `Needs re-check`).
+<!-- END:planning-workspace-rules -->
+
