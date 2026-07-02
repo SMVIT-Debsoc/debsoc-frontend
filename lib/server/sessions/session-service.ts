@@ -7,6 +7,7 @@ import type {
   SessionPreparationContextResponse,
   SessionScoringStatusResponse,
   SessionScoringTaskStatus,
+  SessionRuleConfigView,
   UpdateSessionRequest,
 } from "../../../types/session.ts";
 import type { DebsocRole } from "../roles.ts";
@@ -31,6 +32,46 @@ const scoringStatuses = {
   partial: "partial",
   complete: "complete",
 } as const;
+function emptySessionRules(): SessionRuleConfigView {
+  return {
+    timeConstraints: [],
+    eventTeamUpPreferences: [],
+  };
+}
+
+function normalizeSessionRules(value: unknown): SessionRuleConfigView {
+  if (!value || typeof value !== "object") {
+    return emptySessionRules();
+  }
+
+  const record = value as Record<string, unknown>;
+  const timeConstraints = Array.isArray(record.timeConstraints)
+    ? record.timeConstraints
+        .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
+        .map((entry) => ({
+          participantId: typeof entry.participantId === "string" ? entry.participantId.trim() : "",
+          isStrict: Boolean(entry.isStrict),
+        }))
+        .filter((entry) => entry.participantId.length > 0)
+    : [];
+
+  const eventTeamUpPreferences = Array.isArray(record.eventTeamUpPreferences)
+    ? record.eventTeamUpPreferences
+        .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
+        .map((entry) => ({
+          firstParticipantId: typeof entry.firstParticipantId === "string" ? entry.firstParticipantId.trim() : "",
+          secondParticipantId: typeof entry.secondParticipantId === "string" ? entry.secondParticipantId.trim() : "",
+          isStrict: Boolean(entry.isStrict),
+        }))
+        .filter((entry) => entry.firstParticipantId.length > 0 && entry.secondParticipantId.length > 0)
+        .filter((entry) => entry.firstParticipantId !== entry.secondParticipantId)
+    : [];
+
+  return {
+    timeConstraints,
+    eventTeamUpPreferences,
+  };
+}
 
 export interface CreateSessionInput extends CreateSessionRequest {
   chair: string;
@@ -79,6 +120,7 @@ interface SessionRepositoryContract {
     scoringStatus: string | null;
     acceptedProposalId: string | null;
     publishedProposalId: string | null;
+    sessionRulesJson: unknown;
   }>;
 }
 
@@ -225,6 +267,7 @@ function toSessionMetadataView(result: {
   scoringStatus: string | null;
   acceptedProposalId: string | null;
   publishedProposalId: string | null;
+  sessionRulesJson: unknown;
 }): SessionMetadataView {
   return {
     sessionId: result.id,
@@ -236,6 +279,7 @@ function toSessionMetadataView(result: {
     scoringStatus: normalizeScoringStatus(result.scoringStatus),
     acceptedProposalId: result.acceptedProposalId ?? null,
     publishedProposalId: result.publishedProposalId ?? null,
+    sessionRules: normalizeSessionRules(result.sessionRulesJson),
   } satisfies SessionMetadataView;
 }
 
@@ -446,3 +490,4 @@ export function createSessionService(
 }
 
 export const { createSession, getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
+
