@@ -378,12 +378,12 @@ function deriveLastSessionDetails(
     room.adjudicators.find((adjudicator) => adjudicator.participantId === participantId) ?? null;
   const chair = room.adjudicators.find((adjudicator) => adjudicator.isChair) ?? null;
 
-  const chairLabel = chair ? chair.participantName : "TBD";
+  const chairLabel = chair ? chair.participantId : "TBD";
 
   if (myTeam) {
     const teammates = myTeam.speakers
       .filter((speaker) => speaker.participantId !== participantId)
-      .map((speaker) => `${speaker.participantName} (${speaker.speakingRole})`);
+      .map((speaker) => `${speaker.participantId} (${speaker.speakingRole})`);
 
     return {
       motionType: publishedPairing.motionType,
@@ -395,7 +395,7 @@ function deriveLastSessionDetails(
   if (myAdjudicator) {
     return {
       motionType: publishedPairing.motionType,
-      chair: myAdjudicator.isChair ? myAdjudicator.participantName : chairLabel,
+      chair: myAdjudicator.isChair ? myAdjudicator.participantId : chairLabel,
       pairingLabel: myAdjudicator.isChair ? `Chair - Room ${room.roomIndex}` : `Panel - Room ${room.roomIndex}`,
     };
   }

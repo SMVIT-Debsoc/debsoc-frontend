@@ -5,6 +5,7 @@ import type {
   CreateSessionRequest,
   SessionMetadataView,
   SessionPreparationContextResponse,
+  SessionRuleConfigView,
   SessionScoringStatusResponse,
   SessionScoringTaskStatus,
   UpdateSessionRequest,
@@ -32,7 +33,6 @@ const scoringStatuses = {
   complete: "complete",
 } as const;
 
-
 export interface CreateSessionInput extends CreateSessionRequest {
   chair: string;
 }
@@ -56,6 +56,7 @@ interface SessionRepositoryContract {
     motionText: string;
     pairingObjective: string;
     chair: string;
+    sessionRules?: SessionRuleConfigView;
   }): Promise<SessionMetadataView>;
   getSessionById(sessionId: string): Promise<SessionMetadataView | null>;
   getSessionPreparationContext(sessionId: string): Promise<SessionPreparationContextResponse | null>;
@@ -68,6 +69,7 @@ interface SessionRepositoryContract {
       pairingStatus: string;
       publicationStatus: string;
       scoringStatus: string;
+      sessionRules: SessionRuleConfigView;
     }>,
   ): Promise<{
     id: string;
@@ -78,6 +80,9 @@ interface SessionRepositoryContract {
     pairingStatus: string | null;
     publicationStatus: string | null;
     scoringStatus: string | null;
+    acceptedProposalId: string | null;
+    publishedProposalId: string | null;
+    sessionRulesJson: unknown;
   }>;
 }
 
@@ -222,8 +227,11 @@ function toSessionMetadataView(result: {
   pairingStatus: string | null;
   publicationStatus: string | null;
   scoringStatus: string | null;
+  acceptedProposalId: string | null;
+  publishedProposalId: string | null;
+  sessionRulesJson: unknown;
 }): SessionMetadataView {
-  return {
+  const current = {
     sessionId: result.id,
     motionType: result.motionType ?? result.motiontype,
     motionText: result.motionText ?? "",
@@ -231,7 +239,23 @@ function toSessionMetadataView(result: {
     pairingStatus: result.pairingStatus ?? pairingStatuses.draft,
     publicationStatus: result.publicationStatus ?? publicationStatuses.draft,
     scoringStatus: normalizeScoringStatus(result.scoringStatus),
-  };
+    acceptedProposalId: result.acceptedProposalId ?? null,
+    publishedProposalId: result.publishedProposalId ?? null,
+    sessionRules: {
+      timeConstraints: [],
+      eventTeamUpPreferences: [],
+    },
+  } satisfies SessionMetadataView;
+
+  if (result.sessionRulesJson && typeof result.sessionRulesJson === "object") {
+    const record = result.sessionRulesJson as Record<string, unknown>;
+    current.sessionRules = {
+      timeConstraints: Array.isArray(record.timeConstraints) ? record.timeConstraints as SessionMetadataView["sessionRules"]["timeConstraints"] : [],
+      eventTeamUpPreferences: Array.isArray(record.eventTeamUpPreferences) ? record.eventTeamUpPreferences as SessionMetadataView["sessionRules"]["eventTeamUpPreferences"] : [],
+    };
+  }
+
+  return current;
 }
 
 export function createSessionService(
@@ -246,6 +270,7 @@ export function createSessionService(
       motionText: input.motionText ?? "To be announced",
       pairingObjective: input.pairingObjective ?? "BALANCED",
       chair: input.chair,
+      sessionRules: input.sessionRules,
     });
 
     await publishEvent(created.sessionId, {
@@ -388,6 +413,7 @@ export function createSessionService(
       pairingStatus: input.pairingStatus,
       publicationStatus: input.publicationStatus,
       scoringStatus: input.scoringStatus,
+      sessionRules: input.sessionRules,
     });
 
     const view = toSessionMetadataView(updated);
@@ -441,6 +467,3 @@ export function createSessionService(
 }
 
 export const { createSession, getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
-
-
-
