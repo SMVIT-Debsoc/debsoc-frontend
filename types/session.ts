@@ -1,4 +1,4 @@
-import type { MemberId, MotionType, PairingObjective, SessionId } from "./pairing.ts";
+import type { MemberId, MotionType, PairingObjective, SessionId, TeamUpRule, TimeConstraintRule } from "./pairing.ts";
 
 export const sessionRoles = ["speaker", "adjudicator"] as const;
 export type SessionRole = (typeof sessionRoles)[number];
@@ -34,6 +34,11 @@ export interface SessionRoleAssignmentView {
   roleAssignedAt: string | null;
 }
 
+export interface SessionRuleConfigView {
+  timeConstraints: TimeConstraintRule[];
+  eventTeamUpPreferences: TeamUpRule[];
+}
+
 export interface SessionMetadataView {
   sessionId: SessionId;
   motionType: MotionType;
@@ -44,6 +49,7 @@ export interface SessionMetadataView {
   scoringStatus: string;
   acceptedProposalId?: string | null;
   publishedProposalId?: string | null;
+  sessionRules: SessionRuleConfigView;
 }
 
 export interface SessionPreparationContextResponse {
@@ -58,6 +64,7 @@ export interface CreateSessionRequest {
   motionText?: string;
   pairingObjective?: PairingObjective;
   chair?: string;
+  sessionRules?: SessionRuleConfigView;
 }
 
 export interface UpdateSessionRequest {
@@ -65,6 +72,7 @@ export interface UpdateSessionRequest {
   motionText: string;
   pairingObjective: PairingObjective;
   pairingStatus?: string;
+  sessionRules?: SessionRuleConfigView;
 }
 
 export interface SessionScoringTaskStatus {

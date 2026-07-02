@@ -2,6 +2,14 @@ import type { PairingGenerationContext } from "../../../types/pairing.ts";
 import type { HardRuleValidationResult, PairingCandidate } from "./types.ts";
 import { SPEAKERS_PER_ROOM, SPEAKERS_PER_TEAM, TEAMS_PER_ROOM } from "./types.ts";
 
+type SpeakerAssignmentLocation = {
+  roomIndex: number;
+  teamKey: string;
+  speakingRole: string;
+};
+
+const EARLY_SPEAKING_ROLES = new Set(["PM", "LO"]);
+
 export function validateHardRules(
   candidate: PairingCandidate,
   context: PairingGenerationContext,
@@ -9,6 +17,7 @@ export function validateHardRules(
   const violations: HardRuleValidationResult["violations"] = [];
   const participantIds = new Set(context.participants.map((participant) => participant.participantId));
   const assignedParticipants = new Set<string>();
+  const speakerAssignments = new Map<string, SpeakerAssignmentLocation>();
 
   for (const room of candidate.rooms) {
     if (room.teams.length !== TEAMS_PER_ROOM) {
@@ -33,6 +42,11 @@ export function validateHardRules(
           violations.push({ code: "DUPLICATE_ASSIGNMENT", message: `Speaker ${speaker.participantId} is assigned multiple times.` });
         }
         assignedParticipants.add(speaker.participantId);
+        speakerAssignments.set(speaker.participantId, {
+          roomIndex: room.roomIndex,
+          teamKey: `${room.roomIndex}:${team.bpPosition}`,
+          speakingRole: speaker.speakingRole,
+        });
       }
     }
 
@@ -53,6 +67,25 @@ export function validateHardRules(
         violations.push({ code: "DUPLICATE_ASSIGNMENT", message: `Adjudicator ${adjudicator.participantId} is assigned multiple times.` });
       }
       assignedParticipants.add(adjudicator.participantId);
+    }
+  }
+
+  for (const rule of context.rules.timeConstraints.filter((entry) => entry.isStrict)) {
+    const assignment = speakerAssignments.get(rule.participantId);
+    if (!assignment) {
+      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} was not assigned an early speaking role.` });
+      continue;
+    }
+    if (!EARLY_SPEAKING_ROLES.has(assignment.speakingRole)) {
+      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} must be assigned PM or LO when marked strict.` });
+    }
+  }
+
+  for (const rule of context.rules.forcedTeamUps.filter((entry) => entry.isStrict)) {
+    const firstAssignment = speakerAssignments.get(rule.firstParticipantId);
+    const secondAssignment = speakerAssignments.get(rule.secondParticipantId);
+    if (!firstAssignment || !secondAssignment || firstAssignment.teamKey !== secondAssignment.teamKey) {
+      violations.push({ code: "STRICT_TEAM_UP_UNMET", message: `Participants ${rule.firstParticipantId} and ${rule.secondParticipantId} must be paired on the same team.` });
     }
   }
 

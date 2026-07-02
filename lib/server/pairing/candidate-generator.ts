@@ -27,6 +27,57 @@ function rotateArray<T>(items: T[], offset: number): T[] {
   return items.slice(normalizedOffset).concat(items.slice(0, normalizedOffset));
 }
 
+function buildPrioritizedSpeakerOrder(
+  speakers: SessionSpeaker[],
+  context: PairingGenerationContext,
+): { orderedSpeakers: SessionSpeaker[]; anchoredCount: number } {
+  const byId = new Map(speakers.map((speaker) => [speaker.participantId, speaker]));
+  const seen = new Set<string>();
+  const prioritized: SessionSpeaker[] = [];
+
+  for (const rule of context.rules.timeConstraints) {
+    const speaker = byId.get(rule.participantId);
+    if (speaker && !seen.has(speaker.participantId)) {
+      prioritized.push(speaker);
+      seen.add(speaker.participantId);
+    }
+  }
+
+  for (const rule of context.rules.forcedTeamUps) {
+    for (const participantId of [rule.firstParticipantId, rule.secondParticipantId]) {
+      const speaker = byId.get(participantId);
+      if (speaker && !seen.has(speaker.participantId)) {
+        prioritized.push(speaker);
+        seen.add(speaker.participantId);
+      }
+    }
+  }
+
+  const orderedSpeakers = prioritized.concat(
+    speakers.filter((speaker) => !seen.has(speaker.participantId)),
+  );
+
+  return {
+    orderedSpeakers,
+    anchoredCount: prioritized.length,
+  };
+}
+
+function orderTeamParticipants(
+  participants: SessionSpeaker[],
+  context: PairingGenerationContext,
+): SessionSpeaker[] {
+  const constrainedIds = new Set(context.rules.timeConstraints.map((rule) => rule.participantId));
+  return participants.slice().sort((left, right) => {
+    const leftPriority = constrainedIds.has(left.participantId) ? 0 : 1;
+    const rightPriority = constrainedIds.has(right.participantId) ? 0 : 1;
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+    return left.participantId.localeCompare(right.participantId);
+  });
+}
+
 function toSpeakerAssignments(
   participants: SessionSpeaker[],
   benchIndex: number,
@@ -53,8 +104,11 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
     return [];
   }
 
-  const assignableSpeakers = speakers.slice(0, speakers.length - leftoverSpeakerCount);
-  const leftoverSpeakers = speakers.slice(assignableSpeakers.length);
+  const { orderedSpeakers, anchoredCount } = buildPrioritizedSpeakerOrder(speakers, context);
+  const assignableSpeakers = orderedSpeakers.slice(0, orderedSpeakers.length - leftoverSpeakerCount);
+  const leftoverSpeakers = orderedSpeakers.slice(assignableSpeakers.length);
+  const anchoredSpeakers = assignableSpeakers.slice(0, anchoredCount);
+  const rotatableSpeakers = assignableSpeakers.slice(anchoredCount);
   const generatedCandidates: PairingCandidate[] = [];
 
   for (let candidateIndex = 0; candidateIndex < MAX_CANDIDATE_COUNT; candidateIndex++) {
@@ -62,7 +116,7 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
       break;
     }
 
-    const rotatedSpeakers = rotateArray(assignableSpeakers, candidateIndex);
+    const rotatedSpeakers = anchoredSpeakers.concat(rotateArray(rotatableSpeakers, candidateIndex));
     const rooms: RoomCandidate[] = [];
 
     for (let roomIndex = 0; roomIndex < roomCount; roomIndex++) {
@@ -72,7 +126,10 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
       );
 
       const teams = benchPositions.map((bpPosition, teamIndex) => {
-        const teamParticipants = roomSpeakers.slice(teamIndex * 2, teamIndex * 2 + 2);
+        const teamParticipants = orderTeamParticipants(
+          roomSpeakers.slice(teamIndex * TEAMS_PER_ROOM / 2, teamIndex * TEAMS_PER_ROOM / 2 + 2),
+          context,
+        );
         return {
           bpPosition,
           teamScore: null,

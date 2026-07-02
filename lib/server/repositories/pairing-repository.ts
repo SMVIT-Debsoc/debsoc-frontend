@@ -15,6 +15,8 @@ import type {
   PublishedPairingView,
   ReviewAction,
   RoleHistorySummary,
+  TeamUpRule,
+  TimeConstraintRule,
   UnassignedParticipantView,
 } from "../../../types/pairing.ts";
 import type { SessionRole } from "../../../types/session.ts";
@@ -297,6 +299,46 @@ function buildParticipantKindMap(assignments: SessionRoleAssignmentProjection[])
   );
 }
 
+function buildActivePairingRules(sessionRulesJson: unknown): PairingGenerationContext["rules"] {
+  if (!sessionRulesJson || typeof sessionRulesJson !== "object") {
+    return {
+      timeConstraints: [],
+      forcedTeamUps: [],
+      forcedSeparations: [],
+      forcedChairParticipantId: null,
+      forcedRoomCount: null,
+    };
+  }
+
+  const record = sessionRulesJson as Record<string, unknown>;
+  const timeConstraints: TimeConstraintRule[] = Array.isArray(record.timeConstraints)
+    ? record.timeConstraints
+        .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
+        .map((entry) => ({
+          participantId: String(entry.participantId ?? "").trim(),
+          isStrict: Boolean(entry.isStrict),
+        }))
+        .filter((entry) => entry.participantId.length > 0)
+    : [];
+  const forcedTeamUps: TeamUpRule[] = Array.isArray(record.eventTeamUpPreferences)
+    ? record.eventTeamUpPreferences
+        .filter((entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === "object")
+        .map((entry) => ({
+          firstParticipantId: String(entry.firstParticipantId ?? "").trim(),
+          secondParticipantId: String(entry.secondParticipantId ?? "").trim(),
+          isStrict: Boolean(entry.isStrict),
+        }))
+        .filter((entry) => entry.firstParticipantId.length > 0 && entry.secondParticipantId.length > 0 && entry.firstParticipantId !== entry.secondParticipantId)
+    : [];
+
+  return {
+    timeConstraints,
+    forcedTeamUps,
+    forcedSeparations: [],
+    forcedChairParticipantId: null,
+    forcedRoomCount: null,
+  };
+}
 function parseManualAssignmentPayload(payload: Record<string, unknown>): ManualAssignmentPayload {
   if (!Array.isArray(payload.rooms)) {
     throw new Error("Manual override payload must include rooms.");
@@ -510,6 +552,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         motiontype: true,
         motionText: true,
         pairingObjective: true,
+        sessionRulesJson: true,
         attendance: {
           where: { isPresent: true },
           select: {
@@ -635,13 +678,7 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
       roleHistoryByMemberId: buildRoleHistoryMap(roleHistoryRows),
       motionTypeHistoryByMemberId: buildMotionTypeHistoryMap(motionTypeHistoryRows),
       adjudicatorMetricsById: buildAdjudicatorMetricMap(participantIds, memberMetricSnapshots),
-      rules: {
-        timeConstraintParticipantIds: [],
-        forcedTeamUps: [],
-        forcedSeparations: [],
-        forcedChairParticipantId: null,
-        forcedRoomCount: null,
-      },
+      rules: buildActivePairingRules(sessionRecord.sessionRulesJson),
     };
   }
 
@@ -1354,6 +1391,9 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
 }
 
 export const pairingRepository = createPairingRepository();
+
+
+
 
 
 

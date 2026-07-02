@@ -68,6 +68,25 @@ async function resolveDevBypassId(role: DebsocRole) {
     return match?.id ?? "dev-user";
   }
 
+  if (role === "TechHead") {
+    const match = await prisma.techHead.findFirst({
+      where: {
+        OR: [
+          ...(configuredEmail ? [{ email: configuredEmail }] : []),
+          ...(configuredName ? [{ name: configuredName }] : []),
+        ],
+      },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    if (!match) {
+      // Fallback: grab any TechHead record
+      const any = await prisma.techHead.findFirst({ select: { id: true } });
+      return any?.id ?? "dev-user";
+    }
+    return match.id;
+  }
+
   return configuredId ?? "dev-user";
 }
 

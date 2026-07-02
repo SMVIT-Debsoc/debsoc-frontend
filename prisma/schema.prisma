@@ -55,6 +55,7 @@ model DebateSession {
   motionType             String?
   motionText             String?
   pairingObjective       String?
+  sessionRulesJson       Json?
   status                 String?
   pairingStatus          String?
   publicationStatus      String?
@@ -612,3 +613,4 @@ model TuningReviewWindow {
   status               String
   reviewedAt           DateTime?
 }
+

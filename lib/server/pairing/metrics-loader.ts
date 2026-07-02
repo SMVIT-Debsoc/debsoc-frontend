@@ -25,6 +25,10 @@ interface MetricsRepositoryContract {
 interface SessionRepositoryContract {
   getSessionById(sessionId: string): Promise<{
     pairingObjective: string;
+    sessionRules: SessionInputContext["rules"] extends infer _R ? {
+      timeConstraints: Array<{ participantId: string; isStrict: boolean }>;
+      eventTeamUpPreferences: Array<{ firstParticipantId: string; secondParticipantId: string; isStrict: boolean }>;
+    } : never;
   } | null>;
 }
 
@@ -91,8 +95,8 @@ export function createMetricsLoader(
     return {
       objective: (session.pairingObjective ?? "BALANCED") as SessionInputContext["objective"],
       rules: {
-        timeConstraintParticipantIds: [],
-        forcedTeamUps: [],
+        timeConstraints: session.sessionRules.timeConstraints,
+        forcedTeamUps: session.sessionRules.eventTeamUpPreferences,
         forcedSeparations: [],
         forcedChairParticipantId: null,
         forcedRoomCount: null,

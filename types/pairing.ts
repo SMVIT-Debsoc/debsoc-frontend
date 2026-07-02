@@ -242,10 +242,21 @@ export interface ParticipantContext {
   isChairEligible: boolean;
 }
 
+export interface TimeConstraintRule {
+  participantId: MemberId;
+  isStrict: boolean;
+}
+
+export interface TeamUpRule {
+  firstParticipantId: MemberId;
+  secondParticipantId: MemberId;
+  isStrict: boolean;
+}
+
 export interface ActivePairingRules {
-  timeConstraintParticipantIds: MemberId[];
-  forcedTeamUps: Array<{ firstParticipantId: MemberId; secondParticipantId: MemberId; isStrict: boolean }>;
-  forcedSeparations: Array<{ firstParticipantId: MemberId; secondParticipantId: MemberId; isStrict: boolean }>;
+  timeConstraints: TimeConstraintRule[];
+  forcedTeamUps: TeamUpRule[];
+  forcedSeparations: TeamUpRule[];
   forcedChairParticipantId: MemberId | null;
   forcedRoomCount: number | null;
 }
@@ -260,3 +271,4 @@ export interface PairingGenerationContext {
   adjudicatorMetricsById: Map<MemberId, AdjudicatorMetricSnapshot>;
   rules: ActivePairingRules;
 }
+

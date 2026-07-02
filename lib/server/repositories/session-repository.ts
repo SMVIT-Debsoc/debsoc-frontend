@@ -6,8 +6,9 @@ import type {
   SessionPreparationContextResponse,
   SessionRoleAssignmentEntry,
   SessionRoleAssignmentView,
+  SessionRuleConfigView,
 } from "../../../types/session.ts";
-import type { MemberId } from "../../../types/pairing.ts";
+import type { MemberId, TeamUpRule, TimeConstraintRule } from "../../../types/pairing.ts";
 import { resolveParticipantId } from "./metrics-repository.ts";
 
 type SessionRepositoryClient = PrismaClient;
@@ -15,6 +16,117 @@ type ParticipantType = "member" | "cabinet" | "president";
 
 function toSessionRole(role: string): SessionRoleAssignmentView["role"] {
   return role === "adjudicator" ? "adjudicator" : "speaker";
+}
+
+function emptySessionRules(): SessionRuleConfigView {
+  return {
+    timeConstraints: [],
+    eventTeamUpPreferences: [],
+  };
+}
+
+function normalizeTimeConstraints(value: unknown): TimeConstraintRule[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: TimeConstraintRule[] = [];
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const record = entry as Record<string, unknown>;
+    const participantId = typeof record.participantId === "string" ? record.participantId.trim() : "";
+    if (!participantId || seen.has(participantId)) {
+      continue;
+    }
+
+    seen.add(participantId);
+    normalized.push({
+      participantId,
+      isStrict: Boolean(record.isStrict),
+    });
+  }
+
+  return normalized;
+}
+
+function normalizeTeamUpPreferences(value: unknown): TeamUpRule[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const normalized: TeamUpRule[] = [];
+
+  for (const entry of value) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+
+    const record = entry as Record<string, unknown>;
+    const firstParticipantId = typeof record.firstParticipantId === "string" ? record.firstParticipantId.trim() : "";
+    const secondParticipantId = typeof record.secondParticipantId === "string" ? record.secondParticipantId.trim() : "";
+    if (!firstParticipantId || !secondParticipantId || firstParticipantId === secondParticipantId) {
+      continue;
+    }
+
+    const key = [firstParticipantId, secondParticipantId].sort().join("::");
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    normalized.push({
+      firstParticipantId,
+      secondParticipantId,
+      isStrict: Boolean(record.isStrict),
+    });
+  }
+
+  return normalized;
+}
+
+function normalizeSessionRules(value: unknown): SessionRuleConfigView {
+  if (!value || typeof value !== "object") {
+    return emptySessionRules();
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    timeConstraints: normalizeTimeConstraints(record.timeConstraints),
+    eventTeamUpPreferences: normalizeTeamUpPreferences(record.eventTeamUpPreferences),
+  };
+}
+
+function toSessionMetadataView(session: {
+  id: string;
+  motionType: string | null;
+  motiontype: string;
+  motionText: string | null;
+  pairingObjective: string | null;
+  pairingStatus: string | null;
+  publicationStatus: string | null;
+  scoringStatus: string | null;
+  acceptedProposalId: string | null;
+  publishedProposalId: string | null;
+  sessionRulesJson: unknown;
+}): SessionMetadataView {
+  return {
+    sessionId: session.id,
+    motionType: session.motionType ?? session.motiontype,
+    motionText: session.motionText ?? "",
+    pairingObjective: (session.pairingObjective ?? "BALANCED") as SessionMetadataView["pairingObjective"],
+    pairingStatus: session.pairingStatus ?? "DRAFT",
+    publicationStatus: session.publicationStatus ?? "DRAFT",
+    scoringStatus: session.scoringStatus ?? "pending",
+    acceptedProposalId: session.acceptedProposalId ?? null,
+    publishedProposalId: session.publishedProposalId ?? null,
+    sessionRules: normalizeSessionRules(session.sessionRulesJson),
+  };
 }
 
 export function createSessionRepository(client: SessionRepositoryClient = prisma) {
@@ -46,13 +158,13 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     return map;
   }
 
-
   async function createSession(input: {
     sessionDate: Date;
     motionType: string;
     motionText: string;
     pairingObjective: string;
     chair: string;
+    sessionRules?: SessionRuleConfigView;
   }): Promise<SessionMetadataView> {
     const created = await client.debateSession.create({
       data: {
@@ -65,6 +177,7 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         publicationStatus: "DRAFT",
         scoringStatus: "pending",
         Chair: input.chair,
+        sessionRulesJson: input.sessionRules ?? emptySessionRules(),
       },
       select: {
         id: true,
@@ -77,18 +190,11 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         scoringStatus: true,
         acceptedProposalId: true,
         publishedProposalId: true,
+        sessionRulesJson: true,
       },
     });
 
-    return {
-      sessionId: created.id,
-      motionType: created.motionType ?? created.motiontype,
-      motionText: created.motionText ?? "",
-      pairingObjective: (created.pairingObjective ?? "BALANCED") as SessionMetadataView["pairingObjective"],
-      pairingStatus: created.pairingStatus ?? "DRAFT",
-      publicationStatus: created.publicationStatus ?? "DRAFT",
-      scoringStatus: created.scoringStatus ?? "pending",
-    };
+    return toSessionMetadataView(created);
   }
 
   async function getSessionById(sessionId: string): Promise<SessionMetadataView | null> {
@@ -105,22 +211,11 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         scoringStatus: true,
         acceptedProposalId: true,
         publishedProposalId: true,
+        sessionRulesJson: true,
       },
     });
 
-    if (!session) {
-      return null;
-    }
-
-    return {
-      sessionId: session.id,
-      motionType: session.motionType ?? session.motiontype,
-      motionText: session.motionText ?? "",
-      pairingObjective: (session.pairingObjective ?? "BALANCED") as SessionMetadataView["pairingObjective"],
-      pairingStatus: session.pairingStatus ?? "draft",
-      publicationStatus: session.publicationStatus ?? "draft",
-      scoringStatus: session.scoringStatus ?? "pending",
-    };
+    return session ? toSessionMetadataView(session) : null;
   }
 
   async function getSessionPreparationContext(
@@ -139,6 +234,7 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         scoringStatus: true,
         acceptedProposalId: true,
         publishedProposalId: true,
+        sessionRulesJson: true,
         attendance: {
           select: {
             memberId: true,
@@ -169,17 +265,7 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     }
 
     return {
-      session: {
-        sessionId: session.id,
-        motionType: session.motionType ?? session.motiontype,
-        motionText: session.motionText ?? "",
-        pairingObjective: (session.pairingObjective ?? "BALANCED") as SessionMetadataView["pairingObjective"],
-        pairingStatus: session.pairingStatus ?? "draft",
-        publicationStatus: session.publicationStatus ?? "draft",
-        scoringStatus: session.scoringStatus ?? "pending",
-        acceptedProposalId: session.acceptedProposalId ?? null,
-        publishedProposalId: session.publishedProposalId ?? null,
-      },
+      session: toSessionMetadataView(session),
       attendance: session.attendance
         .map((record: { memberId: string | null; cabinetId: string | null; presidentId: string | null; isPresent: boolean; isFinalized: boolean; wasAssigned: boolean; wasUnassigned: boolean; unassignedReason: string | null }) => {
           const participantId = resolveParticipantId(record);
@@ -283,11 +369,20 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
       pairingStatus: string;
       publicationStatus: string;
       scoringStatus: string;
+      sessionRules: SessionRuleConfigView;
     }>,
   ) {
     return client.debateSession.update({
       where: { id: sessionId },
-      data,
+      data: {
+        motionType: data.motionType,
+        motionText: data.motionText,
+        pairingObjective: data.pairingObjective,
+        pairingStatus: data.pairingStatus,
+        publicationStatus: data.publicationStatus,
+        scoringStatus: data.scoringStatus,
+        ...(data.sessionRules ? { sessionRulesJson: data.sessionRules } : {}),
+      },
       select: {
         id: true,
         motionType: true,
@@ -299,6 +394,7 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
         scoringStatus: true,
         acceptedProposalId: true,
         publishedProposalId: true,
+        sessionRulesJson: true,
       },
     });
   }
