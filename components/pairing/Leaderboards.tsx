@@ -138,7 +138,6 @@ export default function Leaderboards({
                   <tr>
                     <th className="px-4 py-2 font-medium">#</th>
                     <th className="px-4 py-2 font-medium">Name</th>
-                    <th className="px-4 py-2 font-medium">Role</th>
                     <th className="px-4 py-2 font-medium">Score</th>
                     <th className="px-4 py-2 font-medium">Sessions</th>
                   </tr>
@@ -148,9 +147,6 @@ export default function Leaderboards({
                     <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06]">
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{entry.rank}</td>
                       <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{entry.name}</td>
-                      <td className="px-4 py-3">
-                        <Pill tone={entry.type === "Cabinet" ? "amber" : "slate"}>{entry.type}</Pill>
-                      </td>
                       <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{entry.score}</td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
                     </tr>
@@ -220,7 +216,6 @@ export default function Leaderboards({
                     <tr>
                       <th className="px-4 py-3 font-medium">#</th>
                       <th className="px-4 py-3 font-medium">Adjudicator</th>
-                      <th className="px-4 py-3 font-medium">Role</th>
                       <th className="px-4 py-3 font-medium">Average</th>
                       <th className="px-4 py-3 font-medium">Panel rounds</th>
                       <th className="px-4 py-3 font-medium">Chair rounds</th>
@@ -241,9 +236,6 @@ export default function Leaderboards({
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <Pill tone={entry.type === "Cabinet" ? "amber" : "slate"}>{entry.type}</Pill>
-                        </td>
-                        <td className="px-4 py-3">
                           <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">Average score</div>
                         </td>
@@ -261,3 +253,11 @@ export default function Leaderboards({
     </div>
   );
 }
+
+
+
+
+
+
+
+

@@ -16,6 +16,7 @@ type HomeDashboardProps = {
   userName: string;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
+  participants: { id: string; name: string }[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   onOpenLeaderboards: () => void;
@@ -39,6 +40,7 @@ export default function HomeDashboard({
   userName,
   sessions,
   attendanceHistory,
+  participants,
   speakerLeaderboard,
   adjudicatorLeaderboard,
   onOpenLeaderboards,
@@ -98,7 +100,7 @@ export default function HomeDashboard({
           return;
         }
 
-        const details = deriveLastSessionDetails(publishedPairing, currentParticipantId);
+        const details = deriveLastSessionDetails(publishedPairing, currentParticipantId, participants, speakerLeaderboard, adjudicatorLeaderboard);
         if (!cancelled) {
           setLastSessionDetails(details);
         }
@@ -113,7 +115,7 @@ export default function HomeDashboard({
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId, lastSession?.session.id]);
+  }, [adjudicatorLeaderboard, currentParticipantId, lastSession?.session.id, participants, speakerLeaderboard]);
 
   const motionPerformance = useMemo(() => {
     const buckets = new Map<string, { total: number; sessions: number }>();
@@ -200,7 +202,7 @@ export default function HomeDashboard({
                 label="Motion type"
                 value={lastSessionDetails?.motionType ?? lastSession.session.motiontype}
               />
-              <Info label="Chair" value={lastSessionDetails?.chair ?? lastSession.session.Chair} />
+              <Info label="Chair" value={resolveParticipantName(lastSession.session.Chair, participants, speakerLeaderboard, adjudicatorLeaderboard, lastSessionDetails?.chair ?? lastSession.session.Chair)} />
               <Info label="Status" value={lastSession.status} />
               <Info
                 label="Speaker score"
@@ -210,7 +212,13 @@ export default function HomeDashboard({
                 label="Pairing"
                 value={
                   lastSessionDetails?.pairingLabel ??
-                  (lastSession.pairedWith?.length ? lastSession.pairedWith.join(", ") : "No pair saved")
+                  (lastSession.pairedWith?.length
+                    ? lastSession.pairedWith
+                        .map((participantId) =>
+                          resolveParticipantName(participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, participantId),
+                        )
+                        .join(", ")
+                    : "No pair saved")
                 }
               />
             </div>
@@ -354,9 +362,31 @@ function isPresentStatus(status: string | null | undefined) {
 }
 
 
+function resolveParticipantName(
+  id: string | null | undefined,
+  participants: { id: string; name: string }[],
+  speakerLeaderboard: SpeakerLeaderboardRow[],
+  adjudicatorLeaderboard: AdjudicatorLeaderboardRow[],
+  fallback: string,
+) {
+  if (!id) {
+    return fallback;
+  }
+
+  return (
+    participants.find((entry) => entry.id === id)?.name ??
+    speakerLeaderboard.find((entry) => entry.id === id)?.name ??
+    adjudicatorLeaderboard.find((entry) => entry.id === id)?.name ??
+    fallback
+  );
+}
+
 function deriveLastSessionDetails(
   publishedPairing: PublishedPairingView,
   participantId: string,
+  participants: { id: string; name: string }[],
+  speakerLeaderboard: SpeakerLeaderboardRow[],
+  adjudicatorLeaderboard: AdjudicatorLeaderboardRow[],
 ): LastSessionDetails | null {
   const room = publishedPairing.rooms.find(
     (entry) =>
@@ -377,13 +407,17 @@ function deriveLastSessionDetails(
   const myAdjudicator =
     room.adjudicators.find((adjudicator) => adjudicator.participantId === participantId) ?? null;
   const chair = room.adjudicators.find((adjudicator) => adjudicator.isChair) ?? null;
-
-  const chairLabel = chair ? chair.participantId : "TBD";
+  const chairLabel = chair
+    ? resolveParticipantName(chair.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, chair.participantId)
+    : "TBD";
 
   if (myTeam) {
     const teammates = myTeam.speakers
       .filter((speaker) => speaker.participantId !== participantId)
-      .map((speaker) => `${speaker.participantId} (${speaker.speakingRole})`);
+      .map(
+        (speaker) =>
+          `${resolveParticipantName(speaker.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, speaker.participantId)} (${speaker.speakingRole})`,
+      );
 
     return {
       motionType: publishedPairing.motionType,
@@ -395,7 +429,15 @@ function deriveLastSessionDetails(
   if (myAdjudicator) {
     return {
       motionType: publishedPairing.motionType,
-      chair: myAdjudicator.isChair ? myAdjudicator.participantId : chairLabel,
+      chair: myAdjudicator.isChair
+        ? resolveParticipantName(
+            myAdjudicator.participantId,
+            participants,
+            speakerLeaderboard,
+            adjudicatorLeaderboard,
+            myAdjudicator.participantId,
+          )
+        : chairLabel,
       pairingLabel: myAdjudicator.isChair ? `Chair - Room ${room.roomIndex}` : `Panel - Room ${room.roomIndex}`,
     };
   }
@@ -406,4 +448,7 @@ function deriveLastSessionDetails(
     pairingLabel: `Room ${room.roomIndex}`,
   };
 }
+
+
+
 

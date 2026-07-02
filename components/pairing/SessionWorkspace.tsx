@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -34,6 +34,7 @@ import type {
 import type { PairingProposalView } from "@/types/pairing";
 import type {
   SessionPreparationContextResponse,
+  SessionRuleConfigView,
   SessionScoringStatusResponse,
 } from "@/types/session";
 
@@ -68,6 +69,8 @@ type AttendanceDraft = Record<
   string,
   { isPresent: boolean; sessionRole: "speaker" | "adjudicator" }
 >;
+type TimeConstraintDraft = SessionRuleConfigView["timeConstraints"][number];
+type EventTeamUpPreferenceDraft = SessionRuleConfigView["eventTeamUpPreferences"][number];
 
 type OverrideSpeakerSlotDraft = {
   slotKey: string;
@@ -112,6 +115,12 @@ export default function SessionWorkspace({
   const [motionType, setMotionType] = useState("");
   const [motionText, setMotionText] = useState("");
   const [objective, setObjective] = useState("BALANCED");
+  const [timeConstraints, setTimeConstraints] = useState<TimeConstraintDraft[]>([]);
+  const [eventTeamUpPreferences, setEventTeamUpPreferences] = useState<EventTeamUpPreferenceDraft[]>([]);
+  const [selectedTimeConstraintId, setSelectedTimeConstraintId] = useState("");
+  const [teamUpFirstParticipantId, setTeamUpFirstParticipantId] = useState("");
+  const [teamUpSecondParticipantId, setTeamUpSecondParticipantId] = useState("");
+  const [nextTeamUpIsStrict, setNextTeamUpIsStrict] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -141,11 +150,13 @@ export default function SessionWorkspace({
   }, [rolePicker]);
 
   useEffect(() => {
-    if (!selectedSessionId && sessions.length > 0) {
-      setSelectedSessionId(sessions[0].id);
+    if (!selectedSessionId) {
+      const nextSessionId = findDefaultSessionId(sessions);
+      if (nextSessionId) {
+        setSelectedSessionId(nextSessionId);
+      }
     }
   }, [selectedSessionId, sessions]);
-
 
   useEffect(() => {
     let cancelled = false;
@@ -168,7 +179,16 @@ export default function SessionWorkspace({
           publishedPairing: null,
           scoringStatus: null,
         });
-        hydrateFormState(context, participants, setAttendanceDraft, setMotionType, setMotionText, setObjective);
+        hydrateFormState(
+          context,
+          participants,
+          setAttendanceDraft,
+          setMotionType,
+          setMotionText,
+          setObjective,
+          setTimeConstraints,
+          setEventTeamUpPreferences,
+        );
 
         const nextState: WorkspaceSessionData = {
           context,
@@ -223,6 +243,19 @@ export default function SessionWorkspace({
   useEffect(() => {
     setOverrideDraft(workspace.proposal ? createManualOverrideDraft(workspace.proposal) : null);
   }, [workspace.proposal]);
+
+  useEffect(() => {
+    if (workspace.scoringStatus?.scoringStatus !== "complete" || !selectedSessionId) {
+      return;
+    }
+
+    closeCompletedSession(
+      selectedSessionId,
+      sessions,
+      onSessionsChange,
+      setSelectedSessionId,
+    );
+  }, [onSessionsChange, selectedSessionId, sessions, workspace.scoringStatus]);
 
   useEffect(() => {
     const pairingStatus = workspace.context?.session.pairingStatus?.toUpperCase();
@@ -286,6 +319,13 @@ export default function SessionWorkspace({
     };
   }, [attendanceDraft]);
 
+  const presentSpeakers = useMemo(
+    () => participants.filter(
+      (participant) => attendanceDraft[participant.id]?.isPresent && attendanceDraft[participant.id]?.sessionRole === "speaker",
+    ),
+    [attendanceDraft, participants],
+  );
+
   const stepAvailability = computeStepAvailability(workspace.context, workspace.proposal, workspace.publishedPairing);
 
   const isInRole = (id: string, role: "speaker" | "adjudicator") => {
@@ -319,11 +359,17 @@ export default function SessionWorkspace({
   }
 
   if (!selectedSessionId) {
+    const hasCompletedSessions = sessions.some((session) => session.state === "Scored");
+
     return (
       <div className="space-y-4">
         <EmptyState
-          title="No sessions available"
-          body="Create a new session to start the pairing workflow."
+          title={hasCompletedSessions ? "Session completed" : "No sessions available"}
+          body={
+            hasCompletedSessions
+              ? "This session is fully scored and closed. Create a new session to start the next pairing workflow."
+              : "Create a new session to start the pairing workflow."
+          }
         />
         <div className="flex justify-center">
           <PrimaryButton
@@ -341,7 +387,7 @@ export default function SessionWorkspace({
               )
             }
           >
-            Create session
+            Create new session
           </PrimaryButton>
         </div>
       </div>
@@ -405,7 +451,7 @@ export default function SessionWorkspace({
 
       {busyAction && (
         <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
-          {busyAction}…
+          {busyAction}â€¦
         </div>
       )}
       {feedback && (
@@ -481,45 +527,361 @@ export default function SessionWorkspace({
         : null}
 
       {step === "setup" && (
-        <Card className="p-4">
-          <h3 className="mb-4 flex items-center gap-2 font-semibold">
-            <ClipboardList size={16} /> Session-only inputs
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Motion type">
-              <input
-                value={motionType}
-                onChange={(event) => setMotionType(event.target.value)}
-                placeholder="IR / Policy / Moral / ..."
-                className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-              />
-            </Field>
-            <Field label="Pairing objective">
-              <select
-                value={objective}
-                onChange={(event) => setObjective(event.target.value)}
-                className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-              >
-                <option value="DEVELOPMENT">Development</option>
-                <option value="BALANCED">Balanced</option>
-                <option value="COMPETITIVE">Competitive</option>
-              </select>
-            </Field>
-            <div className="md:col-span-2">
-              <Field label="Motion text">
-                <textarea
-                  value={motionText}
-                  onChange={(event) => setMotionText(event.target.value)}
-                  rows={4}
-                  placeholder="Enter the session motion."
-                  className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                />
-              </Field>
-            </div>
-          </div>
-        </Card>
-      )}
+        <div className="space-y-6">
+          <Card className="p-5">
+            <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+              <div>
+                <h3 className="mb-2 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
+                  <ClipboardList size={16} /> Session-only inputs
+                </h3>
+                <p className="mb-5 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                  These are the admin-controlled setup inputs used before the engine generates a proposal. They apply to this session only and feed the pairing run directly.
+                </p>
 
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field
+                    label="Motion type"
+                    hint="Use the debate category that should drive motion-type-aware pairing signals."
+                  >
+                    <input
+                      value={motionType}
+                      onChange={(event) => setMotionType(event.target.value)}
+                      placeholder="IR / Policy / Moral / Finance / ..."
+                      className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                    />
+                  </Field>
+                  <Field
+                    label="Pairing objective"
+                    hint="This changes how the generator prioritizes development, balance, or competitive strength."
+                  >
+                    <select
+                      value={objective}
+                      onChange={(event) => setObjective(event.target.value)}
+                      className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                    >
+                      <option value="DEVELOPMENT">Development</option>
+                      <option value="BALANCED">Balanced</option>
+                      <option value="COMPETITIVE">Competitive</option>
+                    </select>
+                  </Field>
+                  <div className="md:col-span-2">
+                    <Field
+                      label="Motion text"
+                      hint="This is the exact motion shown later in review, publication, and member-visible pairing views."
+                    >
+                      <textarea
+                        value={motionText}
+                        onChange={(event) => setMotionText(event.target.value)}
+                        rows={5}
+                        placeholder="Enter the session motion."
+                        className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Current generation profile
+                  </div>
+                  <div className="mt-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    {objective === "DEVELOPMENT"
+                      ? "Development-focused"
+                      : objective === "COMPETITIVE"
+                        ? "Competitive-focused"
+                        : "Balanced pairing"}
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {objective === "DEVELOPMENT"
+                      ? "Use this when you want the engine to prioritize learning spread, role rotation, and developmental exposure."
+                      : objective === "COMPETITIVE"
+                        ? "Use this when the session should prioritize stronger competitive room quality and tougher assignment alignment."
+                        : "Use this when you want the engine to balance fairness, quality, and reasonable competitive spread."}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Setup checklist
+                  </div>
+                  <div className="mt-3 space-y-3 text-sm">
+                    <SetupChecklistRow
+                      label="Attendance already marked"
+                      value={counts.speakers + counts.adjudicators > 0 ? "Ready" : "Pending"}
+                    />
+                    <SetupChecklistRow
+                      label="Motion type"
+                      value={motionType.trim() ? motionType.trim() : "Missing"}
+                    />
+                    <SetupChecklistRow
+                      label="Motion text"
+                      value={motionText.trim() ? "Added" : "Missing"}
+                    />
+                                        <SetupChecklistRow label="Objective" value={objective} />
+                    <SetupChecklistRow
+                      label="Time constraints"
+                      value={timeConstraints.length > 0 ? String(timeConstraints.length) + " added" : "None"}
+                    />
+                    <SetupChecklistRow
+                      label="Event team-up preferences"
+                      value={
+                        eventTeamUpPreferences.length > 0
+                          ? String(eventTeamUpPreferences.length) + " added"
+                          : "None"
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <ObjectiveCard
+              title="Development"
+              active={objective === "DEVELOPMENT"}
+              body="Push the engine toward broader learning exposure, more developmental rooming, and better training spread."
+            />
+            <ObjectiveCard
+              title="Balanced"
+              active={objective === "BALANCED"}
+              body="Keep the session in the middle ground with stable fairness, usable balance, and cleaner all-round pairings."
+            />
+            <ObjectiveCard
+              title="Competitive"
+              active={objective === "COMPETITIVE"}
+              body="Bias the run toward stronger competitive sorting when session quality and sharper contest spread matter most."
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <Card className="p-5">
+              <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Time constraints
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Use this when a speaker needs an early speaking slot because of a hard leave time or similar session-day constraint.
+              </p>
+              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                <select
+                  value={selectedTimeConstraintId}
+                  onChange={(event) => setSelectedTimeConstraintId(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                >
+                  <option value="">Select a present speaker</option>
+                  {presentSpeakers
+                    .filter(
+                      (participant) =>
+                        !timeConstraints.some(
+                          (constraint) => constraint.participantId === participant.id,
+                        ),
+                    )
+                    .map((participant) => (
+                      <option key={participant.id} value={participant.id}>
+                        {participant.name}
+                      </option>
+                    ))}
+                </select>
+                <SecondaryButton
+                  type="button"
+                  disabled={!selectedTimeConstraintId}
+                  onClick={() => {
+                    if (!selectedTimeConstraintId) return;
+                    setTimeConstraints((current) => [
+                      ...current,
+                      { participantId: selectedTimeConstraintId, isStrict: false },
+                    ]);
+                    setSelectedTimeConstraintId("");
+                  }}
+                >
+                  Add
+                </SecondaryButton>
+              </div>
+              <div className="mt-4 space-y-3">
+                {timeConstraints.length === 0 ? (
+                  <EmptyState
+                    title="No time constraints yet"
+                    body="Add only the speakers who truly need an early slot."
+                  />
+                ) : (
+                  timeConstraints.map((constraint) => (
+                    <div
+                      key={constraint.participantId}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-white/10"
+                    >
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                          {findParticipantName(participants, constraint.participantId)}
+                        </div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">
+                          Prefer PM or LO placement
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                          <input
+                            type="checkbox"
+                            checked={constraint.isStrict}
+                            onChange={(event) =>
+                              setTimeConstraints((current) =>
+                                current.map((entry) =>
+                                  entry.participantId === constraint.participantId
+                                    ? { ...entry, isStrict: event.target.checked }
+                                    : entry,
+                                ),
+                              )
+                            }
+                          />
+                          Strict
+                        </label>
+                        <SecondaryButton
+                          type="button"
+                          onClick={() =>
+                            setTimeConstraints((current) =>
+                              current.filter(
+                                (entry) => entry.participantId !== constraint.participantId,
+                              ),
+                            )
+                          }
+                        >
+                          Remove
+                        </SecondaryButton>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Event team-up preferences
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Use this when two speakers should stay together for tournament prep or focused practice, even if the engine needs to flex their exact speaker positions.
+              </p>
+              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <select
+                  value={teamUpFirstParticipantId}
+                  onChange={(event) => setTeamUpFirstParticipantId(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                >
+                  <option value="">First speaker</option>
+                  {presentSpeakers.map((participant) => (
+                    <option key={participant.id} value={participant.id}>
+                      {participant.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={teamUpSecondParticipantId}
+                  onChange={(event) => setTeamUpSecondParticipantId(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
+                >
+                  <option value="">Second speaker</option>
+                  {presentSpeakers
+                    .filter((participant) => participant.id !== teamUpFirstParticipantId)
+                    .map((participant) => (
+                      <option key={participant.id} value={participant.id}>
+                        {participant.name}
+                      </option>
+                    ))}
+                </select>
+                <SecondaryButton
+                  type="button"
+                  disabled={
+                    !teamUpFirstParticipantId ||
+                    !teamUpSecondParticipantId ||
+                    hasTeamUpPreference(
+                      eventTeamUpPreferences,
+                      teamUpFirstParticipantId,
+                      teamUpSecondParticipantId,
+                    )
+                  }
+                  onClick={() => {
+                    if (!teamUpFirstParticipantId || !teamUpSecondParticipantId) return;
+                    setEventTeamUpPreferences((current) => [
+                      ...current,
+                      {
+                        firstParticipantId: teamUpFirstParticipantId,
+                        secondParticipantId: teamUpSecondParticipantId,
+                        isStrict: nextTeamUpIsStrict,
+                      },
+                    ]);
+                    setTeamUpFirstParticipantId("");
+                    setTeamUpSecondParticipantId("");
+                    setNextTeamUpIsStrict(false);
+                  }}
+                >
+                  Add
+                </SecondaryButton>
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={nextTeamUpIsStrict}
+                  onChange={(event) => setNextTeamUpIsStrict(event.target.checked)}
+                />
+                Mark next team-up as strict
+              </label>
+              <div className="mt-4 space-y-3">
+                {eventTeamUpPreferences.length === 0 ? (
+                  <EmptyState
+                    title="No team-up preferences yet"
+                    body="Add only the pairs that should stay together for this session."
+                  />
+                ) : (
+                  eventTeamUpPreferences.map((preference, index) => (
+                    <div
+                      key={preference.firstParticipantId + "-" + preference.secondParticipantId + "-" + index}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 dark:border-white/10"
+                    >
+                      <div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                          {findParticipantName(participants, preference.firstParticipantId)} + {findParticipantName(participants, preference.secondParticipantId)}
+                        </div>
+                        <div className="text-sm text-slate-500 dark:text-slate-400">
+                          Tournament-prep team preference
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                          <input
+                            type="checkbox"
+                            checked={preference.isStrict}
+                            onChange={(event) =>
+                              setEventTeamUpPreferences((current) =>
+                                current.map((entry, entryIndex) =>
+                                  entryIndex === index
+                                    ? { ...entry, isStrict: event.target.checked }
+                                    : entry,
+                                ),
+                              )
+                            }
+                          />
+                          Strict
+                        </label>
+                        <SecondaryButton
+                          type="button"
+                          onClick={() =>
+                            setEventTeamUpPreferences((current) =>
+                              current.filter((_, entryIndex) => entryIndex !== index),
+                            )
+                          }
+                        >
+                          Remove
+                        </SecondaryButton>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
       {step === "review" && (
         <Card className="p-5">
           <h3 className="mb-4 flex items-center gap-2 font-semibold">
@@ -610,7 +972,7 @@ export default function SessionWorkspace({
                   >
                     <div className="font-medium text-slate-900 dark:text-slate-100">{findParticipantName(participants, task.participantId)}</div>
                     <div className="mt-1 text-slate-600 dark:text-slate-400">
-                      Role: {task.sessionRole} · {task.hasSubmitted ? "Submitted" : "Pending"}
+                      Role: {task.sessionRole} Ã‚· {task.hasSubmitted ? "Submitted" : "Pending"}
                     </div>
                   </div>
                 ))}
@@ -698,6 +1060,8 @@ export default function SessionWorkspace({
                   setMotionType,
                   setMotionText,
                   setObjective,
+                  setTimeConstraints,
+                  setEventTeamUpPreferences,
                   setStep,
                   true,
                 );
@@ -709,6 +1073,8 @@ export default function SessionWorkspace({
                   motionType,
                   motionText,
                   objective,
+                  timeConstraints,
+                  eventTeamUpPreferences,
                   setWorkspace,
                   setFeedback,
                   setActionError,
@@ -789,6 +1155,28 @@ async function createInitialSession(
   }
 }
 
+function findDefaultSessionId(sessions: SessionRow[]) {
+  return sessions.find((session) => session.state !== "Scored")?.id ?? "";
+}
+
+function closeCompletedSession(
+  completedSessionId: string,
+  sessions: SessionRow[],
+  onSessionsChange: (sessions: SessionRow[]) => void,
+  setSelectedSessionId: React.Dispatch<React.SetStateAction<string>>,
+) {
+  const nextSessions = sessions.map((session) =>
+    session.id === completedSessionId ? { ...session, state: "Scored" as const } : session,
+  );
+  const nextActiveSessionId =
+    nextSessions.find(
+      (session) => session.id !== completedSessionId && session.state !== "Scored",
+    )?.id ?? "";
+
+  onSessionsChange(nextSessions);
+  setSelectedSessionId(nextActiveSessionId);
+}
+
 function hydrateFormState(
   context: SessionPreparationContextResponse,
   participants: Participant[],
@@ -796,6 +1184,8 @@ function hydrateFormState(
   setMotionType: React.Dispatch<React.SetStateAction<string>>,
   setMotionText: React.Dispatch<React.SetStateAction<string>>,
   setObjective: React.Dispatch<React.SetStateAction<string>>,
+  setTimeConstraints: React.Dispatch<React.SetStateAction<TimeConstraintDraft[]>>,
+  setEventTeamUpPreferences: React.Dispatch<React.SetStateAction<EventTeamUpPreferenceDraft[]>>,
 ) {
   const roleMap = new Map(
     context.sessionRoles.map((assignment) => [assignment.participantId, assignment.role]),
@@ -816,6 +1206,22 @@ function hydrateFormState(
   setMotionType(context.session.motionType ?? "");
   setMotionText(context.session.motionText ?? "");
   setObjective(context.session.pairingObjective ?? "BALANCED");
+  setTimeConstraints(context.session.sessionRules.timeConstraints ?? []);
+  setEventTeamUpPreferences(context.session.sessionRules.eventTeamUpPreferences ?? []);
+}
+
+function hasTeamUpPreference(
+  preferences: EventTeamUpPreferenceDraft[],
+  firstParticipantId: string,
+  secondParticipantId: string,
+) {
+  return preferences.some(
+    (entry) =>
+      (entry.firstParticipantId === firstParticipantId &&
+        entry.secondParticipantId === secondParticipantId) ||
+      (entry.firstParticipantId === secondParticipantId &&
+        entry.secondParticipantId === firstParticipantId),
+  );
 }
 
 function deriveStepFromContext(context: SessionPreparationContextResponse): StepKey {
@@ -887,6 +1293,8 @@ async function savePreparation(
   setMotionType: React.Dispatch<React.SetStateAction<string>>,
   setMotionText: React.Dispatch<React.SetStateAction<string>>,
   setObjective: React.Dispatch<React.SetStateAction<string>>,
+  setTimeConstraints: React.Dispatch<React.SetStateAction<TimeConstraintDraft[]>>,
+  setEventTeamUpPreferences: React.Dispatch<React.SetStateAction<EventTeamUpPreferenceDraft[]>>,
   setStep: React.Dispatch<React.SetStateAction<StepKey>>,
   advanceToSetup = true,
 ) {
@@ -913,6 +1321,8 @@ async function savePreparation(
       setMotionType,
       setMotionText,
       setObjective,
+      setTimeConstraints,
+      setEventTeamUpPreferences,
     );
     setFeedback(advanceToSetup ? "Attendance and session roles saved." : "Attendance updated.");
     if (advanceToSetup) {
@@ -930,8 +1340,10 @@ async function saveSetup(
   motionType: string,
   motionText: string,
   objective: string,
+  timeConstraints: TimeConstraintDraft[],
+  eventTeamUpPreferences: EventTeamUpPreferenceDraft[],
   setWorkspace: React.Dispatch<React.SetStateAction<WorkspaceSessionData>>,
-  setFeedback: React.Dispatch<React.SetStateAction<string | null>>,
+  setFeedback: React.Dispatch<React.SetStateAction<string | null>>, 
   setActionError: React.Dispatch<React.SetStateAction<string | null>>,
   setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
   setStep: React.Dispatch<React.SetStateAction<StepKey>>,
@@ -947,6 +1359,10 @@ async function saveSetup(
         motionText,
         pairingObjective: objective,
         pairingStatus: "READY",
+        sessionRules: {
+          timeConstraints,
+          eventTeamUpPreferences,
+        },
       }),
     });
 
@@ -1160,6 +1576,56 @@ function previousStep(step: StepKey): StepKey {
 
 function nextStep(step: StepKey): StepKey {
   return STEPS[Math.min(STEP_INDEX[step] + 1, STEPS.length - 1)].key;
+}
+
+function SetupChecklistRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  const isMissing = value === "Missing" || value === "Pending";
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2">
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span
+        className={`font-medium ${
+          isMissing
+            ? "text-amber-700 dark:text-amber-300"
+            : "text-slate-900 dark:text-slate-100"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ObjectiveCard({
+  title,
+  body,
+  active,
+}: {
+  title: string;
+  body: string;
+  active: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition-colors ${
+        active
+          ? "border-indigo-300 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/10"
+          : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
+      }`}
+    >
+      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</div>
+      <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{body}</div>
+      <div className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+        {active ? "Current objective" : "Available objective"}
+      </div>
+    </div>
+  );
 }
 
 function MetricRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -1850,7 +2316,7 @@ function PublishedView({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 p-4 text-sm text-indigo-900 dark:text-indigo-200">
-        Official published pairing · {publishedPairing.motionType} · {publishedPairing.publishedAt}
+        Official published pairing Ã‚· {publishedPairing.motionType} Ã‚· {publishedPairing.publishedAt}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {publishedPairing.rooms.map((room) => (
@@ -1906,3 +2372,21 @@ async function readApiError(response: Response, fallback: string) {
 
   return fallback;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

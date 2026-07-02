@@ -17,7 +17,7 @@ import {
   LogOut,
   Gavel
 } from "lucide-react";
-import { toast } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import PairingDashboard from "@/components/pairing/PairingDashboard";
@@ -176,6 +176,12 @@ export default function TechHeadDashboard() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-zinc-100 p-6 md:p-12 lg:p-20 font-sans">
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: { background: "#18181b", color: "#f4f4f5", border: "1px solid rgba(255,255,255,0.1)" },
+        }}
+      />
       <div className="max-w-6xl mx-auto">
         <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-8">
           <div>

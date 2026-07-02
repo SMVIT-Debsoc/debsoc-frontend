@@ -97,6 +97,7 @@ export default function AdminPairingDashboard({
           userName={userName}
           sessions={sessions}
           attendanceHistory={attendanceHistory}
+          participants={participants}
           speakerLeaderboard={speakerLeaderboard}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}
@@ -155,3 +156,10 @@ export default function AdminPairingDashboard({
     </div>
   );
 }
+
+
+
+
+
+
+
