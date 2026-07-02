@@ -1567,6 +1567,7 @@ async function refreshScoringStatus(
 
 function canAdvance(step: StepKey, availability: Record<StepKey, boolean>) {
   if (step === "post") return false;
+  if (step === "setup") return true;
   return availability[nextStep(step)];
 }
 
