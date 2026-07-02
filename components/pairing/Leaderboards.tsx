@@ -59,8 +59,8 @@ export default function Leaderboards({
         title={view === "speakers" ? "Speaker Leaderboard" : "Adjudicator Leaderboard"}
         subtitle={
           view === "speakers"
-            ? "Track cumulative speaker rankings backed by the current leaderboard API."
-            : "Track adjudicator averages, chaired rounds, and panel coverage from the live backend."
+            ? "Cumulative speaker rankings."
+            : "Adjudicator averages, chaired rounds, and panel coverage."
         }
       />
 
@@ -128,7 +128,7 @@ export default function Leaderboards({
               <div className="p-4">
                 <EmptyState
                   title="No speaker leaderboard entries yet"
-                  body="Speaker rankings will appear here once speaker scores exist in the backend."
+                  body="Speaker rankings will appear here once scores are recorded."
                 />
               </div>
             ) : (
@@ -206,7 +206,7 @@ export default function Leaderboards({
               <div className="p-4">
                 <EmptyState
                   title="No adjudicator leaderboard entries yet"
-                  body="Adjudicator rankings will appear here once adjudicator score records exist in the backend."
+                  body="Adjudicator rankings will appear here once adjudicator scores are recorded."
                 />
               </div>
             ) : (

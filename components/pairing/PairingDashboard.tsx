@@ -78,11 +78,17 @@ export default function PairingDashboard({
   const isAdminView =
     role === "cabinet" || role === "President" || role === "TechHead";
 
+  const [primaryDataVersion, setPrimaryDataVersion] = useState(0);
+  const refreshPrimaryData = () => setPrimaryDataVersion((v) => v + 1);
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadPrimaryData() {
-      setState((current) => ({ ...current, loading: true, error: null }));
+      const isInitial = primaryDataVersion === 0;
+      if (isInitial) {
+        setState((current) => ({ ...current, loading: true, error: null }));
+      }
 
       try {
         const data = await fetchPrimaryData(role);
@@ -108,7 +114,7 @@ export default function PairingDashboard({
     return () => {
       cancelled = true;
     };
-  }, [role]);
+  }, [role, primaryDataVersion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,6 +168,11 @@ export default function PairingDashboard({
       setParticipantTab(key as ParticipantTab);
     }
     setSidebarOpen(false);
+    // Data-consuming tabs get fresh sessions/attendance so newly-published
+    // sessions and their scoring tasks show up without a full page reload.
+    if (key === "MyScoring" || key === "MyPairing" || key === "Home") {
+      refreshPrimaryData();
+    }
   };
 
   // The most-used destinations, surfaced in the mobile bottom bar so common
@@ -312,10 +323,6 @@ export default function PairingDashboard({
 
         <div className="mt-auto pt-6">
           <ThemeToggle />
-          <div className="mt-4 text-[11px] leading-snug text-slate-500 dark:text-slate-500">
-            Pairing UI now reads live roster, sessions, attendance history, and leaderboard data
-            from the current backend.
-          </div>
         </div>
       </aside>
 

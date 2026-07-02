@@ -293,7 +293,13 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
   }
 
   if (error) {
-    return <EmptyState title="Scoring tasks unavailable" body={error} />;
+    console.error("[pairing]", error);
+    return (
+      <EmptyState
+        title="Scoring tasks unavailable"
+        body="Please refresh the page or try again in a moment."
+      />
+    );
   }
 
   if (tasks.length === 0) {
@@ -350,7 +356,6 @@ export default function MyScoring({ role, sessions, attendanceHistory }: MyScori
           </div>
 
           {submitState.message && <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-400/25 bg-emerald-50 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-300">{submitState.message}</div>}
-          {submitState.error && <div className="mb-4 rounded-xl border border-red-200 dark:border-red-400/25 bg-red-50 dark:bg-red-400/10 px-4 py-3 text-sm text-red-800 dark:text-red-300">{submitState.error}</div>}
 
           {selectedTask.role === "speaker" ? (
             <div className="space-y-4">

@@ -50,7 +50,13 @@ export default function Sessions({
   }
 
   if (error) {
-    return <EmptyState title="Sessions unavailable" body={error} />;
+    if (error) console.error("[pairing]", error);
+    return (
+      <EmptyState
+        title="Sessions unavailable"
+        body="Please refresh the page or try again in a moment."
+      />
+    );
   }
 
   if (sessions.length === 0) {
@@ -68,8 +74,8 @@ export default function Sessions({
         title={mode === "admin" ? "Sessions" : "Session History"}
         subtitle={
           mode === "admin"
-            ? "Live session rows from the current backend."
-            : "Your attendance history from the current backend."
+            ? "All scheduled and past sessions."
+            : "Your attendance history."
         }
       />
 
@@ -288,7 +294,7 @@ function SessionDetails({
           ) : (
             <EmptyState
               title="No personal attendance record"
-              body="This session is visible in your history, but your current backend role has no linked attendance row for it."
+              body="This session appears in your history, but no attendance row is linked to your account."
             />
           )}
         </div>

@@ -123,7 +123,16 @@ export default function SessionWorkspace({
   const [nextTeamUpIsStrict, setNextTeamUpIsStrict] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  // Raw backend errors are noisy internals — log them to the console for
+  // debugging but never surface them in the UI. Callers keep using the same
+  // Dispatch<SetStateAction<string|null>> signature; state is intentionally
+  // unused.
+  const setActionError = React.useCallback<
+    React.Dispatch<React.SetStateAction<string | null>>
+  >((value) => {
+    const message = typeof value === "function" ? value(null) : value;
+    if (message) console.error("[pairing]", message);
+  }, []);
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideDraft, setOverrideDraft] = useState<ManualOverrideDraft | null>(null);
   const [overrideNotes, setOverrideNotes] = useState("");
@@ -451,17 +460,12 @@ export default function SessionWorkspace({
 
       {busyAction && (
         <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
-          {busyAction}â€¦
+          {busyAction}…
         </div>
       )}
       {feedback && (
         <div className="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-400/25 bg-emerald-50 dark:bg-emerald-400/10 px-4 py-3 text-sm text-emerald-900 dark:text-emerald-200">
           {feedback}
-        </div>
-      )}
-      {actionError && (
-        <div className="mb-4 rounded-xl border border-red-200 dark:border-red-400/25 bg-red-50 dark:bg-red-400/10 px-4 py-3 text-sm text-red-900 dark:text-red-200">
-          {actionError}
         </div>
       )}
 
@@ -637,24 +641,6 @@ export default function SessionWorkspace({
               </div>
             </div>
           </Card>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <ObjectiveCard
-              title="Development"
-              active={objective === "DEVELOPMENT"}
-              body="Push the engine toward broader learning exposure, more developmental rooming, and better training spread."
-            />
-            <ObjectiveCard
-              title="Balanced"
-              active={objective === "BALANCED"}
-              body="Keep the session in the middle ground with stable fairness, usable balance, and cleaner all-round pairings."
-            />
-            <ObjectiveCard
-              title="Competitive"
-              active={objective === "COMPETITIVE"}
-              body="Bias the run toward stronger competitive sorting when session quality and sharper contest spread matter most."
-            />
-          </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
             <Card className="p-5">
@@ -972,7 +958,7 @@ export default function SessionWorkspace({
                   >
                     <div className="font-medium text-slate-900 dark:text-slate-100">{findParticipantName(participants, task.participantId)}</div>
                     <div className="mt-1 text-slate-600 dark:text-slate-400">
-                      Role: {task.sessionRole} Ã‚· {task.hasSubmitted ? "Submitted" : "Pending"}
+                      Role: {task.sessionRole} · {task.hasSubmitted ? "Submitted" : "Pending"}
                     </div>
                   </div>
                 ))}
@@ -1028,7 +1014,7 @@ export default function SessionWorkspace({
             <PrimaryButton
               type="button"
               disabled={busyAction !== null || !workspace.proposal}
-              onClick={() => void publishCurrentProposal(selectedSessionId, setWorkspace, setFeedback, setActionError, setBusyAction, setStep)}
+              onClick={() => void publishCurrentProposal(selectedSessionId, setWorkspace, setFeedback, setActionError, setBusyAction, setStep, sessions, onSessionsChange)}
             >
               Publish official pairing
             </PrimaryButton>
@@ -1511,6 +1497,8 @@ async function publishCurrentProposal(
   setActionError: React.Dispatch<React.SetStateAction<string | null>>,
   setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
   setStep: React.Dispatch<React.SetStateAction<StepKey>>,
+  sessions: SessionRow[],
+  onSessionsChange: (sessions: SessionRow[]) => void,
 ) {
   setBusyAction("Publishing pairing");
   setActionError(null);
@@ -1533,6 +1521,15 @@ async function publishCurrentProposal(
       publishedPairing,
       scoringStatus,
     }));
+    // Mark the session as Published in the shared sessions list so downstream
+    // views (My Scoring Tasks, Home, etc.) can pick it up without a page reload.
+    onSessionsChange(
+      sessions.map((session) =>
+        session.id === sessionId
+          ? { ...session, state: "Published" as const }
+          : session,
+      ),
+    );
     setFeedback("Official pairing published.");
     setStep("post");
   } catch (caught) {
@@ -1599,32 +1596,6 @@ function SetupChecklistRow({
       >
         {value}
       </span>
-    </div>
-  );
-}
-
-function ObjectiveCard({
-  title,
-  body,
-  active,
-}: {
-  title: string;
-  body: string;
-  active: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border p-4 transition-colors ${
-        active
-          ? "border-indigo-300 bg-indigo-50 dark:border-indigo-400/25 dark:bg-indigo-400/10"
-          : "border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.03]"
-      }`}
-    >
-      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</div>
-      <div className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{body}</div>
-      <div className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-        {active ? "Current objective" : "Available objective"}
-      </div>
     </div>
   );
 }
@@ -1858,24 +1829,36 @@ function ProposalView({ proposal, participants }: { proposal: PairingProposalVie
     <div className="space-y-4">
       <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          Proposal v{proposal.summary.version} ?? Score{" "}
+          Proposal v{proposal.summary.version} · Score{" "}
           <span className="font-semibold text-slate-900 dark:text-slate-100">
             {proposal.summary.proposalScore.toFixed(2)}
           </span>
         </div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Status: {proposal.summary.status} ?? Top-band rank:{" "}
-          {proposal.summary.topBandRank ?? "???"}
+          Status: {proposal.summary.status}
+          {proposal.summary.topBandRank != null
+            ? ` · Top-band rank: ${proposal.summary.topBandRank}`
+            : ""}
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {proposal.rooms.map((room) => (
+        {proposal.rooms.map((room) => {
+          const balance = room.roomBalanceScore?.toFixed(2);
+          const difficulty = room.roomDifficultyScore?.toFixed(2);
+          const scoreLine = [
+            balance ? `Balance ${balance}` : null,
+            difficulty ? `Difficulty ${difficulty}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return (
           <div key={room.roomIndex} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
             <div className="font-semibold text-slate-900 dark:text-slate-100">Room {room.roomIndex}</div>
-            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-              Balance {room.roomBalanceScore?.toFixed(2) ?? "???"} ?? Difficulty{" "}
-              {room.roomDifficultyScore?.toFixed(2) ?? "???"}
-            </div>
+            {scoreLine ? (
+              <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                {scoreLine}
+              </div>
+            ) : null}
             <div className="mt-3 space-y-2 text-sm">
               {room.teams.map((team) => (
                 <div key={team.bpPosition}>
@@ -1896,7 +1879,8 @@ function ProposalView({ proposal, participants }: { proposal: PairingProposalVie
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       {proposal.unassignedParticipants.length > 0 && (
         <div className="rounded-xl border border-amber-200 dark:border-amber-400/25 bg-amber-50 dark:bg-amber-400/10 p-4 text-sm text-amber-900 dark:text-amber-200">
@@ -2317,7 +2301,7 @@ function PublishedView({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 p-4 text-sm text-indigo-900 dark:text-indigo-200">
-        Official published pairing Ã‚· {publishedPairing.motionType} Ã‚· {publishedPairing.publishedAt}
+        Official published pairing · {publishedPairing.motionType} · {publishedPairing.publishedAt}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {publishedPairing.rooms.map((room) => (

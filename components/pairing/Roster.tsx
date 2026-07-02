@@ -95,6 +95,7 @@ export default function Roster({
         if (controller.signal.aborted) {
           return;
         }
+        console.error("[pairing] progress profile", caught);
         setProfileError(
           caught instanceof Error ? caught.message : "Failed to load progress profile.",
         );
@@ -139,14 +140,20 @@ export default function Roster({
   }
 
   if (error) {
-    return <EmptyState title="Roster unavailable" body={error} />;
+    if (error) console.error("[pairing]", error);
+    return (
+      <EmptyState
+        title="Roster unavailable"
+        body="Please refresh the page or try again in a moment."
+      />
+    );
   }
 
   return (
     <div>
       <SectionHeader
         title="Members & Cabinet"
-        subtitle="Live participant roster with progress summaries from the pairing backend."
+        subtitle="Participant roster with progress summaries."
         right={
           <input
             value={filter}
@@ -289,7 +296,10 @@ export default function Roster({
                 body="Fetching the individual pairing progress profile."
               />
             ) : profileError ? (
-              <EmptyState title="Progress profile unavailable" body={profileError} />
+              <EmptyState
+                title="Progress profile unavailable"
+                body="Please try again in a moment."
+              />
             ) : selectedProfile ? (
               modalTab === "overview" ? (
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
@@ -394,7 +404,7 @@ export default function Roster({
                 body={
                   selectedProgressSummary
                     ? "The participant has summary data, but the full profile is not available yet."
-                    : "This participant does not have enough backend progress data yet."
+                    : "This participant does not have enough progress data yet."
                 }
               />
             )}

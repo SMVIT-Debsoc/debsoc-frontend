@@ -225,7 +225,7 @@ export default function HomeDashboard({
           ) : (
             <EmptyState
               title="No recent session yet"
-              body="Once your attendance records appear in the backend, your latest session summary will show here."
+              body="Once your attendance is recorded, your latest session summary will show here."
             />
           )}
         </Card>

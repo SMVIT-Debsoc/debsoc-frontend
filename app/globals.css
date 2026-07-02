@@ -316,17 +316,24 @@ body {
 
 .pairing-shell input:not([type="checkbox"]):not([type="radio"]),
 .pairing-shell select,
-.pairing-shell textarea {
+.pairing-shell textarea,
+.lg-panel input:not([type="checkbox"]):not([type="radio"]),
+.lg-panel select,
+.lg-panel textarea {
   background-color: rgba(255, 255, 255, 0.75);
   border-radius: 0.625rem;
   transition:
     border-color 150ms var(--ease-out-strong),
-    box-shadow 150ms var(--ease-out-strong);
+    box-shadow 150ms var(--ease-out-strong),
+    background-color 150ms var(--ease-out-strong);
 }
 
 .pairing-shell input:focus-visible,
 .pairing-shell select:focus-visible,
-.pairing-shell textarea:focus-visible {
+.pairing-shell textarea:focus-visible,
+.lg-panel input:focus-visible,
+.lg-panel select:focus-visible,
+.lg-panel textarea:focus-visible {
   outline: none;
   border-color: rgba(99, 102, 241, 0.6);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
@@ -334,14 +341,84 @@ body {
 
 .dark .pairing-shell input:not([type="checkbox"]):not([type="radio"]),
 .dark .pairing-shell select,
-.dark .pairing-shell textarea {
+.dark .pairing-shell textarea,
+.dark .lg-panel input:not([type="checkbox"]):not([type="radio"]),
+.dark .lg-panel select,
+.dark .lg-panel textarea {
   background-color: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
 }
 
 .dark .pairing-shell input::placeholder,
-.dark .pairing-shell textarea::placeholder {
+.dark .pairing-shell textarea::placeholder,
+.dark .lg-panel input::placeholder,
+.dark .lg-panel textarea::placeholder {
   color: #64748b;
+}
+
+/* ---------------------------------------------------------------------------
+   Themed <select> (liquid-glass, custom chevron)
+   Native <select> keeps a11y and OS-drawn option panel; we style the closed
+   control to match the rest of the dashboard.
+--------------------------------------------------------------------------- */
+
+.pairing-shell select,
+.lg-panel select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.25rem;
+  cursor: pointer;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.35)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat, no-repeat;
+  background-position:
+    center,
+    right 0.75rem center;
+  background-size:
+    100% 100%,
+    12px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+}
+
+.pairing-shell select:hover,
+.lg-panel select:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.dark .pairing-shell select,
+.dark .lg-panel select {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23818cf8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.dark .pairing-shell select:hover,
+.dark .lg-panel select:hover {
+  border-color: rgba(129, 140, 248, 0.55);
+}
+
+/* The OS-drawn <option> list — best we can do is hint dark/light + accent. */
+.pairing-shell select option,
+.lg-panel select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.dark .pairing-shell select option,
+.dark .lg-panel select option {
+  background-color: #0f1117;
+  color: #e2e8f0;
 }
 
 /* ---------------------------------------------------------------------------

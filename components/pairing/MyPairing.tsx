@@ -131,7 +131,13 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
   }
 
   if (error) {
-    return <EmptyState title="My pairing unavailable" body={error} />;
+    console.error("[pairing]", error);
+    return (
+      <EmptyState
+        title="My pairing unavailable"
+        body="Please refresh the page or try again in a moment."
+      />
+    );
   }
 
   if (!selected || !selected.room) {
