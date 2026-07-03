@@ -211,3 +211,42 @@ Update `.planning/` only when one of these materially changes:
 Keep `.planning` short, high-signal, and verification-labeled (`Verified`, `Derived`, `Expected`, `Needs re-check`).
 <!-- END:planning-workspace-rules -->
 
+<!-- BEGIN:graphify-consult-rules -->
+# Consult the graphify knowledge graph for architecture questions
+
+A pre-built knowledge graph of this codebase lives in `graphify-out/`. Use it as
+the first stop for any architecture, traceability, or impact question — do not
+grep the whole repo before checking it. This applies to Claude Code, Codex, and
+any other agent working in this project.
+
+## When to consult it
+- "How does X work?" / "Trace the flow from A to B."
+- "What calls Y?" / "Where is X used?" / "What breaks if I change Z?"
+- Any question about relationships, boundaries, or cross-community coupling.
+
+Do NOT consult it for narrow tasks: fixing a bug in a known file, renaming a
+symbol, or editing a single component. Read the file directly instead.
+
+## What to read
+1. `graphify-out/GRAPH_REPORT.md` — plain-language summary, god nodes, community
+   labels, surprising connections. Skim this first for orientation.
+2. `graphify-out/graph.json` — raw graph (nodes, edges, communities) if you need
+   to trace a specific path programmatically.
+
+If the graphify CLI is available in this environment, prefer:
+- `graphify query "<question>"` for a targeted answer.
+- `graphify path "<A>" "<B>"` for shortest path between two symbols.
+- `graphify explain "<node>"` for a plain-language explanation of one node.
+
+## Verification rule
+The graph is a point-in-time snapshot. Before recommending a change based on a
+graph result, verify the file and symbol still exist by reading the current
+source. If the report and the code disagree, trust the code and note the drift.
+
+## Rebuild trigger
+If `graphify-out/graph.json` is missing, or the report is clearly stale relative
+to recent large refactors, ask the user to run `/graphify` (Claude Code) or
+`graphify .` (CLI) to rebuild. Do not silently fall through to grep as if the
+graph never existed — mention that it needs rebuilding.
+<!-- END:graphify-consult-rules -->
+
