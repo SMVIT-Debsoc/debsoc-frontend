@@ -249,6 +249,14 @@ export default function PairingDashboard({
     }
   };
 
+  const openAdjudicatorLeaderboards = () => {
+    if (isAdminView) {
+      setAdminTab("AdjudicatorLeaderboard");
+    } else {
+      setParticipantTab("AdjudicatorLeaderboard");
+    }
+  };
+
   const content = isAdminView ? (
     <AdminPairingDashboard
       role={role}
@@ -272,6 +280,7 @@ export default function PairingDashboard({
       }
       onOpenWorkspace={() => setAdminTab("Workspace")}
       onOpenLeaderboards={openLeaderboards}
+      onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
       activeTab={adminTab}
     />
   ) : (
@@ -292,6 +301,7 @@ export default function PairingDashboard({
         setState((current) => ({ ...current, leaderboardScope: scope }))
       }
       onOpenLeaderboards={openLeaderboards}
+      onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
       activeTab={participantTab}
     />
   );

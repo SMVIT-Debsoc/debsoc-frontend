@@ -66,6 +66,7 @@ type AdminPairingDashboardProps = {
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
   onOpenWorkspace: () => void;
   onOpenLeaderboards: () => void;
+  onOpenAdjudicatorLeaderboards: () => void;
   onRefresh?: () => void;
   activeTab?: AdminTab;
 };
@@ -88,6 +89,7 @@ export default function AdminPairingDashboard({
   onLeaderboardScopeChange,
   onOpenWorkspace,
   onOpenLeaderboards,
+  onOpenAdjudicatorLeaderboards,
   onRefresh,
   activeTab = "Home",
 }: AdminPairingDashboardProps) {
@@ -103,6 +105,7 @@ export default function AdminPairingDashboard({
           speakerLeaderboard={speakerLeaderboard}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}
+          onOpenAdjudicatorLeaderboards={onOpenAdjudicatorLeaderboards}
           onOpenWorkspace={onOpenWorkspace}
         />
       )}

@@ -54,6 +54,7 @@ type ParticipantPairingDashboardProps = {
   leaderboardError: string | null;
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
   onOpenLeaderboards: () => void;
+  onOpenAdjudicatorLeaderboards: () => void;
   onRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
@@ -73,6 +74,7 @@ export default function ParticipantPairingDashboard({
   leaderboardError,
   onLeaderboardScopeChange,
   onOpenLeaderboards,
+  onOpenAdjudicatorLeaderboards,
   onRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
@@ -88,6 +90,7 @@ export default function ParticipantPairingDashboard({
           speakerLeaderboard={speakerLeaderboard}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}
+          onOpenAdjudicatorLeaderboards={onOpenAdjudicatorLeaderboards}
         />
       )}
       {activeTab === "MyPairing" && (
