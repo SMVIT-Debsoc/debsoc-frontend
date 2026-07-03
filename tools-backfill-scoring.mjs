@@ -5,7 +5,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 const sessionId = "fda87411-e1b9-4dd7-a52e-6a8cfe3c538c";
 const proposalId = "674e8a8d-8df2-4d10-a995-030c9dae3013";
-const chairMemberId = "224f1b5a-9369-48a9-a49b-2b5c5700dfe1";
+const chairCabinetId = "224f1b5a-9369-48a9-a49b-2b5c5700dfe1";
 const speakerIds = [
   "560a3f66-0f8e-4457-9f8a-ec6637b5f88e",
   "fe952563-2b29-4245-81a7-935e1161ff59",
@@ -33,7 +33,7 @@ if (missingSpeakerIds.length > 0) {
       sessionId,
       proposalId,
       speakerMemberId,
-      chairMemberId,
+      chairCabinetId,
       rating: 8,
       notes: "DB backfill to complete pending speaker feedback.",
     })),

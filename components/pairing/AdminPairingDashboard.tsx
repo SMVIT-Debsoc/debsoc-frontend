@@ -153,7 +153,14 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "MyPairing" && (
-        <MyPairing role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
+        <MyPairing
+          role={role}
+          sessions={sessions}
+          attendanceHistory={attendanceHistory}
+          participants={participants}
+          speakerLeaderboard={speakerLeaderboard}
+          adjudicatorLeaderboard={adjudicatorLeaderboard}
+        />
       )}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
@@ -161,6 +168,7 @@ export default function AdminPairingDashboard({
     </div>
   );
 }
+
 
 
 
