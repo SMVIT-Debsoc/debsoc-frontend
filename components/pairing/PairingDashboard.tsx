@@ -457,11 +457,11 @@ function LogoutButton() {
     <button
       type="button"
       aria-label="Log out"
-      title="Log out"
       onClick={() => signOut({ callbackUrl: "/" })}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100 dark:border-white/15 dark:text-slate-300 dark:hover:bg-white/10"
+      className="inline-flex h-10 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500 px-4 text-sm font-semibold text-white shadow-sm shadow-red-500/25 transition hover:bg-red-600 active:scale-95 dark:border-red-400/40 dark:bg-red-500/90 dark:hover:bg-red-500"
     >
       <LogOut size={16} />
+      Logout
     </button>
   );
 }
