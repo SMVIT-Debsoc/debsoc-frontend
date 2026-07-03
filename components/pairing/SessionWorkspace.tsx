@@ -369,37 +369,71 @@ export default function SessionWorkspace({
 
   if (!selectedSessionId) {
     const hasCompletedSessions = sessions.some((session) => session.state === "Scored");
+    const eyebrow = hasCompletedSessions ? "Session closed" : "Fresh workspace";
+    const headline = hasCompletedSessions ? "Ready for the next round" : "Kick off a session";
+    const body = hasCompletedSessions
+      ? "The last session is fully scored and archived. Spin up a new session to draft attendance, generate pairings, and publish rooms."
+      : "Create a new session to open the pairing workflow — mark attendance, generate the proposal, and publish rooms.";
+
+    const steps = [
+      { n: "1", label: "Mark attendance" },
+      { n: "2", label: "Generate pairing" },
+      { n: "3", label: "Publish rooms" },
+      { n: "4", label: "Score & close" },
+    ];
 
     return (
-      <div className="space-y-4">
-        <EmptyState
-          title={hasCompletedSessions ? "Session completed" : "No sessions available"}
-          body={
-            hasCompletedSessions
-              ? "This session is fully scored and closed. Create a new session to start the next pairing workflow."
-              : "Create a new session to start the pairing workflow."
-          }
-        />
-        <div className="flex justify-center">
-          <PrimaryButton
-            type="button"
-            disabled={busyAction !== null}
-            onClick={() =>
-              void createInitialSession(
-                userName,
-                sessions,
-                onSessionsChange,
-                setSelectedSessionId,
-                setFeedback,
-                setActionError,
-                setBusyAction,
-              )
-            }
-          >
-            Create new session
-          </PrimaryButton>
+      <Card className="overflow-hidden border-indigo-200 dark:border-indigo-400/25 bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(15,23,42,0.04))]">
+        <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-5 sm:p-6 text-white shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
+                {hasCompletedSessions ? "✅" : "✨"}
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-300">{eyebrow}</div>
+                <div className="mt-1 text-2xl sm:text-3xl font-semibold leading-tight">{headline}</div>
+              </div>
+            </div>
+            <p className="mt-4 text-sm leading-6 text-slate-300">{body}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <PrimaryButton
+                type="button"
+                disabled={busyAction !== null}
+                onClick={() =>
+                  void createInitialSession(
+                    userName,
+                    sessions,
+                    onSessionsChange,
+                    setSelectedSessionId,
+                    setFeedback,
+                    setActionError,
+                    setBusyAction,
+                  )
+                }
+              >
+                {busyAction ? "Creating…" : "Create new session"}
+              </PrimaryButton>
+              <span className="text-xs text-slate-400">Takes ~2 seconds</span>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/70 p-5 backdrop-blur dark:bg-white/[0.04]">
+            <div className="text-xs uppercase tracking-[0.22em] text-indigo-700 dark:text-indigo-300">Workflow</div>
+            <div className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">Four steps to close a session</div>
+            <ol className="mt-4 space-y-3">
+              {steps.map((step) => (
+                <li key={step.n} className="flex items-center gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
+                    {step.n}
+                  </span>
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{step.label}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
-      </div>
+      </Card>
     );
   }
 
