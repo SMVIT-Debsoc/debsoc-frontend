@@ -470,14 +470,20 @@ async function fetchPrimaryData(role: string) {
     };
   }
 
-  const attendance = await fetchJson<{ attendance: ApiAttendanceHistory[] }>(
+  const attendance = await fetchJson<{
+    attendance: ApiAttendanceHistory[];
+    publishedSessions?: ApiParticipantSession[];
+  }>(
     "/api/pairing/attendance/self",
   );
   const attendanceHistory = (attendance.attendance ?? []).map(normalizeAttendanceHistory);
 
   return {
     participants: [],
-    sessions: deriveSessionsFromAttendance(attendanceHistory),
+    sessions: mergeParticipantSessions(
+      deriveSessionsFromAttendance(attendanceHistory),
+      (attendance.publishedSessions ?? []).map(normalizeParticipantSession),
+    ),
     attendanceHistory,
     progressSummaries: [],
   };
@@ -677,6 +683,38 @@ function deriveSessionsFromAttendance(attendanceHistory: AttendanceHistoryItem[]
   }));
 }
 
+function normalizeParticipantSession(session: ApiParticipantSession): SessionRow {
+  return {
+    id: session.id,
+    date: formatDate(session.sessionDate),
+    motionType: session.motiontype,
+    chair: session.Chair,
+    state: deriveLifecycleState(session),
+  };
+}
+
+function mergeParticipantSessions(
+  attendanceSessions: SessionRow[],
+  publishedSessions: SessionRow[],
+): SessionRow[] {
+  const merged = new Map<string, SessionRow>();
+
+  for (const session of publishedSessions) {
+    merged.set(session.id, session);
+  }
+
+  for (const session of attendanceSessions) {
+    merged.set(session.id, {
+      ...merged.get(session.id),
+      ...session,
+    });
+  }
+
+  return [...merged.values()].sort(
+    (left, right) => new Date(right.date).getTime() - new Date(left.date).getTime(),
+  );
+}
+
 function deriveLifecycleState(session: {
   pairingStatus?: string | null;
   publicationStatus?: string | null;
@@ -840,6 +878,16 @@ type ApiAttendanceHistory = {
   };
 };
 
+type ApiParticipantSession = {
+  id: string;
+  sessionDate: string | Date;
+  motiontype: string;
+  Chair: string;
+  pairingStatus?: string | null;
+  publicationStatus?: string | null;
+  scoringStatus?: string | null;
+};
+
 type ApiProgressSummary = {
   participantId: string;
   speakerTotalScore: number;
@@ -868,6 +916,7 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
+
 
 
 
