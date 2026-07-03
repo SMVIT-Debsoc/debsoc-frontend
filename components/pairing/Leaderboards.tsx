@@ -137,7 +137,7 @@ export default function Leaderboards({
             </div>
           </Card>
 
-          <Card>
+          <Card className="overflow-hidden">
             {speakerLeaderboard.length === 0 ? (
               <div className="p-4">
                 <EmptyState
@@ -225,7 +225,7 @@ export default function Leaderboards({
             </div>
           </Card>
 
-          <Card>
+          <Card className="overflow-hidden">
             {adjudicatorLeaderboard.length === 0 ? (
               <div className="p-4">
                 <EmptyState

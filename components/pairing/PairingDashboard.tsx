@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, LogOut, Menu, X } from "lucide-react";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
@@ -328,13 +329,13 @@ export default function PairingDashboard({
     return content;
   }
 
-  const brand = role === "President"
-    ? "President Dashboard"
-    : role === "cabinet"
-      ? `${position?.trim() || "Cabinet"} Dashboard`
-      : role === "TechHead"
-        ? "Tech Head Dashboard"
-        : "Member Dashboard";
+  const firstName = (userName?.trim().split(/\s+/)[0]) || (
+    role === "President" ? "President"
+    : role === "cabinet" ? (position?.trim() || "Cabinet")
+    : role === "TechHead" ? "Tech Head"
+    : "Member"
+  );
+  const brand = `${firstName}'s Dashboard`;
 
   return (
     <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
@@ -360,9 +361,7 @@ export default function PairingDashboard({
       {/* Desktop sidebar */}
       <aside className="glass-sidebar relative z-10 hidden w-72 flex-col p-5 lg:sticky lg:top-0 lg:flex lg:h-screen">
         <div className="mb-8 flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
-            <Gavel size={17} />
-          </span>
+          <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
           <span>{brand}</span>
         </div>
 
