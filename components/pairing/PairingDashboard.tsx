@@ -741,7 +741,12 @@ function mergeParticipantSessions(
     merged.set(session.id, {
       ...current,
       ...session,
+      date: current?.date ?? session.date,
+      motionType: current?.motionType ?? session.motionType,
       motionText: session.motionText ?? current?.motionText,
+      chair: current?.chair ?? session.chair,
+      assignedChairLabel: current?.assignedChairLabel ?? session.assignedChairLabel,
+      participantAssignmentLabels: current?.participantAssignmentLabels ?? session.participantAssignmentLabels,
     });
   }
 
@@ -952,7 +957,6 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
-
 
 
 
