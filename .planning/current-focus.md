@@ -8,6 +8,7 @@
 - Use repo docs and code as the source of truth
 
 ## Last Verified
+- Pairing progress profiles now trigger metric snapshot refresh after accepted speaker/chair submissions, so progress reads no longer rely on stale empty snapshot state alone (Verified in code; runtime/browser re-check still needed)
 - Member scoring-task reads were failing because `GET /api/sessions/:sessionId/scoring-status` treated "no scoring obligation in this session" as a 403 for `Member` viewers; locally repaired in `session-service.ts` so the self-view now returns an empty task list instead (Verified in code, runtime still needs browser re-check)
 - Pairing dashboard sidebar structure exists
 - Separate speaker and adjudicator leaderboard views exist
@@ -34,3 +35,4 @@
 
 ## Update Rule
 - Only update this file when the active task, blocker, or verified state materially changes
+

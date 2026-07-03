@@ -1,6 +1,11 @@
 import type { ChairScoringRequest, ScoreSubmissionResponse } from "../../../types/scoring.ts";
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
+import {
+  updateLearnedMetricsFromSession,
+  updatePairMetricSnapshotsFromSession,
+  updateRolePerformanceFromSession,
+} from "./metric-update-service.ts";
 import { invalidateTags } from "../cache/cache.ts";
 import { CACHE_TAGS } from "../cache/keys.ts";
 
@@ -224,6 +229,10 @@ export function createChairScoringService(
       );
     }
 
+    await updateLearnedMetricsFromSession(input.sessionId);
+    await updatePairMetricSnapshotsFromSession(input.sessionId);
+    await updateRolePerformanceFromSession(input.sessionId);
+
     await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
 
     await publishEvent(input.sessionId, {
@@ -247,3 +256,5 @@ export function createChairScoringService(
 }
 
 export const { submitChairAdjudicatorScore } = createChairScoringService();
+
+
