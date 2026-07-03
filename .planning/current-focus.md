@@ -14,6 +14,7 @@
 - Session workspace now closes scored sessions back to new-session entry state (Verified)
 - Session metadata mapper now includes `sessionRules` in the service layer
 - Session Workspace draft state was being rehydrated by dashboard auto-refresh plus participant-prop reload coupling (Verified)
+- Pairing dashboard auto-refresh is now limited to Home and leaderboard tabs; interaction-heavy tabs stay stable while in use (Verified)
 - Published pairing chair assignments can drift from `SessionRoleAssignment` unless publish sync rewrites roles from official room assignments (Verified and repaired locally)
 - Repo still has pre-existing type-check failures outside this task (Verified)
 - Local build now reaches a Windows spawn EPERM after type-check starts

@@ -8,7 +8,7 @@ type SpeakerAssignmentLocation = {
   speakingRole: string;
 };
 
-const EARLY_SPEAKING_ROLES = new Set(["PM", "LO"]);
+const EARLY_SPEAKING_ROLES = new Set(["PM", "DPM", "LO", "DLO"]);
 
 export function validateHardRules(
   candidate: PairingCandidate,
@@ -77,7 +77,7 @@ export function validateHardRules(
       continue;
     }
     if (!EARLY_SPEAKING_ROLES.has(assignment.speakingRole)) {
-      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} must be assigned PM or LO when marked strict.` });
+      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} must be assigned one of PM, DPM, LO, or DLO when marked strict.` });
     }
   }
 
