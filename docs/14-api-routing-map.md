@@ -161,6 +161,27 @@ Update session-level inputs before generation.
 
 - `updateSessionLifecycleState()` or session update method from `lib/server/sessions/session-service.ts`
 
+## `DELETE /api/sessions/:sessionId`
+
+### Purpose
+
+Cancel an unpublished in-progress session and remove all session-scoped draft data so the workspace returns to the fresh new-session state.
+
+### Access
+
+- cabinet admin
+- president admin
+
+### Behavior
+
+- allowed only while the session is still unpublished
+- deletes attendance, session-role assignments, draft proposals and proposal children, and any draft session scoring artifacts tied to that session
+- rejects cancellation once the session has been published
+
+### Should call
+
+- `cancelSession()` from `lib/server/sessions/session-service.ts`
+
 ## `GET /api/sessions/:sessionId/scoring-status`
 
 ### Purpose
@@ -764,4 +785,3 @@ It should be used together with:
 - `13-pairing-learning-loop.md`
 
 when we begin implementation.
-

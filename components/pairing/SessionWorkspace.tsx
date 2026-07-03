@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, {useEffect, useMemo, useState} from "react";
 import {createPortal} from "react-dom";
@@ -135,7 +135,7 @@ export default function SessionWorkspace({
     const [nextTeamUpIsStrict, setNextTeamUpIsStrict] = useState(false);
     const [busyAction, setBusyAction] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<string | null>(null);
-    // Raw backend errors are noisy internals — log them to the console for
+    // Raw backend errors are noisy internals â€” log them to the console for
     // debugging but never surface them in the UI. Callers keep using the same
     // Dispatch<SetStateAction<string|null>> signature; state is intentionally
     // unused.
@@ -399,6 +399,11 @@ export default function SessionWorkspace({
         workspace.publishedPairing,
     );
 
+    const canCancelSession =
+        Boolean(selectedSessionId) &&
+        (workspace.context?.session.publicationStatus?.toUpperCase() ??
+            "DRAFT") !== "PUBLISHED";
+
     const isInRole = (id: string, role: "speaker" | "adjudicator") => {
         const draft = attendanceDraft[id];
         return Boolean(draft?.isPresent && draft.sessionRole === role);
@@ -450,7 +455,7 @@ export default function SessionWorkspace({
             : "Kick off a session";
         const body = hasCompletedSessions
             ? "The last session is fully scored and archived. Spin up a new session to draft attendance, generate pairings, and publish rooms."
-            : "Create a new session to open the pairing workflow — mark attendance, generate the proposal, and publish rooms.";
+            : "Create a new session to open the pairing workflow â€” mark attendance, generate the proposal, and publish rooms.";
 
         const steps = [
             {n: "1", label: "Mark attendance"},
@@ -465,7 +470,7 @@ export default function SessionWorkspace({
                     <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-5 sm:p-6 text-white shadow-sm">
                         <div className="flex items-start gap-3">
                             <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
-                                {hasCompletedSessions ? "✅" : "✨"}
+                                {hasCompletedSessions ? "âœ…" : "âœ¨"}
                             </div>
                             <div className="min-w-0">
                                 <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-300">
@@ -496,7 +501,7 @@ export default function SessionWorkspace({
                                 }
                             >
                                 {busyAction
-                                    ? "Creating…"
+                                    ? "Creatingâ€¦"
                                     : "Create new session"}
                             </PrimaryButton>
                             <span className="text-xs text-slate-400">
@@ -559,7 +564,7 @@ export default function SessionWorkspace({
                         >
                             {sessions.map((session) => (
                                 <option key={session.id} value={session.id}>
-                                    {session.date} · {session.motionType}
+                                    {session.date} Â· {session.motionType}
                                 </option>
                             ))}
                         </select>
@@ -607,7 +612,7 @@ export default function SessionWorkspace({
 
             {busyAction && (
                 <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
-                    {busyAction}…
+                    {busyAction}â€¦
                 </div>
             )}
             {feedback && (
@@ -1293,7 +1298,7 @@ export default function SessionWorkspace({
                                             )}
                                         </div>
                                         <div className="mt-1 text-slate-600 dark:text-slate-400">
-                                            Role: {task.sessionRole} ·{" "}
+                                            Role: {task.sessionRole} Â·{" "}
                                             {task.hasSubmitted
                                                 ? "Submitted"
                                                 : "Pending"}
@@ -1321,14 +1326,40 @@ export default function SessionWorkspace({
                         : " - use Previous or Next to move through the workflow."}
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-white/10 pt-4">
-                    <SecondaryButton
-                        type="button"
-                        onClick={() => setStep(previousStep(step))}
-                        disabled={STEP_INDEX[step] === 0 || busyAction !== null}
-                    >
-                        <ArrowLeft size={16} />
-                        Previous
-                    </SecondaryButton>
+                    <div className="flex flex-wrap gap-3">
+                        <SecondaryButton
+                            type="button"
+                            onClick={() => setStep(previousStep(step))}
+                            disabled={
+                                STEP_INDEX[step] === 0 || busyAction !== null
+                            }
+                        >
+                            <ArrowLeft size={16} />
+                            Previous
+                        </SecondaryButton>
+                        {canCancelSession && (
+                            <SecondaryButton
+                                type="button"
+                                className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-400/25 dark:text-red-300 dark:hover:bg-red-400/10"
+                                disabled={busyAction !== null}
+                                onClick={() =>
+                                    void cancelCurrentSession(
+                                        selectedSessionId,
+                                        sessions,
+                                        onSessionsChange,
+                                        setSelectedSessionId,
+                                        setWorkspace,
+                                        setFeedback,
+                                        setActionError,
+                                        setBusyAction,
+                                    )
+                                }
+                            >
+                                <X size={16} />
+                                Cancel session
+                            </SecondaryButton>
+                        )}
+                    </div>
 
                     <div className="flex flex-wrap gap-3">
                         {step === "review" && workspace.proposal && (
@@ -1517,6 +1548,57 @@ async function createInitialSession(
     }
 }
 
+async function cancelCurrentSession(
+    sessionId: string,
+    sessions: SessionRow[],
+    onSessionsChange: (sessions: SessionRow[]) => void,
+    setSelectedSessionId: React.Dispatch<React.SetStateAction<string>>,
+    setWorkspace: React.Dispatch<React.SetStateAction<WorkspaceSessionData>>,
+    setFeedback: React.Dispatch<React.SetStateAction<string | null>>,
+    setActionError: React.Dispatch<React.SetStateAction<string | null>>,
+    setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+    if (
+        !window.confirm(
+            "Cancel this session? This will remove the draft session and undo attendance, roles, proposals, and any other in-progress session data.",
+        )
+    ) {
+        return;
+    }
+
+    setBusyAction("Cancelling session");
+    setActionError(null);
+    setFeedback(null);
+
+    try {
+        await fetchJson<{sessionId: string; cancelled: boolean}>(
+            "/api/sessions/" + sessionId,
+            {method: "DELETE"},
+        );
+
+        setWorkspace({
+            context: null,
+            proposal: null,
+            publishedPairing: null,
+            scoringStatus: null,
+        });
+        removeCancelledSession(
+            sessionId,
+            sessions,
+            onSessionsChange,
+            setSelectedSessionId,
+        );
+        setFeedback("Session cancelled. You can start a new session now.");
+    } catch (caught) {
+        setActionError(
+            caught instanceof Error
+                ? caught.message
+                : "Session cancel failed.",
+        );
+    } finally {
+        setBusyAction(null);
+    }
+}
 function findDefaultSessionId(sessions: SessionRow[]) {
     return sessions.find((session) => session.state !== "Scored")?.id ?? "";
 }
@@ -1542,6 +1624,21 @@ function closeCompletedSession(
     setSelectedSessionId(nextActiveSessionId);
 }
 
+function removeCancelledSession(
+    cancelledSessionId: string,
+    sessions: SessionRow[],
+    onSessionsChange: (sessions: SessionRow[]) => void,
+    setSelectedSessionId: React.Dispatch<React.SetStateAction<string>>,
+) {
+    const nextSessions = sessions.filter(
+        (session) => session.id !== cancelledSessionId,
+    );
+    const nextActiveSessionId =
+        nextSessions.find((session) => session.state !== "Scored")?.id ?? "";
+
+    onSessionsChange(nextSessions);
+    setSelectedSessionId(nextActiveSessionId);
+}
 function hydrateFormState(
     context: SessionPreparationContextResponse,
     participants: Participant[],
@@ -2150,7 +2247,7 @@ function RoleColumn({
                                 </div>
                                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">
                                     {p.account}
-                                    {p.position ? ` · ${p.position}` : ""}
+                                    {p.position ? ` Â· ${p.position}` : ""}
                                 </div>
                             </div>
                             <button
@@ -2266,7 +2363,7 @@ function RolePickerModal({
                                                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">
                                                     {p.account}
                                                     {inOther
-                                                        ? ` · currently ${other}`
+                                                        ? ` Â· currently ${other}`
                                                         : ""}
                                                 </div>
                                             </div>
@@ -2318,7 +2415,7 @@ function ProposalView({
         <div className="space-y-4">
             <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
-                    Proposal v{proposal.summary.version} · Score{" "}
+                    Proposal v{proposal.summary.version} Â· Score{" "}
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {proposal.summary.proposalScore.toFixed(2)}
                     </span>
@@ -2326,7 +2423,7 @@ function ProposalView({
                 <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                     Status: {proposal.summary.status}
                     {proposal.summary.topBandRank != null
-                        ? ` · Top-band rank: ${proposal.summary.topBandRank}`
+                        ? ` Â· Top-band rank: ${proposal.summary.topBandRank}`
                         : ""}
                 </div>
             </div>
@@ -2339,7 +2436,7 @@ function ProposalView({
                         difficulty ? `Difficulty ${difficulty}` : null,
                     ]
                         .filter(Boolean)
-                        .join(" · ");
+                        .join(" Â· ");
                     return (
                         <div
                             key={room.roomIndex}
@@ -3041,7 +3138,7 @@ function PublishedView({
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 p-4 text-sm text-indigo-900 dark:text-indigo-200">
-                Official published pairing · {publishedPairing.motionType} ·{" "}
+                Official published pairing Â· {publishedPairing.motionType} Â·{" "}
                 {publishedPairing.publishedAt}
             </div>
             <div className="grid gap-4 md:grid-cols-2">

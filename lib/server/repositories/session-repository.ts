@@ -399,6 +399,67 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     });
   }
 
+  async function deleteDraftSession(sessionId: string) {
+    await client.$transaction(async (tx: PrismaClient) => {
+      const proposalIds = (
+        await tx.pairingProposal.findMany({
+          where: { sessionId },
+          select: { id: true },
+        })
+      ).map((proposal: { id: string }) => proposal.id);
+
+      await tx.teamDynamicsRating.deleteMany({ where: { sessionId } });
+      await tx.adjudicatorScoreRecord.deleteMany({ where: { sessionId } });
+      await tx.chairFeedbackRecord.deleteMany({ where: { sessionId } });
+      await tx.speakerScoreRecord.deleteMany({ where: { sessionId } });
+      await tx.sessionRoleAssignment.deleteMany({ where: { sessionId } });
+      await tx.attendance.deleteMany({ where: { sessionId } });
+
+      if (proposalIds.length > 0) {
+        await tx.teamSpeakerAssignment.deleteMany({
+          where: {
+            teamAssignment: {
+              roomAssignment: {
+                proposalId: { in: proposalIds },
+              },
+            },
+          },
+        });
+        await tx.roomAdjudicatorAssignment.deleteMany({
+          where: {
+            roomAssignment: {
+              proposalId: { in: proposalIds },
+            },
+          },
+        });
+        await tx.debateTeamAssignment.deleteMany({
+          where: {
+            roomAssignment: {
+              proposalId: { in: proposalIds },
+            },
+          },
+        });
+        await tx.debateRoomAssignment.deleteMany({
+          where: { proposalId: { in: proposalIds } },
+        });
+        await tx.unassignedParticipant.deleteMany({
+          where: { proposalId: { in: proposalIds } },
+        });
+        await tx.proposalRating.deleteMany({
+          where: { proposalId: { in: proposalIds } },
+        });
+        await tx.proposalReviewLog.deleteMany({
+          where: { proposalId: { in: proposalIds } },
+        });
+        await tx.pairingProposal.deleteMany({
+          where: { id: { in: proposalIds } },
+        });
+      }
+
+      await tx.debateSession.delete({ where: { id: sessionId } });
+    });
+  }
+
   return {
     createSession,
     getSessionById,
@@ -406,7 +467,9 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     upsertAttendanceEntries,
     replaceSessionRoles,
     updateSessionState,
+    deleteDraftSession,
   };
 }
 
 export const sessionRepository = createSessionRepository();
+

@@ -34,7 +34,8 @@ const scoringStatuses = {
   partial: "partial",
   complete: "complete",
 } as const;
-function emptySessionRules(): SessionRuleConfigView {
+
+function emptySessionRules(): SessionRuleConfigView {
   return {
     timeConstraints: [],
     eventTeamUpPreferences: [],
@@ -124,6 +125,7 @@ interface SessionRepositoryContract {
     publishedProposalId: string | null;
     sessionRulesJson: unknown;
   }>;
+  deleteDraftSession(sessionId: string): Promise<void>;
 }
 
 interface ScoringRepositoryContract {
@@ -483,13 +485,32 @@ export function createSessionService(
     return view;
   }
 
+  async function cancelSession(sessionId: string): Promise<void> {
+    const currentSession = await repository.getSessionById(sessionId);
+    if (!currentSession) {
+      throw new Error(`Session ${sessionId} not found.`);
+    }
+
+    if (
+      normalizePublicationStatus(currentSession.publicationStatus) === publicationStatuses.published ||
+      normalizePairingStatus(currentSession.pairingStatus) === pairingStatuses.published
+    ) {
+      throw new Error("Only unpublished in-progress sessions can be cancelled.");
+    }
+
+    await repository.deleteDraftSession(sessionId);
+    await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress, CACHE_TAGS.leaderboard]);
+  }
+
   return {
     createSession,
     getSessionPreparationContext,
     getSessionScoringStatus,
     updateSessionLifecycleState,
+    cancelSession,
   };
 }
 
-export const { createSession, getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState } = createSessionService();
+export const { createSession, getSessionPreparationContext, getSessionScoringStatus, updateSessionLifecycleState, cancelSession } = createSessionService();
+
 
