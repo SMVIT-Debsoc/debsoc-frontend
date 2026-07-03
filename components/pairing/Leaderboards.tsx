@@ -95,29 +95,43 @@ export default function Leaderboards({
         <EmptyState title="Leaderboard unavailable" body={error} />
       ) : view === "speakers" ? (
         <div className="space-y-6">
-          <Card className="border-indigo-200 dark:border-indigo-400/25 bg-indigo-50/70 dark:bg-indigo-400/10">
-            <div className="grid gap-4 p-5 md:grid-cols-3">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-400">
-                  Speaker view
+          <Card className="hidden lg:block overflow-hidden border-indigo-200 dark:border-indigo-400/25 bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(15,23,42,0.04))]">
+            <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.05fr_0.95fr_0.8fr]">
+              <div className="hidden lg:block rounded-3xl border border-indigo-200/80 bg-white/70 p-5 backdrop-blur dark:border-indigo-400/25 dark:bg-indigo-400/[0.07]">
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-700 dark:text-indigo-300">
+                  Speaker command
                 </div>
-                <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">Speaker leaderboard</div>
-                <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                  Ranked by cumulative speaker score from saved speaker scoring data.
+                <div className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">Speaker leaderboard</div>
+                <div className="mt-3 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  This board ranks speakers by cumulative speaker score from saved speaker scoring data, with tracked sessions visible as a participation signal.
                 </div>
               </div>
-              <div className="rounded-2xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
-                <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Top speaker</div>
-                <div className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{speakerSummary.topSpeaker}</div>
+
+              <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-5 text-white shadow-sm">
+                <div className="text-xs uppercase tracking-[0.22em] text-indigo-300">Top speaker</div>
+                <div className="mt-3 text-3xl font-semibold leading-tight">{speakerSummary.topSpeaker}</div>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Ranked speakers</div>
+                    <div className="mt-1 text-2xl font-semibold text-indigo-200">{speakerSummary.totalEntries}</div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Tracked sessions</div>
+                    <div className="mt-1 text-2xl font-semibold text-indigo-200">{speakerSummary.totalSessions}</div>
+                  </div>
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
+
+              <div className="hidden lg:grid gap-4">
+                <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
                   <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Ranked speakers</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{speakerSummary.totalEntries}</div>
+                  <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{speakerSummary.totalEntries}</div>
                 </div>
-                <div className="rounded-2xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Tracked sessions</div>
-                  <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-100">{speakerSummary.totalSessions}</div>
+                <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Board status</div>
+                  <div className="mt-2 text-base font-semibold text-slate-950 dark:text-white">
+                    {speakerSummary.totalEntries > 0 ? "Live and ranked" : "Waiting for data"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -133,35 +147,44 @@ export default function Leaderboards({
               </div>
             ) : (
               <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
-                  <tr>
-                    <th className="px-4 py-2 font-medium">#</th>
-                    <th className="px-4 py-2 font-medium">Name</th>
-                    <th className="px-4 py-2 font-medium">Score</th>
-                    <th className="px-4 py-2 font-medium">Sessions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {speakerLeaderboard.map((entry) => (
-                    <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06]">
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{entry.rank}</td>
-                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{entry.name}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-slate-100">{entry.score}</td>
-                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">#</th>
+                      <th className="px-4 py-3 font-medium">Speaker</th>
+                      <th className="px-4 py-3 font-medium">Score</th>
+                      <th className="px-4 py-3 font-medium">Sessions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {speakerLeaderboard.map((entry, index) => (
+                      <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-indigo-50/30 dark:hover:bg-indigo-400/10">
+                        <td className="px-4 py-3">
+                          <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-400/15 font-semibold text-indigo-900 dark:text-indigo-200">
+                            {entry.rank}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-slate-900 dark:text-slate-100">{entry.name}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Cumulative score</div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </Card>
         </div>
       ) : (
         <div className="space-y-6">
-          <Card className="overflow-hidden border-amber-200 dark:border-amber-400/25 bg-[linear-gradient(135deg,rgba(251,191,36,0.14),rgba(15,23,42,0.04))]">
-            <div className="grid gap-5 p-5 lg:grid-cols-[1.05fr_0.95fr_0.8fr]">
-              <div className="rounded-3xl border border-amber-200/80 bg-white/70 p-5 backdrop-blur dark:border-amber-400/25 dark:bg-amber-400/[0.07]">
+          <Card className="hidden lg:block overflow-hidden border-amber-200 dark:border-amber-400/25 bg-[linear-gradient(135deg,rgba(251,191,36,0.14),rgba(15,23,42,0.04))]">
+            <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[1.05fr_0.95fr_0.8fr]">
+              <div className="hidden lg:block rounded-3xl border border-amber-200/80 bg-white/70 p-5 backdrop-blur dark:border-amber-400/25 dark:bg-amber-400/[0.07]">
                 <div className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
                   Adjudicator command
                 </div>
@@ -186,7 +209,7 @@ export default function Leaderboards({
                 </div>
               </div>
 
-              <div className="grid gap-4">
+              <div className="hidden lg:grid gap-4">
                 <div className="rounded-3xl border border-amber-200 dark:border-amber-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
                   <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Ranked adjudicators</div>
                   <div className="mt-2 text-3xl font-semibold text-slate-950 dark:text-white">{adjudicatorSummary.totalEntries}</div>
@@ -210,37 +233,37 @@ export default function Leaderboards({
                 />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div>
+                <table className="w-full text-sm table-fixed">
                   <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
                     <tr>
-                      <th className="px-4 py-3 font-medium">#</th>
-                      <th className="px-4 py-3 font-medium">Adjudicator</th>
-                      <th className="px-4 py-3 font-medium">Average</th>
-                      <th className="px-4 py-3 font-medium">Panel rounds</th>
-                      <th className="px-4 py-3 font-medium">Chair rounds</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium w-14">#</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium">Adjudicator</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium">Average</th>
+                      <th className="hidden md:table-cell px-4 py-3 font-medium">Panel rounds</th>
+                      <th className="hidden md:table-cell px-4 py-3 font-medium">Chair rounds</th>
                     </tr>
                   </thead>
                   <tbody>
                     {adjudicatorLeaderboard.map((entry, index) => (
                       <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-amber-50/30 dark:hover:bg-amber-400/10">
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-3">
                           <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-400/15 font-semibold text-amber-900 dark:text-amber-200">
                             {entry.rank}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-slate-900 dark:text-slate-100">{entry.name}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">
-                            {index === 0 ? "Current table leader" : `Ranked #${entry.rank}`}
+                        <td className="px-2 sm:px-4 py-3">
+                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate">{entry.name}</div>
+                          <div className="md:hidden text-xs text-slate-500 dark:text-slate-400">
+                            {entry.adjudicatedCount} panel · {entry.chairedCount} chair
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-3">
                           <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">Average score</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Average</div>
                         </td>
-                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.adjudicatedCount}</td>
-                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.chairedCount}</td>
+                        <td className="hidden md:table-cell px-4 py-3 text-slate-700 dark:text-slate-300">{entry.adjudicatedCount}</td>
+                        <td className="hidden md:table-cell px-4 py-3 text-slate-700 dark:text-slate-300">{entry.chairedCount}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -101,7 +101,10 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
           }),
         );
 
-        const relevant = loaded.filter((entry) => entry.room !== null);
+        const relevant = loaded
+          .filter((entry) => entry.room !== null)
+          .sort((a, b) => (b.session.date ?? "").localeCompare(a.session.date ?? ""))
+          .slice(0, 1);
         if (cancelled) return;
         setSessionViews(relevant);
         setSelectedSessionId((current) => current ?? relevant[0]?.session.id ?? null);
@@ -170,13 +173,13 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
       />
 
       {sessionViews.length > 1 && (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
           {sessionViews.map((entry) => (
             <button
               key={entry.session.id}
               type="button"
               onClick={() => setSelectedSessionId(entry.session.id)}
-              className={`rounded-md border px-3 py-1.5 text-sm ${selected.session.id === entry.session.id ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-white/15 bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06]"}`}
+              className={`shrink-0 rounded-md border px-3 py-1.5 text-sm ${selected.session.id === entry.session.id ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-300 dark:border-white/15 bg-white dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06]"}`}
             >
               {entry.session.date}
             </button>
@@ -184,21 +187,54 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
         </div>
       )}
 
-      <Card className="p-5">
-        <div className="mb-5 grid gap-4 md:grid-cols-2">
-          <Info label="Room" value={`Room ${room.roomIndex}`} />
-          <Info label="Your assignment" value={room.assignmentLabel} />
-          <Info label="Your team" value={room.teamLabel ?? "Adjudicator panel"} />
-          <Info label="Chair" value={room.chair ?? "TBD"} />
-          <Info label="Teammates" value={room.teammates.length > 0 ? room.teammates.join(", ") : "None"} />
-          <Info label="Panel adjudicators" value={room.panel.length > 0 ? room.panel.join(", ") : "None"} />
-        </div>
+      <div className="space-y-5">
+        <Card className="overflow-hidden border-indigo-200 dark:border-indigo-400/25 bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(15,23,42,0.04))]">
+          <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_1fr]">
+            <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-4 sm:p-5 text-white shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] sm:text-xs uppercase tracking-[0.22em] text-indigo-300">Your assignment</div>
+                  <div className="mt-2 text-2xl sm:text-3xl font-semibold leading-tight truncate">{room.assignmentLabel}</div>
+                </div>
+                <div className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-center">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Room</div>
+                  <div className="text-xl font-semibold text-indigo-200 leading-tight">{room.roomIndex}</div>
+                </div>
+              </div>
+              <div className="mt-2 text-sm text-slate-300 truncate">
+                {room.teamLabel ?? "Adjudicator panel"} · Chair: {room.chair ?? "TBD"}
+              </div>
+            </div>
 
-        <div className="border-t border-slate-200 dark:border-white/10 pt-5">
-          <h3 className="mb-4 text-base font-semibold text-slate-900 dark:text-slate-100">Full room pairing</h3>
-          <div className="space-y-3">
+            <div className="hidden lg:grid gap-4">
+              <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Teammates</div>
+                <div className="mt-2 text-base font-semibold text-slate-950 dark:text-white">
+                  {room.teammates.length > 0 ? room.teammates.join(", ") : "None"}
+                </div>
+              </div>
+              <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
+                <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Panel adjudicators</div>
+                <div className="mt-2 text-base font-semibold text-slate-950 dark:text-white">
+                  {room.panel.length > 0 ? room.panel.join(", ") : "None"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+            <Info label="Teammates" value={room.teammates.length > 0 ? room.teammates.join(", ") : "None"} />
+            <Info label="Panel adjudicators" value={room.panel.length > 0 ? room.panel.join(", ") : "None"} />
+          </div>
+
+          <div className="lg:hidden my-4 border-t border-slate-200 dark:border-white/10" />
+
+          <h3 className="mb-3 text-base font-semibold text-slate-900 dark:text-slate-100">Full room pairing</h3>
+          <div className="grid grid-cols-2 gap-3">
             {room.teams.map((team) => (
-              <div key={team.bpPosition} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
+              <div key={team.bpPosition} className="rounded-xl border border-slate-200 dark:border-white/10 p-3 sm:p-4">
                 <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{team.bpPosition}</div>
                 <div className="text-sm text-slate-700 dark:text-slate-300">
                   {team.speakers.map((speaker) => `${speaker.name} (${speaker.speakingRole})`).join(", ")}
@@ -206,8 +242,8 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
               </div>
             ))}
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

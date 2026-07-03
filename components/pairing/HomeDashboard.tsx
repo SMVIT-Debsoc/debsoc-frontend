@@ -20,6 +20,7 @@ type HomeDashboardProps = {
   speakerLeaderboard: SpeakerLeaderboardRow[];
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   onOpenLeaderboards: () => void;
+  onOpenAdjudicatorLeaderboards?: () => void;
   onOpenWorkspace?: () => void;
 };
 
@@ -44,6 +45,7 @@ export default function HomeDashboard({
   speakerLeaderboard,
   adjudicatorLeaderboard,
   onOpenLeaderboards,
+  onOpenAdjudicatorLeaderboards,
   onOpenWorkspace,
 }: HomeDashboardProps) {
   const [lastSessionDetails, setLastSessionDetails] = useState<LastSessionDetails | null>(null);
@@ -184,7 +186,7 @@ export default function HomeDashboard({
           label="Adjudicator rank"
           rank={adjudicatorRank}
           helper="Current adjudicator leaderboard position"
-          onClick={onOpenLeaderboards}
+          onClick={onOpenAdjudicatorLeaderboards ?? onOpenLeaderboards}
         />
       </div>
 
