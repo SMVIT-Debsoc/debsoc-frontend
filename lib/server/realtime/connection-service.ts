@@ -138,6 +138,7 @@ export async function openRealtimeEventStream(
       let heartbeatId: ReturnType<typeof setInterval> | null = null;
       let brokerUnsubscribe: (() => void) | null = null;
       let localConnectionClose: (() => void) | null = null;
+      const deliveredEventIds = new Set<string>();
 
       const cleanup = () => {
         if (cleanedUp) {
@@ -170,6 +171,11 @@ export async function openRealtimeEventStream(
           return;
         }
 
+        if (deliveredEventIds.has(filtered.eventId)) {
+          return;
+        }
+
+        deliveredEventIds.add(filtered.eventId);
         writeSseEvent(controller, "message", filtered);
       };
 
@@ -183,20 +189,18 @@ export async function openRealtimeEventStream(
         subscriptions,
       });
 
+      const localConnection = acceptRealtimeConnection({
+        user,
+        subscriptions,
+        sessionParticipantIdsBySessionId,
+        onEvent: emitFiltered,
+      });
+      localConnectionClose = () => {
+        localConnection.close();
+      };
+
       if (hasRedisRealtimeBroker()) {
-        bootstrap.close();
         brokerUnsubscribe = subscribeToRealtimeBroker(emitFiltered);
-      } else {
-        bootstrap.close();
-        const localConnection = acceptRealtimeConnection({
-          user,
-          subscriptions,
-          sessionParticipantIdsBySessionId,
-          onEvent: (event) => writeSseEvent(controller, "message", event),
-        });
-        localConnectionClose = () => {
-          localConnection.close();
-        };
       }
 
       heartbeatId = setInterval(() => {
