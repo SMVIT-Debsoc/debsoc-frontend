@@ -325,7 +325,7 @@ export default function PairingDashboard({
     return content;
   }
 
-  const brand = isAdminView ? "Pairing (Admin)" : "Pairing";
+  const brand = isAdminView ? "Cabinet Dashboard" : "Pairing";
 
   return (
     <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">

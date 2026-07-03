@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
 import type {
   AdjudicatorLeaderboardRow,
@@ -97,6 +97,18 @@ export default function MyPairing({
     return map;
   }, [participants, speakerLeaderboard, adjudicatorLeaderboard, sessions]);
 
+  const candidateSessions = useMemo(
+    () => sessions.filter(isPublishedLike),
+    [sessions],
+  );
+  const candidateSessionKey = useMemo(
+    () => candidateSessions.map((session) => `${session.id}:${session.date}:${session.state}`).join("|") ,
+    [candidateSessions],
+  );
+  const globalNameMapRef = useRef(globalNameMap);
+  useEffect(() => {
+    globalNameMapRef.current = globalNameMap;
+  }, [globalNameMap]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionViews, setSessionViews] = useState<Array<{
@@ -107,12 +119,11 @@ export default function MyPairing({
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
-
   useEffect(() => {
     let cancelled = false;
 
     async function loadPairings() {
-      setLoading(true);
+      setLoading((current) => current || sessionViews.length === 0);
       setError(null);
 
       if (!currentParticipantId) {
@@ -122,12 +133,15 @@ export default function MyPairing({
       }
 
       try {
-        const candidateSessions = sessions.filter(isPublishedLike);
         const loaded = await Promise.all(
           candidateSessions.map(async (session) => {
             const response = await fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`);
             const publishedPairing = response.publishedPairing;
-            const names = { ...globalNameMap, ...participantNameMap(session), ...(response.participantNames ?? {}) };
+            const names = {
+              ...globalNameMapRef.current,
+              ...participantNameMap(session),
+              ...(response.participantNames ?? {}),
+            };
             const room = buildParticipantRoomView(session, publishedPairing, currentParticipantId, names);
             return { session, publishedPairing, room };
           }),
@@ -154,7 +168,7 @@ export default function MyPairing({
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId, sessions, globalNameMap]);
+  }, [currentParticipantId, candidateSessionKey]);
 
   const selected = useMemo(
     () => sessionViews.find((entry) => entry.session.id === selectedSessionId) ?? sessionViews[0] ?? null,
@@ -347,3 +361,6 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+
+

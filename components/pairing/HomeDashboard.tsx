@@ -150,7 +150,7 @@ export default function HomeDashboard({
     <div>
       <SectionHeader
         title="Home"
-        subtitle={`Welcome back, ${userName}. Here is your pairing dashboard summary.`}
+        subtitle={<span className="text-slate-500 dark:text-slate-300">Welcome back, <span className="font-semibold text-slate-900 dark:text-white">{userName}</span></span>}
         right={
           isAdmin && onOpenWorkspace ? (
             <PrimaryButton onClick={onOpenWorkspace}>
