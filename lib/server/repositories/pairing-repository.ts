@@ -83,6 +83,43 @@ function buildParticipantReferenceData(participantId: MemberId, participantKind:
   };
 }
 
+function buildSessionRoleAssignmentDataFromProposalRooms(
+  rooms: Array<{
+    teamAssignments: Array<{
+      speakerAssignments: Array<{
+        memberId: string | null;
+        cabinetId: string | null;
+        presidentId: string | null;
+      }>;
+    }>;
+    adjudicatorAssignments: Array<{
+      memberId: string | null;
+      cabinetId: string | null;
+      presidentId: string | null;
+      isChair: boolean;
+    }>;
+  }>,
+) {
+  return rooms.flatMap((room) => [
+    ...room.teamAssignments.flatMap((team) =>
+      team.speakerAssignments.map((speaker) => ({
+        memberId: speaker.memberId,
+        cabinetId: speaker.cabinetId,
+        presidentId: speaker.presidentId,
+        role: "speaker" as const,
+        isChair: false,
+      })),
+    ),
+    ...room.adjudicatorAssignments.map((adjudicator) => ({
+      memberId: adjudicator.memberId,
+      cabinetId: adjudicator.cabinetId,
+      presidentId: adjudicator.presidentId,
+      role: "adjudicator" as const,
+      isChair: adjudicator.isChair,
+    })),
+  ]);
+}
+
 function toSessionRole(role: string): SessionRole {
   return role === "adjudicator" ? "adjudicator" : "speaker";
 }
@@ -1329,6 +1366,29 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
         orderBy: [{ approvedAt: "desc" }, { proposalVersion: "desc" }],
         select: {
           id: true,
+          roomAssignments: {
+            select: {
+              teamAssignments: {
+                select: {
+                  speakerAssignments: {
+                    select: {
+                      memberId: true,
+                      cabinetId: true,
+                      presidentId: true,
+                    },
+                  },
+                },
+              },
+              adjudicatorAssignments: {
+                select: {
+                  memberId: true,
+                  cabinetId: true,
+                  presidentId: true,
+                  isChair: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -1346,6 +1406,24 @@ export function createPairingRepository(client: PairingRepositoryClient = prisma
           isPublishedOfficially: true,
         },
       });
+
+      const roleAssignments = buildSessionRoleAssignmentDataFromProposalRooms(
+        approvedProposal.roomAssignments,
+      );
+      await tx.sessionRoleAssignment.deleteMany({ where: { sessionId: input.sessionId } });
+      if (roleAssignments.length > 0) {
+        await tx.sessionRoleAssignment.createMany({
+          data: roleAssignments.map((assignment) => ({
+            sessionId: input.sessionId,
+            role: assignment.role,
+            isChair: assignment.isChair,
+            roleAssignedAt: publishedAt,
+            memberId: assignment.memberId,
+            cabinetId: assignment.cabinetId,
+            presidentId: assignment.presidentId,
+          })),
+        });
+      }
 
       await tx.debateSession.update({
         where: { id: input.sessionId },
