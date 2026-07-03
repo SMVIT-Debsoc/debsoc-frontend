@@ -18,7 +18,7 @@ export default function PairingBackdrop() {
         width={600}
         height={140}
         rotate={12}
-        gradient="from-indigo-500/[0.16]"
+        gradient="from-indigo-500/[0.32] dark:from-indigo-500/[0.16]"
         className="left-[-12%] top-[8%]"
       />
       <ElegantShape
@@ -26,7 +26,7 @@ export default function PairingBackdrop() {
         width={480}
         height={120}
         rotate={-15}
-        gradient="from-blue-500/[0.14]"
+        gradient="from-blue-500/[0.30] dark:from-blue-500/[0.14]"
         className="right-[-8%] top-[62%]"
       />
       <ElegantShape
@@ -34,7 +34,7 @@ export default function PairingBackdrop() {
         width={300}
         height={80}
         rotate={-8}
-        gradient="from-violet-500/[0.12]"
+        gradient="from-violet-500/[0.28] dark:from-violet-500/[0.12]"
         className="left-[4%] bottom-[6%]"
       />
       <ElegantShape
@@ -42,7 +42,7 @@ export default function PairingBackdrop() {
         width={220}
         height={64}
         rotate={20}
-        gradient="from-sky-500/[0.12]"
+        gradient="from-sky-500/[0.28] dark:from-sky-500/[0.12]"
         className="right-[14%] top-[12%]"
       />
     </div>
