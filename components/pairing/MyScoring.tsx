@@ -25,6 +25,7 @@ type TaskStatusResponse = {
 
 type PublishedPairingResponse = {
   publishedPairing: PublishedPairingView;
+  participantNames?: Record<string, string>;
 };
 
 type ScoringTaskView = {
@@ -52,10 +53,6 @@ function participantNameMap(session: SessionRow) {
       return participantId && name ? [[participantId, name]] : []
     }),
   ) as Record<string, string>;
-}
-
-function formatTaskLabel(session: SessionRow) {
-  return `${session.date} | ${session.motionType}`;
 }
 
 function isPublishedLike(session: SessionRow) {
@@ -149,7 +146,10 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
               return null;
             }
 
-            const names = participantNameMap(session);
+            const names = {
+              ...participantNameMap(session),
+              ...(publishedResponse.participantNames ?? {}),
+            };
             const room = (publishedPairing.rooms ?? []).find(
               (entry) =>
                 entry.teams.some((team) =>
@@ -170,12 +170,14 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
               const chairParticipantId = room.adjudicators.find((adjudicator) => adjudicator.isChair)?.participantId;
               return {
                 sessionId: session.id,
-                sessionLabel: formatTaskLabel(session),
+                sessionLabel: `${session.date} | ${publishedPairing.motionType}`,
                 motionType: publishedPairing.motionType,
                 role: "speaker" as const,
                 hasSubmitted: visibleTask.hasSubmitted,
                 scoringStatus: scoringStatus.scoringStatus,
-                chairName: chairParticipantId ? names[chairParticipantId] ?? session.assignedChairLabel : session.assignedChairLabel,
+                chairName: chairParticipantId
+                  ? names[chairParticipantId] ?? session.assignedChairLabel ?? session.chair
+                  : session.assignedChairLabel ?? session.chair,
                 panel: [],
                 speakers: room.teams.flatMap((team) =>
                   team.speakers.map((speaker) => ({
@@ -195,12 +197,12 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
 
             return {
               sessionId: session.id,
-              sessionLabel: formatTaskLabel(session),
+              sessionLabel: `${session.date} | ${publishedPairing.motionType}`,
               motionType: publishedPairing.motionType,
               role: "chair" as const,
               hasSubmitted: visibleTask.hasSubmitted,
               scoringStatus: scoringStatus.scoringStatus,
-              chairName: names[chairId] ?? session.assignedChairLabel,
+              chairName: names[chairId] ?? session.assignedChairLabel ?? session.chair,
               panel: room.adjudicators
                 .filter((adjudicator) => !adjudicator.isChair)
                 .map((adjudicator) => ({
