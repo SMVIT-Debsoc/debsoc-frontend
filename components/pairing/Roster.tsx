@@ -167,7 +167,7 @@ export default function Roster({
       {filteredParticipants.length === 0 ? (
         <EmptyState title="No matching participants" body="Try a different search term." />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {filteredParticipants.map((participant, index) => (
             <motion.div
               key={participant.id}
@@ -179,18 +179,18 @@ export default function Roster({
                 ease: [0.16, 1, 0.3, 1],
               }}
               whileHover={reduce ? undefined : { y: -3 }}
-              className="lg-tile flex flex-col gap-5 p-5"
+              className="lg-tile flex min-w-0 flex-col gap-3 p-3 sm:gap-5 sm:p-5"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                <div className="flex w-full min-w-0 items-center gap-2 sm:gap-3">
                   <span
-                    className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_16px_-6px_rgba(79,70,229,0.5)]"
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-blue-600 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_16px_-6px_rgba(79,70,229,0.5)] sm:h-11 sm:w-11 sm:text-sm"
                     aria-hidden
                   >
                     {getInitials(participant.name)}
                   </span>
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100 sm:text-base">
                       {participant.name}
                     </div>
                   </div>
@@ -204,7 +204,7 @@ export default function Roster({
                     setModalTab("overview");
                     setSelectedParticipantId(participant.id);
                   }}
-                  className="lg-button group mt-auto inline-flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium active:scale-[0.98]"
+                  className="lg-button group mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-medium active:scale-[0.98] sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm"
                 >
                   View progress
                   <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
@@ -212,8 +212,8 @@ export default function Roster({
                   </span>
                 </button>
               ) : (
-                <span className="mt-auto rounded-xl border border-dashed border-zinc-300/70 px-3 py-2.5 text-center text-sm text-zinc-400 dark:border-white/10 dark:text-zinc-500">
-                  No progress data yet
+                <span className="mt-auto rounded-xl border border-dashed border-zinc-300/70 px-2 py-2 text-center text-xs text-zinc-400 dark:border-white/10 dark:text-zinc-500 sm:px-3 sm:py-2.5 sm:text-sm">
+                  No progress yet
                 </span>
               )}
             </motion.div>
