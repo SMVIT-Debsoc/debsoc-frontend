@@ -1,6 +1,6 @@
 import { dashboardRepository } from "../repositories/dashboard-repository.ts";
 import { getOrLoad } from "../cache/cache.ts";
-import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
+import { cacheKeys, CACHE_TAGS, CACHE_TTL } from "../cache/keys.ts";
 
 // Cached dashboard bootstrap read. Carries both `sessions` and `roster` tags so
 // it is invalidated by session/attendance changes and by roster changes
@@ -9,7 +9,7 @@ import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
 export function getDashboardBootstrap() {
   return getOrLoad(
     cacheKeys.bootstrap(),
-    { tags: [CACHE_TAGS.sessions, CACHE_TAGS.roster] },
+    { tags: [CACHE_TAGS.sessions, CACHE_TAGS.roster], ...CACHE_TTL.bootstrap },
     () => dashboardRepository.getBootstrapData(),
   );
 }
@@ -65,7 +65,7 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
 
   return getOrLoad(
     cacheKeys.selfAttendance(role, userId),
-    { tags: [CACHE_TAGS.sessions] },
+    { tags: [CACHE_TAGS.sessions], ...CACHE_TTL.attendance },
     async () => {
       const where =
         role === "cabinet"

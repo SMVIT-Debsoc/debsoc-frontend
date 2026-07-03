@@ -5,6 +5,8 @@ import type {
   ProposalRatingPayload,
 } from "../../../types/pairing.ts";
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { invalidateTags } from "../cache/cache.ts";
+import { CACHE_TAGS } from "../cache/keys.ts";
 import { generatePairingProposal } from "./engine.ts";
 import type { PairingProposalResult } from "./types.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
@@ -102,6 +104,7 @@ export function createPairingReviewService(
   async function approveProposal(proposalId: string, reviewerId: string): Promise<ProposalApprovalResult> {
     try {
       const proposal = await repository.approveProposalReviewAction(proposalId, reviewerId);
+      await invalidateTags([CACHE_TAGS.sessions]);
       await publishEvent(proposal.sessionId, {
         eventId: `pairing.proposal.approved:${proposal.proposalId}:${proposal.approvedAt ?? proposal.generatedAt}`,
         eventType: "pairing.proposal.approved",
@@ -127,6 +130,7 @@ export function createPairingReviewService(
         payload: input.payload,
         notes: input.notes,
       });
+      await invalidateTags([CACHE_TAGS.sessions]);
       await publishEvent(proposal.summary.sessionId, {
         eventId: `pairing.proposal.overridden:${proposal.summary.proposalId}:${proposal.summary.approvedAt ?? proposal.summary.generatedAt}`,
         eventType: "pairing.proposal.overridden",
@@ -152,6 +156,7 @@ export function createPairingReviewService(
         seed: input.seed,
       });
       if (result.ok) {
+        await invalidateTags([CACHE_TAGS.sessions]);
         await publishEvent(target.sessionId, {
           eventId: `pairing.proposal.regenerated:${result.proposal.summary.proposalId}:${result.proposal.summary.generatedAt}`,
           eventType: "pairing.proposal.regenerated",
@@ -204,6 +209,5 @@ export function createPairingReviewService(
 }
 
 export const { getProposalView, approveProposal, overrideProposal, regenerateProposal, rateProposal } = createPairingReviewService();
-
 
 

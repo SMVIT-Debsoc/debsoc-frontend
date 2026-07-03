@@ -1,9 +1,12 @@
 import { broadcastRealtimeEvent } from "./websocket-hub.ts";
+import { publishRealtimeBrokerEvent } from "./redis-broker.ts";
 import type { RealtimeEventEnvelope } from "../../../types/realtime.ts";
 
 export async function publishRealtimeEvent(event: RealtimeEventEnvelope) {
   try {
-    return broadcastRealtimeEvent(event);
+    const localResult = broadcastRealtimeEvent(event);
+    await publishRealtimeBrokerEvent(event);
+    return localResult;
   } catch (error) {
     console.error("Realtime publish failed", error);
     return {

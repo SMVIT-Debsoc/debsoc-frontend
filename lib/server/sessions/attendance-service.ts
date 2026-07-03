@@ -89,6 +89,8 @@ export function createAttendanceService(
       throw new Error(`Session ${input.sessionId} preparation context is unavailable after attendance mark.`);
     }
 
+    await invalidateTags([CACHE_TAGS.sessions]);
+
     await publishEvent(input.sessionId, {
       eventId: `attendance.marked:${input.sessionId}:${Date.now()}`,
       eventType: "attendance.marked",
@@ -99,8 +101,6 @@ export function createAttendanceService(
       refetchHints: ["session_detail"],
       entityVersion: context.session.pairingStatus,
     });
-
-    await invalidateTags([CACHE_TAGS.sessions]);
 
     return context;
   }

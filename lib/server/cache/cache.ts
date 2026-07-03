@@ -109,16 +109,33 @@ export async function getOrLoad<T>(
     }
   }
 
-  // Miss -> source of truth
+  // Miss -> source of truth. Single-flight: if another request for the same key
+  // is already loading, wait for it instead of issuing a duplicate DB query.
+  // This prevents a cache stampede when a hot key expires while many clients
+  // (e.g. 30s dashboard polling) hit it at once.
+  const inFlight = inFlightLoads.get(key);
+  if (inFlight) {
+    return (await inFlight) as T;
+  }
+
   cacheStats.misses += 1;
-  const value = await loader();
-
-  // Populate L1 always; L2 best-effort.
-  l1Set(key, value, l1Ttl, options.tags);
-  void writeToL2(key, value, l2Ttl, options.tags);
-
-  return value;
+  const loadPromise = (async () => {
+    const value = await loader();
+    // Populate L1 always; L2 best-effort.
+    l1Set(key, value, l1Ttl, options.tags);
+    void writeToL2(key, value, l2Ttl, options.tags);
+    return value;
+  })();
+  inFlightLoads.set(key, loadPromise);
+  try {
+    return (await loadPromise) as T;
+  } finally {
+    inFlightLoads.delete(key);
+  }
 }
+
+// Coalesces concurrent cache-miss loads for the same key within this process.
+const inFlightLoads = new Map<string, Promise<unknown>>();
 
 async function writeToL2(
   key: string,

@@ -2,8 +2,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
 import { authenticateRole, normalizeEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
-import { invalidateTags } from "@/lib/server/cache/cache";
-import { CACHE_TAGS } from "@/lib/server/cache/keys";
+import { getOrLoad, invalidateTags } from "@/lib/server/cache/cache";
+import { CACHE_TAGS, cacheKeys } from "@/lib/server/cache/keys";
 
 // Roster mutations (register/verify/unverify/delete/role-change) all alter the
 // members/cabinet/presidents lists the dashboard bootstrap reads, so each
@@ -405,7 +405,7 @@ async function changeEntityRoleImpl(
   };
 }
 
-export async function getUnverifiedUsers() {
+async function getUnverifiedUsersImpl() {
   const [unverifiedPresidents, unverifiedCabinet, unverifiedMembers] = await Promise.all([
     prisma.president.findMany({
       where: { isVerified: false },
@@ -424,7 +424,7 @@ export async function getUnverifiedUsers() {
   return { unverifiedPresidents, unverifiedCabinet, unverifiedMembers };
 }
 
-export async function getVerifiedUsers() {
+async function getVerifiedUsersImpl() {
   const [verifiedPresidents, verifiedCabinet, verifiedMembers] = await Promise.all([
     prisma.president.findMany({
       where: { isVerified: true },
@@ -442,3 +442,12 @@ export async function getVerifiedUsers() {
 
   return { verifiedPresidents, verifiedCabinet, verifiedMembers };
 }
+
+// Roster read lists for the TechHead dashboard. Cached under the `roster` tag,
+// which every roster mutation (verify/unverify/delete/role-change/register)
+// already invalidates.
+export const getUnverifiedUsers: typeof getUnverifiedUsersImpl = () =>
+  getOrLoad(cacheKeys.unverifiedUsers(), { tags: [CACHE_TAGS.roster] }, getUnverifiedUsersImpl);
+
+export const getVerifiedUsers: typeof getVerifiedUsersImpl = () =>
+  getOrLoad(cacheKeys.verifiedUsers(), { tags: [CACHE_TAGS.roster] }, getVerifiedUsersImpl);

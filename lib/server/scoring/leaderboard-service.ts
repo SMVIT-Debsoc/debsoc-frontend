@@ -6,7 +6,7 @@ import type {
 } from "../../../types/scoring.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
 import { getOrLoad } from "../cache/cache.ts";
-import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
+import { cacheKeys, CACHE_TAGS, CACHE_TTL } from "../cache/keys.ts";
 
 interface LeaderboardRepositoryContract {
   getSpeakerLeaderboardRawData(): Promise<SpeakerLeaderboardResponse["leaderboard"]>;
@@ -66,27 +66,36 @@ const service = createLeaderboardService();
 export const recomputeSpeakerLeaderboard: typeof service.recomputeSpeakerLeaderboard = () =>
   getOrLoad(
     cacheKeys.speakerLeaderboard("all"),
-    { tags: [CACHE_TAGS.leaderboard] },
+    { tags: [CACHE_TAGS.leaderboard], ...CACHE_TTL.leaderboard },
     () => service.recomputeSpeakerLeaderboard(),
   );
 
 export const recomputeAdjudicatorLeaderboard: typeof service.recomputeAdjudicatorLeaderboard = () =>
   getOrLoad(
     cacheKeys.adjudicatorLeaderboard("all"),
-    { tags: [CACHE_TAGS.leaderboard] },
+    { tags: [CACHE_TAGS.leaderboard], ...CACHE_TTL.leaderboard },
     () => service.recomputeAdjudicatorLeaderboard(),
   );
 
 export const getParticipantProgressSummaries: typeof service.getParticipantProgressSummaries = () =>
   getOrLoad(
     cacheKeys.progressSummaries(),
-    { tags: [CACHE_TAGS.progress] },
+    { tags: [CACHE_TAGS.progress], ...CACHE_TTL.progress },
     () => service.getParticipantProgressSummaries(),
+  );
+
+// Individual progress profile — member-facing (own progress) and admin roster.
+export const getParticipantProgressProfile: typeof service.getParticipantProgressProfile = (
+  participantId,
+) =>
+  getOrLoad(
+    cacheKeys.progressProfile(participantId),
+    { tags: [CACHE_TAGS.progress], ...CACHE_TTL.progress },
+    () => service.getParticipantProgressProfile(participantId),
   );
 
 export const {
   recomputeChairDerivedStats,
-  getParticipantProgressProfile,
   getParticipantProgressSummary,
 } = service;
 

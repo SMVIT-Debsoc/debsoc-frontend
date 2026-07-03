@@ -104,7 +104,12 @@ export default function ParticipantPairingDashboard({
         />
       )}
       {activeTab === "MyScoring" && (
-        <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} />
+        <MyScoring
+          role={role}
+          sessions={sessions}
+          attendanceHistory={attendanceHistory}
+          onRefresh={onRefresh}
+        />
       )}
       {activeTab === "SpeakerLeaderboard" && (
         <Leaderboards

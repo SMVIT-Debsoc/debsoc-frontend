@@ -6,6 +6,8 @@ import type {
   ParticipantKind,
 } from "../../../types/pairing.ts";
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { invalidateTags } from "../cache/cache.ts";
+import { CACHE_TAGS } from "../cache/keys.ts";
 import { metricsRepository } from "../repositories/metrics-repository.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { generateCandidateProposals } from "./candidate-generator.ts";
@@ -226,6 +228,8 @@ export function createPairingEngine(
       participantKindsById: buildParticipantKindsById(scoringContext),
       audit,
     });
+
+    await invalidateTags([CACHE_TAGS.sessions]);
 
     await publishEvent(input.sessionId, {
       eventId: `pairing.proposal.generated:${proposal.summary.proposalId}:${proposal.summary.generatedAt}`,

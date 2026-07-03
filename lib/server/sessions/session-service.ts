@@ -299,6 +299,8 @@ export function createSessionService(
       chair: input.chair,
     });
 
+    await invalidateTags([CACHE_TAGS.sessions]);
+
     await publishEvent(created.sessionId, {
       eventId: `session.created:${created.sessionId}:${Date.now()}`,
       eventType: "session.updated",
@@ -309,8 +311,6 @@ export function createSessionService(
       refetchHints: ["session_detail"],
       entityVersion: `${created.pairingStatus}:${created.publicationStatus}:${created.scoringStatus}`,
     });
-
-    await invalidateTags([CACHE_TAGS.sessions]);
 
     return created;
   }
@@ -441,6 +441,8 @@ export function createSessionService(
 
     const view = toSessionMetadataView(updated);
 
+    await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress, CACHE_TAGS.leaderboard]);
+
     await publishEvent(input.sessionId, {
       eventId: `session.updated:${input.sessionId}:${Date.now()}`,
       eventType: "session.updated",
@@ -477,8 +479,6 @@ export function createSessionService(
         entityVersion: view.scoringStatus,
       });
     }
-
-    await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress, CACHE_TAGS.leaderboard]);
 
     return view;
   }

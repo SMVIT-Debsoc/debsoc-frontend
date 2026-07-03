@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
 import PairingBackdrop from "./PairingBackdrop";
+import { usePairingRealtime } from "./usePairingRealtime";
 import AdminPairingDashboard, {
   ADMIN_TABS,
   type AdminTab,
@@ -23,6 +24,7 @@ import type {
   SessionRow,
   SpeakerLeaderboardRow,
 } from "./types";
+import type { RealtimeEventEnvelope, RealtimeSubscription } from "@/types/realtime";
 
 type PairingDashboardProps = {
   role: string;
@@ -89,6 +91,11 @@ export default function PairingDashboard({
 
   const [primaryDataVersion, setPrimaryDataVersion] = useState(0);
   const refreshPrimaryData = () => setPrimaryDataVersion((v) => v + 1);
+  const [leaderboardDataVersion, setLeaderboardDataVersion] = useState(0);
+  const refreshLeaderboardData = () => setLeaderboardDataVersion((v) => v + 1);
+  const [workspaceRealtimeEvent, setWorkspaceRealtimeEvent] = useState<RealtimeEventEnvelope | null>(null);
+  const primaryRefreshTimeoutRef = useRef<number | null>(null);
+  const leaderboardRefreshTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,7 +196,90 @@ export default function PairingDashboard({
     return () => {
       cancelled = true;
     };
-  }, [state.leaderboardScope]);
+  }, [leaderboardDataVersion, state.leaderboardScope]);
+
+  const realtimeRelevantSessions = useMemo(
+    () =>
+      state.sessions.filter(
+        (session) => session.state !== "Completed" && session.state !== "Scored",
+      ),
+    [state.sessions],
+  );
+
+  const realtimeSubscriptions = useMemo(() => {
+    const sessionIds = [...new Set(realtimeRelevantSessions.map((session) => session.id).filter(Boolean))];
+    const subscriptions: RealtimeSubscription[] = [{ scope: "LEADERBOARD" }];
+
+    for (const sessionId of sessionIds) {
+      if (isAdminView) {
+        subscriptions.push({ scope: "SESSION_ADMIN", sessionId });
+      }
+
+      if (role !== "TechHead") {
+        subscriptions.push({ scope: "SESSION_PUBLISHED", sessionId });
+      }
+
+      subscriptions.push({ scope: "SESSION_SCORING", sessionId });
+    }
+
+    return subscriptions;
+  }, [isAdminView, realtimeRelevantSessions, role]);
+
+  const schedulePrimaryRefresh = () => {
+    if (primaryRefreshTimeoutRef.current !== null) {
+      return;
+    }
+
+    primaryRefreshTimeoutRef.current = window.setTimeout(() => {
+      primaryRefreshTimeoutRef.current = null;
+      refreshPrimaryData();
+    }, 250);
+  };
+
+  const scheduleLeaderboardRefresh = () => {
+    if (leaderboardRefreshTimeoutRef.current !== null) {
+      return;
+    }
+
+    leaderboardRefreshTimeoutRef.current = window.setTimeout(() => {
+      leaderboardRefreshTimeoutRef.current = null;
+      refreshLeaderboardData();
+    }, 250);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (primaryRefreshTimeoutRef.current !== null) {
+        window.clearTimeout(primaryRefreshTimeoutRef.current);
+      }
+      if (leaderboardRefreshTimeoutRef.current !== null) {
+        window.clearTimeout(leaderboardRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  usePairingRealtime({
+    enabled: true,
+    subscriptions: realtimeSubscriptions,
+    onBootstrap() {
+      schedulePrimaryRefresh();
+      scheduleLeaderboardRefresh();
+    },
+    onEvent(event) {
+      setWorkspaceRealtimeEvent(event);
+      if (event.refetchHints.includes("leaderboard")) {
+        scheduleLeaderboardRefresh();
+      }
+
+      if (
+        event.refetchHints.includes("session_detail") ||
+        event.refetchHints.includes("published_pairing") ||
+        event.refetchHints.includes("scoring_status")
+      ) {
+        schedulePrimaryRefresh();
+      }
+    },
+  });
 
   const selectTab = (key: string) => {
     if (isAdminView) {
@@ -288,6 +378,8 @@ export default function PairingDashboard({
       onOpenWorkspace={() => setAdminTab("Workspace")}
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
+      onRefresh={refreshPrimaryData}
+      workspaceRealtimeEvent={workspaceRealtimeEvent}
       activeTab={adminTab}
     />
   ) : (
@@ -309,6 +401,7 @@ export default function PairingDashboard({
       }
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
+      onRefresh={refreshPrimaryData}
       activeTab={participantTab}
     />
   );
@@ -957,11 +1050,6 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
-
-
-
-
-
 
 
 
