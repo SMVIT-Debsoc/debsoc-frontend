@@ -44,6 +44,7 @@ export type SessionRow = {
   id: string;
   date: string;
   motionType: string;
+  motionText?: string;
   chair?: string;
   assignedChairLabel?: string;
   participantAssignmentLabels?: Record<string, string>;
@@ -153,4 +154,3 @@ export type WorkspaceSessionData = {
   publishedPairing: PublishedPairingView | null;
   scoringStatus: SessionScoringStatusResponse | null;
 };
-
