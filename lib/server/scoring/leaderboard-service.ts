@@ -5,6 +5,8 @@ import type {
   SpeakerLeaderboardResponse,
 } from "../../../types/scoring.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
+import { getOrLoad } from "../cache/cache.ts";
+import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
 
 interface LeaderboardRepositoryContract {
   getSpeakerLeaderboardRawData(): Promise<SpeakerLeaderboardResponse["leaderboard"]>;
@@ -56,12 +58,35 @@ export function createLeaderboardService(
   };
 }
 
+const service = createLeaderboardService();
+
+// Cache the hot dashboard reads. The pure factory above stays uncached so
+// tests can inject fakes without cross-test cache bleed; caching is applied
+// only to the shared singleton used by the API routes.
+export const recomputeSpeakerLeaderboard: typeof service.recomputeSpeakerLeaderboard = () =>
+  getOrLoad(
+    cacheKeys.speakerLeaderboard("all"),
+    { tags: [CACHE_TAGS.leaderboard] },
+    () => service.recomputeSpeakerLeaderboard(),
+  );
+
+export const recomputeAdjudicatorLeaderboard: typeof service.recomputeAdjudicatorLeaderboard = () =>
+  getOrLoad(
+    cacheKeys.adjudicatorLeaderboard("all"),
+    { tags: [CACHE_TAGS.leaderboard] },
+    () => service.recomputeAdjudicatorLeaderboard(),
+  );
+
+export const getParticipantProgressSummaries: typeof service.getParticipantProgressSummaries = () =>
+  getOrLoad(
+    cacheKeys.progressSummaries(),
+    { tags: [CACHE_TAGS.progress] },
+    () => service.getParticipantProgressSummaries(),
+  );
+
 export const {
-  recomputeSpeakerLeaderboard,
-  recomputeAdjudicatorLeaderboard,
   recomputeChairDerivedStats,
-  getParticipantProgressSummaries,
   getParticipantProgressProfile,
   getParticipantProgressSummary,
-} = createLeaderboardService();
+} = service;
 

@@ -2,8 +2,30 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/server/prisma";
 import { authenticateRole, normalizeEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
+import { invalidateTags } from "@/lib/server/cache/cache";
+import { CACHE_TAGS } from "@/lib/server/cache/keys";
 
-export async function registerRole(
+// Roster mutations (register/verify/unverify/delete/role-change) all alter the
+// members/cabinet/presidents lists the dashboard bootstrap reads, so each
+// wrapped export drops the `roster` cache tag after a successful write.
+async function withRosterInvalidation<T>(run: () => Promise<T>): Promise<T> {
+  const result = await run();
+  await invalidateTags([CACHE_TAGS.roster]);
+  return result;
+}
+
+export const registerRole: typeof registerRoleImpl = (...args) =>
+  withRosterInvalidation(() => registerRoleImpl(...args));
+export const verifyEntity: typeof verifyEntityImpl = (...args) =>
+  withRosterInvalidation(() => verifyEntityImpl(...args));
+export const unverifyEntity: typeof unverifyEntityImpl = (...args) =>
+  withRosterInvalidation(() => unverifyEntityImpl(...args));
+export const deleteEntity: typeof deleteEntityImpl = (...args) =>
+  withRosterInvalidation(() => deleteEntityImpl(...args));
+export const changeEntityRole: typeof changeEntityRoleImpl = (...args) =>
+  withRosterInvalidation(() => changeEntityRoleImpl(...args));
+
+async function registerRoleImpl(
   role: "President" | "cabinet" | "Member",
   input: { name?: string; email?: string; password?: string; position?: string },
 ) {
@@ -97,7 +119,7 @@ export async function loginRole(role: DebsocRole, input: { email?: string; passw
   };
 }
 
-export async function verifyEntity(
+async function verifyEntityImpl(
   entity: "president" | "cabinet" | "member",
   entityId: string,
   techHeadId: string,
@@ -159,7 +181,7 @@ export async function verifyEntity(
   };
 }
 
-export async function unverifyEntity(
+async function unverifyEntityImpl(
   entity: "president" | "cabinet" | "member",
   entityId: string,
 ) {
@@ -220,7 +242,7 @@ export async function unverifyEntity(
   };
 }
 
-export async function deleteEntity(entity: "president" | "cabinet" | "member", id: string) {
+async function deleteEntityImpl(entity: "president" | "cabinet" | "member", id: string) {
   if (!id) {
     throw new Error("ID is required");
   }
@@ -304,7 +326,7 @@ async function assertEmailAvailableForRole(role: RoleKey, email: string) {
   }
 }
 
-export async function changeEntityRole(
+async function changeEntityRoleImpl(
   fromRole: RoleKey,
   toRole: RoleKey,
   id: string,

@@ -1,6 +1,8 @@
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
+import { invalidateTags } from "../cache/cache.ts";
+import { CACHE_TAGS } from "../cache/keys.ts";
 import type { AttendancePreparationRequest, MarkAttendanceRequest, SessionPreparationContextResponse } from "../../../types/session.ts";
 
 interface SessionRepositoryContract {
@@ -97,6 +99,8 @@ export function createAttendanceService(
       refetchHints: ["session_detail"],
       entityVersion: context.session.pairingStatus,
     });
+
+    await invalidateTags([CACHE_TAGS.sessions]);
 
     return context;
   }

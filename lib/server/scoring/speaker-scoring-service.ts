@@ -1,6 +1,8 @@
 import type { ScoreSubmissionResponse, SpeakerScoringRequest } from "../../../types/scoring.ts";
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
+import { invalidateTags } from "../cache/cache.ts";
+import { CACHE_TAGS } from "../cache/keys.ts";
 
 export class SpeakerScoringError extends Error {
   code:
@@ -178,6 +180,8 @@ export function createSpeakerScoringService(
       entityVersion: context.proposalId,
       audienceParticipantIds: context.roles.map((entry) => entry.participantId),
     });
+
+    await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
 
     return { sessionId: input.sessionId, accepted: true };
   }

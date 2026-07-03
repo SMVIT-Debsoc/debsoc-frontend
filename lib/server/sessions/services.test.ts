@@ -136,3 +136,50 @@ test("illegal lifecycle transition is guarded before generation-ready state", as
     /Illegal lifecycle transition|Cannot move session forward/,
   );
 });
+
+test("member scoring-status read returns an empty task list when they have no scoring obligation", async () => {
+  const repo = createInMemorySessionRepo();
+  const sessionService = createSessionService(repo as never, {
+    async getPublishedScoringContext() {
+      return {
+        sessionId: "session-1",
+        proposalId: "proposal-1",
+        motionType: "BP",
+        publicationStatus: "published",
+        roles: [
+          { participantId: "speaker-1", role: "speaker", isChair: false },
+          { participantId: "chair-1", role: "adjudicator", isChair: true },
+          { participantId: "panel-1", role: "adjudicator", isChair: false },
+        ],
+        rooms: [
+          {
+            roomIndex: 0,
+            speakers: [{ participantId: "speaker-1", bpPosition: "OG", speakingRole: "PM" }],
+            adjudicators: [
+              { participantId: "chair-1", isChair: true },
+              { participantId: "panel-1", isChair: false },
+            ],
+          },
+        ],
+      };
+    },
+    async getChairFeedbackBySession() {
+      return [];
+    },
+    async getAdjudicatorScoreRecordsBySession() {
+      return [];
+    },
+    async getSpeakerScoreRecordsBySession() {
+      return [];
+    },
+  } as never);
+
+  const result = await sessionService.getSessionScoringStatus({
+    sessionId: "session-1",
+    viewerId: "panel-1",
+    viewerRole: "Member",
+  });
+
+  assert.deepEqual(result.tasks, []);
+  assert.equal(result.scoringStatus, "pending");
+});
