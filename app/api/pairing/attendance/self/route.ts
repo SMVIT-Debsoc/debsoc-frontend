@@ -14,6 +14,17 @@ type AttendanceItem = {
   session: { id: string; sessionDate: Date | string; motiontype: string; Chair: string };
 };
 
+type PublishedSessionItem = {
+  id: string;
+  sessionDate: Date | string;
+  motiontype: string;
+  motionType: string | null;
+  Chair: string;
+  pairingStatus: string | null;
+  publicationStatus: string | null;
+  scoringStatus: string | null;
+};
+
 type AttendancePeer = {
   memberId?: string | null;
   cabinetId?: string | null;
@@ -73,6 +84,53 @@ export async function GET() {
     },
   });
 
+  const publishedSessions = await prisma.debateSession.findMany({
+    where: {
+      publicationStatus: "PUBLISHED",
+      OR: [
+        { attendance: { some: where } },
+        { sessionRoleAssignments: { some: where } },
+        {
+          publishedProposal: {
+            roomAssignments: {
+              some: {
+                teamAssignments: {
+                  some: {
+                    speakerAssignments: {
+                      some: where,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        {
+          publishedProposal: {
+            roomAssignments: {
+              some: {
+                adjudicatorAssignments: {
+                  some: where,
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    orderBy: { sessionDate: "desc" },
+    select: {
+      id: true,
+      sessionDate: true,
+      motiontype: true,
+      motionType: true,
+      Chair: true,
+      pairingStatus: true,
+      publicationStatus: true,
+      scoringStatus: true,
+    },
+  });
+
   attendance.sort(
     (
       a: { session: { sessionDate: Date | string } },
@@ -116,5 +174,16 @@ export async function GET() {
     }),
   );
 
-  return ok({ attendance: enrichedAttendance });
+  return ok({
+    attendance: enrichedAttendance,
+    publishedSessions: (publishedSessions as PublishedSessionItem[]).map((session) => ({
+      id: session.id,
+      sessionDate: session.sessionDate,
+      motiontype: session.motionType ?? session.motiontype,
+      Chair: session.Chair,
+      pairingStatus: session.pairingStatus,
+      publicationStatus: session.publicationStatus,
+      scoringStatus: session.scoringStatus,
+    })),
+  });
 }
