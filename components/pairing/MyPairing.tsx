@@ -2,13 +2,22 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
-import type { AttendanceHistoryItem, SessionRow } from "./types";
+import type {
+  AdjudicatorLeaderboardRow,
+  AttendanceHistoryItem,
+  Participant,
+  SessionRow,
+  SpeakerLeaderboardRow,
+} from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
 
 type MyPairingProps = {
   role: string;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
+  participants?: Participant[];
+  speakerLeaderboard?: SpeakerLeaderboardRow[];
+  adjudicatorLeaderboard?: AdjudicatorLeaderboardRow[];
 };
 
 type PublishedPairingResponse = {
@@ -64,7 +73,29 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export default function MyPairing({ role, sessions, attendanceHistory }: MyPairingProps) {
+export default function MyPairing({
+  role,
+  sessions,
+  attendanceHistory,
+  participants = [],
+  speakerLeaderboard = [],
+  adjudicatorLeaderboard = [],
+}: MyPairingProps) {
+  const globalNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of participants) if (p.id && p.name) map[p.id] = p.name;
+    for (const r of speakerLeaderboard) if (r.id && r.name) map[r.id] = r.name;
+    for (const r of adjudicatorLeaderboard) if (r.id && r.name) map[r.id] = r.name;
+    for (const s of sessions) {
+      for (const a of s.attendance ?? []) {
+        for (const src of [a.member, a.cabinet, a.president]) {
+          if (src?.id && src?.name) map[src.id] = src.name;
+        }
+      }
+    }
+    return map;
+  }, [participants, speakerLeaderboard, adjudicatorLeaderboard, sessions]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionViews, setSessionViews] = useState<Array<{
@@ -95,7 +126,7 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
           candidateSessions.map(async (session) => {
             const response = await fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`);
             const publishedPairing = response.publishedPairing;
-            const names = participantNameMap(session);
+            const names = { ...globalNameMap, ...participantNameMap(session) };
             const room = buildParticipantRoomView(session, publishedPairing, currentParticipantId, names);
             return { session, publishedPairing, room };
           }),
@@ -122,7 +153,7 @@ export default function MyPairing({ role, sessions, attendanceHistory }: MyPairi
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId, sessions]);
+  }, [currentParticipantId, sessions, globalNameMap]);
 
   const selected = useMemo(
     () => sessionViews.find((entry) => entry.session.id === selectedSessionId) ?? sessionViews[0] ?? null,
