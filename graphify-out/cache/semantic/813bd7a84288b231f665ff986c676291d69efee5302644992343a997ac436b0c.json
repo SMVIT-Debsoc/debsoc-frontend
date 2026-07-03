@@ -1,1 +1,0 @@
-{"nodes": [{"id": "cabinet_sessions_route", "label": "GET /api/cabinet/sessions", "file_type": "code", "source_file": "app/api/cabinet/sessions/route.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
