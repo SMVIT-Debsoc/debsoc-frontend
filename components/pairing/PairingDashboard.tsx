@@ -121,15 +121,18 @@ export default function PairingDashboard({
     };
   }, [role, primaryDataVersion]);
 
-  // Keep the dashboard live: refetch when the tab regains focus and every 30s
-  // while it's visible. Pauses when the tab is hidden so we don't hammer the
-  // backend from background tabs.
+  // Keep lightweight overview surfaces live, but avoid interrupting tabs where
+  // people are actively filling forms, reviewing pairings, or working in a
+  // modal-heavy flow.
   useEffect(() => {
-    const shouldAutoRefresh = !(isAdminView && activeTab === "Workspace");
-    if (!shouldAutoRefresh) {
+    const liveRefreshTabs = new Set<string>([
+      "Home",
+      "SpeakerLeaderboard",
+      "AdjudicatorLeaderboard",
+    ]);
+    if (!liveRefreshTabs.has(activeTab)) {
       return;
     }
-
     const onFocus = () => {
       if (document.visibilityState === "visible") refreshPrimaryData();
     };
@@ -410,7 +413,7 @@ export default function PairingDashboard({
         {content}
       </main>
 
-      {/* Mobile bottom navigation â€” one-tap access to primary destinations */}
+      {/* Mobile bottom navigation - one-tap access to primary destinations */}
       <nav className="glass-topbar fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-900/[0.06] px-1 pb-[env(safe-area-inset-bottom)] dark:border-white/[0.06] lg:hidden">
         {primaryTabs.map((entry) => {
           const isActive = activeTab === entry.key;
