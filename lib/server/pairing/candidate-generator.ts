@@ -35,7 +35,12 @@ function buildPrioritizedSpeakerOrder(
   const seen = new Set<string>();
   const prioritized: SessionSpeaker[] = [];
 
-  for (const rule of context.rules.timeConstraints) {
+  const orderedTimeConstraints = [
+    ...context.rules.timeConstraints.filter((rule) => rule.isStrict),
+    ...context.rules.timeConstraints.filter((rule) => !rule.isStrict),
+  ];
+
+  for (const rule of orderedTimeConstraints) {
     const speaker = byId.get(rule.participantId);
     if (speaker && !seen.has(speaker.participantId)) {
       prioritized.push(speaker);
@@ -67,13 +72,24 @@ function orderTeamParticipants(
   participants: SessionSpeaker[],
   context: PairingGenerationContext,
 ): SessionSpeaker[] {
+  const strictConstrainedIds = new Set(
+    context.rules.timeConstraints.filter((rule) => rule.isStrict).map((rule) => rule.participantId),
+  );
   const constrainedIds = new Set(context.rules.timeConstraints.map((rule) => rule.participantId));
+
   return participants.slice().sort((left, right) => {
+    const leftStrictPriority = strictConstrainedIds.has(left.participantId) ? 0 : 1;
+    const rightStrictPriority = strictConstrainedIds.has(right.participantId) ? 0 : 1;
+    if (leftStrictPriority !== rightStrictPriority) {
+      return leftStrictPriority - rightStrictPriority;
+    }
+
     const leftPriority = constrainedIds.has(left.participantId) ? 0 : 1;
     const rightPriority = constrainedIds.has(right.participantId) ? 0 : 1;
     if (leftPriority !== rightPriority) {
       return leftPriority - rightPriority;
     }
+
     return left.participantId.localeCompare(right.participantId);
   });
 }
@@ -103,7 +119,6 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
   if (roomCount === 0) {
     return [];
   }
-
   const { orderedSpeakers, anchoredCount } = buildPrioritizedSpeakerOrder(speakers, context);
   const assignableSpeakers = orderedSpeakers.slice(0, orderedSpeakers.length - leftoverSpeakerCount);
   const leftoverSpeakers = orderedSpeakers.slice(assignableSpeakers.length);
