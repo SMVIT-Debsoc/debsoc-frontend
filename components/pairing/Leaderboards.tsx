@@ -249,8 +249,8 @@ export default function Leaderboards({
                     {adjudicatorLeaderboard.map((entry, index) => (
                       <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-amber-50/30 dark:hover:bg-amber-400/10">
                         <td className="px-2 sm:px-4 py-3">
-                          <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-400/15 font-semibold text-amber-900 dark:text-amber-200">
-                            {entry.rank}
+                          <div className="inline-flex h-10 w-10 items-center justify-center">
+                            <RankDoodle rank={entry.rank} />
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-3">
