@@ -352,7 +352,6 @@ export default function PairingDashboard({
         </button>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <LogoutButton />
         </div>
       </div>
 
@@ -411,6 +410,12 @@ export default function PairingDashboard({
 
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {renderNav("pairing-nav-pill-drawer")}
+              </div>
+
+              <div className="mt-4 flex border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
+                <div className="[&>button]:w-full flex-1">
+                  <LogoutButton />
+                </div>
               </div>
             </motion.aside>
           </div>
