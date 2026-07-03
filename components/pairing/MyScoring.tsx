@@ -220,7 +220,13 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
         );
 
         if (cancelled) return;
-        const nextTasks: ScoringTaskView[] = loaded.filter((task) => task !== null) as ScoringTaskView[];
+        const nextTasks: ScoringTaskView[] = (loaded.filter((task) => task !== null) as ScoringTaskView[])
+          .sort((a, b) => {
+            const da = new Date(sessions.find((s) => s.id === a.sessionId)?.date ?? "").getTime() || 0;
+            const db = new Date(sessions.find((s) => s.id === b.sessionId)?.date ?? "").getTime() || 0;
+            return db - da;
+          })
+          .slice(0, 1);
         setTasks(nextTasks);
         setSelectedSessionId((current) => current ?? nextTasks[0]?.sessionId ?? null);
       } catch (caught) {
