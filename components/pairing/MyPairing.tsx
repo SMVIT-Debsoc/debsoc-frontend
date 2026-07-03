@@ -22,6 +22,7 @@ type MyPairingProps = {
 
 type PublishedPairingResponse = {
   publishedPairing: PublishedPairingView;
+  participantNames?: Record<string, string>;
 };
 
 type ParticipantRoomView = {
@@ -126,7 +127,7 @@ export default function MyPairing({
           candidateSessions.map(async (session) => {
             const response = await fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`);
             const publishedPairing = response.publishedPairing;
-            const names = { ...globalNameMap, ...participantNameMap(session) };
+            const names = { ...globalNameMap, ...participantNameMap(session), ...(response.participantNames ?? {}) };
             const room = buildParticipantRoomView(session, publishedPairing, currentParticipantId, names);
             return { session, publishedPairing, room };
           }),
@@ -233,7 +234,7 @@ export default function MyPairing({
                 </div>
               </div>
               <div className="mt-2 text-sm text-slate-300 truncate">
-                {room.teamLabel ?? "Adjudicator panel"} · Chair: {room.chair ?? "TBD"}
+                {room.teamLabel ?? "Adjudicator panel"} · Chair: {mask(room.chair, "TBD")}
               </div>
             </div>
 
@@ -241,13 +242,13 @@ export default function MyPairing({
               <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Teammates</div>
                 <div className="mt-2 text-base font-semibold text-slate-950 dark:text-white">
-                  {room.teammates.length > 0 ? room.teammates.join(", ") : "None"}
+                  {maskList(room.teammates).join(", ") || "None"}
                 </div>
               </div>
               <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/80 p-4 dark:bg-white/[0.06]">
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Panel adjudicators</div>
                 <div className="mt-2 text-base font-semibold text-slate-950 dark:text-white">
-                  {room.panel.length > 0 ? room.panel.join(", ") : "None"}
+                  {maskList(room.panel).join(", ") || "None"}
                 </div>
               </div>
             </div>
@@ -256,8 +257,8 @@ export default function MyPairing({
 
         <Card className="p-4 sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
-            <Info label="Teammates" value={room.teammates.length > 0 ? room.teammates.join(", ") : "None"} />
-            <Info label="Panel adjudicators" value={room.panel.length > 0 ? room.panel.join(", ") : "None"} />
+            <Info label="Teammates" value={maskList(room.teammates).join(", ") || "None"} />
+            <Info label="Panel adjudicators" value={maskList(room.panel).join(", ") || "None"} />
           </div>
 
           <div className="lg:hidden my-4 border-t border-slate-200 dark:border-white/10" />
@@ -268,7 +269,7 @@ export default function MyPairing({
               <div key={team.bpPosition} className="rounded-xl border border-slate-200 dark:border-white/10 p-3 sm:p-4">
                 <div className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{team.bpPosition}</div>
                 <div className="text-sm text-slate-700 dark:text-slate-300">
-                  {team.speakers.map((speaker) => `${speaker.name} (${speaker.speakingRole})`).join(", ")}
+                  {team.speakers.map((speaker) => `${mask(speaker.name)} (${speaker.speakingRole})`).join(", ")}
                 </div>
               </div>
             ))}
@@ -326,6 +327,16 @@ function buildParticipantRoomView(
 
 function bpPositionOrder(position: string) {
   return ["OG", "OO", "CG", "CO"].indexOf(position);
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function mask(value: string | null | undefined, fallback = "—") {
+  if (!value) return fallback;
+  return UUID_RE.test(value) ? fallback : value;
+}
+function maskList(values: string[]) {
+  const cleaned = values.map((v) => mask(v, "")).filter(Boolean);
+  return cleaned;
 }
 
 function Info({ label, value }: { label: string; value: string }) {
