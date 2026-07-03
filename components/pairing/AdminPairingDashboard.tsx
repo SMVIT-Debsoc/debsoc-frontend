@@ -18,6 +18,7 @@ import Leaderboards from "./Leaderboards";
 import Roster from "./Roster";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
+import type { RealtimeEventEnvelope } from "@/types/realtime";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -68,6 +69,7 @@ type AdminPairingDashboardProps = {
   onOpenLeaderboards: () => void;
   onOpenAdjudicatorLeaderboards: () => void;
   onRefresh?: () => void;
+  workspaceRealtimeEvent?: RealtimeEventEnvelope | null;
   activeTab?: AdminTab;
 };
 
@@ -91,6 +93,7 @@ export default function AdminPairingDashboard({
   onOpenLeaderboards,
   onOpenAdjudicatorLeaderboards,
   onRefresh,
+  workspaceRealtimeEvent = null,
   activeTab = "Home",
 }: AdminPairingDashboardProps) {
   return (
@@ -115,6 +118,7 @@ export default function AdminPairingDashboard({
           participants={participants}
           sessions={sessions}
           onSessionsChange={onSessionsChange}
+          realtimeEvent={workspaceRealtimeEvent}
           loading={loading}
           error={error}
         />
@@ -168,8 +172,6 @@ export default function AdminPairingDashboard({
     </div>
   );
 }
-
-
 
 
 

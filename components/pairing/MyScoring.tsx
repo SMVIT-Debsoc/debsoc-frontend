@@ -282,6 +282,7 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
         }),
       });
       setTasks((current) => current.map((task) => task.sessionId === selectedTask.sessionId ? { ...task, hasSubmitted: true } : task));
+      onRefresh?.();
       setSubmitState({ saving: false, message: "Speaker form submitted.", error: null });
     } catch (caught) {
       setSubmitState({ saving: false, message: null, error: caught instanceof Error ? caught.message : "Speaker scoring failed." });
@@ -312,6 +313,7 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
         }),
       });
       setTasks((current) => current.map((task) => task.sessionId === selectedTask.sessionId ? { ...task, hasSubmitted: true } : task));
+      onRefresh?.();
       setSubmitState({ saving: false, message: "Chair form submitted.", error: null });
     } catch (caught) {
       setSubmitState({ saving: false, message: null, error: caught instanceof Error ? caught.message : "Chair scoring failed." });

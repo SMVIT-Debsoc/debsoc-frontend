@@ -61,7 +61,8 @@ function eventScopes(eventType: RealtimeEventEnvelope["eventType"]) {
 }
 
 function sanitizeEvent(event: RealtimeEventEnvelope): RealtimeEventEnvelope {
-  const { audienceParticipantIds: _audienceParticipantIds, ...sanitized } = event;
+  const { audienceParticipantIds, ...sanitized } = event;
+  void audienceParticipantIds;
   return sanitized;
 }
 

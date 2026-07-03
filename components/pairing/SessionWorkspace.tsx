@@ -37,6 +37,7 @@ import type {
     SessionRuleConfigView,
     SessionScoringStatusResponse,
 } from "@/types/session";
+import type { RealtimeEventEnvelope } from "@/types/realtime";
 import ProfileAvatar from "@/components/ProfileAvatar";
 
 type StepKey = "prepare" | "setup" | "review" | "publish" | "post";
@@ -46,6 +47,7 @@ type SessionWorkspaceProps = {
     participants: Participant[];
     sessions: SessionRow[];
     onSessionsChange: (sessions: SessionRow[]) => void;
+    realtimeEvent?: RealtimeEventEnvelope | null;
     loading: boolean;
     error: string | null;
 };
@@ -102,6 +104,7 @@ export default function SessionWorkspace({
     participants,
     sessions,
     onSessionsChange,
+    realtimeEvent = null,
     loading,
     error,
 }: SessionWorkspaceProps) {
@@ -180,6 +183,14 @@ export default function SessionWorkspace({
             }
         }
     }, [selectedSessionId, sessions]);
+
+    const shouldRefreshSelectedSession =
+        realtimeEvent !== null &&
+        realtimeEvent.sessionId !== null &&
+        realtimeEvent.sessionId === selectedSessionId &&
+        (realtimeEvent.refetchHints.includes("session_detail") ||
+            realtimeEvent.refetchHints.includes("published_pairing") ||
+            realtimeEvent.refetchHints.includes("scoring_status"));
 
     useEffect(() => {
         let cancelled = false;
@@ -271,7 +282,7 @@ export default function SessionWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId]);
+    }, [selectedSessionId, shouldRefreshSelectedSession]);
 
     useEffect(() => {
         setOverrideDraft(

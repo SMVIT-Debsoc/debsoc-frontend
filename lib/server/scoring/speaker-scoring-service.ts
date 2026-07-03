@@ -169,6 +169,8 @@ export function createSpeakerScoringService(
       });
     }
 
+    await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
+
     await publishEvent(input.sessionId, {
       eventId: `scoring.submitted:${input.sessionId}:${input.participantId}:${Date.now()}`,
       eventType: "scoring.submitted",
@@ -180,8 +182,6 @@ export function createSpeakerScoringService(
       entityVersion: context.proposalId,
       audienceParticipantIds: context.roles.map((entry) => entry.participantId),
     });
-
-    await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
 
     return { sessionId: input.sessionId, accepted: true };
   }

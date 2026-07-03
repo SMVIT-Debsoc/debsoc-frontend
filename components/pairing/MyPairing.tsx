@@ -82,6 +82,15 @@ export default function MyPairing({
   speakerLeaderboard = [],
   adjudicatorLeaderboard = [],
 }: MyPairingProps) {
+  const currentParticipantIds = useMemo(() => {
+    const ids = new Set<string>();
+    attendanceHistory.forEach((item) => {
+      if (item.participantId) ids.add(item.participantId);
+      item.participantIds?.forEach((id) => ids.add(id));
+    });
+    return ids;
+  }, [attendanceHistory]);
+
   const globalNameMap = useMemo(() => {
     const map: Record<string, string> = {};
     for (const p of participants) if (p.id && p.name) map[p.id] = p.name;
@@ -117,8 +126,6 @@ export default function MyPairing({
     room: ParticipantRoomView | null;
   }>>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-
-  const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
   useEffect(() => {
     let cancelled = false;
 
@@ -126,7 +133,7 @@ export default function MyPairing({
       setLoading((current) => current || sessionViews.length === 0);
       setError(null);
 
-      if (!currentParticipantId) {
+      if (currentParticipantIds.size === 0) {
         setSessionViews([]);
         setLoading(false);
         return;
@@ -142,7 +149,7 @@ export default function MyPairing({
               ...participantNameMap(session),
               ...(response.participantNames ?? {}),
             };
-            const room = buildParticipantRoomView(session, publishedPairing, currentParticipantId, names);
+            const room = buildParticipantRoomView(session, publishedPairing, currentParticipantIds, names);
             return { session, publishedPairing, room };
           }),
         );
@@ -168,7 +175,7 @@ export default function MyPairing({
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId, candidateSessionKey]);
+  }, [candidateSessionKey, currentParticipantIds]);
 
   const selected = useMemo(
     () => sessionViews.find((entry) => entry.session.id === selectedSessionId) ?? sessionViews[0] ?? null,
@@ -305,30 +312,44 @@ export default function MyPairing({
 function buildParticipantRoomView(
   session: SessionRow,
   publishedPairing: PublishedPairingView,
-  participantId: string,
+  participantIds: Set<string>,
   names: Record<string, string>,
 ): ParticipantRoomView | null {
   const room = publishedPairing.rooms.find(
     (entry) =>
-      entry.teams.some((team) => team.speakers.some((speaker) => speaker.participantId === participantId)) ||
-      entry.adjudicators.some((adjudicator) => adjudicator.participantId === participantId),
+      entry.teams.some((team) => team.speakers.some((speaker) => participantIds.has(speaker.participantId))) ||
+      entry.adjudicators.some((adjudicator) => participantIds.has(adjudicator.participantId)),
   );
 
   if (!room) {
     return null;
   }
 
-  const myTeam = room.teams.find((team) => team.speakers.some((speaker) => speaker.participantId === participantId)) ?? null;
-  const mySpeaker = myTeam?.speakers.find((speaker) => speaker.participantId === participantId) ?? null;
-  const myAdjudicator = room.adjudicators.find((adjudicator) => adjudicator.participantId === participantId) ?? null;
+  const matchedParticipantId =
+    room.teams
+      .flatMap((team) => team.speakers.map((speaker) => speaker.participantId))
+      .find((candidateId) => participantIds.has(candidateId)) ??
+    room.adjudicators
+      .map((adjudicator) => adjudicator.participantId)
+      .find((candidateId) => participantIds.has(candidateId)) ??
+    null;
+  const myTeam = room.teams.find((team) => team.speakers.some((speaker) => participantIds.has(speaker.participantId))) ?? null;
+  const mySpeaker = myTeam?.speakers.find((speaker) => participantIds.has(speaker.participantId)) ?? null;
+  const myAdjudicator = room.adjudicators.find((adjudicator) => participantIds.has(adjudicator.participantId)) ?? null;
   const chair = room.adjudicators.find((adjudicator) => adjudicator.isChair) ?? null;
 
   return {
     roomIndex: room.roomIndex,
-    assignmentLabel: mySpeaker?.speakingRole ?? (myAdjudicator?.isChair ? "Chair" : myAdjudicator ? "Panel adjudicator" : session.participantAssignmentLabels?.[participantId] ?? "Assigned"),
+    assignmentLabel:
+      mySpeaker?.speakingRole ??
+      (myAdjudicator?.isChair
+        ? "Chair"
+        : myAdjudicator
+          ? "Panel adjudicator"
+          : (matchedParticipantId ? session.participantAssignmentLabels?.[matchedParticipantId] : null) ?? "Assigned"),
     teamLabel: myTeam?.bpPosition ?? null,
     teammates: (myTeam?.speakers ?? [])
-      .filter((speaker) => speaker.participantId !== participantId)
+      .filter((speaker) => !participantIds.has(speaker.participantId))
       .map((speaker) => names[speaker.participantId] ?? speaker.participantId),
     chair: chair ? names[chair.participantId] ?? session.assignedChairLabel ?? chair.participantId : session.assignedChairLabel ?? null,
     panel: room.adjudicators
@@ -369,7 +390,5 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-
 
 

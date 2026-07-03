@@ -2,7 +2,7 @@ import type { PublishPairingResponse, GetPublishedPairingResponse, PublishedPair
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { getOrLoad, invalidateTags } from "../cache/cache.ts";
-import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
+import { cacheKeys, CACHE_TAGS, CACHE_TTL } from "../cache/keys.ts";
 
 export class PairingPublishError extends Error {
   code:
@@ -52,6 +52,9 @@ export function createPairingPublishService(
   async function publishApprovedProposal(sessionId: string): Promise<PublishPairingResult> {
     try {
       const publishedPairing = await repository.publishProposalTransaction({ sessionId });
+      // Invalidate before notifying clients so their event-driven refetch reads
+      // fresh data rather than repopulating the cache with a stale value.
+      await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress]);
       try {
         await publishEvent(sessionId, {
           eventId: `pairing.proposal.published:${publishedPairing.proposalId}:${publishedPairing.publishedAt}`,
@@ -66,7 +69,6 @@ export function createPairingPublishService(
       } catch (error) {
         console.error("Realtime publish fan-out failed after commit", error);
       }
-      await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress]);
       return { publishedPairing };
     } catch (error) {
       throw mapPublishError(error);
@@ -101,6 +103,6 @@ export const { publishApprovedProposal } = publishService;
 export const getPublishedPairing: typeof publishService.getPublishedPairing = (sessionId) =>
   getOrLoad(
     cacheKeys.publishedPairing(sessionId),
-    { tags: [CACHE_TAGS.sessions] },
+    { tags: [CACHE_TAGS.sessions], ...CACHE_TTL.published },
     () => publishService.getPublishedPairing(sessionId),
   );
