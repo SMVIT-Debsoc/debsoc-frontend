@@ -26,6 +26,7 @@ import type {
 type PairingDashboardProps = {
   role: string;
   userName: string;
+  position?: string | null;
   embedded?: boolean;
 };
 
@@ -70,6 +71,7 @@ const INITIAL_STATE: PairingDataState = {
 export default function PairingDashboard({
   role,
   userName,
+  position = null,
   embedded = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
@@ -329,7 +331,7 @@ export default function PairingDashboard({
   const brand = role === "President"
     ? "President Dashboard"
     : role === "cabinet"
-      ? "Cabinet Dashboard"
+      ? `${position?.trim() || "Cabinet"} Dashboard`
       : role === "TechHead"
         ? "Tech Head Dashboard"
         : "Member Dashboard";
