@@ -336,7 +336,7 @@ export default function PairingDashboard({
 
   return (
     <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
-      <PairingBackdrop />
+      <PairingBackdrop key={activeTab} />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
         <button
