@@ -233,7 +233,7 @@ export default function PairingDashboard({
     primaryRefreshTimeoutRef.current = window.setTimeout(() => {
       primaryRefreshTimeoutRef.current = null;
       refreshPrimaryData();
-    }, 250);
+    }, 0);
   };
 
   const scheduleLeaderboardRefresh = () => {
@@ -244,7 +244,7 @@ export default function PairingDashboard({
     leaderboardRefreshTimeoutRef.current = window.setTimeout(() => {
       leaderboardRefreshTimeoutRef.current = null;
       refreshLeaderboardData();
-    }, 250);
+    }, 0);
   };
 
   useEffect(() => {
@@ -1050,6 +1050,5 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
-
 
 
