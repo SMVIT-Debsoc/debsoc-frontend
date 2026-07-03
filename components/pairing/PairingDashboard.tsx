@@ -26,6 +26,7 @@ import type {
 type PairingDashboardProps = {
   role: string;
   userName: string;
+  position?: string | null;
   embedded?: boolean;
 };
 
@@ -70,6 +71,7 @@ const INITIAL_STATE: PairingDataState = {
 export default function PairingDashboard({
   role,
   userName,
+  position = null,
   embedded = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
@@ -329,14 +331,14 @@ export default function PairingDashboard({
   const brand = role === "President"
     ? "President Dashboard"
     : role === "cabinet"
-      ? "Cabinet Dashboard"
+      ? `${position?.trim() || "Cabinet"} Dashboard`
       : role === "TechHead"
         ? "Tech Head Dashboard"
         : "Member Dashboard";
 
   return (
     <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
-      <PairingBackdrop />
+      <PairingBackdrop key={activeTab} />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
         <button
@@ -352,7 +354,6 @@ export default function PairingDashboard({
         </button>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <LogoutButton />
         </div>
       </div>
 
@@ -411,6 +412,12 @@ export default function PairingDashboard({
 
               <div className="min-h-0 flex-1 overflow-y-auto">
                 {renderNav("pairing-nav-pill-drawer")}
+              </div>
+
+              <div className="mt-4 flex border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
+                <div className="[&>button]:w-full flex-1">
+                  <LogoutButton />
+                </div>
               </div>
             </motion.aside>
           </div>

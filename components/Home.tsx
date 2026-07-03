@@ -519,10 +519,10 @@ export default function HomeClient() {
                     </div>
 
                     {/* ── Social links ────────────────────────────────────── */}
-                    <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 hidden sm:flex gap-5 md:gap-6 items-center">
+                    <div className="absolute bottom-6 md:bottom-8 right-4 md:right-12 z-20 flex gap-5 md:gap-6 items-center">
                         {/* Instagram */}
                         <a
-                            href="https://www.instagram.com/smvitdebsoc"
+                            href="https://www.instagram.com/smvit_debsoc/"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group"
@@ -536,7 +536,7 @@ export default function HomeClient() {
                         </a>
                         {/* YouTube */}
                         <a
-                            href="https://youtube.com/@smvitdebsoc"
+                            href="https://www.youtube.com/@smvitdebsoc738"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group"
@@ -549,10 +549,10 @@ export default function HomeClient() {
                         </a>
                         {/* LinkedIn */}
                         <a
-                            href="https://linkedin.com/company/smvit-debsoc"
+                            href="https://www.linkedin.com/company/smvitdebsoc/"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group hidden md:flex"
+                            className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors duration-300 group"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>

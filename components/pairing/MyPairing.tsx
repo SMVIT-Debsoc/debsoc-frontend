@@ -244,18 +244,18 @@ export default function MyPairing({
       <div className="space-y-5">
         <Card className="overflow-hidden border-indigo-200 dark:border-indigo-400/25 bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(15,23,42,0.04))]">
           <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1fr_1fr]">
-            <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-4 sm:p-5 text-white shadow-sm">
+            <div className="rounded-3xl border border-indigo-200 bg-gradient-to-br from-indigo-600 to-blue-700 p-4 sm:p-5 text-white shadow-md shadow-indigo-500/25 dark:border-slate-900/10 dark:from-slate-950 dark:to-slate-950 dark:shadow-none">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="text-[11px] sm:text-xs uppercase tracking-[0.22em] text-indigo-300">Your assignment</div>
+                  <div className="text-[11px] sm:text-xs uppercase tracking-[0.22em] text-indigo-100 dark:text-indigo-300">Your assignment</div>
                   <div className="mt-2 text-2xl sm:text-3xl font-semibold leading-tight truncate">{room.assignmentLabel}</div>
                 </div>
-                <div className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-center">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-slate-300">Room</div>
-                  <div className="text-xl font-semibold text-indigo-200 leading-tight">{room.roomIndex}</div>
+                <div className="shrink-0 rounded-2xl border border-white/25 bg-white/10 px-3 py-2 text-center dark:border-white/10 dark:bg-white/5">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-indigo-100 dark:text-slate-300">Room</div>
+                  <div className="text-xl font-semibold text-white leading-tight dark:text-indigo-200">{room.roomIndex}</div>
                 </div>
               </div>
-              <div className="mt-2 text-sm text-slate-300 truncate">
+              <div className="mt-2 text-sm text-indigo-100 truncate dark:text-slate-300">
                 {room.teamLabel ?? "Adjudicator panel"} · Chair: {mask(room.chair, "TBD")}
               </div>
             </div>

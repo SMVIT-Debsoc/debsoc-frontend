@@ -17,9 +17,9 @@ const organizationJsonLd = {
   url: SITE_URL,
   logo: `${SITE_URL}/logo.png`,
   sameAs: [
-    "https://www.instagram.com/smvitdebsoc",
-    "https://youtube.com/@smvitdebsoc",
-    "https://linkedin.com/company/smvit-debsoc",
+    "https://www.instagram.com/smvit_debsoc/",
+    "https://www.youtube.com/@smvitdebsoc738",
+    "https://www.linkedin.com/company/smvitdebsoc/",
   ],
 };
 

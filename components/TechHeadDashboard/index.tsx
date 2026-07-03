@@ -8,14 +8,17 @@ import {
   ShieldAlert, 
   UserCheck, 
   UserMinus, 
-  Trash2, 
-  Search, 
+  Trash2,
+  Search,
   Loader2,
   RefreshCw,
   CheckCircle2,
   Clock,
   LogOut,
-  Gavel
+  Gavel,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  X
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { signOut } from "next-auth/react";
@@ -48,6 +51,13 @@ export default function TechHeadDashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"pending" | "verified" | "pairing">("pending");
+  const [roleChange, setRoleChange] = useState<{
+    user: UserRecord;
+    fromRole: "President" | "Cabinet" | "Member";
+    toRole: "President" | "Cabinet" | "Member";
+  } | null>(null);
+  const [rolePosition, setRolePosition] = useState("");
+  const [roleSubmitting, setRoleSubmitting] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -95,6 +105,71 @@ export default function TechHeadDashboard() {
     } catch (error) {
       toast.error("An error occurred");
     }
+  };
+
+  const openRoleChange = (
+    user: UserRecord,
+    fromRole: "President" | "Cabinet" | "Member",
+    toRole: "President" | "Cabinet" | "Member",
+  ) => {
+    setRolePosition(toRole === "Cabinet" ? user.position ?? "" : "");
+    setRoleChange({ user, fromRole, toRole });
+  };
+
+  const submitRoleChange = async () => {
+    if (!roleChange) return;
+    const { user, fromRole, toRole } = roleChange;
+    if (toRole === "Cabinet" && !rolePosition.trim()) {
+      toast.error("Please enter a cabinet position");
+      return;
+    }
+    setRoleSubmitting(true);
+    try {
+      const res = await fetch("/api/techhead/change-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: user.id,
+          fromRole: fromRole.toLowerCase(),
+          toRole: toRole.toLowerCase(),
+          position: toRole === "Cabinet" ? rolePosition.trim() : undefined,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Moved ${user.name} to ${toRole}`);
+        setRoleChange(null);
+        setRolePosition("");
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.message || "Failed to change role");
+      }
+    } catch {
+      toast.error("An error occurred");
+    } finally {
+      setRoleSubmitting(false);
+    }
+  };
+
+  const targetsForRole = (
+    role: "President" | "Cabinet" | "Member",
+  ): { toRole: "President" | "Cabinet" | "Member"; direction: "promote" | "demote" }[] => {
+    if (role === "Member") {
+      return [
+        { toRole: "Cabinet", direction: "promote" },
+        { toRole: "President", direction: "promote" },
+      ];
+    }
+    if (role === "Cabinet") {
+      return [
+        { toRole: "President", direction: "promote" },
+        { toRole: "Member", direction: "demote" },
+      ];
+    }
+    return [
+      { toRole: "Cabinet", direction: "demote" },
+      { toRole: "Member", direction: "demote" },
+    ];
   };
 
   const renderUsers = (data: UserRecord[], role: string, isUnverified: boolean) => {
@@ -153,6 +228,27 @@ export default function TechHeadDashboard() {
                     <UserMinus size={16} />
                   </button>
                 )}
+                {!isUnverified &&
+                  targetsForRole(role as "President" | "Cabinet" | "Member").map((t) => (
+                    <button
+                      key={t.toRole}
+                      onClick={() =>
+                        openRoleChange(user, role as "President" | "Cabinet" | "Member", t.toRole)
+                      }
+                      className={`p-2 rounded-lg transition-all ${
+                        t.direction === "promote"
+                          ? "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white"
+                          : "bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white"
+                      }`}
+                      title={`${t.direction === "promote" ? "Promote" : "Demote"} to ${t.toRole}`}
+                    >
+                      {t.direction === "promote" ? (
+                        <ArrowUpCircle size={16} />
+                      ) : (
+                        <ArrowDownCircle size={16} />
+                      )}
+                    </button>
+                  ))}
                 <button
                   onClick={() => handleAction(role, user.id, "delete")}
                   className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all"
@@ -342,6 +438,83 @@ export default function TechHeadDashboard() {
           )}
         </AnimatePresence>
       </div>
+
+      <AnimatePresence>
+        {roleChange && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => !roleSubmitting && setRoleChange(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 10, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 10, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 relative"
+            >
+              <button
+                onClick={() => !roleSubmitting && setRoleChange(null)}
+                className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5"
+              >
+                <X size={16} />
+              </button>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 mb-2">
+                Change Role
+              </p>
+              <h2 className="text-xl font-light text-white mb-1">
+                {roleChange.fromRole} <span className="text-zinc-600">→</span>{" "}
+                <span className="font-bold">{roleChange.toRole}</span>
+              </h2>
+              <p className="text-sm text-zinc-500 mb-6 font-light">
+                {roleChange.user.name} · {roleChange.user.email}
+              </p>
+
+              {roleChange.toRole === "Cabinet" && (
+                <div className="mb-6">
+                  <label className="text-[10px] uppercase tracking-[0.25em] text-zinc-500 font-bold block mb-2">
+                    Cabinet Position
+                  </label>
+                  <input
+                    type="text"
+                    value={rolePosition}
+                    onChange={(e) => setRolePosition(e.target.value)}
+                    placeholder="e.g. General Secretary"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
+                    autoFocus
+                  />
+                </div>
+              )}
+
+              <div className="text-xs text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3 mb-6 font-light">
+                Their attendance, scoring history, and pairing records will be re-linked to the new
+                role. Login credentials are preserved.
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRoleChange(null)}
+                  disabled={roleSubmitting}
+                  className="flex-1 py-3 rounded-2xl border border-white/10 text-zinc-400 hover:bg-white/5 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitRoleChange}
+                  disabled={roleSubmitting}
+                  className="flex-1 py-3 rounded-2xl bg-white text-black font-medium hover:bg-zinc-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {roleSubmitting && <Loader2 size={14} className="animate-spin" />}
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
