@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Gavel, Menu, X } from "lucide-react";
+import { Gavel, LogOut, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { signOut } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
 import PairingBackdrop from "./PairingBackdrop";
 import AdminPairingDashboard, {
@@ -349,7 +350,10 @@ export default function PairingDashboard({
           </span>
           <span className="truncate">{brand}</span>
         </button>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <LogoutButton />
+        </div>
       </div>
 
       {/* Desktop sidebar */}
@@ -363,8 +367,9 @@ export default function PairingDashboard({
 
         {renderNav("pairing-nav-pill-desktop")}
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto flex items-center gap-2 pt-6">
           <ThemeToggle />
+          <LogoutButton />
         </div>
       </aside>
 
@@ -450,6 +455,20 @@ export default function PairingDashboard({
         })}
       </nav>
     </div>
+  );
+}
+
+function LogoutButton() {
+  return (
+    <button
+      type="button"
+      aria-label="Log out"
+      title="Log out"
+      onClick={() => signOut({ callbackUrl: "/" })}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100 dark:border-white/15 dark:text-slate-300 dark:hover:bg-white/10"
+    >
+      <LogOut size={16} />
+    </button>
   );
 }
 
