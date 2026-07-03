@@ -160,7 +160,7 @@ export default function Sessions({
               />
               <div className="lg-panel modal-pop relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl">
                 <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-900/5 px-5 py-4 dark:border-white/10">
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                       {selectedSession.date}
                     </h3>
@@ -170,6 +170,12 @@ export default function Sessions({
                         ? ` · Chair: ${selectedSession.assignedChairLabel ?? selectedSession.chair}`
                         : ""}
                     </p>
+                    {selectedSession.motionText ? (
+                      <p className="mt-2 max-w-2xl whitespace-normal break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Motion:</span>{" "}
+                        {selectedSession.motionText}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     <StateBadge state={selectedSession.state} />
@@ -335,3 +341,5 @@ function sessionInitials(name: string): string {
 function isPresentStatus(status: string | null | undefined) {
   return status?.trim().toLowerCase() === "present";
 }
+
+

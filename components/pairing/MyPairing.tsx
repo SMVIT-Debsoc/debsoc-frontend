@@ -214,9 +214,17 @@ export default function MyPairing({
     <div>
       <SectionHeader
         title="My Pairing"
-        subtitle={`${selected.session.date} | Motion type: ${selected.publishedPairing.motionType}`}
+        subtitle={selected.session.date}
         right={<StateBadge state="Published" />}
       />
+
+      <div className="mb-4 space-y-1 text-sm text-slate-400 dark:text-slate-400">
+        <div><span className="font-medium text-slate-300 dark:text-slate-300">Motion type:</span> {selected.publishedPairing.motionType}</div>
+        <div className="max-w-4xl whitespace-normal break-words leading-6">
+          <span className="font-medium text-slate-300 dark:text-slate-300">Motion:</span> {" "}
+          {selected.publishedPairing.motionText}
+        </div>
+      </div>
 
       {sessionViews.length > 1 && (
         <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible">
@@ -361,6 +369,7 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
 
 
 

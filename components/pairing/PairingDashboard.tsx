@@ -624,6 +624,7 @@ function normalizeAdminSession(session: ApiAdminSession): SessionRow {
     id: session.id,
     date: formatDate(session.sessionDate),
     motionType: session.motionType ?? session.motiontype,
+    motionText: session.motionText ?? undefined,
     chair: session.Chair,
     assignedChairLabel: deriveAssignedChairLabel(session),
     participantAssignmentLabels: deriveParticipantAssignmentLabels(session),
@@ -713,6 +714,7 @@ function normalizeParticipantSession(session: ApiParticipantSession): SessionRow
     id: session.id,
     date: formatDate(session.sessionDate),
     motionType: session.motiontype,
+    motionText: session.motionText ?? undefined,
     chair: session.Chair,
     state: deriveLifecycleState(session),
   };
@@ -729,9 +731,11 @@ function mergeParticipantSessions(
   }
 
   for (const session of attendanceSessions) {
+    const current = merged.get(session.id);
     merged.set(session.id, {
-      ...merged.get(session.id),
+      ...current,
       ...session,
+      motionText: session.motionText ?? current?.motionText,
     });
   }
 
@@ -907,6 +911,7 @@ type ApiParticipantSession = {
   id: string;
   sessionDate: string | Date;
   motiontype: string;
+  motionText?: string | null;
   Chair: string;
   pairingStatus?: string | null;
   publicationStatus?: string | null;
@@ -941,6 +946,8 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
+
+
 
 
 

@@ -19,6 +19,7 @@ type PublishedSessionItem = {
   sessionDate: Date | string;
   motiontype: string;
   motionType: string | null;
+  motionText: string | null;
   Chair: string;
   pairingStatus: string | null;
   publicationStatus: string | null;
@@ -124,6 +125,7 @@ export async function GET() {
       sessionDate: true,
       motiontype: true,
       motionType: true,
+      motionText: true,
       Chair: true,
       pairingStatus: true,
       publicationStatus: true,
@@ -180,6 +182,7 @@ export async function GET() {
       id: session.id,
       sessionDate: session.sessionDate,
       motiontype: session.motionType ?? session.motiontype,
+      motionText: session.motionText,
       Chair: session.Chair,
       pairingStatus: session.pairingStatus,
       publicationStatus: session.publicationStatus,
