@@ -194,9 +194,9 @@ export default function PairingDashboard({
       setParticipantTab(key as ParticipantTab);
     }
     setSidebarOpen(false);
-    // Data-consuming tabs get fresh sessions/attendance so newly-published
-    // sessions and their scoring tasks show up without a full page reload.
-    if (key === "MyScoring" || key === "MyPairing" || key === "Home") {
+    // Keep My Pairing stable while someone is viewing it; only overview/task
+    // surfaces force an immediate refetch on entry.
+    if (key === "MyScoring" || key === "Home") {
       refreshPrimaryData();
     }
   };
@@ -916,6 +916,7 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
+
 
 
 
