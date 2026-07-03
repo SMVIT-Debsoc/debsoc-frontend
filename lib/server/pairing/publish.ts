@@ -1,6 +1,8 @@
 import type { PublishPairingResponse, GetPublishedPairingResponse, PublishedPairingView } from "../../../types/pairing.ts";
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
+import { getOrLoad, invalidateTags } from "../cache/cache.ts";
+import { cacheKeys, CACHE_TAGS } from "../cache/keys.ts";
 
 export class PairingPublishError extends Error {
   code:
@@ -64,6 +66,7 @@ export function createPairingPublishService(
       } catch (error) {
         console.error("Realtime publish fan-out failed after commit", error);
       }
+      await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress]);
       return { publishedPairing };
     } catch (error) {
       throw mapPublishError(error);
@@ -88,4 +91,16 @@ export function createPairingPublishService(
   };
 }
 
-export const { publishApprovedProposal, getPublishedPairing } = createPairingPublishService();
+const publishService = createPairingPublishService();
+
+export const { publishApprovedProposal } = publishService;
+
+// Published pairing is the member-facing source of truth and changes only when
+// a proposal is (re)published or the session lifecycle changes — both of which
+// invalidate the `sessions` tag. Cache it so member dashboards read from Redis.
+export const getPublishedPairing: typeof publishService.getPublishedPairing = (sessionId) =>
+  getOrLoad(
+    cacheKeys.publishedPairing(sessionId),
+    { tags: [CACHE_TAGS.sessions] },
+    () => publishService.getPublishedPairing(sessionId),
+  );

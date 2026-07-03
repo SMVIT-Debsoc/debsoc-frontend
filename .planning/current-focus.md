@@ -1,13 +1,14 @@
 # Current Focus
 
 ## Active Area
-- Pairing system frontend/backend integration with workspace auto-refresh stabilization
+- Pairing system frontend/backend integration with member scoring-task self-view repair
 
 ## Current Working Mode
 - Use `.planning` as navigation and working memory
 - Use repo docs and code as the source of truth
 
 ## Last Verified
+- Member scoring-task reads were failing because `GET /api/sessions/:sessionId/scoring-status` treated "no scoring obligation in this session" as a 403 for `Member` viewers; locally repaired in `session-service.ts` so the self-view now returns an empty task list instead (Verified in code, runtime still needs browser re-check)
 - Pairing dashboard sidebar structure exists
 - Separate speaker and adjudicator leaderboard views exist
 - Home dashboard exists
@@ -23,6 +24,7 @@
 - `.planning/codebase/*` can drift from the repo if not refreshed
 - Generated `.next/dev/types/*` may fail type-check independently of feature work
 - Local Windows/Turbopack spawn errors may be environment-specific
+- `npm run test:services` is currently blocked by an existing ESM module-resolution issue in the cache layer (`lib/server/cache/redis` import path), so the local regression test could not be executed end-to-end here
 - Existing published sessions may need one-time data repair if they were published before the role-sync fix
 
 ## Next Useful Checks

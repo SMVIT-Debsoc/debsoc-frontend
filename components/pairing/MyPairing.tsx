@@ -218,10 +218,10 @@ export default function MyPairing({
         right={<StateBadge state="Published" />}
       />
 
-      <div className="mb-4 space-y-1 text-sm text-slate-400 dark:text-slate-400">
-        <div><span className="font-medium text-slate-300 dark:text-slate-300">Motion type:</span> {selected.publishedPairing.motionType}</div>
+      <div className="mb-4 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+        <div><span className="font-medium text-slate-800 dark:text-slate-300">Motion type:</span> {selected.publishedPairing.motionType}</div>
         <div className="max-w-4xl whitespace-normal break-words leading-6">
-          <span className="font-medium text-slate-300 dark:text-slate-300">Motion:</span> {" "}
+          <span className="font-medium text-slate-800 dark:text-slate-300">Motion:</span> {" "}
           {selected.publishedPairing.motionText}
         </div>
       </div>

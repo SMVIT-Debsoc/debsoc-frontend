@@ -1,6 +1,8 @@
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
+import { invalidateTags } from "../cache/cache.ts";
+import { CACHE_TAGS } from "../cache/keys.ts";
 import type {
   CreateSessionRequest,
   SessionMetadataView,
@@ -308,6 +310,8 @@ export function createSessionService(
       entityVersion: `${created.pairingStatus}:${created.publicationStatus}:${created.scoringStatus}`,
     });
 
+    await invalidateTags([CACHE_TAGS.sessions]);
+
     return created;
   }
 
@@ -399,10 +403,6 @@ export function createSessionService(
       ? tasks.filter((task) => task.participantId === input.viewerId)
       : tasks;
 
-    if (input.viewerRole === "Member" && visibleTasks.length === 0) {
-      throw new Error("Forbidden: Members may only view their own scoring task status.");
-    }
-
     const submittedCount = tasks.filter((task) => task.hasSubmitted).length;
     const scoringStatus: SessionScoringStatusResponse["scoringStatus"] = tasks.length === 0
       ? normalizeScoringStatus(session.scoringStatus)
@@ -477,6 +477,8 @@ export function createSessionService(
         entityVersion: view.scoringStatus,
       });
     }
+
+    await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress, CACHE_TAGS.leaderboard]);
 
     return view;
   }
