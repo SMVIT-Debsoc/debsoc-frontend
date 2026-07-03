@@ -19,12 +19,18 @@ export default async function DashboardPage() {
   }
 
   let position: string | null = null;
-  if (session.user.role === "cabinet" && session.user.id) {
-    const record = await prisma.cabinet.findUnique({
-      where: { id: session.user.id },
+  if (session.user.role === "cabinet") {
+    const record = await prisma.cabinet.findFirst({
+      where: {
+        OR: [
+          ...(session.user.id ? [{ id: session.user.id }] : []),
+          ...(session.user.email ? [{ email: session.user.email }] : []),
+        ],
+      },
       select: { position: true },
     });
-    position = record?.position ?? null;
+    position = record?.position?.trim() || null;
+    console.log("[dashboard] cabinet position lookup", { id: session.user.id, email: session.user.email, position });
   }
 
   return (
