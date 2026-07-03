@@ -466,16 +466,19 @@ export default function SessionWorkspace({
         </div>
       </Card>
 
-      <div className="mb-6 grid gap-3 md:grid-cols-5">
-        {STEPS.map((entry) => {
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-5">
+        {STEPS.map((entry, index) => {
           const enabled = stepAvailability[entry.key];
+          const isLastOdd = index === STEPS.length - 1 && STEPS.length % 2 === 1;
           return (
             <button
               key={entry.key}
               type="button"
               onClick={() => enabled && setStep(entry.key)}
               disabled={!enabled}
-              className={`rounded-xl border px-4 py-3 text-left text-sm ${
+              className={`rounded-xl border px-3 py-2.5 text-left text-sm md:px-4 md:py-3 ${
+                isLastOdd ? "col-span-2 md:col-span-1" : ""
+              } ${
                 step === entry.key
                   ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-400/10 text-indigo-900 dark:text-indigo-200"
                   : enabled
@@ -483,10 +486,10 @@ export default function SessionWorkspace({
                     : "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500"
               }`}
             >
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Step
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 md:text-[11px]">
+                Step {index + 1}
               </div>
-              <div className="mt-1 font-semibold">{entry.label}</div>
+              <div className="mt-0.5 truncate text-sm font-semibold md:mt-1">{entry.label}</div>
             </button>
           );
         })}
