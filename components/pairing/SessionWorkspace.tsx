@@ -247,7 +247,7 @@ export default function SessionWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [participants, selectedSessionId]);
+  }, [selectedSessionId]);
 
   useEffect(() => {
     setOverrideDraft(workspace.proposal ? createManualOverrideDraft(workspace.proposal) : null);

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Gavel, Menu, X } from "lucide-react";
@@ -77,6 +77,11 @@ export default function PairingDashboard({
   const [participantTab, setParticipantTab] = useState<ParticipantTab>("Home");
   const isAdminView =
     role === "cabinet" || role === "President" || role === "TechHead";
+  const navTabs = useMemo(
+    () => (isAdminView ? ADMIN_TABS : PARTICIPANT_TABS),
+    [isAdminView],
+  );
+  const activeTab = isAdminView ? adminTab : participantTab;
 
   const [primaryDataVersion, setPrimaryDataVersion] = useState(0);
   const refreshPrimaryData = () => setPrimaryDataVersion((v) => v + 1);
@@ -120,6 +125,11 @@ export default function PairingDashboard({
   // while it's visible. Pauses when the tab is hidden so we don't hammer the
   // backend from background tabs.
   useEffect(() => {
+    const shouldAutoRefresh = !(isAdminView && activeTab === "Workspace");
+    if (!shouldAutoRefresh) {
+      return;
+    }
+
     const onFocus = () => {
       if (document.visibilityState === "visible") refreshPrimaryData();
     };
@@ -133,7 +143,7 @@ export default function PairingDashboard({
       document.removeEventListener("visibilitychange", onFocus);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [activeTab, isAdminView]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,12 +183,6 @@ export default function PairingDashboard({
       cancelled = true;
     };
   }, [state.leaderboardScope]);
-
-  const navTabs = useMemo(
-    () => (isAdminView ? ADMIN_TABS : PARTICIPANT_TABS),
-    [isAdminView],
-  );
-  const activeTab = isAdminView ? adminTab : participantTab;
 
   const selectTab = (key: string) => {
     if (isAdminView) {
