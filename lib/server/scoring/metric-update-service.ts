@@ -343,11 +343,44 @@ export function createMetricUpdateService(
         repository.getAdjudicatorScoreRecordsForAdjudicators(participantIds),
       ])
       : [[], []];
-    const participantTypes = await repository.getParticipantTypes(participantIds);
+    // Resolve ids by explicit role fields, never by column order. Both record
+    // types carry several *MemberId/*CabinetId/*PresidentId columns, so a
+    // positional `resolveParticipantId(row)` can pick the wrong person (e.g. the
+    // chair instead of the adjudicator), which then mis-types the participant and
+    // corrupts the snapshot write. chair_score keys on the chair (it feeds
+    // "sessions chaired"); adjudicator score keys on the adjudicator.
+    const chairIdOf = (row: {
+      chairMemberId?: string | null;
+      chairCabinetId?: string | null;
+      chairPresidentId?: string | null;
+    }) =>
+      resolveParticipantId({
+        memberId: row.chairMemberId,
+        cabinetId: row.chairCabinetId,
+        presidentId: row.chairPresidentId,
+      });
+    const adjudicatorIdOf = (row: {
+      adjudicatorMemberId?: string | null;
+      adjudicatorCabinetId?: string | null;
+      adjudicatorPresidentId?: string | null;
+    }) =>
+      resolveParticipantId({
+        memberId: row.adjudicatorMemberId,
+        cabinetId: row.adjudicatorCabinetId,
+        presidentId: row.adjudicatorPresidentId,
+      });
+
+    const relevantParticipantIds = [
+      ...new Set([
+        ...chairFeedback.map(chairIdOf).filter(Boolean),
+        ...adjudicatorScores.map(adjudicatorIdOf).filter(Boolean),
+      ]),
+    ];
+    const participantTypes = await repository.getParticipantTypes(relevantParticipantIds);
 
     const chairGroups = new Map<string, number[]>();
     for (const row of chairFeedback) {
-      const participantId = resolveParticipantId(row);
+      const participantId = chairIdOf(row);
       if (!participantId) {
         continue;
       }
@@ -356,11 +389,7 @@ export function createMetricUpdateService(
 
     const adjudicatorGroups = new Map<string, number[]>();
     for (const row of adjudicatorScores) {
-      const participantId = resolveParticipantId({
-        memberId: row.adjudicatorMemberId,
-        cabinetId: row.adjudicatorCabinetId,
-        presidentId: row.adjudicatorPresidentId,
-      });
+      const participantId = adjudicatorIdOf(row);
       if (!participantId) {
         continue;
       }

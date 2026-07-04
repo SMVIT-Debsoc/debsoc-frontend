@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Gavel, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
@@ -79,6 +79,7 @@ export default function PairingDashboard({
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<AdminTab>("Home");
   const [participantTab, setParticipantTab] = useState<ParticipantTab>("Home");
   const isAdminView =
@@ -281,18 +282,31 @@ export default function PairingDashboard({
     },
   });
 
-  const selectTab = (key: string) => {
+  const applyTab = (key: string) => {
     if (isAdminView) {
       setAdminTab(key as AdminTab);
     } else {
       setParticipantTab(key as ParticipantTab);
     }
-    setSidebarOpen(false);
     // Keep My Pairing stable while someone is viewing it; only overview/task
     // surfaces force an immediate refetch on entry.
     if (key === "MyScoring" || key === "Home") {
       refreshPrimaryData();
     }
+  };
+
+  // Desktop sidebar / mobile bottom bar: no drawer to animate, switch at once.
+  const selectTab = (key: string) => {
+    applyTab(key);
+    setSidebarOpen(false);
+  };
+
+  // Mobile drawer: close first, then switch the page once the slide-out finishes
+  // (applied in the drawer's AnimatePresence onExitComplete) so the drawer glides
+  // away before the new surface appears, matching the desktop transition feel.
+  const selectTabFromDrawer = (key: string) => {
+    setPendingTab(key);
+    setSidebarOpen(false);
   };
 
   // The most-used destinations, surfaced in the mobile bottom bar so common
@@ -306,7 +320,7 @@ export default function PairingDashboard({
       .filter((tab): tab is (typeof navTabs)[number] => Boolean(tab));
   }, [isAdminView, navTabs]);
 
-  const renderNav = (pillId: string) => (
+  const renderNav = (pillId: string, onSelect: (key: string) => void = selectTab) => (
     <nav className="flex flex-col gap-1">
       {navTabs.map((entry) => {
         const isActive = activeTab === entry.key;
@@ -314,7 +328,7 @@ export default function PairingDashboard({
           <button
             key={entry.key}
             type="button"
-            onClick={() => selectTab(entry.key)}
+            onClick={() => onSelect(entry.key)}
             className={`relative flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
               isActive
                 ? "text-white"
@@ -435,19 +449,20 @@ export default function PairingDashboard({
       <PairingBackdrop key={activeTab} />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
-        <button
-          type="button"
-          aria-label="Open menu"
-          onClick={() => setSidebarOpen(true)}
-          className="-ml-2 flex items-center gap-2 rounded-lg p-2 font-semibold tracking-tight transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
-            <Menu size={16} />
-          </span>
+        <div className="-ml-1 flex min-w-0 items-center gap-2 font-semibold tracking-tight">
+          <ProfileAvatar name={userName || firstName} className="h-8 w-8 shadow-sm shadow-indigo-600/30" initialsClassName="text-xs" />
           <span className="truncate">{brand}</span>
-        </button>
-        <div className="flex items-center gap-2">
+        </div>
+        <div className="flex items-center gap-1">
           <ThemeToggle />
+          <button
+            type="button"
+            aria-label="Open menu"
+            onClick={() => setSidebarOpen(true)}
+            className="flex items-center justify-center rounded-lg p-2 transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
+          >
+            <Menu size={20} />
+          </button>
         </div>
       </div>
 
@@ -467,7 +482,14 @@ export default function PairingDashboard({
       </aside>
 
       {/* Mobile off-canvas drawer */}
-      <AnimatePresence>
+      <AnimatePresence
+        onExitComplete={() => {
+          if (pendingTab) {
+            applyTab(pendingTab);
+            setPendingTab(null);
+          }
+        }}
+      >
         {sidebarOpen && (
           <div className="lg:hidden">
             <motion.div
@@ -487,9 +509,7 @@ export default function PairingDashboard({
             >
               <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white shadow-sm shadow-indigo-600/30">
-                    <Gavel size={17} />
-                  </span>
+                  <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
                   <span>{brand}</span>
                 </div>
                 <button
@@ -503,7 +523,7 @@ export default function PairingDashboard({
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto">
-                {renderNav("pairing-nav-pill-drawer")}
+                {renderNav("pairing-nav-pill-drawer", selectTabFromDrawer)}
               </div>
 
               <div className="mt-4 flex border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
@@ -646,9 +666,15 @@ async function fetchLeaderboards(scope: "all" | "bi-monthly") {
   };
 }
 
+// Ceiling for a single dashboard read. The bootstrap read is a large composite
+// query and the backing DB (Neon serverless) can cold-start after idle, so a
+// tight budget spuriously aborts the first load; a warm request still returns
+// in well under this, so the ceiling only bites on a genuine cold start.
+const FETCH_TIMEOUT_MS = 30000;
+
 async function fetchJson<T>(url: string): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+  const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {
