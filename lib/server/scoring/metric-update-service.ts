@@ -3,9 +3,11 @@ import { scoringRepository } from "../repositories/scoring-repository.ts";
 type ParticipantType = "member" | "cabinet" | "president";
 
 type SpeakerScoreRow = {
+  sessionId: string;
   memberId: string | null;
   cabinetId: string | null;
   presidentId: string | null;
+  teamAssignmentId: string | null;
   bpPosition: string;
   speakingRole: string;
   rawScore: number;
@@ -28,6 +30,7 @@ type AdjudicatorScoreRow = {
 };
 
 type TeamDynamicsRow = {
+  sessionId: string;
   raterMemberId: string | null;
   raterCabinetId: string | null;
   raterPresidentId: string | null;
@@ -39,9 +42,13 @@ type TeamDynamicsRow = {
 
 interface MetricRepositoryContract {
   getSpeakerScoreRecordsBySession(sessionId: string): Promise<SpeakerScoreRow[]>;
+  getSpeakerScoreRecordsForParticipants(participantIds: string[]): Promise<SpeakerScoreRow[]>;
   getChairFeedbackBySession(sessionId: string): Promise<ChairFeedbackRow[]>;
+  getChairFeedbackForChairs(participantIds: string[]): Promise<ChairFeedbackRow[]>;
   getAdjudicatorScoreRecordsBySession(sessionId: string): Promise<AdjudicatorScoreRow[]>;
+  getAdjudicatorScoreRecordsForAdjudicators(participantIds: string[]): Promise<AdjudicatorScoreRow[]>;
   getTeamDynamicsRatingsBySession(sessionId: string): Promise<TeamDynamicsRow[]>;
+  getTeamDynamicsRatingsForParticipants(participantIds: string[]): Promise<TeamDynamicsRow[]>;
   getParticipantTypes(participantIds: string[]): Promise<Map<string, ParticipantType>>;
   upsertMemberMetricSnapshot(input: {
     participantId: string;
@@ -66,7 +73,24 @@ interface MetricRepositoryContract {
 }
 
 function resolveParticipantId(ref: { memberId?: string | null; cabinetId?: string | null; presidentId?: string | null; chairMemberId?: string | null; chairCabinetId?: string | null; chairPresidentId?: string | null; adjudicatorMemberId?: string | null; adjudicatorCabinetId?: string | null; adjudicatorPresidentId?: string | null; raterMemberId?: string | null; raterCabinetId?: string | null; raterPresidentId?: string | null; teammateMemberId?: string | null; teammateCabinetId?: string | null; teammatePresidentId?: string | null }) {
-  return Object.values(ref).find((value) => typeof value === "string" && value.length > 0) ?? "";
+  return (
+    ref.memberId ??
+    ref.cabinetId ??
+    ref.presidentId ??
+    ref.chairMemberId ??
+    ref.chairCabinetId ??
+    ref.chairPresidentId ??
+    ref.adjudicatorMemberId ??
+    ref.adjudicatorCabinetId ??
+    ref.adjudicatorPresidentId ??
+    ref.raterMemberId ??
+    ref.raterCabinetId ??
+    ref.raterPresidentId ??
+    ref.teammateMemberId ??
+    ref.teammateCabinetId ??
+    ref.teammatePresidentId ??
+    ""
+  );
 }
 
 function computeConfidence(observationCount: number, targetCount: number) {
@@ -94,12 +118,28 @@ function buildMotionType(row: SpeakerScoreRow) {
   return row.session.motionType ?? row.session.motiontype;
 }
 
+function participantIdsFromSpeakerRows(rows: SpeakerScoreRow[]) {
+  return [...new Set(rows.map((row) => resolveParticipantId(row)).filter(Boolean))];
+}
+
+function participantIdsFromRoleRows(chairFeedback: ChairFeedbackRow[], adjudicatorScores: AdjudicatorScoreRow[]) {
+  return [
+    ...new Set([
+      ...chairFeedback.map((row) => resolveParticipantId(row)).filter(Boolean),
+      ...adjudicatorScores.map((row) => resolveParticipantId(row)).filter(Boolean),
+    ]),
+  ];
+}
+
 export function createMetricUpdateService(
   repository: MetricRepositoryContract = scoringRepository as MetricRepositoryContract,
 ) {
   async function updateLearnedMetricsFromSession(sessionId: string) {
-    const speakerScores = await repository.getSpeakerScoreRecordsBySession(sessionId);
-    const participantIds = [...new Set(speakerScores.map((row) => resolveParticipantId(row)).filter(Boolean))];
+    const sessionSpeakerScores = await repository.getSpeakerScoreRecordsBySession(sessionId);
+    const participantIds = participantIdsFromSpeakerRows(sessionSpeakerScores);
+    const speakerScores = participantIds.length > 0
+      ? await repository.getSpeakerScoreRecordsForParticipants(participantIds)
+      : [];
     const participantTypes = await repository.getParticipantTypes(participantIds);
 
     const grouped = new Map<string, SpeakerScoreRow[]>();
@@ -108,9 +148,7 @@ export function createMetricUpdateService(
       if (!participantId) {
         continue;
       }
-      const rows = grouped.get(participantId) ?? [];
-      rows.push(row);
-      grouped.set(participantId, rows);
+      grouped.set(participantId, [...(grouped.get(participantId) ?? []), row]);
     }
 
     for (const [participantId, rows] of grouped.entries()) {
@@ -119,6 +157,7 @@ export function createMetricUpdateService(
       const motionGroups = new Map<string, number[]>();
       const roleGroups = new Map<string, number[]>();
       const motionRoleGroups = new Map<string, number[]>();
+
       for (const row of rows) {
         const motionType = buildMotionType(row);
         const role = row.speakingRole;
@@ -194,22 +233,25 @@ export function createMetricUpdateService(
   }
 
   async function updatePairMetricSnapshotsFromSession(sessionId: string) {
-    const [speakerScores, teamDynamicsRatings] = await Promise.all([
-      repository.getSpeakerScoreRecordsBySession(sessionId),
-      repository.getTeamDynamicsRatingsBySession(sessionId),
-    ]);
+    const sessionSpeakerScores = await repository.getSpeakerScoreRecordsBySession(sessionId);
+    const participantIds = participantIdsFromSpeakerRows(sessionSpeakerScores);
+    const [speakerScores, teamDynamicsRatings] = participantIds.length > 0
+      ? await Promise.all([
+        repository.getSpeakerScoreRecordsForParticipants(participantIds),
+        repository.getTeamDynamicsRatingsForParticipants(participantIds),
+      ])
+      : [[], []];
 
     const scoresByPair = new Map<string, { a: string; b: string; typeA: ParticipantType; typeB: ParticipantType; motionType: string; resultPoints: number[]; dynamicsRatings: number[] }>();
-    const participantIds = [...new Set(speakerScores.map((row) => resolveParticipantId(row)).filter(Boolean))];
     const participantTypes = await repository.getParticipantTypes(participantIds);
 
-    const byBench = new Map<string, SpeakerScoreRow[]>();
+    const bySessionBench = new Map<string, SpeakerScoreRow[]>();
     for (const row of speakerScores) {
-      const key = row.bpPosition;
-      byBench.set(key, [...(byBench.get(key) ?? []), row]);
+      const key = row.teamAssignmentId ?? `${row.sessionId}:${row.bpPosition}`;
+      bySessionBench.set(key, [...(bySessionBench.get(key) ?? []), row]);
     }
 
-    for (const rows of byBench.values()) {
+    for (const rows of bySessionBench.values()) {
       if (rows.length < 2) {
         continue;
       }
@@ -222,15 +264,17 @@ export function createMetricUpdateService(
       }
       const [a, b] = [firstId, secondId].sort();
       const pairKey = `${a}::${b}`;
-      scoresByPair.set(pairKey, {
+      const current = scoresByPair.get(pairKey) ?? {
         a,
         b,
         typeA: participantTypes.get(a) ?? "member",
         typeB: participantTypes.get(b) ?? "member",
         motionType: buildMotionType(first),
-        resultPoints: [first.teamResultPoints, second.teamResultPoints],
+        resultPoints: [],
         dynamicsRatings: [],
-      });
+      };
+      current.resultPoints.push(first.teamResultPoints, second.teamResultPoints);
+      scoresByPair.set(pairKey, current);
     }
 
     for (const rating of teamDynamicsRatings) {
@@ -256,9 +300,11 @@ export function createMetricUpdateService(
     }
 
     for (const entry of scoresByPair.values()) {
+      const resultObservationCount = Math.max(entry.resultPoints.length / 2, 1);
       const resultAverage = average(entry.resultPoints);
       const dynamicsAverage = entry.dynamicsRatings.length > 0 ? average(entry.dynamicsRatings) / 10 : resultAverage / 3;
       const overall = 0.8 * (resultAverage / 3) + 0.2 * dynamicsAverage;
+      const observationCount = resultObservationCount + entry.dynamicsRatings.length;
       await repository.upsertPairMetricSnapshot({
         memberAId: entry.a,
         memberAType: entry.typeA,
@@ -267,8 +313,8 @@ export function createMetricUpdateService(
         metricKey: "partner_dynamics_overall",
         contextKey: null,
         value: overall,
-        observationCount: 1 + entry.dynamicsRatings.length,
-        confidence: computeConfidence(1 + entry.dynamicsRatings.length, 4),
+        observationCount,
+        confidence: computeConfidence(observationCount, 4),
       });
       await repository.upsertPairMetricSnapshot({
         memberAId: entry.a,
@@ -278,24 +324,25 @@ export function createMetricUpdateService(
         metricKey: "partner_dynamics_by_motion_type",
         contextKey: entry.motionType,
         value: overall,
-        observationCount: 1 + entry.dynamicsRatings.length,
-        confidence: computeConfidence(1 + entry.dynamicsRatings.length, 6),
+        observationCount,
+        confidence: computeConfidence(observationCount, 6),
       });
     }
   }
 
   async function updateRolePerformanceFromSession(sessionId: string) {
-    const [chairFeedback, adjudicatorScores] = await Promise.all([
+    const [sessionChairFeedback, sessionAdjudicatorScores] = await Promise.all([
       repository.getChairFeedbackBySession(sessionId),
       repository.getAdjudicatorScoreRecordsBySession(sessionId),
     ]);
 
-    const participantIds = [
-      ...new Set([
-        ...chairFeedback.map((row) => resolveParticipantId(row)).filter(Boolean),
-        ...adjudicatorScores.map((row) => resolveParticipantId(row)).filter(Boolean),
-      ]),
-    ];
+    const participantIds = participantIdsFromRoleRows(sessionChairFeedback, sessionAdjudicatorScores);
+    const [chairFeedback, adjudicatorScores] = participantIds.length > 0
+      ? await Promise.all([
+        repository.getChairFeedbackForChairs(participantIds),
+        repository.getAdjudicatorScoreRecordsForAdjudicators(participantIds),
+      ])
+      : [[], []];
     const participantTypes = await repository.getParticipantTypes(participantIds);
 
     const chairGroups = new Map<string, number[]>();

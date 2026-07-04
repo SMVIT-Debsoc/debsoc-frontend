@@ -235,6 +235,7 @@ model DebateTeamAssignment {
   bpPosition       String
   teamScore        Float?
   speakerAssignments TeamSpeakerAssignment[]
+  speakerScoreRecords SpeakerScoreRecord[]
 
   @@index([roomAssignmentId])
 }
@@ -321,6 +322,8 @@ model SpeakerScoreRecord {
   session            DebateSession @relation(fields: [sessionId], references: [id])
   proposalId         String
   proposal           PairingProposal @relation(fields: [proposalId], references: [id])
+  teamAssignmentId   String?
+  teamAssignment     DebateTeamAssignment? @relation(fields: [teamAssignmentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   memberId           String?
   member             Member?       @relation("SpeakerScoreRecordMember", fields: [memberId], references: [id])
   cabinetId          String?
@@ -340,6 +343,7 @@ model SpeakerScoreRecord {
 
   @@index([sessionId])
   @@index([proposalId])
+  @@index([teamAssignmentId])
   @@index([memberId, cabinetId, presidentId])
   @@index([scoredByMemberId, scoredByCabinetId, scoredByPresidentId])
 }

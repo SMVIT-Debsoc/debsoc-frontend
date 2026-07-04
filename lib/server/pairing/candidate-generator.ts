@@ -4,6 +4,7 @@ import {
   MAX_CANDIDATE_COUNT,
   MAX_GENERATION_TIME_BUDGET_MS,
   SPEAKERS_PER_ROOM,
+  SPEAKERS_PER_TEAM,
   TEAMS_PER_ROOM,
 } from "./types.ts";
 import { assignChairsToRooms } from "./chair-assignment.ts";
@@ -17,6 +18,7 @@ const speakingRoles: ReadonlyArray<readonly [SpeakingRole, SpeakingRole]> = [
   ["MG", "GW"],
   ["MO", "OW"],
 ] as const;
+const earlyTeamIndexes = new Set([0, 1]);
 
 function rotateArray<T>(items: T[], offset: number): T[] {
   if (items.length === 0) {
@@ -66,6 +68,85 @@ function buildPrioritizedSpeakerOrder(
     orderedSpeakers,
     anchoredCount: prioritized.length,
   };
+}
+
+function buildTimeConstrainedSpeakerOrder(
+  speakers: SessionSpeaker[],
+  context: PairingGenerationContext,
+): SessionSpeaker[] {
+  const byId = new Map(speakers.map((speaker) => [speaker.participantId, speaker]));
+  const seen = new Set<string>();
+  const constrainedSpeakers: SessionSpeaker[] = [];
+  const orderedTimeConstraints = [
+    ...context.rules.timeConstraints.filter((rule) => rule.isStrict),
+    ...context.rules.timeConstraints.filter((rule) => !rule.isStrict),
+  ];
+
+  for (const rule of orderedTimeConstraints) {
+    const speaker = byId.get(rule.participantId);
+    if (speaker && !seen.has(speaker.participantId)) {
+      constrainedSpeakers.push(speaker);
+      seen.add(speaker.participantId);
+    }
+  }
+
+  return constrainedSpeakers;
+}
+
+function buildEarlySpeakingSlotIndexes(roomCount: number): number[] {
+  const indexes: number[] = [];
+
+  for (let roomIndex = 0; roomIndex < roomCount; roomIndex++) {
+    const roomStartIndex = roomIndex * SPEAKERS_PER_ROOM;
+    for (let teamIndex = 0; teamIndex < TEAMS_PER_ROOM; teamIndex++) {
+      if (!earlyTeamIndexes.has(teamIndex)) {
+        continue;
+      }
+      const teamStartIndex = roomStartIndex + teamIndex * SPEAKERS_PER_TEAM;
+      indexes.push(teamStartIndex, teamStartIndex + 1);
+    }
+  }
+
+  return indexes;
+}
+
+function arrangeSpeakersForTimeConstraints(
+  constrainedSpeakers: SessionSpeaker[],
+  otherSpeakers: SessionSpeaker[],
+  roomCount: number,
+): SessionSpeaker[] {
+  const arrangedSpeakers: Array<SessionSpeaker | null> = Array.from(
+    { length: constrainedSpeakers.length + otherSpeakers.length },
+    () => null,
+  );
+  const earlySlotIndexes = buildEarlySpeakingSlotIndexes(roomCount);
+  let overflowIndex = 0;
+
+  for (const speaker of constrainedSpeakers) {
+    const earlySlotIndex = earlySlotIndexes.shift();
+    if (earlySlotIndex !== undefined && earlySlotIndex < arrangedSpeakers.length) {
+      arrangedSpeakers[earlySlotIndex] = speaker;
+      continue;
+    }
+
+    while (arrangedSpeakers[overflowIndex]) {
+      overflowIndex += 1;
+    }
+    arrangedSpeakers[overflowIndex] = speaker;
+  }
+
+  const remainingSpeakers = otherSpeakers[Symbol.iterator]();
+  return arrangedSpeakers.map((speaker) => {
+    if (speaker) {
+      return speaker;
+    }
+
+    const nextSpeaker = remainingSpeakers.next();
+    if (nextSpeaker.done) {
+      throw new Error("Speaker arrangement failed because the candidate speaker pool was exhausted.");
+    }
+    return nextSpeaker.value;
+  });
 }
 
 function orderTeamParticipants(
@@ -122,8 +203,14 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
   const { orderedSpeakers, anchoredCount } = buildPrioritizedSpeakerOrder(speakers, context);
   const assignableSpeakers = orderedSpeakers.slice(0, orderedSpeakers.length - leftoverSpeakerCount);
   const leftoverSpeakers = orderedSpeakers.slice(assignableSpeakers.length);
-  const anchoredSpeakers = assignableSpeakers.slice(0, anchoredCount);
-  const rotatableSpeakers = assignableSpeakers.slice(anchoredCount);
+  const timeConstrainedSpeakers = buildTimeConstrainedSpeakerOrder(assignableSpeakers, context);
+  const timeConstrainedIds = new Set(timeConstrainedSpeakers.map((speaker) => speaker.participantId));
+  const anchoredSpeakers = assignableSpeakers
+    .slice(0, anchoredCount)
+    .filter((speaker) => !timeConstrainedIds.has(speaker.participantId));
+  const rotatableSpeakers = assignableSpeakers
+    .slice(anchoredCount)
+    .filter((speaker) => !timeConstrainedIds.has(speaker.participantId));
   const generatedCandidates: PairingCandidate[] = [];
 
   for (let candidateIndex = 0; candidateIndex < MAX_CANDIDATE_COUNT; candidateIndex++) {
@@ -131,7 +218,11 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
       break;
     }
 
-    const rotatedSpeakers = anchoredSpeakers.concat(rotateArray(rotatableSpeakers, candidateIndex));
+    const rotatedSpeakers = arrangeSpeakersForTimeConstraints(
+      timeConstrainedSpeakers,
+      anchoredSpeakers.concat(rotateArray(rotatableSpeakers, candidateIndex)),
+      roomCount,
+    );
     const rooms: RoomCandidate[] = [];
 
     for (let roomIndex = 0; roomIndex < roomCount; roomIndex++) {

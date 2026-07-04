@@ -85,6 +85,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
                 roomIndex: true,
                 teamAssignments: {
                   select: {
+                    id: true,
                     bpPosition: true,
                     speakerAssignments: {
                       select: {
@@ -129,11 +130,12 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         isChair: assignment.isChair,
       })),
       rooms:
-        session.publishedProposal?.roomAssignments.map((room: { roomIndex: number; teamAssignments: Array<{ bpPosition: string; speakerAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; speakingRole: string }> }>; adjudicatorAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; isChair: boolean }> }) => ({
+        session.publishedProposal?.roomAssignments.map((room: { roomIndex: number; teamAssignments: Array<{ id: string; bpPosition: string; speakerAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; speakingRole: string }> }>; adjudicatorAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; isChair: boolean }> }) => ({
           roomIndex: room.roomIndex,
-          speakers: room.teamAssignments.flatMap((team: { bpPosition: string; speakerAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; speakingRole: string }> }) =>
+          speakers: room.teamAssignments.flatMap((team: { id: string; bpPosition: string; speakerAssignments: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null; speakingRole: string }> }) =>
             team.speakerAssignments.map((speaker: { memberId: string | null; cabinetId: string | null; presidentId: string | null; speakingRole: string }) => ({
               participantId: resolveParticipantId(speaker),
+              teamAssignmentId: team.id,
               bpPosition: team.bpPosition,
               speakingRole: speaker.speakingRole,
             })),
@@ -152,6 +154,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     records: Array<{
       participantId: MemberId;
       participantType: ParticipantType;
+      teamAssignmentId?: string | null;
       bpPosition: string;
       speakingRole: string;
       rawScore: number;
@@ -168,6 +171,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       data: records.map((record) => ({
         sessionId,
         proposalId,
+        teamAssignmentId: record.teamAssignmentId ?? null,
         bpPosition: record.bpPosition,
         speakingRole: record.speakingRole,
         rawScore: record.rawScore,
@@ -207,9 +211,11 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     return client.speakerScoreRecord.findMany({
       where: { sessionId },
       select: {
+        sessionId: true,
         memberId: true,
         cabinetId: true,
         presidentId: true,
+        teamAssignmentId: true,
         scoredByMemberId: true,
         scoredByCabinetId: true,
         scoredByPresidentId: true,
@@ -227,6 +233,42 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     });
   }
 
+
+  async function getSpeakerScoreRecordsForParticipants(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    return client.speakerScoreRecord.findMany({
+      where: {
+        OR: [
+          { memberId: { in: participantIds } },
+          { cabinetId: { in: participantIds } },
+          { presidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        sessionId: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        teamAssignmentId: true,
+        scoredByMemberId: true,
+        scoredByCabinetId: true,
+        scoredByPresidentId: true,
+        bpPosition: true,
+        speakingRole: true,
+        rawScore: true,
+        teamResultPoints: true,
+        session: {
+          select: {
+            motionType: true,
+            motiontype: true,
+          },
+        },
+      },
+    });
+  }
   async function createChairFeedbackRecord(input: {
     sessionId: string;
     proposalId: string;
@@ -289,6 +331,31 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     });
   }
 
+
+  async function getChairFeedbackForChairs(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    return client.chairFeedbackRecord.findMany({
+      where: {
+        OR: [
+          { chairMemberId: { in: participantIds } },
+          { chairCabinetId: { in: participantIds } },
+          { chairPresidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        speakerMemberId: true,
+        speakerCabinetId: true,
+        speakerPresidentId: true,
+        chairMemberId: true,
+        chairCabinetId: true,
+        chairPresidentId: true,
+        rating: true,
+      },
+    });
+  }
   async function createTeamDynamicsRatings(input: {
     sessionId: string;
     raterParticipantId: MemberId;
@@ -341,6 +408,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     return client.teamDynamicsRating.findMany({
       where: { sessionId },
       select: {
+        sessionId: true,
         raterMemberId: true,
         raterCabinetId: true,
         raterPresidentId: true,
@@ -352,6 +420,35 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     });
   }
 
+
+  async function getTeamDynamicsRatingsForParticipants(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    return client.teamDynamicsRating.findMany({
+      where: {
+        OR: [
+          { raterMemberId: { in: participantIds } },
+          { raterCabinetId: { in: participantIds } },
+          { raterPresidentId: { in: participantIds } },
+          { teammateMemberId: { in: participantIds } },
+          { teammateCabinetId: { in: participantIds } },
+          { teammatePresidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        sessionId: true,
+        raterMemberId: true,
+        raterCabinetId: true,
+        raterPresidentId: true,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+        rating: true,
+      },
+    });
+  }
   async function createAdjudicatorScoreRecords(input: {
     sessionId: string;
     proposalId: string;
@@ -420,6 +517,31 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     });
   }
 
+
+  async function getAdjudicatorScoreRecordsForAdjudicators(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    return client.adjudicatorScoreRecord.findMany({
+      where: {
+        OR: [
+          { adjudicatorMemberId: { in: participantIds } },
+          { adjudicatorCabinetId: { in: participantIds } },
+          { adjudicatorPresidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        chairMemberId: true,
+        chairCabinetId: true,
+        chairPresidentId: true,
+        adjudicatorMemberId: true,
+        adjudicatorCabinetId: true,
+        adjudicatorPresidentId: true,
+        rating: true,
+      },
+    });
+  }
   async function upsertMemberMetricSnapshot(input: {
     participantId: MemberId;
     participantType: ParticipantType;
@@ -991,15 +1113,19 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     createSpeakerScoreRecords,
     getExistingSpeakerScoreRecords,
     getSpeakerScoreRecordsBySession,
+    getSpeakerScoreRecordsForParticipants,
     createChairFeedbackRecord,
     getChairFeedbackBySpeaker,
     getChairFeedbackBySession,
+    getChairFeedbackForChairs,
     createTeamDynamicsRatings,
     getExistingTeamDynamicsRatings,
     getTeamDynamicsRatingsBySession,
+    getTeamDynamicsRatingsForParticipants,
     createAdjudicatorScoreRecords,
     getExistingAdjudicatorScoreRecords,
     getAdjudicatorScoreRecordsBySession,
+    getAdjudicatorScoreRecordsForAdjudicators,
     upsertMemberMetricSnapshot,
     upsertPairMetricSnapshot,
     getParticipantTypes,
@@ -1012,6 +1138,4 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
 }
 
 export const scoringRepository = createScoringRepository();
-
-
 

@@ -6,7 +6,9 @@ import { computeRoomPlan, buildUnassignedParticipants } from "./leftovers.ts";
 import { computeChairAssignmentScore, assignChairsToRooms } from "./chair-assignment.ts";
 import { selectProposalFromTopBand } from "./proposal-selector.ts";
 import { generateCandidateProposals } from "./candidate-generator.ts";
+import { validateHardRules } from "./hard-rules.ts";
 import type { ParticipantContext, ProposalScoreBreakdown } from "../../../types/pairing.ts";
+import type { PairingCandidate } from "./types.ts";
 
 test("Fo2 and Fo3 confidence fallback handles zero observation and target saturation", () => {
   assert.equal(computeConfidence(0, 5), 0);
@@ -124,7 +126,7 @@ test("candidate generation keeps OG/OO/CG/CO order with correct role labels", ()
       ["adj-1", { participantId: "adj-1", adjudicatorAverageScore: 5, chairScore: 7, confidence: 1 }],
     ]),
     rules: {
-      timeConstraintParticipantIds: [],
+      timeConstraints: [],
       forcedTeamUps: [],
       forcedSeparations: [],
       forcedChairParticipantId: null,
@@ -145,4 +147,108 @@ test("candidate generation keeps OG/OO/CG/CO order with correct role labels", ()
       { bpPosition: "CO", roles: ["MO", "OW"] },
     ],
   );
+});
+
+test("candidate generation places time-constrained speakers in early speaking roles when possible", () => {
+  const participants: ParticipantContext[] = [
+    { participantId: "speaker-1", participantKind: "member", name: "S1", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-2", participantKind: "member", name: "S2", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-3", participantKind: "member", name: "S3", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-4", participantKind: "member", name: "S4", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-5", participantKind: "member", name: "S5", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-6", participantKind: "member", name: "S6", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-7", participantKind: "member", name: "S7", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-8", participantKind: "member", name: "S8", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "adj-1", participantKind: "member", name: "A1", academicYear: null, sessionRole: "adjudicator", isChairEligible: true },
+  ];
+  const candidates = generateCandidateProposals({
+    session: {
+      sessionId: "session-1",
+      motionType: "IR",
+      motionText: "THBT test motion",
+      pairingObjective: "BALANCED",
+    },
+    participants,
+    memberMetricsById: new Map(),
+    pairMetricsByKey: new Map(),
+    roleHistoryByMemberId: new Map(),
+    motionTypeHistoryByMemberId: new Map(),
+    adjudicatorMetricsById: new Map([
+      ["adj-1", { participantId: "adj-1", adjudicatorAverageScore: 5, chairScore: 7, confidence: 1 }],
+    ]),
+    rules: {
+      timeConstraints: [{ participantId: "speaker-5", isStrict: false }],
+      forcedTeamUps: [],
+      forcedSeparations: [],
+      forcedChairParticipantId: null,
+      forcedRoomCount: null,
+    },
+  });
+  const earlyRoles = new Set(["PM", "DPM", "LO", "DLO"]);
+
+  assert.equal(candidates.length > 0, true);
+  for (const candidate of candidates) {
+    const assignment = candidate.rooms
+      .flatMap((room) => room.teams.flatMap((team) => team.speakers))
+      .find((speaker) => speaker.participantId === "speaker-5");
+    assert.ok(assignment);
+    assert.equal(earlyRoles.has(assignment.speakingRole), true);
+  }
+});
+
+test("hard rules reject event team-up mismatch before top-band selection", () => {
+  const participants: ParticipantContext[] = [
+    { participantId: "speaker-1", participantKind: "member", name: "S1", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-2", participantKind: "member", name: "S2", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-3", participantKind: "member", name: "S3", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-4", participantKind: "member", name: "S4", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-5", participantKind: "member", name: "S5", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-6", participantKind: "member", name: "S6", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-7", participantKind: "member", name: "S7", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "speaker-8", participantKind: "member", name: "S8", academicYear: null, sessionRole: "speaker", isChairEligible: false },
+    { participantId: "adj-1", participantKind: "member", name: "A1", academicYear: null, sessionRole: "adjudicator", isChairEligible: true },
+  ];
+  const candidate: PairingCandidate = {
+    rooms: [
+      {
+        roomIndex: 1,
+        roomScore: null,
+        roomBalanceScore: null,
+        roomDifficultyScore: 1,
+        teams: [
+          { bpPosition: "OG", teamScore: null, speakers: [{ participantId: "speaker-1", speakingRole: "PM" }, { participantId: "speaker-2", speakingRole: "DPM" }] },
+          { bpPosition: "OO", teamScore: null, speakers: [{ participantId: "speaker-3", speakingRole: "LO" }, { participantId: "speaker-4", speakingRole: "DLO" }] },
+          { bpPosition: "CG", teamScore: null, speakers: [{ participantId: "speaker-5", speakingRole: "MG" }, { participantId: "speaker-6", speakingRole: "GW" }] },
+          { bpPosition: "CO", teamScore: null, speakers: [{ participantId: "speaker-7", speakingRole: "MO" }, { participantId: "speaker-8", speakingRole: "OW" }] },
+        ],
+        adjudicators: [{ participantId: "adj-1", isChair: true, chairAssignmentScore: 1 }],
+      },
+    ],
+    unassignedParticipants: [],
+  };
+
+  const result = validateHardRules(candidate, {
+    session: {
+      sessionId: "session-1",
+      motionType: "IR",
+      motionText: "THBT test motion",
+      pairingObjective: "BALANCED",
+    },
+    participants,
+    memberMetricsById: new Map(),
+    pairMetricsByKey: new Map(),
+    roleHistoryByMemberId: new Map(),
+    motionTypeHistoryByMemberId: new Map(),
+    adjudicatorMetricsById: new Map(),
+    rules: {
+      timeConstraints: [],
+      forcedTeamUps: [{ firstParticipantId: "speaker-1", secondParticipantId: "speaker-5", isStrict: false }],
+      forcedSeparations: [],
+      forcedChairParticipantId: null,
+      forcedRoomCount: null,
+    },
+  });
+
+  assert.equal(result.isValid, false);
+  assert.equal(result.violations.some((violation) => violation.code === "FORCED_TEAM_UP_UNMET"), true);
 });

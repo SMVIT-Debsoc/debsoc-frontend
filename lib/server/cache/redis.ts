@@ -5,14 +5,35 @@
 // degrades to L1-only (and ultimately the database). Nothing in the request
 // path should ever throw because of Redis.
 
-import Redis from "ioredis";
+import { createRequire } from "node:module";
 
 const globalForRedis = globalThis as typeof globalThis & {
-  redisClient?: Redis | null;
-  redisSubscriber?: Redis | null;
+  redisClient?: RedisClient | null;
+  redisSubscriber?: RedisClient | null;
 };
 
-function buildClient(): Redis | null {
+type RedisClient = {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, mode: "PX", ttl: number): Promise<unknown>;
+  sadd(key: string, value: string): Promise<unknown>;
+  pexpire(key: string, ttl: number): Promise<unknown>;
+  smembers(key: string): Promise<string[]>;
+  del(...keys: string[]): Promise<unknown>;
+  publish(channel: string, message: string): Promise<unknown>;
+  subscribe(channel: string): Promise<unknown>;
+  pipeline(): {
+    set(key: string, value: string, mode: "PX", ttl: number): unknown;
+    sadd(key: string, value: string): unknown;
+    pexpire(key: string, ttl: number): unknown;
+    del(...keys: string[]): unknown;
+    exec(): Promise<unknown>;
+  };
+  on(event: "error" | "message", listener: (...args: string[]) => void): void;
+};
+
+const require = createRequire(import.meta.url);
+
+function buildClient(): RedisClient | null {
   const url = process.env.REDIS_URL?.trim();
   if (!url) return null;
   if (process.env.CACHE_ENABLED === "false") return null;
@@ -22,6 +43,7 @@ function buildClient(): Redis | null {
   // imports the cache. Treat any construction failure as "no Redis" and degrade
   // to L1-only — Redis must never be able to take the app down.
   try {
+    const Redis = require("ioredis").default ?? require("ioredis");
     const client = new Redis(url, {
       lazyConnect: false,
       maxRetriesPerRequest: 3,
@@ -56,7 +78,7 @@ function buildClient(): Redis | null {
   }
 }
 
-export function getRedis(): Redis | null {
+export function getRedis(): RedisClient | null {
   if (globalForRedis.redisClient === undefined) {
     globalForRedis.redisClient = buildClient();
   }
@@ -66,7 +88,7 @@ export function getRedis(): Redis | null {
 // A second connection dedicated to pub/sub. Redis requires a separate
 // connection for subscriptions since a subscribed client cannot run normal
 // commands. Returns null when caching is disabled.
-export function getRedisSubscriber(): Redis | null {
+export function getRedisSubscriber(): RedisClient | null {
   if (globalForRedis.redisSubscriber === undefined) {
     globalForRedis.redisSubscriber = buildClient();
   }

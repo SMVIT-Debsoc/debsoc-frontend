@@ -112,7 +112,7 @@ test("publishProposalTransaction wraps publish state changes in one transaction"
       },
     },
     pairingProposal: {
-      findFirst: async () => ({ id: "proposal-1" }),
+      findFirst: async () => ({ id: "proposal-1", roomAssignments: [] }),
       update: async () => {
         calls.push("pairingProposal.update");
         return { id: "proposal-1" };
@@ -143,9 +143,21 @@ test("publishProposalTransaction wraps publish state changes in one transaction"
         return { count: 1 };
       },
     },
+    sessionRoleAssignment: {
+      deleteMany: async () => {
+        calls.push("sessionRoleAssignment.deleteMany");
+        return { count: 0 };
+      },
+      createMany: async () => {
+        calls.push("sessionRoleAssignment.createMany");
+        return { count: 0 };
+      },
+    },
   };
 
   const mockClient = {
+    debateSession: tx.debateSession,
+    pairingProposal: tx.pairingProposal,
     $transaction: async (callback: (transactionClient: typeof tx) => Promise<unknown>) => {
       calls.push("$transaction");
       return callback(tx);
@@ -158,6 +170,7 @@ test("publishProposalTransaction wraps publish state changes in one transaction"
   assert.deepEqual(calls, [
     "$transaction",
     "pairingProposal.update",
+    "sessionRoleAssignment.deleteMany",
     "debateSession.update",
     "attendance.updateMany",
   ]);
@@ -201,6 +214,7 @@ test("saveGeneratedProposal persists audit metadata in the proposal payload", as
   };
 
   const mockClient = {
+    pairingProposal: tx.pairingProposal,
     $transaction: async (callback: (transactionClient: typeof tx) => Promise<unknown>) => callback(tx),
   };
 
@@ -247,6 +261,26 @@ test("saveGeneratedProposal persists audit metadata in the proposal payload", as
 test("overrideProposalReviewAction preserves score breakdown and stores override audit", async () => {
   let updatedData: Record<string, unknown> | null = null;
   let reviewLogData: Record<string, unknown> | null = null;
+  const overrideParticipants = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "chair-1"];
+  const overrideSessionRoleAssignments = overrideParticipants.map((participantId) => ({
+    memberId: participantId,
+    cabinetId: null,
+    presidentId: null,
+    role: participantId === "chair-1" ? "adjudicator" : "speaker",
+    isChair: participantId === "chair-1",
+  }));
+  const overrideRooms = [
+    {
+      roomIndex: 1,
+      teams: [
+        { bpPosition: "OG", speakers: [{ participantId: "s1", speakingRole: "PM" }, { participantId: "s2", speakingRole: "DPM" }] },
+        { bpPosition: "OO", speakers: [{ participantId: "s3", speakingRole: "LO" }, { participantId: "s4", speakingRole: "DLO" }] },
+        { bpPosition: "CG", speakers: [{ participantId: "s5", speakingRole: "MG" }, { participantId: "s6", speakingRole: "GW" }] },
+        { bpPosition: "CO", speakers: [{ participantId: "s7", speakingRole: "MO" }, { participantId: "s8", speakingRole: "OW" }] },
+      ],
+      adjudicators: [{ participantId: "chair-1", isChair: true }],
+    },
+  ];
 
   const tx = {
     pairingProposal: {
@@ -271,6 +305,10 @@ test("overrideProposalReviewAction preserves score breakdown and stores override
             roomAssignments: [],
             unassignedParticipants: [],
             reviewLogs: [{ action: "OVERRIDE", createdAt: new Date("2026-01-01T00:01:00.000Z") }],
+            session: {
+              publishedProposalId: null,
+              sessionRoleAssignments: overrideSessionRoleAssignments,
+            },
           };
         }
 
@@ -289,6 +327,7 @@ test("overrideProposalReviewAction preserves score breakdown and stores override
           },
           session: {
             publishedProposalId: null,
+            sessionRoleAssignments: overrideSessionRoleAssignments,
           },
         };
       },
@@ -297,6 +336,12 @@ test("overrideProposalReviewAction preserves score breakdown and stores override
         return { id: "proposal-1" };
       },
     },
+    teamSpeakerAssignment: { deleteMany: async () => ({ count: 0 }), createMany: async () => ({ count: 0 }) },
+    roomAdjudicatorAssignment: { deleteMany: async () => ({ count: 0 }), createMany: async () => ({ count: 0 }) },
+    debateTeamAssignment: { deleteMany: async () => ({ count: 0 }), create: async () => ({ id: "team-1" }) },
+    debateRoomAssignment: { deleteMany: async () => ({ count: 0 }), create: async () => ({ id: "room-1" }) },
+    unassignedParticipant: { deleteMany: async () => ({ count: 0 }), createMany: async () => ({ count: 0 }) },
+    sessionRoleAssignment: { deleteMany: async () => ({ count: 0 }), createMany: async () => ({ count: 0 }) },
     proposalReviewLog: {
       create: async (args: Record<string, unknown>) => {
         reviewLogData = args.data as Record<string, unknown>;
@@ -309,6 +354,7 @@ test("overrideProposalReviewAction preserves score breakdown and stores override
   };
 
   const mockClient = {
+    pairingProposal: tx.pairingProposal,
     $transaction: async (callback: (transactionClient: typeof tx) => Promise<unknown>) => callback(tx),
   };
 
@@ -317,7 +363,7 @@ test("overrideProposalReviewAction preserves score breakdown and stores override
     proposalId: "proposal-1",
     reviewerId: "cabinet-1",
     overrideType: "manual_assignment",
-    payload: { preserved: true },
+    payload: { rooms: overrideRooms },
     notes: "Keep original payload.",
   });
 
@@ -380,9 +426,15 @@ test("publishProposalTransaction returns the existing official result on double 
     attendance: {
       updateMany: async () => ({ count: 0 }),
     },
+    sessionRoleAssignment: {
+      deleteMany: async () => ({ count: 0 }),
+      createMany: async () => ({ count: 0 }),
+    },
   };
 
   const mockClient = {
+    debateSession: tx.debateSession,
+    pairingProposal: tx.pairingProposal,
     $transaction: async (callback: (transactionClient: typeof tx) => Promise<unknown>) => callback(tx),
   };
 

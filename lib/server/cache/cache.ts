@@ -9,9 +9,9 @@
 // wrapped, and a circuit breaker stops calling a dead Redis for a cooldown
 // window. If Redis is unavailable the cache degrades to L1-only, then DB.
 
-import { getRedis, getRedisSubscriber, isRedisConfigured } from "./redis";
-import { l1Get, l1Set, l1InvalidateTags } from "./l1";
-import { CACHE_INVALIDATION_CHANNEL, type CacheTag } from "./keys";
+import { getRedis, getRedisSubscriber, isRedisConfigured } from "./redis.ts";
+import { l1Get, l1Set, l1InvalidateTags } from "./l1.ts";
+import { CACHE_INVALIDATION_CHANNEL, type CacheTag } from "./keys.ts";
 
 // --- Tunables -------------------------------------------------------------
 const DEFAULT_L1_TTL_MS = 10_000; // short: absorbs bursts on one instance

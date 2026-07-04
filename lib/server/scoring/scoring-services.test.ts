@@ -109,8 +109,8 @@ test("chair submission is idempotent across adjudicator and speaker score sectio
         rooms: [
           {
             speakers: [
-              { participantId: "speaker-1", bpPosition: "OG", speakingRole: "PM" },
-              { participantId: "speaker-2", bpPosition: "OG", speakingRole: "DPM" },
+              { participantId: "speaker-1", teamAssignmentId: "team-og-1", bpPosition: "OG", speakingRole: "PM" },
+              { participantId: "speaker-2", teamAssignmentId: "team-og-1", bpPosition: "OG", speakingRole: "DPM" },
             ],
             adjudicators: [
               { participantId: "chair-1", isChair: true },
@@ -145,9 +145,11 @@ test("chair submission is idempotent across adjudicator and speaker score sectio
     async getExistingSpeakerScoreRecords() {
       return [
         {
+          sessionId: "session-1",
           memberId: "speaker-1",
           cabinetId: null,
           presidentId: null,
+          teamAssignmentId: "team-og-1",
           bpPosition: "OG",
           speakingRole: "PM",
           rawScore: 75,
@@ -157,6 +159,7 @@ test("chair submission is idempotent across adjudicator and speaker score sectio
           memberId: "speaker-2",
           cabinetId: null,
           presidentId: null,
+          teamAssignmentId: "team-og-1",
           bpPosition: "OG",
           speakingRole: "DPM",
           rawScore: 74,
@@ -202,19 +205,49 @@ test("leaderboards recompute from raw records", async () => {
   assert.equal(result.leaderboard[0]?.rank, 1);
 });
 
-test("metric update increases snapshot confidence from fresh session evidence", async () => {
+test("metric update recomputes snapshots from historical speaker evidence", async () => {
   const updates: Array<{ metricKey: string; contextKey: string | null; confidence: number; observationCount: number }> = [];
   const service = createMetricUpdateService({
     async getSpeakerScoreRecordsBySession() {
       return [
         {
+          sessionId: "session-1",
           memberId: "speaker-1",
           cabinetId: null,
           presidentId: null,
+          teamAssignmentId: "team-og-1",
           bpPosition: "OG",
           speakingRole: "PM",
           rawScore: 75,
           teamResultPoints: 3,
+          session: { motionType: "IR", motiontype: "IR" },
+        },
+      ];
+    },
+    async getSpeakerScoreRecordsForParticipants() {
+      return [
+        {
+          sessionId: "session-1",
+          memberId: "speaker-1",
+          cabinetId: null,
+          presidentId: null,
+          teamAssignmentId: "team-og-1",
+          bpPosition: "OG",
+          speakingRole: "PM",
+          rawScore: 75,
+          teamResultPoints: 3,
+          session: { motionType: "IR", motiontype: "IR" },
+        },
+        {
+          sessionId: "session-0",
+          memberId: "speaker-1",
+          cabinetId: null,
+          presidentId: null,
+          teamAssignmentId: "team-oo-0",
+          bpPosition: "OO",
+          speakingRole: "LO",
+          rawScore: 72,
+          teamResultPoints: 2,
           session: { motionType: "IR", motiontype: "IR" },
         },
       ];
@@ -225,7 +258,16 @@ test("metric update increases snapshot confidence from fresh session evidence", 
     async getAdjudicatorScoreRecordsBySession() {
       return [];
     },
+    async getAdjudicatorScoreRecordsForAdjudicators() {
+      return [];
+    },
     async getTeamDynamicsRatingsBySession() {
+      return [];
+    },
+    async getTeamDynamicsRatingsForParticipants() {
+      return [];
+    },
+    async getChairFeedbackForChairs() {
       return [];
     },
     async getParticipantTypes() {
@@ -247,11 +289,13 @@ test("metric update increases snapshot confidence from fresh session evidence", 
 
   await service.updateLearnedMetricsFromSession("session-1");
 
-  const totalScoreUpdate = updates.find((update) => update.metricKey === "speaker_total_score");
+  const totalScoreUpdate = updates
+    .filter((update) => update.metricKey === "speaker_total_score")
+    .sort((left, right) => right.observationCount - left.observationCount)[0];
   const strengthUpdate = updates.find((update) => update.metricKey === "speaker_strength");
   assert.ok(totalScoreUpdate);
   assert.ok(strengthUpdate);
-  assert.equal(totalScoreUpdate?.observationCount, 1);
+  assert.equal(totalScoreUpdate?.observationCount, 2);
   assert.ok((totalScoreUpdate?.confidence ?? 0) > 0);
   assert.ok((strengthUpdate?.confidence ?? 0) > 0);
 });

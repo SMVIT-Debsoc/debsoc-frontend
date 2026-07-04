@@ -81,11 +81,11 @@ export function validateHardRules(
     }
   }
 
-  for (const rule of context.rules.forcedTeamUps.filter((entry) => entry.isStrict)) {
+  for (const rule of context.rules.forcedTeamUps) {
     const firstAssignment = speakerAssignments.get(rule.firstParticipantId);
     const secondAssignment = speakerAssignments.get(rule.secondParticipantId);
     if (!firstAssignment || !secondAssignment || firstAssignment.teamKey !== secondAssignment.teamKey) {
-      violations.push({ code: "STRICT_TEAM_UP_UNMET", message: `Participants ${rule.firstParticipantId} and ${rule.secondParticipantId} must be paired on the same team.` });
+      violations.push({ code: "FORCED_TEAM_UP_UNMET", message: `Participants ${rule.firstParticipantId} and ${rule.secondParticipantId} must be paired on the same team.` });
     }
   }
 

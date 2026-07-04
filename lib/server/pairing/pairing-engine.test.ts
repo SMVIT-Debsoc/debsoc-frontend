@@ -118,7 +118,7 @@ function buildContext(): PreparedScoringContext {
     motionTypeHistoryByMemberId: new Map(),
     adjudicatorMetricsById: new Map([["adj-1", { participantId: "adj-1", adjudicatorAverageScore: 0.77, chairScore: 0.81, confidence: 1 }]]),
     rules: {
-      timeConstraintParticipantIds: [],
+      timeConstraints: [],
       forcedTeamUps: [],
       forcedSeparations: [],
       forcedChairParticipantId: null,

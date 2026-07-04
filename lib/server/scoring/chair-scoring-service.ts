@@ -34,7 +34,7 @@ interface ChairScoringRepositoryContract {
     publicationStatus: string;
     roles: Array<{ participantId: string; role: string; isChair: boolean }>;
     rooms: Array<{
-      speakers: Array<{ participantId: string; bpPosition: string; speakingRole: string }>;
+      speakers: Array<{ participantId: string; teamAssignmentId: string; bpPosition: string; speakingRole: string }>;
       adjudicators: Array<{ participantId: string; isChair: boolean }>;
     }>;
     motionType: string;
@@ -74,6 +74,7 @@ interface ChairScoringRepositoryContract {
     records: Array<{
       participantId: string;
       participantType: ParticipantType;
+      teamAssignmentId?: string | null;
       bpPosition: string;
       speakingRole: string;
       rawScore: number;
@@ -171,7 +172,8 @@ export function createChairScoringService(
     const permittedAdjudicators = new Set(
       room.adjudicators.filter((adjudicator) => !adjudicator.isChair).map((adjudicator) => adjudicator.participantId),
     );
-    const permittedSpeakers = new Set(room.speakers.map((speaker) => speaker.participantId));
+    const speakersByParticipantId = new Map(room.speakers.map((speaker) => [speaker.participantId, speaker]));
+    const permittedSpeakers = new Set(speakersByParticipantId.keys());
 
     if (!input.adjudicatorScores.every((entry) => permittedAdjudicators.has(entry.adjudicatorMemberId))) {
       throw new ChairScoringError("SESSION_ROLE_REQUIRED", "Chair may only score adjudicators in their own room.");
@@ -187,12 +189,15 @@ export function createChairScoringService(
     ]);
     const chairParticipantType = participantTypes.get(input.participantId) ?? "member";
 
+    let wroteScores = false;
+
     const existingAdjudicatorScores = await repository.getExistingAdjudicatorScoreRecords(input.sessionId, input.participantId);
     if (existingAdjudicatorScores.length > 0) {
       if (!sameAdjudicatorScores(existingAdjudicatorScores, input.adjudicatorScores)) {
         throw new ChairScoringError("SUBMISSION_CONFLICT", "Chair adjudicator scores already submitted with different values.");
       }
     } else if (input.adjudicatorScores.length > 0) {
+      wroteScores = true;
       await repository.createAdjudicatorScoreRecords({
         sessionId: input.sessionId,
         proposalId: context.proposalId,
@@ -213,12 +218,14 @@ export function createChairScoringService(
         throw new ChairScoringError("SUBMISSION_CONFLICT", "Chair speaker scores already submitted with different values.");
       }
     } else if (input.speakerScores.length > 0) {
+      wroteScores = true;
       await repository.createSpeakerScoreRecords(
         input.sessionId,
         context.proposalId,
         input.speakerScores.map((entry) => ({
           participantId: entry.memberId,
           participantType: participantTypes.get(entry.memberId) ?? "member",
+          teamAssignmentId: speakersByParticipantId.get(entry.memberId)?.teamAssignmentId ?? null,
           bpPosition: entry.bpPosition,
           speakingRole: entry.speakingRole,
           rawScore: entry.rawScore,
@@ -227,6 +234,10 @@ export function createChairScoringService(
           scoredByParticipantType: chairParticipantType,
         })),
       );
+    }
+
+    if (!wroteScores) {
+      return { accepted: true };
     }
 
     await updateLearnedMetricsFromSession(input.sessionId);
@@ -256,5 +267,4 @@ export function createChairScoringService(
 }
 
 export const { submitChairAdjudicatorScore } = createChairScoringService();
-
 
