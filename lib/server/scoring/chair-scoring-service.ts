@@ -237,7 +237,7 @@ export function createChairScoringService(
     }
 
     if (!wroteScores) {
-      return { accepted: true };
+      return { sessionId: input.sessionId, accepted: true };
     }
 
     await updateLearnedMetricsFromSession(input.sessionId);

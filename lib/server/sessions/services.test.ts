@@ -15,6 +15,7 @@ function createInMemorySessionRepo() {
     pairingStatus: "DRAFT",
     publicationStatus: "DRAFT",
     scoringStatus: "pending",
+    sessionRules: { timeConstraints: [], eventTeamUpPreferences: [] },
   };
 
   let attendance: SessionPreparationContextResponse["attendance"] = [];
