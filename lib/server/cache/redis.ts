@@ -21,6 +21,7 @@ type RedisClient = {
   del(...keys: string[]): Promise<unknown>;
   publish(channel: string, message: string): Promise<unknown>;
   subscribe(channel: string): Promise<unknown>;
+  ping(): Promise<string>;
   pipeline(): {
     set(key: string, value: string, mode: "PX", ttl: number): unknown;
     sadd(key: string, value: string): unknown;
@@ -57,14 +58,14 @@ function buildClient(): RedisClient | null {
       connectTimeout: 10000,
       // Keep reconnecting in the background, but with backoff, so a brief Redis
       // outage self-heals without hammering a free-tier instance.
-      retryStrategy: (times) => Math.min(times * 200, 5000),
+      retryStrategy: (times: number) => Math.min(times * 200, 5000),
     });
 
     // Swallow connection errors — the circuit breaker in cache.ts handles
     // fallback. Without this listener ioredis would emit unhandled error events.
-    client.on("error", (err) => {
+    client.on("error", (err: unknown) => {
       if (process.env.NODE_ENV === "development") {
-        console.warn("[cache] Redis error:", err.message);
+        console.warn("[cache] Redis error:", err instanceof Error ? err.message : err);
       }
     });
 
