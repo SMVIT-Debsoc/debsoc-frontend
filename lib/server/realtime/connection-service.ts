@@ -213,3 +213,82 @@ export async function openRealtimeEventStream(
     headers: SSE_HEADERS,
   });
 }
+
+// Transport-agnostic sink for a realtime connection. The WebSocket server
+// (server.ts) implements this over a `ws` socket; the logic below is identical
+// to the SSE path (same hub, same broker, same auth filtering + dedupe) so
+// there is no second source of truth for realtime lifecycle.
+export interface RealtimeConnectionSink {
+  send(event: string, data: unknown): void;
+  isOpen(): boolean;
+}
+
+export async function openRealtimeWebSocketConnection(
+  user: SessionUser,
+  requestUrl: string,
+  sink: RealtimeConnectionSink,
+  repository: RealtimeScoringRepositoryContract = scoringRepository as RealtimeScoringRepositoryContract,
+): Promise<{ dispose(): void }> {
+  const url = new URL(requestUrl);
+  const subscriptions = parseRealtimeSubscriptions(url.searchParams);
+  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(subscriptions, repository);
+
+  let heartbeatId: ReturnType<typeof setInterval> | null = null;
+  let brokerUnsubscribe: (() => void) | null = null;
+  let disposed = false;
+  const deliveredEventIds = new Set<string>();
+
+  const emitFiltered = (event: RealtimeEventEnvelope) => {
+    if (!sink.isOpen()) {
+      return;
+    }
+    const filtered = filterRealtimeEventForSubscriber({
+      subscriber: { user, subscriptions },
+      event,
+    });
+    if (!filtered || deliveredEventIds.has(filtered.eventId)) {
+      return;
+    }
+    deliveredEventIds.add(filtered.eventId);
+    sink.send("message", filtered);
+  };
+
+  const localConnection = acceptRealtimeConnection({
+    user,
+    subscriptions,
+    sessionParticipantIdsBySessionId,
+    onEvent: emitFiltered,
+  });
+
+  sink.send("bootstrap", {
+    connectionId: localConnection.connectionId,
+    allowedScopes: localConnection.allowedScopes,
+    transport: localConnection.transport,
+    reconnectStrategy: localConnection.reconnectStrategy,
+    subscriptions,
+  });
+
+  if (hasRedisRealtimeBroker()) {
+    brokerUnsubscribe = subscribeToRealtimeBroker(emitFiltered);
+  }
+
+  heartbeatId = setInterval(() => {
+    if (sink.isOpen()) {
+      sink.send("ping", { ts: new Date().toISOString() });
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  return {
+    dispose() {
+      if (disposed) {
+        return;
+      }
+      disposed = true;
+      if (heartbeatId) {
+        clearInterval(heartbeatId);
+      }
+      brokerUnsubscribe?.();
+      localConnection.close();
+    },
+  };
+}
