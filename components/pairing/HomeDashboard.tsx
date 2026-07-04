@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, Trophy, Users } from "lucide-react";
-import { Card, EmptyState, Pill, PrimaryButton, SectionHeader } from "./ui";
+import { Card, EmptyState, Pill, PrimaryButton } from "./ui";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -15,6 +15,7 @@ import type { PublishedPairingView } from "@/types/pairing";
 type HomeDashboardProps = {
   role: string;
   userName: string;
+  position?: string | null;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   participants: { id: string; name: string }[];
@@ -40,6 +41,7 @@ type LastSessionDetails = {
 export default function HomeDashboard({
   role,
   userName,
+  position,
   sessions,
   attendanceHistory,
   participants,
@@ -175,21 +177,33 @@ export default function HomeDashboard({
   const bestMotion = motionPerformance[0] ?? null;
   const recentScore = lastSession?.speakerScore ?? null;
   const isAdmin = role === "cabinet" || role === "President" || role === "TechHead";
+  // Prefer the specific post (e.g. a cabinet member whose position is
+  // "Tech Head") over the generic account role.
+  const roleLabel =
+    role === "cabinet"
+      ? "Cabinet"
+      : role === "President"
+        ? "President"
+        : role === "TechHead"
+          ? "Tech Head"
+          : role === "Member"
+            ? "Member"
+            : role;
+  const positionLabel = position?.trim() || roleLabel;
 
   return (
     <div>
-      <SectionHeader
-        title="Home"
-        subtitle={<span className="text-slate-500 dark:text-slate-300">Welcome back, <span className="font-semibold text-slate-900 dark:text-white">{userName}</span></span>}
-        right={
-          isAdmin && onOpenWorkspace ? (
-            <PrimaryButton onClick={onOpenWorkspace}>
-              Open session workspace
-              <ArrowRight size={16} />
-            </PrimaryButton>
-          ) : null
-        }
-      />
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+          Welcome, {positionLabel}
+        </h1>
+        {isAdmin && onOpenWorkspace ? (
+          <PrimaryButton onClick={onOpenWorkspace}>
+            Open session workspace
+            <ArrowRight size={16} />
+          </PrimaryButton>
+        ) : null}
+      </div>
 
       <div className="stagger-children grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <SummaryCard

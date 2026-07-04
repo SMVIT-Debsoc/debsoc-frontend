@@ -372,6 +372,7 @@ export default function PairingDashboard({
     <AdminPairingDashboard
       role={role}
       userName={userName}
+      position={position}
       participants={state.participants}
       sessions={state.sessions}
       onSessionsChange={(sessions) =>
@@ -400,6 +401,7 @@ export default function PairingDashboard({
     <ParticipantPairingDashboard
       role={role}
       userName={userName}
+      position={position}
       sessions={state.sessions}
       attendanceHistory={state.attendanceHistory}
       participants={state.participants}
