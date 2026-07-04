@@ -646,9 +646,15 @@ async function fetchLeaderboards(scope: "all" | "bi-monthly") {
   };
 }
 
+// Ceiling for a single dashboard read. The bootstrap read is a large composite
+// query and the backing DB (Neon serverless) can cold-start after idle, so a
+// tight budget spuriously aborts the first load; a warm request still returns
+// in well under this, so the ceiling only bites on a genuine cold start.
+const FETCH_TIMEOUT_MS = 30000;
+
 async function fetchJson<T>(url: string): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+  const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, {

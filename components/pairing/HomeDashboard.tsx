@@ -6,6 +6,7 @@ import { Card, EmptyState, Pill, PrimaryButton, SectionHeader } from "./ui";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
+  ProgressProfile,
   SessionRow,
   SpeakerLeaderboardRow,
 } from "./types";
@@ -49,6 +50,7 @@ export default function HomeDashboard({
   onOpenWorkspace,
 }: HomeDashboardProps) {
   const [lastSessionDetails, setLastSessionDetails] = useState<LastSessionDetails | null>(null);
+  const [progressProfile, setProgressProfile] = useState<ProgressProfile | null>(null);
   const currentParticipantId = attendanceHistory.find((item) => item.participantId)?.participantId ?? null;
   const totalSessions = sessions.length;
   const attendedSessions = attendanceHistory.filter((item) => isPresentStatus(item.status)).length;
@@ -119,28 +121,56 @@ export default function HomeDashboard({
     };
   }, [adjudicatorLeaderboard, currentParticipantId, lastSession?.session.id, participants, speakerLeaderboard]);
 
-  const motionPerformance = useMemo(() => {
-    const buckets = new Map<string, { total: number; sessions: number }>();
+  useEffect(() => {
+    if (!currentParticipantId) {
+      setProgressProfile(null);
+      return;
+    }
 
-    attendanceHistory.forEach((item) => {
-      if (typeof item.speakerScore !== "number") {
-        return;
+    let cancelled = false;
+
+    async function loadProgressProfile() {
+      try {
+        const response = await fetch(`/api/progress/members/${currentParticipantId}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          if (!cancelled) {
+            setProgressProfile(null);
+          }
+          return;
+        }
+        const profile = (await response.json()) as ProgressProfile;
+        if (!cancelled) {
+          setProgressProfile(profile);
+        }
+      } catch {
+        if (!cancelled) {
+          setProgressProfile(null);
+        }
       }
+    }
 
-      const current = buckets.get(item.session.motiontype) ?? { total: 0, sessions: 0 };
-      current.total += item.speakerScore;
-      current.sessions += 1;
-      buckets.set(item.session.motiontype, current);
-    });
+    void loadProgressProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentParticipantId]);
 
-    return Array.from(buckets.entries())
-      .map(([motionType, value]) => ({
-        motionType,
-        averageScore: Number((value.total / value.sessions).toFixed(1)),
-        sessions: value.sessions,
+  const motionPerformance = useMemo<MotionPerformance[]>(() => {
+    if (!progressProfile) {
+      return [];
+    }
+
+    return progressProfile.motionTypeScores
+      .map((entry) => ({
+        motionType: entry.motionType,
+        averageScore: Number(entry.score.toFixed(1)),
+        sessions: entry.observationCount,
       }))
       .sort((left, right) => right.averageScore - left.averageScore);
-  }, [attendanceHistory]);
+  }, [progressProfile]);
 
   const bestMotion = motionPerformance[0] ?? null;
   const recentScore = lastSession?.speakerScore ?? null;
