@@ -135,7 +135,7 @@ export default function SessionWorkspace({
     const [nextTeamUpIsStrict, setNextTeamUpIsStrict] = useState(false);
     const [busyAction, setBusyAction] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<string | null>(null);
-    // Raw backend errors are noisy internals â€” log them to the console for
+    // Raw backend errors are noisy internals — log them to the console for
     // debugging but never surface them in the UI. Callers keep using the same
     // Dispatch<SetStateAction<string|null>> signature; state is intentionally
     // unused.
@@ -455,7 +455,7 @@ export default function SessionWorkspace({
             : "Kick off a session";
         const body = hasCompletedSessions
             ? "The last session is fully scored and archived. Spin up a new session to draft attendance, generate pairings, and publish rooms."
-            : "Create a new session to open the pairing workflow â€” mark attendance, generate the proposal, and publish rooms.";
+            : "Create a new session to open the pairing workflow — mark attendance, generate the proposal, and publish rooms.";
 
         const steps = [
             {n: "1", label: "Mark attendance"},
@@ -470,7 +470,7 @@ export default function SessionWorkspace({
                     <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-5 sm:p-6 text-white shadow-sm">
                         <div className="flex items-start gap-3">
                             <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
-                                {hasCompletedSessions ? "âœ…" : "âœ¨"}
+                                {hasCompletedSessions ? "✅" : "✨"}
                             </div>
                             <div className="min-w-0">
                                 <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-300">
@@ -501,7 +501,7 @@ export default function SessionWorkspace({
                                 }
                             >
                                 {busyAction
-                                    ? "Creatingâ€¦"
+                                    ? "Creating…"
                                     : "Create new session"}
                             </PrimaryButton>
                             <span className="text-xs text-slate-400">
@@ -564,7 +564,7 @@ export default function SessionWorkspace({
                         >
                             {sessions.map((session) => (
                                 <option key={session.id} value={session.id}>
-                                    {session.date} Â· {session.motionType}
+                                    {session.date} · {session.motionType}
                                 </option>
                             ))}
                         </select>
@@ -612,7 +612,7 @@ export default function SessionWorkspace({
 
             {busyAction && (
                 <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
-                    {busyAction}â€¦
+                    {busyAction}…
                 </div>
             )}
             {feedback && (
@@ -1298,7 +1298,7 @@ export default function SessionWorkspace({
                                             )}
                                         </div>
                                         <div className="mt-1 text-slate-600 dark:text-slate-400">
-                                            Role: {task.sessionRole} Â·{" "}
+                                            Role: {task.sessionRole} ·{" "}
                                             {task.hasSubmitted
                                                 ? "Submitted"
                                                 : "Pending"}
@@ -2247,7 +2247,7 @@ function RoleColumn({
                                 </div>
                                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">
                                     {p.account}
-                                    {p.position ? ` Â· ${p.position}` : ""}
+                                    {p.position ? ` · ${p.position}` : ""}
                                 </div>
                             </div>
                             <button
@@ -2363,7 +2363,7 @@ function RolePickerModal({
                                                 <div className="truncate text-xs text-slate-500 dark:text-slate-400">
                                                     {p.account}
                                                     {inOther
-                                                        ? ` Â· currently ${other}`
+                                                        ? ` · currently ${other}`
                                                         : ""}
                                                 </div>
                                             </div>
@@ -2415,7 +2415,7 @@ function ProposalView({
         <div className="space-y-4">
             <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.04] p-4">
                 <div className="text-sm text-slate-600 dark:text-slate-400">
-                    Proposal v{proposal.summary.version} Â· Score{" "}
+                    Proposal v{proposal.summary.version} · Score{" "}
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {proposal.summary.proposalScore.toFixed(2)}
                     </span>
@@ -2423,7 +2423,7 @@ function ProposalView({
                 <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                     Status: {proposal.summary.status}
                     {proposal.summary.topBandRank != null
-                        ? ` Â· Top-band rank: ${proposal.summary.topBandRank}`
+                        ? ` · Top-band rank: ${proposal.summary.topBandRank}`
                         : ""}
                 </div>
             </div>
@@ -2436,7 +2436,7 @@ function ProposalView({
                         difficulty ? `Difficulty ${difficulty}` : null,
                     ]
                         .filter(Boolean)
-                        .join(" Â· ");
+                        .join(" · ");
                     return (
                         <div
                             key={room.roomIndex}
@@ -3138,7 +3138,7 @@ function PublishedView({
     return (
         <div className="space-y-4">
             <div className="rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 p-4 text-sm text-indigo-900 dark:text-indigo-200">
-                Official published pairing Â· {publishedPairing.motionType} Â·{" "}
+                Official published pairing · {publishedPairing.motionType} ·{" "}
                 {publishedPairing.publishedAt}
             </div>
             <div className="grid gap-4 md:grid-cols-2">

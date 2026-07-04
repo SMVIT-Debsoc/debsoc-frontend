@@ -1,4 +1,9 @@
 import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import {
+  updateLearnedMetricsFromSession,
+  updatePairMetricSnapshotsFromSession,
+  updateRolePerformanceFromSession,
+} from "../scoring/metric-update-service.ts";
 import { scoringRepository } from "../repositories/scoring-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
 import { invalidateTags } from "../cache/cache.ts";
@@ -291,6 +296,14 @@ export function createSessionService(
   repository: SessionRepositoryContract = sessionRepository,
   scoringReadRepository: ScoringRepositoryContract = scoringRepository as ScoringRepositoryContract,
   publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
+  rebuildSessionMetrics: (sessionId: string) => Promise<void> = async (sessionId) => {
+    // Idempotent upserts: safe to run whenever scoring finalizes. This guarantees
+    // metric snapshots exist for a completed session even if individual score
+    // submissions bypassed the per-submission metric trigger (e.g. bulk import).
+    await updateLearnedMetricsFromSession(sessionId);
+    await updatePairMetricSnapshotsFromSession(sessionId);
+    await updateRolePerformanceFromSession(sessionId);
+  },
 ) {
   async function createSession(input: CreateSessionInput): Promise<SessionMetadataView> {
     const created = await repository.createSession({
@@ -442,6 +455,15 @@ export function createSessionService(
     });
 
     const view = toSessionMetadataView(updated);
+
+    // Finalizing scoring must build the learned metric snapshots that power
+    // progress profiles and leaderboards. Only fire on the transition into
+    // "complete" so re-saves of an already-complete session don't rebuild.
+    const wasComplete =
+      normalizeScoringStatus(currentSession.scoringStatus) === scoringStatuses.complete;
+    if (view.scoringStatus === scoringStatuses.complete && !wasComplete) {
+      await rebuildSessionMetrics(input.sessionId);
+    }
 
     await invalidateTags([CACHE_TAGS.sessions, CACHE_TAGS.progress, CACHE_TAGS.leaderboard]);
 
