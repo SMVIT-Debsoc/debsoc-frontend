@@ -860,14 +860,19 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       }),
       client.chairFeedbackRecord.findMany({
         select: {
+          sessionId: true,
           chairMemberId: true,
           chairCabinetId: true,
           chairPresidentId: true,
+          chairMember: { select: { name: true } },
+          chairCabinet: { select: { name: true } },
+          chairPresident: { select: { name: true } },
         },
       }),
     ]);
 
     const aggregate = new Map<MemberId, { name: string; scoreTotal: number; adjudicatedCount: number; chairedCount: number }>();
+    const chairedSessionsByParticipantId = new Map<MemberId, Set<string>>();
 
     for (const row of adjudicatorRows) {
       const participantId = resolveParticipantId({
@@ -901,12 +906,15 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       }
 
       const current = aggregate.get(participantId) ?? {
-        name: "Unknown Participant",
+        name: row.chairMember?.name ?? row.chairCabinet?.name ?? row.chairPresident?.name ?? "Unknown Participant",
         scoreTotal: 0,
         adjudicatedCount: 0,
         chairedCount: 0,
       };
-      current.chairedCount += 1;
+      const chairedSessions = chairedSessionsByParticipantId.get(participantId) ?? new Set<string>();
+      chairedSessions.add(row.sessionId);
+      chairedSessionsByParticipantId.set(participantId, chairedSessions);
+      current.chairedCount = chairedSessions.size;
       aggregate.set(participantId, current);
     }
 
@@ -1194,4 +1202,5 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
 }
 
 export const scoringRepository = createScoringRepository();
+
 
