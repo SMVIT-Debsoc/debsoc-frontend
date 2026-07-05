@@ -191,7 +191,7 @@ export default function Leaderboards({
                 </div>
                 <div className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">Adjudicator leaderboard</div>
                 <div className="mt-3 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-                  This board ranks adjudicators by average score while keeping chair rounds and panel rounds visible as separate responsibility signals.
+                  This board ranks adjudicators by one combined average: panel rounds use direct adjudicator ratings, and chair rounds use the per-session chair average.
                 </div>
               </div>
 
@@ -343,6 +343,7 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
+
 
 
 

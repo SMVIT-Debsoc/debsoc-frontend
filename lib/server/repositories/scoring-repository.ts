@@ -861,6 +861,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       client.chairFeedbackRecord.findMany({
         select: {
           sessionId: true,
+          rating: true,
           chairMemberId: true,
           chairCabinetId: true,
           chairPresidentId: true,
@@ -872,7 +873,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     ]);
 
     const aggregate = new Map<MemberId, { name: string; scoreTotal: number; adjudicatedCount: number; chairedCount: number }>();
-    const chairedSessionsByParticipantId = new Map<MemberId, Set<string>>();
+    const chairScoresByParticipantAndSession = new Map<MemberId, Map<string, { name: string; scoreTotal: number; ratingCount: number }>>();
 
     for (const row of adjudicatorRows) {
       const participantId = resolveParticipantId({
@@ -905,35 +906,52 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         continue;
       }
 
-      const current = aggregate.get(participantId) ?? {
+      const sessions = chairScoresByParticipantAndSession.get(participantId) ?? new Map<string, { name: string; scoreTotal: number; ratingCount: number }>();
+      const currentSession = sessions.get(row.sessionId) ?? {
         name: row.chairMember?.name ?? row.chairCabinet?.name ?? row.chairPresident?.name ?? "Unknown Participant",
+        scoreTotal: 0,
+        ratingCount: 0,
+      };
+      currentSession.scoreTotal += row.rating;
+      currentSession.ratingCount += 1;
+      sessions.set(row.sessionId, currentSession);
+      chairScoresByParticipantAndSession.set(participantId, sessions);
+    }
+
+    for (const [participantId, sessions] of chairScoresByParticipantAndSession.entries()) {
+      const current = aggregate.get(participantId) ?? {
+        name: [...sessions.values()][0]?.name ?? "Unknown Participant",
         scoreTotal: 0,
         adjudicatedCount: 0,
         chairedCount: 0,
       };
-      const chairedSessions = chairedSessionsByParticipantId.get(participantId) ?? new Set<string>();
-      chairedSessions.add(row.sessionId);
-      chairedSessionsByParticipantId.set(participantId, chairedSessions);
-      current.chairedCount = chairedSessions.size;
+
+      for (const sessionScore of sessions.values()) {
+        current.scoreTotal += sessionScore.ratingCount === 0 ? 0 : sessionScore.scoreTotal / sessionScore.ratingCount;
+        current.chairedCount += 1;
+      }
+
       aggregate.set(participantId, current);
     }
 
     return [...aggregate.entries()]
-      .map(([participantId, entry]) => ({
-        participantId,
-        name: entry.name,
-        score: entry.adjudicatedCount === 0 ? 0 : entry.scoreTotal / entry.adjudicatedCount,
-        sessionsCount: entry.adjudicatedCount,
-        adjudicatedCount: entry.adjudicatedCount,
-        chairedCount: entry.chairedCount,
-      }))
+      .map(([participantId, entry]) => {
+        const combinedCount = entry.adjudicatedCount + entry.chairedCount;
+        return {
+          participantId,
+          name: entry.name,
+          score: combinedCount === 0 ? 0 : entry.scoreTotal / combinedCount,
+          sessionsCount: combinedCount,
+          adjudicatedCount: entry.adjudicatedCount,
+          chairedCount: entry.chairedCount,
+        };
+      })
       .sort((left, right) => right.score - left.score)
       .map((entry, index) => ({
         ...entry,
         rank: index + 1,
       }));
   }
-
   async function getParticipantProgressProfile(participantId: MemberId): Promise<ParticipantProgressProfile> {
     const [rawMetrics, attendanceRows, pairMetrics, assignmentCounts] = await Promise.all([
       client.memberMetricSnapshot.findMany({
@@ -1202,5 +1220,9 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
 }
 
 export const scoringRepository = createScoringRepository();
+
+
+
+
 
 
