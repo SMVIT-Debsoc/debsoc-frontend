@@ -838,7 +838,7 @@ function deriveSessionsFromAttendance(attendanceHistory: AttendanceHistoryItem[]
     date: item.session.sessionDate,
     motionType: item.session.motiontype,
     chair: item.session.Chair,
-    state: item.speakerScore !== null ? "Scored" : "Published",
+    state: item.speakerScore !== null ? "Scored" : "Preparation",
   }));
 }
 
