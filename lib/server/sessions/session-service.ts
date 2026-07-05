@@ -116,6 +116,7 @@ interface SessionRepositoryContract {
       pairingStatus: string;
       publicationStatus: string;
       scoringStatus: string;
+      sessionRules: SessionRuleConfigView;
     }>,
   ): Promise<{
     id: string;
@@ -463,6 +464,7 @@ export function createSessionService(
       pairingStatus: input.pairingStatus,
       publicationStatus: input.publicationStatus,
       scoringStatus: input.scoringStatus,
+      sessionRules: input.sessionRules,
     });
 
     const view = toSessionMetadataView(updated);
