@@ -169,7 +169,7 @@ export default function Leaderboards({
                             <div className="font-medium text-slate-900 dark:text-slate-100">{entry.name}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score}</div>
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score.toFixed(1)}</div>
                           </td>
                           <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
                         </tr>
@@ -260,7 +260,7 @@ export default function Leaderboards({
                           </div>
                         </td>
                         <td className="px-2 sm:px-4 py-3">
-                          <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score}</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score.toFixed(1)}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400">Average</div>
                         </td>
                         <td className="hidden md:table-cell px-4 py-3 text-slate-700 dark:text-slate-300">{entry.adjudicatedCount}</td>
@@ -343,6 +343,7 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
+
 
 
 
