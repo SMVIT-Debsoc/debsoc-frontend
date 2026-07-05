@@ -1281,7 +1281,17 @@ export default function SessionWorkspace({
                         <div className="space-y-4">
                             <div className="text-sm text-slate-600 dark:text-slate-400">
                                 Scoring status:{" "}
-                                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                <span
+                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                        workspace.scoringStatus.scoringStatus ===
+                                        "complete"
+                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                                            : workspace.scoringStatus
+                                                    .scoringStatus === "open"
+                                              ? "bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300"
+                                              : "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
+                                    }`}
+                                >
                                     {workspace.scoringStatus.scoringStatus}
                                 </span>
                             </div>
@@ -1289,20 +1299,34 @@ export default function SessionWorkspace({
                                 {workspace.scoringStatus.tasks.map((task) => (
                                     <div
                                         key={task.participantId}
-                                        className="rounded-xl border border-slate-200 dark:border-white/10 px-4 py-3 text-sm"
+                                        className={`flex items-center justify-between gap-3 rounded-xl border-l-4 border border-slate-200 dark:border-white/10 px-4 py-3 text-sm ${
+                                            task.hasSubmitted
+                                                ? "border-l-emerald-500"
+                                                : "border-l-amber-500"
+                                        }`}
                                     >
-                                        <div className="font-medium text-slate-900 dark:text-slate-100">
-                                            {findParticipantName(
-                                                participants,
-                                                task.participantId,
-                                            )}
+                                        <div>
+                                            <div className="font-medium text-slate-900 dark:text-slate-100">
+                                                {findParticipantName(
+                                                    participants,
+                                                    task.participantId,
+                                                )}
+                                            </div>
+                                            <div className="mt-1 text-slate-600 dark:text-slate-400">
+                                                Role: {task.sessionRole}
+                                            </div>
                                         </div>
-                                        <div className="mt-1 text-slate-600 dark:text-slate-400">
-                                            Role: {task.sessionRole} ·{" "}
+                                        <span
+                                            className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                                task.hasSubmitted
+                                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300"
+                                                    : "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
+                                            }`}
+                                        >
                                             {task.hasSubmitted
                                                 ? "Submitted"
                                                 : "Pending"}
-                                        </div>
+                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -3165,6 +3189,20 @@ function PublishedView({
                                         .join(", ")}
                                 </div>
                             ))}
+                            {room.adjudicators.length > 0 ? (
+                                <div>
+                                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                                        Adjudicators
+                                    </span>
+                                    :{" "}
+                                    {room.adjudicators
+                                        .map(
+                                            (adjudicator) =>
+                                                `${findParticipantName(participants, adjudicator.participantId)}${adjudicator.isChair ? " (Chair)" : ""}`,
+                                        )
+                                        .join(", ")}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 ))}
