@@ -148,6 +148,34 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     };
   }
 
+  // Lightweight variant for the realtime connect path: the realtime hub only
+  // needs the set of published-scoring participant IDs to authorize a non-admin
+  // SESSION_SCORING subscription. Selecting only the role assignments avoids the
+  // full nested published-proposal tree that getPublishedScoringContext fetches,
+  // keeping this off the WS/SSE bootstrap's critical path.
+  async function getPublishedScoringParticipantIds(sessionId: string): Promise<string[]> {
+    const session = await client.debateSession.findUnique({
+      where: { id: sessionId },
+      select: {
+        sessionRoleAssignments: {
+          select: { memberId: true, cabinetId: true, presidentId: true },
+        },
+      },
+    });
+
+    if (!session) {
+      return [];
+    }
+
+    const participantIds = session.sessionRoleAssignments
+      .map((assignment: { memberId: string | null; cabinetId: string | null; presidentId: string | null }) =>
+        String(resolveParticipantId(assignment)),
+      )
+      .filter((id: string) => id.length > 0);
+
+    return Array.from(new Set<string>(participantIds));
+  }
+
   async function createSpeakerScoreRecords(
     sessionId: string,
     proposalId: string,
@@ -1110,6 +1138,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
 
   return {
     getPublishedScoringContext,
+    getPublishedScoringParticipantIds,
     createSpeakerScoreRecords,
     getExistingSpeakerScoreRecords,
     getSpeakerScoreRecordsBySession,

@@ -261,6 +261,9 @@ export default function PairingDashboard({
 
   usePairingRealtime({
     enabled: true,
+    // Admin surfaces use the lower-latency WebSocket transport; other views
+    // stay on SSE. Both terminate in the same realtime hub server-side.
+    transport: isAdminView ? "ws" : "sse",
     subscriptions: realtimeSubscriptions,
     onBootstrap() {
       schedulePrimaryRefresh();
