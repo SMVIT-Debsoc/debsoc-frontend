@@ -139,7 +139,9 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
         where: {
           publicationStatus: "PUBLISHED",
           OR: [
-            { attendance: { some: where } },
+            // Session-role assignments cover present participants, including
+            // leftover/unassigned debaters, without forcing the wider
+            // attendance-based branch on every published-session refresh.
             { sessionRoleAssignments: { some: where } },
             {
               publishedProposal: {

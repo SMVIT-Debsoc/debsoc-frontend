@@ -139,6 +139,7 @@ export default function PairingDashboard({
   useEffect(() => {
     const liveRefreshTabs = new Set<string>([
       "Home",
+      "MyPairing",
       "SpeakerLeaderboard",
       "AdjudicatorLeaderboard",
     ]);
@@ -152,7 +153,7 @@ export default function PairingDashboard({
     document.addEventListener("visibilitychange", onFocus);
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") refreshPrimaryData();
-    }, 30_000);
+    }, 10_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
