@@ -8,8 +8,22 @@ type RealtimeBrokerListener = (event: RealtimeEventEnvelope) => void;
 const listeners = new Set<RealtimeBrokerListener>();
 let subscriptionStarted = false;
 
+// Cross-instance realtime fan-out via Redis pub/sub. This opens a SECOND,
+// dedicated Redis connection (Redis requires a separate connection for
+// subscriptions). It is only needed when the app runs as MULTIPLE instances —
+// with the single custom server (server.ts) the in-memory hub already delivers
+// every event to every connected client, so the subscriber is pure overhead.
+//
+// On a connection-capped free-tier Redis, that wasted connection is exactly
+// what pushes the instance to "max number of clients reached". So fan-out is
+// OFF by default and must be explicitly enabled (set REALTIME_REDIS_FANOUT=true)
+// only when you actually run more than one app instance behind the same Redis.
+function isRealtimeFanoutEnabled() {
+  return isRedisConfigured() && process.env.REALTIME_REDIS_FANOUT === "true";
+}
+
 function startSubscription() {
-  if (subscriptionStarted || !isRedisConfigured()) {
+  if (subscriptionStarted || !isRealtimeFanoutEnabled()) {
     return;
   }
 
@@ -41,8 +55,11 @@ function startSubscription() {
 }
 
 export function hasRedisRealtimeBroker() {
+  if (!isRealtimeFanoutEnabled()) {
+    return false;
+  }
   startSubscription();
-  return isRedisConfigured() && Boolean(getRedis()) && Boolean(getRedisSubscriber());
+  return Boolean(getRedis()) && Boolean(getRedisSubscriber());
 }
 
 export async function publishRealtimeBrokerEvent(event: RealtimeEventEnvelope) {

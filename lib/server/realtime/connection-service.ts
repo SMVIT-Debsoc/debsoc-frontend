@@ -15,9 +15,14 @@ const SSE_HEADERS = {
 const HEARTBEAT_INTERVAL_MS = 20_000;
 
 interface RealtimeScoringRepositoryContract {
-  getPublishedScoringContext(sessionId: string): Promise<{
-    roles: Array<{ participantId: string }>;
-  } | null>;
+  getPublishedScoringParticipantIds(sessionId: string): Promise<string[]>;
+}
+
+// Admin session roles are authorized for SESSION_SCORING regardless of the
+// published participant set (see canSubscribeToRealtimeScope), so we never need
+// the participant-ID lookup for them — skip it to keep the connect path fast.
+function isRealtimeAdminRole(role: SessionUser["role"]) {
+  return role === "cabinet" || role === "President" || role === "TechHead";
 }
 
 function parseSubscriptionToken(token: string): RealtimeSubscription | null {
@@ -61,9 +66,18 @@ function parseRealtimeSubscriptions(searchParams: URLSearchParams): RealtimeSubs
 }
 
 async function buildSessionParticipantIdsBySessionId(
+  user: SessionUser,
   subscriptions: RealtimeSubscription[],
   repository: RealtimeScoringRepositoryContract,
 ) {
+  const participantIdsBySessionId = new Map<string, string[]>();
+
+  // Admins are authorized for SESSION_SCORING without the participant lookup,
+  // so the (DB-backed) query stays off their connect path entirely.
+  if (isRealtimeAdminRole(user.role)) {
+    return participantIdsBySessionId;
+  }
+
   const scoringSessionIds = [...new Set(
     subscriptions
       .filter((subscription) => subscription.scope === "SESSION_SCORING")
@@ -71,14 +85,10 @@ async function buildSessionParticipantIdsBySessionId(
       .filter((sessionId): sessionId is string => Boolean(sessionId)),
   )];
 
-  const participantIdsBySessionId = new Map<string, string[]>();
   await Promise.all(
     scoringSessionIds.map(async (sessionId) => {
-      const context = await repository.getPublishedScoringContext(sessionId);
-      participantIdsBySessionId.set(
-        sessionId,
-        [...new Set((context?.roles ?? []).map((role) => role.participantId).filter(Boolean))],
-      );
+      const participantIds = await repository.getPublishedScoringParticipantIds(sessionId);
+      participantIdsBySessionId.set(sessionId, participantIds);
     }),
   );
 
@@ -98,7 +108,7 @@ export async function getRealtimeConnectionBootstrap(
 ) {
   const url = new URL(requestUrl);
   const subscriptions = parseRealtimeSubscriptions(url.searchParams);
-  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(subscriptions, repository);
+  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(user, subscriptions, repository);
   const connection = acceptRealtimeConnection({
     user,
     subscriptions,
@@ -125,7 +135,7 @@ export async function openRealtimeEventStream(
 ) {
   const url = new URL(requestUrl);
   const subscriptions = parseRealtimeSubscriptions(url.searchParams);
-  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(subscriptions, repository);
+  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(user, subscriptions, repository);
   const bootstrap = acceptRealtimeConnection({
     user,
     subscriptions,
@@ -212,4 +222,83 @@ export async function openRealtimeEventStream(
   return new Response(stream, {
     headers: SSE_HEADERS,
   });
+}
+
+// Transport-agnostic sink for a realtime connection. The WebSocket server
+// (server.ts) implements this over a `ws` socket; the logic below is identical
+// to the SSE path (same hub, same broker, same auth filtering + dedupe) so
+// there is no second source of truth for realtime lifecycle.
+export interface RealtimeConnectionSink {
+  send(event: string, data: unknown): void;
+  isOpen(): boolean;
+}
+
+export async function openRealtimeWebSocketConnection(
+  user: SessionUser,
+  requestUrl: string,
+  sink: RealtimeConnectionSink,
+  repository: RealtimeScoringRepositoryContract = scoringRepository as RealtimeScoringRepositoryContract,
+): Promise<{ dispose(): void }> {
+  const url = new URL(requestUrl);
+  const subscriptions = parseRealtimeSubscriptions(url.searchParams);
+  const sessionParticipantIdsBySessionId = await buildSessionParticipantIdsBySessionId(user, subscriptions, repository);
+
+  let heartbeatId: ReturnType<typeof setInterval> | null = null;
+  let brokerUnsubscribe: (() => void) | null = null;
+  let disposed = false;
+  const deliveredEventIds = new Set<string>();
+
+  const emitFiltered = (event: RealtimeEventEnvelope) => {
+    if (!sink.isOpen()) {
+      return;
+    }
+    const filtered = filterRealtimeEventForSubscriber({
+      subscriber: { user, subscriptions },
+      event,
+    });
+    if (!filtered || deliveredEventIds.has(filtered.eventId)) {
+      return;
+    }
+    deliveredEventIds.add(filtered.eventId);
+    sink.send("message", filtered);
+  };
+
+  const localConnection = acceptRealtimeConnection({
+    user,
+    subscriptions,
+    sessionParticipantIdsBySessionId,
+    onEvent: emitFiltered,
+  });
+
+  sink.send("bootstrap", {
+    connectionId: localConnection.connectionId,
+    allowedScopes: localConnection.allowedScopes,
+    transport: localConnection.transport,
+    reconnectStrategy: localConnection.reconnectStrategy,
+    subscriptions,
+  });
+
+  if (hasRedisRealtimeBroker()) {
+    brokerUnsubscribe = subscribeToRealtimeBroker(emitFiltered);
+  }
+
+  heartbeatId = setInterval(() => {
+    if (sink.isOpen()) {
+      sink.send("ping", { ts: new Date().toISOString() });
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+
+  return {
+    dispose() {
+      if (disposed) {
+        return;
+      }
+      disposed = true;
+      if (heartbeatId) {
+        clearInterval(heartbeatId);
+      }
+      brokerUnsubscribe?.();
+      localConnection.close();
+    },
+  };
 }

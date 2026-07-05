@@ -34,7 +34,11 @@ type RedisClient = {
 
 const require = createRequire(import.meta.url);
 
-function buildClient(): RedisClient | null {
+function buildClient(role: "cmd" | "sub" = "cmd"): RedisClient | null {
+  // Hosted free-tier Redis (e.g. redis.io) caps total client connections
+  // (~30). This process opens at most one command client and one subscriber;
+  // both are process-global singletons (see getRedis/getRedisSubscriber) so
+  // HMR reloads and repeated imports reuse them instead of leaking new sockets.
   const url = process.env.REDIS_URL?.trim();
   if (!url) return null;
   if (process.env.CACHE_ENABLED === "false") return null;
@@ -46,6 +50,9 @@ function buildClient(): RedisClient | null {
   try {
     const Redis = require("ioredis").default ?? require("ioredis");
     const client = new Redis(url, {
+      // Name the connection so it is identifiable in `CLIENT LIST` when
+      // diagnosing "max number of clients reached" on the capped instance.
+      connectionName: `debsoc-${role}-${process.pid}`,
       lazyConnect: false,
       maxRetriesPerRequest: 3,
       // Queue commands issued before the connection is ready instead of failing
@@ -91,7 +98,7 @@ export function getRedis(): RedisClient | null {
 // commands. Returns null when caching is disabled.
 export function getRedisSubscriber(): RedisClient | null {
   if (globalForRedis.redisSubscriber === undefined) {
-    globalForRedis.redisSubscriber = buildClient();
+    globalForRedis.redisSubscriber = buildClient("sub");
   }
   return globalForRedis.redisSubscriber ?? null;
 }

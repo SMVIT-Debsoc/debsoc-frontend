@@ -135,7 +135,9 @@ export default function PairingDashboard({
 
   // Keep lightweight overview surfaces live, but avoid interrupting tabs where
   // people are actively filling forms, reviewing pairings, or working in a
-  // modal-heavy flow.
+  // modal-heavy flow. Read-only member surfaces (Home, MyPairing) are included
+  // so members pick up admin-driven changes — a session opening, being marked
+  // present, or a pairing being published — without waiting to switch tabs.
   useEffect(() => {
     const liveRefreshTabs = new Set<string>([
       "Home",
@@ -262,6 +264,9 @@ export default function PairingDashboard({
 
   usePairingRealtime({
     enabled: true,
+    // Admin surfaces use the lower-latency WebSocket transport; other views
+    // stay on SSE. Both terminate in the same realtime hub server-side.
+    transport: isAdminView ? "ws" : "sse",
     subscriptions: realtimeSubscriptions,
     onBootstrap() {
       schedulePrimaryRefresh();
@@ -373,6 +378,7 @@ export default function PairingDashboard({
     <AdminPairingDashboard
       role={role}
       userName={userName}
+      position={position}
       participants={state.participants}
       sessions={state.sessions}
       onSessionsChange={(sessions) =>
@@ -401,6 +407,7 @@ export default function PairingDashboard({
     <ParticipantPairingDashboard
       role={role}
       userName={userName}
+      position={position}
       sessions={state.sessions}
       attendanceHistory={state.attendanceHistory}
       participants={state.participants}
