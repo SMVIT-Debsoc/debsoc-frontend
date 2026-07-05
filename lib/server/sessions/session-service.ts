@@ -1,4 +1,4 @@
-import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { publishDashboardRealtimeEvent, publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import {
   updateLearnedMetricsFromSession,
   updatePairMetricSnapshotsFromSession,
@@ -296,6 +296,7 @@ export function createSessionService(
   repository: SessionRepositoryContract = sessionRepository,
   scoringReadRepository: ScoringRepositoryContract = scoringRepository as ScoringRepositoryContract,
   publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
+  publishDashboardEvent: typeof publishDashboardRealtimeEvent = publishDashboardRealtimeEvent,
   rebuildSessionMetrics: (sessionId: string) => Promise<void> = async (sessionId) => {
     // Idempotent upserts: safe to run whenever scoring finalizes. This guarantees
     // metric snapshots exist for a completed session even if individual score
@@ -327,6 +328,16 @@ export function createSessionService(
       entityVersion: `${created.pairingStatus}:${created.publicationStatus}:${created.scoringStatus}`,
     });
 
+    await publishDashboardEvent({
+      eventId: `dashboard.changed:session:${created.sessionId}:${Date.now()}`,
+      eventType: "dashboard.changed",
+      occurredAt: new Date().toISOString(),
+      sessionId: null,
+      proposalId: null,
+      visibility: "MEMBER_SAFE",
+      refetchHints: ["dashboard"],
+      entityVersion: `${created.sessionId}:${created.pairingStatus}:${created.publicationStatus}:${created.scoringStatus}`,
+    });
     return created;
   }
 

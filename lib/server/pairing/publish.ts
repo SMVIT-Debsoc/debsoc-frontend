@@ -1,5 +1,5 @@
 import type { PublishPairingResponse, GetPublishedPairingResponse, PublishedPairingView } from "../../../types/pairing.ts";
-import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { publishDashboardRealtimeEvent, publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { getOrLoad, invalidateTags } from "../cache/cache.ts";
 import { cacheKeys, CACHE_TAGS, CACHE_TTL } from "../cache/keys.ts";
@@ -48,6 +48,7 @@ function mapPublishError(error: unknown): PairingPublishError {
 export function createPairingPublishService(
   repository: PairingPublishRepositoryContract = pairingRepository as PairingPublishRepositoryContract,
   publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
+  publishDashboardEvent: typeof publishDashboardRealtimeEvent = publishDashboardRealtimeEvent,
 ) {
   async function publishApprovedProposal(sessionId: string): Promise<PublishPairingResult> {
     try {
@@ -64,6 +65,16 @@ export function createPairingPublishService(
           proposalId: publishedPairing.proposalId,
           visibility: "MEMBER_SAFE",
           refetchHints: ["published_pairing", "session_detail"],
+          entityVersion: publishedPairing.publishedAt,
+        });
+        await publishDashboardEvent({
+          eventId: `dashboard.changed:publish:${sessionId}:${publishedPairing.publishedAt}`,
+          eventType: "dashboard.changed",
+          occurredAt: publishedPairing.publishedAt,
+          sessionId: null,
+          proposalId: null,
+          visibility: "MEMBER_SAFE",
+          refetchHints: ["dashboard"],
           entityVersion: publishedPairing.publishedAt,
         });
       } catch (error) {
@@ -98,7 +109,7 @@ const publishService = createPairingPublishService();
 export const { publishApprovedProposal } = publishService;
 
 // Published pairing is the member-facing source of truth and changes only when
-// a proposal is (re)published or the session lifecycle changes — both of which
+// a proposal is (re)published or the session lifecycle changes - both of which
 // invalidate the `sessions` tag. Cache it so member dashboards read from Redis.
 export const getPublishedPairing: typeof publishService.getPublishedPairing = (sessionId) =>
   getOrLoad(

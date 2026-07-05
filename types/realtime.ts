@@ -5,6 +5,7 @@ export const realtimeSubscriptionScopes = [
   "SESSION_PUBLISHED",
   "SESSION_SCORING",
   "LEADERBOARD",
+  "DASHBOARD",
 ] as const;
 export type RealtimeSubscriptionScope = (typeof realtimeSubscriptionScopes)[number];
 
@@ -12,6 +13,7 @@ export const realtimeEventTypes = [
   "attendance.prepared",
   "attendance.marked",
   "session.updated",
+  "dashboard.changed",
   "pairing.proposal.generated",
   "pairing.proposal.approved",
   "pairing.proposal.overridden",
@@ -33,6 +35,7 @@ export const realtimeRefetchHints = [
   "published_pairing",
   "scoring_status",
   "leaderboard",
+  "dashboard",
 ] as const;
 export type RealtimeRefetchHint = (typeof realtimeRefetchHints)[number];
 

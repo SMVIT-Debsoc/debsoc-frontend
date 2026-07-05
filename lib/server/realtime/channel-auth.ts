@@ -30,6 +30,7 @@ export function canSubscribeToRealtimeScope(input: {
         (input.sessionParticipantIds ?? []).includes(input.user.id)
       );
     case "LEADERBOARD":
+    case "DASHBOARD":
       return true;
     default:
       return false;
@@ -47,6 +48,8 @@ function eventScopes(eventType: RealtimeEventEnvelope["eventType"]) {
     case "pairing.proposal.regenerated":
     case "pairing.proposal.rated":
       return ["SESSION_ADMIN"] as const;
+    case "dashboard.changed":
+      return ["DASHBOARD"] as const;
     case "pairing.proposal.published":
       return ["SESSION_ADMIN", "SESSION_PUBLISHED"] as const;
     case "scoring.window.opened":
@@ -73,7 +76,7 @@ export function filterRealtimeEventForSubscriber(input: FilterRealtimeEventInput
       return false;
     }
 
-    if (subscription.scope === "LEADERBOARD") {
+    if (subscription.scope === "LEADERBOARD" || subscription.scope === "DASHBOARD") {
       return true;
     }
 

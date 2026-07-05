@@ -23,3 +23,11 @@ export async function publishSessionRealtimeEvent(sessionId: string, event: Real
     sessionId,
   });
 }
+
+export async function publishDashboardRealtimeEvent(event: RealtimeEventEnvelope) {
+  return publishRealtimeEvent({
+    ...event,
+    sessionId: null,
+    proposalId: null,
+  });
+}

@@ -1,4 +1,4 @@
-import { publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
+import { publishDashboardRealtimeEvent, publishSessionRealtimeEvent } from "../realtime/event-publisher.ts";
 import { pairingRepository } from "../repositories/pairing-repository.ts";
 import { sessionRepository } from "../repositories/session-repository.ts";
 import { invalidateTags } from "../cache/cache.ts";
@@ -34,6 +34,7 @@ export function createAttendanceService(
   repository: SessionRepositoryContract = sessionRepository,
   pairingRepo: PairingRepositoryContract = pairingRepository,
   publishEvent: typeof publishSessionRealtimeEvent = publishSessionRealtimeEvent,
+  publishDashboardEvent: typeof publishDashboardRealtimeEvent = publishDashboardRealtimeEvent,
 ) {
   async function prepareAttendance(
     input: AttendancePreparationRequest,
@@ -100,6 +101,17 @@ export function createAttendanceService(
       visibility: "ADMIN_ONLY",
       refetchHints: ["session_detail"],
       entityVersion: context.session.pairingStatus,
+    });
+
+    await publishDashboardEvent({
+      eventId: `dashboard.changed:attendance:${input.sessionId}:${Date.now()}`,
+      eventType: "dashboard.changed",
+      occurredAt: new Date().toISOString(),
+      sessionId: null,
+      proposalId: null,
+      visibility: "MEMBER_SAFE",
+      refetchHints: ["dashboard"],
+      entityVersion: `${input.sessionId}:${context.session.pairingStatus}`,
     });
 
     return context;

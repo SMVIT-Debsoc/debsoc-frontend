@@ -14,7 +14,7 @@ function buildRealtimeQuery(subscriptions: RealtimeSubscription[]) {
   for (const subscription of subscriptions) {
     params.append(
       "subscription",
-      subscription.scope === "LEADERBOARD"
+      subscription.scope === "LEADERBOARD" || subscription.scope === "DASHBOARD"
         ? subscription.scope
         : `${subscription.scope}:${subscription.sessionId}`,
     );

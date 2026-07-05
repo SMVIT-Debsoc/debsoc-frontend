@@ -135,13 +135,11 @@ export default function PairingDashboard({
 
   // Keep lightweight overview surfaces live, but avoid interrupting tabs where
   // people are actively filling forms, reviewing pairings, or working in a
-  // modal-heavy flow. Read-only member surfaces (Home, MyPairing) are included
-  // so members pick up admin-driven changes — a session opening, being marked
-  // present, or a pairing being published — without waiting to switch tabs.
+  // modal-heavy flow. Home stays on the faster cadence because it is the
+  // discovery surface for newly relevant session state.
   useEffect(() => {
     const liveRefreshTabs = new Set<string>([
       "Home",
-      "MyPairing",
       "SpeakerLeaderboard",
       "AdjudicatorLeaderboard",
     ]);
@@ -153,9 +151,10 @@ export default function PairingDashboard({
     };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onFocus);
+    const refreshIntervalMs = activeTab === "Home" ? 10_000 : 30_000;
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") refreshPrimaryData();
-    }, 10_000);
+    }, refreshIntervalMs);
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
@@ -212,7 +211,7 @@ export default function PairingDashboard({
 
   const realtimeSubscriptions = useMemo(() => {
     const sessionIds = [...new Set(realtimeRelevantSessions.map((session) => session.id).filter(Boolean))];
-    const subscriptions: RealtimeSubscription[] = [{ scope: "LEADERBOARD" }];
+    const subscriptions: RealtimeSubscription[] = [{ scope: "LEADERBOARD" }, { scope: "DASHBOARD" }];
 
     for (const sessionId of sessionIds) {
       if (isAdminView) {
@@ -281,7 +280,8 @@ export default function PairingDashboard({
       if (
         event.refetchHints.includes("session_detail") ||
         event.refetchHints.includes("published_pairing") ||
-        event.refetchHints.includes("scoring_status")
+        event.refetchHints.includes("scoring_status") ||
+        event.refetchHints.includes("dashboard")
       ) {
         schedulePrimaryRefresh();
       }
@@ -296,7 +296,7 @@ export default function PairingDashboard({
     }
     // Keep My Pairing stable while someone is viewing it; only overview/task
     // surfaces force an immediate refetch on entry.
-    if (key === "MyScoring" || key === "Home") {
+    if (key === "MyScoring" || key === "Home" || key === "MyPairing") {
       refreshPrimaryData();
     }
   };
