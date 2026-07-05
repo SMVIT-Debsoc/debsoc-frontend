@@ -18,7 +18,10 @@ const speakingRoles: ReadonlyArray<readonly [SpeakingRole, SpeakingRole]> = [
   ["MG", "GW"],
   ["MO", "OW"],
 ] as const;
-const earlyTeamIndexes = new Set([0, 1]);
+// Within a room the flat speaker slots are [PM, DPM, LO, DLO, MG, GW, MO, OW].
+// Per docs/05 time_constraint the genuinely-early roles are PM (1st speaker,
+// offset 0) and LO (2nd speaker, offset 2). DPM/DLO speak 3rd/4th, not early.
+const earlySpeakingSlotOffsets = [0, 2] as const;
 
 function rotateArray<T>(items: T[], offset: number): T[] {
   if (items.length === 0) {
@@ -93,17 +96,49 @@ function buildTimeConstrainedSpeakerOrder(
   return constrainedSpeakers;
 }
 
+// Forced team-up speakers ("anchored") must stay on the same team, but they
+// should still move around the grid across candidates so regeneration reshuffles
+// their room/bench/position instead of pinning them to the front every time.
+// We keep the anchored block contiguous and insert it at a team-aligned offset
+// that cycles with candidateIndex: because the block length is even and the
+// offset is a multiple of SPEAKERS_PER_TEAM, each anchored pair stays aligned to
+// a team boundary (same team preserved; candidates that still violate a rule are
+// dropped by the hard-rule filter). candidateIndex 0 reproduces the original
+// front-anchored arrangement so a feasible candidate always exists.
+function assembleAnchoredAndRotatable(
+  anchoredSpeakers: SessionSpeaker[],
+  rotatableSpeakers: SessionSpeaker[],
+  candidateIndex: number,
+): SessionSpeaker[] {
+  const rotatedRotatable = rotateArray(rotatableSpeakers, candidateIndex);
+  if (anchoredSpeakers.length === 0) {
+    return rotatedRotatable;
+  }
+
+  const teamSlotCount = Math.floor(
+    (anchoredSpeakers.length + rotatableSpeakers.length) / SPEAKERS_PER_TEAM,
+  );
+  if (teamSlotCount === 0) {
+    return anchoredSpeakers.concat(rotatedRotatable);
+  }
+
+  const insertIndex = (candidateIndex % teamSlotCount) * SPEAKERS_PER_TEAM;
+  return [
+    ...rotatedRotatable.slice(0, insertIndex),
+    ...anchoredSpeakers,
+    ...rotatedRotatable.slice(insertIndex),
+  ];
+}
+
 function buildEarlySpeakingSlotIndexes(roomCount: number): number[] {
   const indexes: number[] = [];
 
-  for (let roomIndex = 0; roomIndex < roomCount; roomIndex++) {
-    const roomStartIndex = roomIndex * SPEAKERS_PER_ROOM;
-    for (let teamIndex = 0; teamIndex < TEAMS_PER_ROOM; teamIndex++) {
-      if (!earlyTeamIndexes.has(teamIndex)) {
-        continue;
-      }
-      const teamStartIndex = roomStartIndex + teamIndex * SPEAKERS_PER_TEAM;
-      indexes.push(teamStartIndex, teamStartIndex + 1);
+  // Iterate offsets in the outer loop so every room's PM slot is filled before
+  // any LO slot. With N constrained speakers this spreads them across rooms
+  // (room0 PM, room1 PM, room0 LO, ...) instead of packing one room full.
+  for (const slotOffset of earlySpeakingSlotOffsets) {
+    for (let roomIndex = 0; roomIndex < roomCount; roomIndex++) {
+      indexes.push(roomIndex * SPEAKERS_PER_ROOM + slotOffset);
     }
   }
 
@@ -220,7 +255,7 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
 
     const rotatedSpeakers = arrangeSpeakersForTimeConstraints(
       timeConstrainedSpeakers,
-      anchoredSpeakers.concat(rotateArray(rotatableSpeakers, candidateIndex)),
+      assembleAnchoredAndRotatable(anchoredSpeakers, rotatableSpeakers, candidateIndex),
       roomCount,
     );
     const rooms: RoomCandidate[] = [];

@@ -184,7 +184,7 @@ test("candidate generation places time-constrained speakers in early speaking ro
       forcedRoomCount: null,
     },
   });
-  const earlyRoles = new Set(["PM", "DPM", "LO", "DLO"]);
+  const earlyRoles = new Set(["PM", "LO"]);
 
   assert.equal(candidates.length > 0, true);
   for (const candidate of candidates) {

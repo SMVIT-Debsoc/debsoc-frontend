@@ -8,7 +8,9 @@ type SpeakerAssignmentLocation = {
   speakingRole: string;
 };
 
-const EARLY_SPEAKING_ROLES = new Set(["PM", "DPM", "LO", "DLO"]);
+// Per docs/05 time_constraint: an "earlier speaking role" means the first speaker
+// of a bench — PM (OG) or LO (OO). DPM/DLO speak 3rd/4th and are not early.
+const EARLY_SPEAKING_ROLES = new Set(["PM", "LO"]);
 
 export function validateHardRules(
   candidate: PairingCandidate,
@@ -77,7 +79,7 @@ export function validateHardRules(
       continue;
     }
     if (!EARLY_SPEAKING_ROLES.has(assignment.speakingRole)) {
-      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} must be assigned one of PM, DPM, LO, or DLO when marked strict.` });
+      violations.push({ code: "STRICT_TIME_CONSTRAINT_UNMET", message: `Participant ${rule.participantId} must be assigned PM or LO (an early speaking role) when marked strict.` });
     }
   }
 
