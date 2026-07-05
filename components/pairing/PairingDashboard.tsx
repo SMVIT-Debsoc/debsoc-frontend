@@ -135,10 +135,13 @@ export default function PairingDashboard({
 
   // Keep lightweight overview surfaces live, but avoid interrupting tabs where
   // people are actively filling forms, reviewing pairings, or working in a
-  // modal-heavy flow.
+  // modal-heavy flow. Read-only member surfaces (Home, MyPairing) are included
+  // so members pick up admin-driven changes — a session opening, being marked
+  // present, or a pairing being published — without waiting to switch tabs.
   useEffect(() => {
     const liveRefreshTabs = new Set<string>([
       "Home",
+      "MyPairing",
       "SpeakerLeaderboard",
       "AdjudicatorLeaderboard",
     ]);
@@ -152,7 +155,7 @@ export default function PairingDashboard({
     document.addEventListener("visibilitychange", onFocus);
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") refreshPrimaryData();
-    }, 30_000);
+    }, 10_000);
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onFocus);
