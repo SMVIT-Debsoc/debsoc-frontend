@@ -40,7 +40,13 @@ type SelfAttendanceRecord = {
   speakerScore: number | null;
   pairingCode: string | null;
   debatedAlone: boolean;
-  session: { id: string; sessionDate: Date | string; motiontype: string; Chair: string };
+  session: {
+    id: string;
+    sessionDate: Date | string;
+    motiontype: string;
+    motionType: string | null;
+    Chair: string;
+  };
 };
 
 type SelfPublishedSession = {
@@ -96,7 +102,14 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
             .filter((peer) => !matchesViewer(peer, role, userId))
             .map((peer) => peer.member?.name ?? peer.cabinet?.name ?? peer.president?.name ?? null)
             .filter((name): name is string => Boolean(name));
-          return { ...record, pairedWith };
+          return {
+            ...record,
+            pairedWith,
+            session: {
+              ...record.session,
+              motiontype: record.session.motionType ?? record.session.motiontype,
+            },
+          };
         }),
       );
 
@@ -116,3 +129,4 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
     },
   );
 }
+

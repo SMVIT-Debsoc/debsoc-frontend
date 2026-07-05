@@ -782,7 +782,7 @@ function normalizeAttendanceHistory(item: ApiAttendanceHistory): AttendanceHisto
     session: {
       id: item.session.id,
       sessionDate: formatDate(item.session.sessionDate),
-      motiontype: item.session.motiontype,
+      motiontype: item.session.motionType ?? item.session.motiontype,
       Chair: item.session.Chair,
     },
   };
@@ -846,7 +846,7 @@ function normalizeParticipantSession(session: ApiParticipantSession): SessionRow
   return {
     id: session.id,
     date: formatDate(session.sessionDate),
-    motionType: session.motiontype,
+    motionType: session.motionType ?? session.motiontype,
     motionText: session.motionText ?? undefined,
     chair: session.Chair,
     state: deriveLifecycleState(session),
@@ -1042,6 +1042,7 @@ type ApiAttendanceHistory = {
     id: string;
     sessionDate: string | Date;
     motiontype: string;
+    motionType?: string | null;
     Chair: string;
   };
 };
@@ -1050,6 +1051,7 @@ type ApiParticipantSession = {
   id: string;
   sessionDate: string | Date;
   motiontype: string;
+  motionType?: string | null;
   motionText?: string | null;
   Chair: string;
   pairingStatus?: string | null;
@@ -1086,5 +1088,6 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
+
 
 

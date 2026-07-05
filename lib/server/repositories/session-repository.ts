@@ -375,6 +375,7 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
     return client.debateSession.update({
       where: { id: sessionId },
       data: {
+        motiontype: data.motionType,
         motionType: data.motionType,
         motionText: data.motionText,
         pairingObjective: data.pairingObjective,
@@ -472,4 +473,6 @@ export function createSessionRepository(client: SessionRepositoryClient = prisma
 }
 
 export const sessionRepository = createSessionRepository();
+
+
 

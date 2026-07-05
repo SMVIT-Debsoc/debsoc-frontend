@@ -131,7 +131,7 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
           pairingCode: true,
           debatedAlone: true,
           session: {
-            select: { id: true, sessionDate: true, motiontype: true, Chair: true },
+            select: { id: true, sessionDate: true, motiontype: true, motionType: true, Chair: true },
           },
         },
       }),
@@ -194,3 +194,4 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
 }
 
 export const dashboardRepository = createDashboardRepository();
+
