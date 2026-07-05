@@ -401,7 +401,7 @@ export default function Roster({
                                                   )}
                                               />
                                               <SummaryStat
-                                                  label="Confidence"
+                                                  label={`Speaker confidence (${selectedProfile.summary.scoredSpeakerSessions} scored)`}
                                                   value={selectedProfile.summary.confidence.toFixed(
                                                       2,
                                                   )}

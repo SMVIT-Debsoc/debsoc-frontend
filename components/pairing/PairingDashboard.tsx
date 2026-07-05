@@ -932,6 +932,7 @@ function normalizeProgressSummary(summary: ApiProgressSummary): ProgressSummary 
     sessionsSpoken: summary.sessionsSpoken,
     sessionsAdjudicated: summary.sessionsAdjudicated,
     sessionsChaired: summary.sessionsChaired,
+    scoredSpeakerSessions: summary.scoredSpeakerSessions,
     dataMaturity: summary.dataMaturity,
   };
 }
@@ -1064,6 +1065,7 @@ type ApiProgressSummary = {
   sessionsSpoken: number;
   sessionsAdjudicated: number;
   sessionsChaired: number;
+  scoredSpeakerSessions: number;
   dataMaturity: "LOW" | "MEDIUM" | "HIGH";
 };
 

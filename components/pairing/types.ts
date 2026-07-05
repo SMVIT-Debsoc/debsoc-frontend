@@ -102,6 +102,7 @@ export type ProgressSummary = {
   sessionsSpoken: number;
   sessionsAdjudicated: number;
   sessionsChaired: number;
+  scoredSpeakerSessions: number;
   dataMaturity: "LOW" | "MEDIUM" | "HIGH";
 };
 

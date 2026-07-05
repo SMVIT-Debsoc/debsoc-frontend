@@ -63,6 +63,10 @@ export interface ParticipantProgressSummary {
   sessionsSpoken: number;
   sessionsAdjudicated: number;
   sessionsChaired: number;
+  // Number of sessions with a chair-submitted speaker score. Drives confidence
+  // and data maturity, and can be lower than sessionsSpoken (which counts every
+  // session the participant was paired as a speaker, scored or not).
+  scoredSpeakerSessions: number;
   dataMaturity: "LOW" | "MEDIUM" | "HIGH";
 }
 

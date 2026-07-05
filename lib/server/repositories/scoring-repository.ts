@@ -41,9 +41,12 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     });
   }
 
+  type RoleAssignmentCounts = { spoken: number; adjudicated: number; chaired: number };
+
   function buildProgressSummaryFromMetrics(
     participantId: MemberId,
     metrics: Array<{ metricKey: string; value: number; confidence: number; observationCount: number }>,
+    assignmentCounts: RoleAssignmentCounts = { spoken: 0, adjudicated: 0, chaired: 0 },
   ): ParticipantProgressSummary {
     const byMetric = new Map(metrics.map((metric: (typeof metrics)[number]) => [metric.metricKey, metric]));
     const speakerStrengthConfidence = byMetric.get("speaker_strength")?.confidence ?? 0;
@@ -53,11 +56,30 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       speakerTotalScore: byMetric.get("speaker_total_score")?.value ?? 0,
       speakerStrength: byMetric.get("speaker_strength")?.value ?? 0,
       confidence: speakerStrengthConfidence,
-      sessionsSpoken: byMetric.get("speaker_total_score")?.observationCount ?? 0,
+      // Spoken counts every session the participant was paired as a speaker
+      // (scored or not). The scored count below is what confidence/maturity are
+      // actually built from, so it can be lower than sessionsSpoken.
+      sessionsSpoken: assignmentCounts.spoken,
       sessionsAdjudicated: byMetric.get("adjudicator_average_score")?.observationCount ?? 0,
       sessionsChaired: byMetric.get("chair_score")?.observationCount ?? 0,
+      scoredSpeakerSessions: byMetric.get("speaker_total_score")?.observationCount ?? 0,
       dataMaturity: speakerStrengthConfidence >= 0.8 ? "HIGH" : speakerStrengthConfidence >= 0.4 ? "MEDIUM" : "LOW",
     };
+  }
+
+  // Counts sessions the participant was paired as a speaker, from the session
+  // role assignments (one row per participant per session), independent of
+  // whether a chair has scored the room yet. Adjudicated/chaired stay on their
+  // scored-metric sources because SessionRoleAssignment does not record which
+  // adjudicator chaired (chair is decided later, in RoomAdjudicatorAssignment).
+  async function getRoleAssignmentCounts(participantId: MemberId): Promise<RoleAssignmentCounts> {
+    const spoken = await client.sessionRoleAssignment.count({
+      where: {
+        role: "speaker",
+        OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
+      },
+    });
+    return { spoken, adjudicated: 0, chaired: 0 };
   }
 
   async function getPublishedScoringContext(sessionId: string) {
@@ -905,7 +927,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }
 
   async function getParticipantProgressProfile(participantId: MemberId): Promise<ParticipantProgressProfile> {
-    const [rawMetrics, attendanceRows, pairMetrics] = await Promise.all([
+    const [rawMetrics, attendanceRows, pairMetrics, assignmentCounts] = await Promise.all([
       client.memberMetricSnapshot.findMany({
         where: {
           OR: [{ memberId: participantId }, { cabinetId: participantId }, { presidentId: participantId }],
@@ -953,6 +975,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
           confidence: true,
         },
       }),
+      getRoleAssignmentCounts(participantId),
     ]);
 
     const summary = buildProgressSummaryFromMetrics(
@@ -963,6 +986,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         confidence: metric.confidence,
         observationCount: metric.observationCount,
       })),
+      assignmentCounts,
     );
 
     const presentCount = attendanceRows.filter((row: { status: string }) => row.status.toLowerCase() === "present").length;
@@ -1132,8 +1156,11 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }
 
   async function getParticipantProgressSummary(participantId: MemberId): Promise<ParticipantProgressSummary> {
-    const metrics = await loadProgressSummaryMetrics(participantId);
-    return buildProgressSummaryFromMetrics(participantId, metrics);
+    const [metrics, assignmentCounts] = await Promise.all([
+      loadProgressSummaryMetrics(participantId),
+      getRoleAssignmentCounts(participantId),
+    ]);
+    return buildProgressSummaryFromMetrics(participantId, metrics, assignmentCounts);
   }
 
   return {
