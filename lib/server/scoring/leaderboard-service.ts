@@ -9,7 +9,7 @@ import { getOrLoad } from "../cache/cache.ts";
 import { cacheKeys, CACHE_TAGS, CACHE_TTL } from "../cache/keys.ts";
 
 interface LeaderboardRepositoryContract {
-  getSpeakerLeaderboardRawData(): Promise<SpeakerLeaderboardResponse["leaderboard"]>;
+  getSpeakerLeaderboardRawData(): Promise<SpeakerLeaderboardResponse>;
   getAdjudicatorLeaderboardRawData(): Promise<AdjudicatorLeaderboardResponse["leaderboard"]>;
   getAllParticipantProgressSummaries?(): Promise<ParticipantProgressSummary[]>;
   getParticipantProgressProfile?(participantId: string): Promise<ParticipantProgressProfile>;
@@ -20,8 +20,7 @@ export function createLeaderboardService(
   repository: LeaderboardRepositoryContract = scoringRepository as LeaderboardRepositoryContract,
 ) {
   async function recomputeSpeakerLeaderboard(): Promise<SpeakerLeaderboardResponse> {
-    const leaderboard = await repository.getSpeakerLeaderboardRawData();
-    return { leaderboard };
+    return repository.getSpeakerLeaderboardRawData();
   }
 
   async function recomputeAdjudicatorLeaderboard(): Promise<AdjudicatorLeaderboardResponse> {

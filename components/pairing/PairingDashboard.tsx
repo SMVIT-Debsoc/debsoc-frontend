@@ -38,6 +38,7 @@ type PairingDataState = {
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
+  speakerRounds: number;
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   progressSummaries: ProgressSummary[];
   loading: boolean;
@@ -62,6 +63,7 @@ const INITIAL_STATE: PairingDataState = {
   sessions: [],
   attendanceHistory: [],
   speakerLeaderboard: [],
+  speakerRounds: 0,
   adjudicatorLeaderboard: [],
   progressSummaries: [],
   loading: true,
@@ -186,6 +188,7 @@ export default function PairingDashboard({
         setState((current) => ({
           ...current,
           speakerLeaderboard: [],
+          speakerRounds: 0,
           adjudicatorLeaderboard: [],
           loadingLeaderboard: false,
           leaderboardError:
@@ -386,6 +389,7 @@ export default function PairingDashboard({
       }
       attendanceHistory={state.attendanceHistory}
       speakerLeaderboard={state.speakerLeaderboard}
+      speakerRounds={state.speakerRounds}
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
       progressSummaries={state.progressSummaries}
       leaderboardScope={state.leaderboardScope}
@@ -412,6 +416,7 @@ export default function PairingDashboard({
       attendanceHistory={state.attendanceHistory}
       participants={state.participants}
       speakerLeaderboard={state.speakerLeaderboard}
+      speakerRounds={state.speakerRounds}
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
       leaderboardScope={state.leaderboardScope}
       loading={state.loading}
@@ -644,7 +649,7 @@ async function fetchPrimaryData(role: string) {
 async function fetchLeaderboards(scope: "all" | "bi-monthly") {
   const suffix = scope === "bi-monthly" ? "?type=bi-monthly" : "";
   const [speakerData, adjudicatorData] = await Promise.all([
-    fetchJson<{ leaderboard: ApiSpeakerLeaderboardEntry[] }>(
+    fetchJson<{ leaderboard: ApiSpeakerLeaderboardEntry[]; roundsCount?: number }>(
       `/api/leaderboard/speakers${suffix}`,
     ),
     fetchJson<{ leaderboard: ApiAdjudicatorLeaderboardEntry[] }>(
@@ -661,6 +666,7 @@ async function fetchLeaderboards(scope: "all" | "bi-monthly") {
       sessions: entry.sessionsCount,
       rank: entry.rank,
     })),
+    speakerRounds: speakerData.roundsCount ?? 0,
     adjudicatorLeaderboard: (adjudicatorData.leaderboard ?? []).map((entry) => ({
       id: entry.participantId,
       name: entry.name,

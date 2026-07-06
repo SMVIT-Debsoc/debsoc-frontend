@@ -47,6 +47,7 @@ type ParticipantPairingDashboardProps = {
   attendanceHistory: AttendanceHistoryItem[];
   participants: Participant[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
+  speakerRounds: number;
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   leaderboardScope: "all" | "bi-monthly";
   loading: boolean;
@@ -68,6 +69,7 @@ export default function ParticipantPairingDashboard({
   attendanceHistory,
   participants,
   speakerLeaderboard,
+  speakerRounds,
   adjudicatorLeaderboard,
   leaderboardScope,
   loading,
@@ -117,6 +119,7 @@ export default function ParticipantPairingDashboard({
       {activeTab === "SpeakerLeaderboard" && (
         <Leaderboards
           speakerLeaderboard={speakerLeaderboard}
+          speakerRounds={speakerRounds}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           scope={leaderboardScope}
           loading={loadingLeaderboard}

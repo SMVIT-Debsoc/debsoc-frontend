@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../prisma.ts";
 import type {
   AdjudicatorLeaderboardEntry,
-  LeaderboardEntry,
+  SpeakerLeaderboardResponse,
   ParticipantCompatibilityProfile,
   ParticipantMetricDetail,
   ParticipantMotionTypeScore,
@@ -704,7 +704,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     return result;
   }
 
-  async function getSpeakerLeaderboardRawData(): Promise<LeaderboardEntry[]> {
+  async function getSpeakerLeaderboardRawData(): Promise<SpeakerLeaderboardResponse> {
     const [publishedSpeakerRows, scoreRows, legacyRows] = await Promise.all([
       client.teamSpeakerAssignment.findMany({
         where: {
@@ -827,7 +827,14 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       aggregate.set(participantId, current);
     }
 
-    return [...aggregate.entries()]
+    const distinctSessionIds = new Set<string>();
+    for (const entry of aggregate.values()) {
+      for (const sessionId of entry.sessionIds) {
+        distinctSessionIds.add(sessionId);
+      }
+    }
+
+    const leaderboard = [...aggregate.entries()]
       .map(([participantId, entry]) => ({ participantId, name: entry.name, score: entry.score, sessionsCount: entry.sessionIds.size }))
       .sort((left, right) => {
         if (right.score !== left.score) {
@@ -845,6 +852,8 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         sessionsCount: entry.sessionsCount,
         rank: index + 1,
       }));
+
+    return { leaderboard, roundsCount: distinctSessionIds.size };
   }
 
   async function getAdjudicatorLeaderboardRawData(): Promise<AdjudicatorLeaderboardEntry[]> {

@@ -9,6 +9,7 @@ import type {
 
 type LeaderboardsProps = {
   speakerLeaderboard: SpeakerLeaderboardRow[];
+  speakerRounds?: number;
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   scope: "all" | "bi-monthly";
   loading: boolean;
@@ -19,6 +20,7 @@ type LeaderboardsProps = {
 
 export default function Leaderboards({
   speakerLeaderboard,
+  speakerRounds = 0,
   adjudicatorLeaderboard,
   scope,
   loading,
@@ -27,15 +29,14 @@ export default function Leaderboards({
   view = "speakers",
 }: LeaderboardsProps) {
   const speakerSummary = useMemo(() => {
-    const totalSessions = speakerLeaderboard.reduce((sum, entry) => sum + entry.sessions, 0);
     const topSpeaker = speakerLeaderboard[0]?.name ?? "No speaker yet";
 
     return {
       totalEntries: speakerLeaderboard.length,
-      totalSessions,
+      totalSessions: speakerRounds,
       topSpeaker,
     };
-  }, [speakerLeaderboard]);
+  }, [speakerLeaderboard, speakerRounds]);
 
   const adjudicatorSummary = useMemo(() => {
     const totalChaired = adjudicatorLeaderboard.reduce((sum, entry) => sum + entry.chairedCount, 0);
@@ -103,7 +104,7 @@ export default function Leaderboards({
                 </div>
                 <div className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">Speaker leaderboard</div>
                 <div className="mt-3 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-                  This board ranks speakers by cumulative speaker score from saved speaker scoring data, with total speaker rounds visible as a participation signal.
+                  This board ranks speakers by cumulative speaker score from saved speaker scoring data, with the number of scored rounds visible as a participation signal.
                 </div>
               </div>
 

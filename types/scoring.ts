@@ -44,6 +44,8 @@ export interface LeaderboardEntry {
 
 export interface SpeakerLeaderboardResponse {
   leaderboard: LeaderboardEntry[];
+  /** Distinct scored sessions represented on the board (not summed participations). */
+  roundsCount: number;
 }
 
 export interface AdjudicatorLeaderboardEntry extends LeaderboardEntry {

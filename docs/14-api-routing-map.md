@@ -502,6 +502,7 @@ Return speaker leaderboard data.
 ### Response summary
 
 - overall speaker ranking
+- `roundsCount`: count of distinct scored sessions represented on the board
 - motion-type-specific summary where supported
 
 ### Should call

@@ -188,10 +188,13 @@ test("chair submission is idempotent across adjudicator and speaker score sectio
 test("leaderboards recompute from raw records", async () => {
   const service = createLeaderboardService({
     async getSpeakerLeaderboardRawData() {
-      return [
-        { participantId: "speaker-1", name: "Alice", score: 150, rank: 1, sessionsCount: 2 },
-        { participantId: "speaker-2", name: "Bob", score: 74, rank: 2, sessionsCount: 1 },
-      ];
+      return {
+        leaderboard: [
+          { participantId: "speaker-1", name: "Alice", score: 150, rank: 1, sessionsCount: 2 },
+          { participantId: "speaker-2", name: "Bob", score: 74, rank: 2, sessionsCount: 1 },
+        ],
+        roundsCount: 2,
+      };
     },
     async getAdjudicatorLeaderboardRawData() {
       return [

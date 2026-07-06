@@ -58,6 +58,7 @@ type AdminPairingDashboardProps = {
   onSessionsChange: (sessions: SessionRow[]) => void;
   attendanceHistory: AttendanceHistoryItem[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
+  speakerRounds: number;
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
   progressSummaries: ProgressSummary[];
   leaderboardScope: "all" | "bi-monthly";
@@ -83,6 +84,7 @@ export default function AdminPairingDashboard({
   onSessionsChange,
   attendanceHistory,
   speakerLeaderboard,
+  speakerRounds,
   adjudicatorLeaderboard,
   progressSummaries,
   leaderboardScope,
@@ -140,6 +142,7 @@ export default function AdminPairingDashboard({
       {activeTab === "SpeakerLeaderboard" && (
         <Leaderboards
           speakerLeaderboard={speakerLeaderboard}
+          speakerRounds={speakerRounds}
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           scope={leaderboardScope}
           loading={loadingLeaderboard}
