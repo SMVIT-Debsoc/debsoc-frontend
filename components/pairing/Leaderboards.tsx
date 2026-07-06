@@ -103,7 +103,7 @@ export default function Leaderboards({
                 </div>
                 <div className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">Speaker leaderboard</div>
                 <div className="mt-3 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-                  This board ranks speakers by cumulative speaker score from saved speaker scoring data, with tracked sessions visible as a participation signal.
+                  This board ranks speakers by cumulative speaker score from saved speaker scoring data, with total speaker rounds visible as a participation signal.
                 </div>
               </div>
 
@@ -116,7 +116,7 @@ export default function Leaderboards({
                     <div className="mt-1 text-2xl font-semibold text-indigo-200">{speakerSummary.totalEntries}</div>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Tracked sessions</div>
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-300">Speaker rounds</div>
                     <div className="mt-1 text-2xl font-semibold text-indigo-200">{speakerSummary.totalSessions}</div>
                   </div>
                 </div>
