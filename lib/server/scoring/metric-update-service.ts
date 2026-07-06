@@ -16,6 +16,7 @@ type SpeakerScoreRow = {
 };
 
 type ChairFeedbackRow = {
+  sessionId: string;
   chairMemberId: string | null;
   chairCabinetId: string | null;
   chairPresidentId: string | null;
@@ -169,8 +170,10 @@ export function createMetricUpdateService(
       const sessionCount = rows.length;
       const meanScore = average(rows.map((row) => row.rawScore));
       const variance = average(rows.map((row) => (row.rawScore - meanScore) ** 2));
-      const normalizedVariance = Math.min(variance / (80 ** 2), 1);
-      const consistencyScore = Math.max(0, 1 - normalizedVariance);
+      // docs/09 Fo4: consistency_score = 1 / (1 + normalized_standard_deviation),
+      // with the raw-score scale (80) as the normalization base.
+      const normalizedStandardDeviation = Math.sqrt(variance) / 80;
+      const consistencyScore = 1 / (1 + normalizedStandardDeviation);
       const confidenceScore = computeConfidence(sessionCount, 6);
       const speakerStrength =
         0.7 * normalizeSpeakerTotal(totalScore, sessionCount) +
@@ -235,14 +238,14 @@ export function createMetricUpdateService(
   async function updatePairMetricSnapshotsFromSession(sessionId: string) {
     const sessionSpeakerScores = await repository.getSpeakerScoreRecordsBySession(sessionId);
     const participantIds = participantIdsFromSpeakerRows(sessionSpeakerScores);
-    const [speakerScores, teamDynamicsRatings] = participantIds.length > 0
-      ? await Promise.all([
-        repository.getSpeakerScoreRecordsForParticipants(participantIds),
-        repository.getTeamDynamicsRatingsForParticipants(participantIds),
-      ])
-      : [[], []];
+    const speakerScores = participantIds.length > 0
+      ? await repository.getSpeakerScoreRecordsForParticipants(participantIds)
+      : [];
 
-    const scoresByPair = new Map<string, { a: string; b: string; typeA: ParticipantType; typeB: ParticipantType; motionType: string; resultPoints: number[]; dynamicsRatings: number[] }>();
+    // docs/09 Fo6/Fo7: partner dynamics is the plain average of BP result
+    // points earned together (3/2/1/0), overall and per motion type. Pair
+    // dynamics ratings are NOT blended in — that aggregation is still OPEN.
+    const scoresByPair = new Map<string, { a: string; b: string; typeA: ParticipantType; typeB: ParticipantType; resultPoints: number[]; resultPointsByMotionType: Map<string, number[]> }>();
     const participantTypes = await repository.getParticipantTypes(participantIds);
 
     const bySessionBench = new Map<string, SpeakerScoreRow[]>();
@@ -269,42 +272,21 @@ export function createMetricUpdateService(
         b,
         typeA: participantTypes.get(a) ?? "member",
         typeB: participantTypes.get(b) ?? "member",
-        motionType: buildMotionType(first),
         resultPoints: [],
-        dynamicsRatings: [],
+        resultPointsByMotionType: new Map<string, number[]>(),
       };
-      current.resultPoints.push(first.teamResultPoints, second.teamResultPoints);
+      // One debate together contributes one result-points observation.
+      current.resultPoints.push(first.teamResultPoints);
+      const motionType = buildMotionType(first);
+      current.resultPointsByMotionType.set(motionType, [
+        ...(current.resultPointsByMotionType.get(motionType) ?? []),
+        first.teamResultPoints,
+      ]);
       scoresByPair.set(pairKey, current);
     }
 
-    for (const rating of teamDynamicsRatings) {
-      const firstId = resolveParticipantId({
-        memberId: rating.raterMemberId,
-        cabinetId: rating.raterCabinetId,
-        presidentId: rating.raterPresidentId,
-      });
-      const secondId = resolveParticipantId({
-        memberId: rating.teammateMemberId,
-        cabinetId: rating.teammateCabinetId,
-        presidentId: rating.teammatePresidentId,
-      });
-      if (!firstId || !secondId) {
-        continue;
-      }
-      const [a, b] = [firstId, secondId].sort();
-      const pairKey = `${a}::${b}`;
-      const current = scoresByPair.get(pairKey);
-      if (current) {
-        current.dynamicsRatings.push(rating.rating);
-      }
-    }
-
     for (const entry of scoresByPair.values()) {
-      const resultObservationCount = Math.max(entry.resultPoints.length / 2, 1);
-      const resultAverage = average(entry.resultPoints);
-      const dynamicsAverage = entry.dynamicsRatings.length > 0 ? average(entry.dynamicsRatings) / 10 : resultAverage / 3;
-      const overall = 0.8 * (resultAverage / 3) + 0.2 * dynamicsAverage;
-      const observationCount = resultObservationCount + entry.dynamicsRatings.length;
+      const observationCount = entry.resultPoints.length;
       await repository.upsertPairMetricSnapshot({
         memberAId: entry.a,
         memberAType: entry.typeA,
@@ -312,21 +294,23 @@ export function createMetricUpdateService(
         memberBType: entry.typeB,
         metricKey: "partner_dynamics_overall",
         contextKey: null,
-        value: overall,
+        value: average(entry.resultPoints),
         observationCount,
         confidence: computeConfidence(observationCount, 4),
       });
-      await repository.upsertPairMetricSnapshot({
-        memberAId: entry.a,
-        memberAType: entry.typeA,
-        memberBId: entry.b,
-        memberBType: entry.typeB,
-        metricKey: "partner_dynamics_by_motion_type",
-        contextKey: entry.motionType,
-        value: overall,
-        observationCount,
-        confidence: computeConfidence(observationCount, 6),
-      });
+      for (const [motionType, points] of entry.resultPointsByMotionType.entries()) {
+        await repository.upsertPairMetricSnapshot({
+          memberAId: entry.a,
+          memberAType: entry.typeA,
+          memberBId: entry.b,
+          memberBType: entry.typeB,
+          metricKey: "partner_dynamics_by_motion_type",
+          contextKey: motionType,
+          value: average(points),
+          observationCount: points.length,
+          confidence: computeConfidence(points.length, 6),
+        });
+      }
     }
   }
 
@@ -378,13 +362,22 @@ export function createMetricUpdateService(
     ];
     const participantTypes = await repository.getParticipantTypes(relevantParticipantIds);
 
-    const chairGroups = new Map<string, number[]>();
+    // docs/09 Fo13: two-stage mean — average speaker ratings within each
+    // session first, then average the per-session ratings, so a session with
+    // more raters cannot dominate. Observation count = sessions chaired.
+    const chairSessionGroups = new Map<string, Map<string, number[]>>();
     for (const row of chairFeedback) {
       const participantId = chairIdOf(row);
       if (!participantId) {
         continue;
       }
-      chairGroups.set(participantId, [...(chairGroups.get(participantId) ?? []), row.rating]);
+      const sessions = chairSessionGroups.get(participantId) ?? new Map<string, number[]>();
+      sessions.set(row.sessionId, [...(sessions.get(row.sessionId) ?? []), row.rating]);
+      chairSessionGroups.set(participantId, sessions);
+    }
+    const chairGroups = new Map<string, number[]>();
+    for (const [participantId, sessions] of chairSessionGroups.entries()) {
+      chairGroups.set(participantId, [...sessions.values()].map(average));
     }
 
     const adjudicatorGroups = new Map<string, number[]>();

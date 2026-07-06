@@ -370,6 +370,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     return client.chairFeedbackRecord.findMany({
       where: { sessionId },
       select: {
+        sessionId: true,
         speakerMemberId: true,
         speakerCabinetId: true,
         speakerPresidentId: true,
@@ -396,6 +397,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         ],
       },
       select: {
+        sessionId: true,
         speakerMemberId: true,
         speakerCabinetId: true,
         speakerPresidentId: true,
