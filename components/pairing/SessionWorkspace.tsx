@@ -1312,8 +1312,18 @@ export default function SessionWorkspace({
                                                     task.participantId,
                                                 )}
                                             </div>
-                                            <div className="mt-1 text-slate-600 dark:text-slate-400">
-                                                Role: {task.sessionRole}
+                                            <div className="mt-1 flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                                                Role:
+                                                <span
+                                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                                        task.sessionRole ===
+                                                        "adjudicator"
+                                                            ? "bg-violet-100 text-violet-700 dark:bg-violet-400/15 dark:text-violet-300"
+                                                            : "bg-sky-100 text-sky-700 dark:bg-sky-400/15 dark:text-sky-300"
+                                                    }`}
+                                                >
+                                                    {task.sessionRole}
+                                                </span>
                                             </div>
                                         </div>
                                         <span
