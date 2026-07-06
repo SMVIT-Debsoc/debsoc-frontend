@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { authOptions } from "@/auth";
 import Navbar from "@/components/Navbar";
@@ -83,6 +84,7 @@ export default async function RootLayout({
           </Suspense>
           {children}
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
