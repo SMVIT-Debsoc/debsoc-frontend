@@ -69,9 +69,7 @@ export default function AlumniSection({items}: AlumniSectionProps) {
                     </div>
 
                     <p className="max-w-md text-sm sm:text-base text-zinc-400 leading-relaxed">
-                        A living archive of voices shaped by DEBSOC. Minimal by
-                        design: each entry carries just a name and a lasting
-                        idea.
+                        A living archive of voices shaped by DEBSOC.
                     </p>
                 </div>
             </div>

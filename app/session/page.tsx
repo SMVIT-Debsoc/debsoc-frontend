@@ -209,20 +209,16 @@ export default function Session() {
                                             duration: 0.6,
                                             ease: [0.16, 1, 0.3, 1],
                                         }}
-                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-6 sm:p-10 md:p-14 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[min(80svh,820px)]"
+                                        className="relative w-full bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 p-5 sm:p-8 md:p-10 rounded-sm shadow-[0_40px_100px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col"
                                     >
-                                        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-white/10 pb-6 md:pb-8 mb-6 md:mb-8 shrink-0">
-                                            <div className="flex items-center gap-6">
+                                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4 md:pb-6 mb-4 md:mb-6 shrink-0">
+                                            <div className="flex items-center">
                                                 <span className="px-5 py-2 bg-white text-black text-[11px] uppercase tracking-[0.2em] font-black rounded-full">
                                                     {
                                                         motions[0].types.split(
                                                             " ",
                                                         )[0]
                                                     }
-                                                </span>
-                                                <div className="h-5 w-px bg-white/20" />
-                                                <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold italic">
-                                                    Official Protocol
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-3">
@@ -233,15 +229,15 @@ export default function Session() {
                                             </div>
                                         </div>
 
-                                        <div className="w-full max-h-[clamp(90px,22svh,240px)] overflow-y-auto custom-scrollbar pr-1 shrink-0">
-                                            <h3 className="text-2xl sm:text-4xl md:text-5xl font-light text-white leading-tight tracking-tight italic">
-                                                "{motions[0].motion}"
+                                        <div className="w-full shrink-0">
+                                            <h3 className="text-xl sm:text-2xl md:text-3xl font-light text-white leading-snug tracking-tight italic">
+                                                &ldquo;{motions[0].motion}&rdquo;
                                             </h3>
                                         </div>
 
-                                        <div className="mt-6 md:mt-10 flex flex-col items-center gap-6 md:gap-8 min-h-0">
-                                            <div className="w-full max-w-3xl text-center border-t border-white/5 pt-6 md:pt-8 max-h-[clamp(140px,26svh,300px)] md:max-h-[34vh] overflow-y-auto custom-scrollbar pr-1">
-                                                <p className="text-zinc-200 text-base md:text-lg leading-relaxed font-light italic">
+                                        <div className="mt-4 md:mt-6 flex flex-col items-center gap-4 md:gap-6">
+                                            <div className="w-full max-w-3xl text-center border-t border-white/5 pt-4 md:pt-6">
+                                                <p className="text-zinc-300 text-sm md:text-base leading-relaxed font-light italic">
                                                     {motions[0].InfoSlide ||
                                                         "Strategic information slide is currently undergoing synthesis."}
                                                 </p>
@@ -654,13 +650,7 @@ export default function Session() {
                                         <p className="text-base md:text-lg text-zinc-300 leading-relaxed font-light group-hover:text-white transition-colors">
                                             {type.desc}
                                         </p>
-                                        <motion.div
-                                            whileHover={{x: 10}}
-                                            className="pt-6 md:pt-8 flex items-center gap-4 text-[9px] md:text-[10px] text-white uppercase tracking-[0.3em] md:tracking-[0.5em] cursor-pointer font-black border-t border-white/5 mt-auto"
-                                        >
-                                            Strategic Playbook{" "}
-                                            <ChevronRight size={14} />
-                                        </motion.div>
+
                                     </div>
                                 </div>
                             ))}
@@ -698,6 +688,10 @@ export default function Session() {
                         <div className="space-y-8 md:space-y-10 relative z-10">
                             {[
                                 {
+                                    label: "Characterization",
+                                    detail: "Set the environment. How do people feel?",
+                                },
+                                {
                                     label: "Define the Burden",
                                     detail: "What exactly do we need to prove to win this specific round?",
                                 },
@@ -708,10 +702,6 @@ export default function Session() {
                                 {
                                     label: "Comparative Analysis",
                                     detail: "What does the world look like on both sides?",
-                                },
-                                {
-                                    label: "Characterization",
-                                    detail: "Set the environment. How do people feel?",
                                 },
                             ].map((item, i) => (
                                 <div
@@ -736,14 +726,7 @@ export default function Session() {
                 </section>
             </main>
 
-            <footer className="py-12 border-t border-white/10 flex flex-col items-center gap-6 relative z-10 bg-[#020202]">
-                <div className="flex items-center gap-4 opacity-40">
-                    <Sparkles size={16} />
-                    <span className="text-[10px] uppercase tracking-[1em] font-black">
-                        SMVIT DEBSOC // SYSTEM v2.4
-                    </span>
-                </div>
-            </footer>
+
 
             <style jsx global>{`
                 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
