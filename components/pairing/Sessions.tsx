@@ -191,7 +191,7 @@ export default function Sessions({
                               onClick={() => setSelectedSessionId(null)}
                           />
                           <div className="lg-panel modal-pop relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl">
-                              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-900/5 px-5 py-4 dark:border-white/10">
+                              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-900/5 px-4 py-3 sm:px-5 sm:py-4 dark:border-white/10">
                                   <div className="min-w-0">
                                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                                           {selectedSession.date}
@@ -229,7 +229,7 @@ export default function Sessions({
                                       </button>
                                   </div>
                               </div>
-                              <div className="overflow-y-auto p-5">
+                              <div className="overflow-y-auto p-4 sm:p-5">
                                   <SessionDetails
                                       mode={mode}
                                       session={selectedSession}
@@ -347,9 +347,9 @@ function SessionDetails({
                     </div>
                 </div>
             ) : (
-                <div className="mt-5">
+                <div>
                     {myAttendance ? (
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
                             <SummaryTile
                                 label="Status"
                                 value={myAttendance.status}
@@ -369,14 +369,16 @@ function SessionDetails({
                                 }
                                 icon={<Users size={13} />}
                             />
-                            <SummaryTile
-                                label="Teammates"
-                                value={
-                                    myAttendance.pairedWith?.join(", ") ||
-                                    "Solo / unavailable"
-                                }
-                                icon={<Users size={13} />}
-                            />
+                            <div className="col-span-2">
+                                <SummaryTile
+                                    label="Teammates"
+                                    value={
+                                        myAttendance.pairedWith?.join(", ") ||
+                                        "Solo / unavailable"
+                                    }
+                                    icon={<Users size={13} />}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <EmptyState
