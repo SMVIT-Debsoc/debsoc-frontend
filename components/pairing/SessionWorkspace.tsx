@@ -1352,8 +1352,10 @@ export default function SessionWorkspace({
 
             {/* On mobile the fixed bottom tab bar (~5rem incl. safe area) would cover
                 a bottom-4 sticky panel, so it sticks higher there. */}
-            <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-4 py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
-                <div className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-2.5 py-2 sm:px-4 sm:py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
+                {/* On mobile the panel is a slim one-row action bar; the helper
+                    copy and divider only appear on larger screens. */}
+                <div className="mb-3 hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
                     Step navigation
                     {busyAction === null &&
                     !canAdvance(step, stepAvailability) &&
@@ -1361,17 +1363,18 @@ export default function SessionWorkspace({
                         ? " - complete the current step action to unlock the next stage."
                         : " - use Previous or Next to move through the workflow."}
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-white/10 pt-4">
-                    <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 sm:border-t sm:border-slate-200 sm:dark:border-white/10 sm:pt-4">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                         <SecondaryButton
                             type="button"
                             onClick={() => setStep(previousStep(step))}
                             disabled={
                                 STEP_INDEX[step] === 0 || busyAction !== null
                             }
+                            aria-label="Previous step"
                         >
                             <ArrowLeft size={16} />
-                            Previous
+                            <span className="hidden sm:inline">Previous</span>
                         </SecondaryButton>
                         {canCancelSession && (
                             <SecondaryButton
@@ -1390,9 +1393,10 @@ export default function SessionWorkspace({
                                         setBusyAction,
                                     )
                                 }
+                                aria-label="Cancel session"
                             >
                                 <X size={16} />
-                                Cancel session
+                                <span className="hidden sm:inline">Cancel session</span>
                             </SecondaryButton>
                         )}
                     </div>
@@ -1437,7 +1441,8 @@ export default function SessionWorkspace({
                                     )
                                 }
                             >
-                                Publish official pairing
+                                <span className="sm:hidden">Publish</span>
+                                <span className="hidden sm:inline">Publish official pairing</span>
                             </PrimaryButton>
                         )}
                         {step === "post" &&
@@ -1456,7 +1461,8 @@ export default function SessionWorkspace({
                                         )
                                     }
                                 >
-                                    Refresh scoring
+                                    <span className="sm:hidden">Refresh</span>
+                                    <span className="hidden sm:inline">Refresh scoring</span>
                                 </SecondaryButton>
                             )}
 
