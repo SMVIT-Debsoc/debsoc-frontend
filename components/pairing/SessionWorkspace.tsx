@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {createPortal} from "react-dom";
 import {
     ArrowLeft,
@@ -117,6 +117,10 @@ export default function SessionWorkspace({
         publishedPairing: null,
         scoringStatus: null,
     });
+    // Mirror of the latest committed workspace so a reload can read the
+    // previously-loaded proposal even after it optimistically clears state.
+    const workspaceRef = useRef(workspace);
+    workspaceRef.current = workspace;
     const [attendanceDraft, setAttendanceDraft] = useState<AttendanceDraft>({});
     const [motionType, setMotionType] = useState("");
     const [motionText, setMotionText] = useState("");
@@ -201,6 +205,14 @@ export default function SessionWorkspace({
             setFeedback(null);
             setBusyAction("Loading session");
 
+            // Capture the proposal already on screen before the optimistic reset
+            // below clears it, so a realtime refresh can keep a freshly-generated
+            // (still-unapproved) proposal instead of blanking the review step.
+            const previousWorkspace = workspaceRef.current;
+            const previousSessionId =
+                previousWorkspace.context?.session.sessionId ?? null;
+            const previousProposal = previousWorkspace.proposal;
+
             try {
                 const context =
                     await fetchJson<SessionPreparationContextResponse>(
@@ -255,6 +267,21 @@ export default function SessionWorkspace({
                         await fetchJson<SessionScoringStatusResponse>(
                             `/api/sessions/${sessionId}/scoring-status`,
                         );
+                }
+
+                // A generated-but-unapproved proposal has no acceptedProposalId,
+                // so the fetches above never reload it. Without this, every
+                // realtime "session_detail" refresh would wipe the proposal the
+                // admin just generated. Keep the previously-loaded proposal for
+                // the same session while it is still in the GENERATED state.
+                if (
+                    !nextState.proposal &&
+                    !nextState.publishedPairing &&
+                    previousProposal &&
+                    previousSessionId === context.session.sessionId &&
+                    context.session.pairingStatus?.toUpperCase() === "GENERATED"
+                ) {
+                    nextState.proposal = previousProposal;
                 }
 
                 if (!cancelled) {
