@@ -874,6 +874,10 @@ function mergeParticipantSessions(
     merged.set(session.id, {
       ...current,
       ...session,
+      // The published-session read derives lifecycle state from the server's
+      // pairing/publication/scoring statuses; the attendance-derived state is
+      // only a guess ("Preparation"/"Scored") and must not downgrade it.
+      state: current?.state ?? session.state,
       date: current?.date ?? session.date,
       motionType: current?.motionType ?? session.motionType,
       motionText: session.motionText ?? current?.motionText,
