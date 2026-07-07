@@ -1350,7 +1350,9 @@ export default function SessionWorkspace({
                 </Card>
             )}
 
-            <div className="sticky bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-4 py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
+            {/* On mobile the fixed bottom tab bar (~5rem incl. safe area) would cover
+                a bottom-4 sticky panel, so it sticks higher there. */}
+            <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-4 py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
                 <div className="mb-3 text-xs text-slate-500 dark:text-slate-400">
                     Step navigation
                     {busyAction === null &&
