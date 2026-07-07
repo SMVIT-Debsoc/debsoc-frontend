@@ -285,9 +285,7 @@ export default function Session() {
                     {/* SECTION: THE PROTOCOLS (FORMATS) */}
                     <section className="scroll-mt-32 pt-16 md:pt-24 space-y-16 md:space-y-32 max-w-screen-2xl mx-auto text-left">
                         <div className="flex flex-col items-center text-center space-y-6 md:space-y-8">
-                            <div className="px-6 py-2 bg-white/5 border border-white/10 text-[10px] md:text-[11px] text-zinc-400 uppercase tracking-[0.3em] md:tracking-[0.5em] font-bold">
-                                The Protocols
-                            </div>
+
                             <h2 className="text-4xl sm:text-6xl md:text-8xl font-light text-white uppercase italic tracking-tighter">
                                 Debate{" "}
                                 <span className="text-zinc-600 not-italic">
