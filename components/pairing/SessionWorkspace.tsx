@@ -328,7 +328,7 @@ export default function SessionWorkspace({
             return;
         }
 
-        if (pairingStatus !== "READY" && pairingStatus != "GENERATED") {
+        if (pairingStatus !== "READY") {
             return;
         }
 
