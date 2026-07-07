@@ -554,22 +554,17 @@ export default function SessionWorkspace({
             />
 
             <Card className="mb-6 p-4">
-                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                    <Field label="Session">
-                        <select
-                            value={selectedSessionId}
-                            onChange={(event) =>
-                                setSelectedSessionId(event.target.value)
-                            }
-                            className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                        >
-                            {sessions.map((session) => (
-                                <option key={session.id} value={session.id}>
-                                    {session.date} · {session.motionType}
-                                </option>
-                            ))}
-                        </select>
-                    </Field>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            Session
+                        </div>
+                        <div className="mt-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {selectedSession
+                                ? `${selectedSession.date} · ${selectedSession.motionType}`
+                                : "No session"}
+                        </div>
+                    </div>
                     <div className="text-sm text-slate-500 dark:text-slate-400">
                         Chair default:{" "}
                         <span className="font-medium text-slate-900 dark:text-slate-100">
@@ -1358,20 +1353,20 @@ export default function SessionWorkspace({
                                 {workspace.scoringStatus.tasks.map((task) => (
                                     <div
                                         key={task.participantId}
-                                        className={`flex items-center justify-between gap-3 rounded-xl border-l-4 border border-slate-200 dark:border-white/10 px-4 py-3 text-sm ${
+                                        className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border-l-4 border border-slate-200 dark:border-white/10 px-4 py-3 text-sm ${
                                             task.hasSubmitted
                                                 ? "border-l-emerald-500"
                                                 : "border-l-amber-500"
                                         }`}
                                     >
-                                        <div>
-                                            <div className="font-medium text-slate-900 dark:text-slate-100">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="truncate font-medium text-slate-900 dark:text-slate-100">
                                                 {findParticipantName(
                                                     participants,
                                                     task.participantId,
                                                 )}
                                             </div>
-                                            <div className="mt-1 flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-slate-600 dark:text-slate-400">
                                                 Role:
                                                 <span
                                                     className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
