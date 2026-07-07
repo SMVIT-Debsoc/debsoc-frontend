@@ -2082,6 +2082,7 @@ async function generateProposal(
             ok?: boolean;
             reason?: string;
             detail?: string;
+            violations?: Array<{code: string; message: string}>;
             proposal?: PairingProposalView;
         }>("/api/pairing/generate", {
             method: "POST",
@@ -2089,10 +2090,21 @@ async function generateProposal(
         });
         const proposal = generated.ok === false ? null : generated.proposal;
         if (!proposal) {
-            throw new Error(
+            // Violations repeat across candidates; dedupe and show the first
+            // few so the admin sees which hard rule is blocking generation.
+            const uniqueViolations = [
+                ...new Set(
+                    (generated.violations ?? []).map((entry) => entry.message),
+                ),
+            ].slice(0, 3);
+            const baseMessage =
                 generated.detail ??
-                    generated.reason ??
-                    "Proposal generation failed.",
+                generated.reason ??
+                "Proposal generation failed.";
+            throw new Error(
+                uniqueViolations.length > 0
+                    ? `${baseMessage} ${uniqueViolations.join(" ")}`
+                    : baseMessage,
             );
         }
         const context = await fetchJson<SessionPreparationContextResponse>(

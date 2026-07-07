@@ -8,7 +8,6 @@ import {
   TEAMS_PER_ROOM,
 } from "./types.ts";
 import { assignChairsToRooms } from "./chair-assignment.ts";
-import { isCandidateValid } from "./hard-rules.ts";
 import { buildUnassignedParticipants, computeRoomPlan } from "./leftovers.ts";
 
 const benchPositions = ["OG", "OO", "CG", "CO"] as const;
@@ -307,14 +306,15 @@ export function generateCandidateProposals(context: PairingGenerationContext): P
       ];
     }
 
-    const candidate: PairingCandidate = {
+    // Do NOT pre-filter with the hard rules here: the engine re-validates every
+    // candidate and, when all of them violate a rule, reports the concrete
+    // violations (NO_VALID_PROPOSAL). Filtering here collapsed that into an
+    // uninformative NO_CANDIDATES_GENERATED and made the engine's diagnostic
+    // branch unreachable.
+    generatedCandidates.push({
       rooms,
       unassignedParticipants: buildUnassignedParticipants(leftoverSpeakers),
-    };
-
-    if (isCandidateValid(candidate, context)) {
-      generatedCandidates.push(candidate);
-    }
+    });
   }
 
   return generatedCandidates;
