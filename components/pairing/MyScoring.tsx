@@ -8,6 +8,7 @@ import type { PublishedPairingView } from "@/types/pairing";
 
 type MyScoringProps = {
   role: string;
+  userId?: string | null;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   onRefresh?: () => void;
@@ -82,7 +83,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export default function MyScoring({ role, sessions, attendanceHistory, onRefresh }: MyScoringProps) {
+export default function MyScoring({ role, userId, sessions, attendanceHistory, onRefresh }: MyScoringProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tasks, setTasks] = useState<ScoringTaskView[]>([]);
@@ -104,12 +105,13 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
   // shows up in the user's attendance history.
   const currentParticipantIds = useMemo(() => {
     const set = new Set<string>();
+    if (userId) set.add(userId);
     attendanceHistory.forEach((item) => {
       if (item.participantId) set.add(item.participantId);
       item.participantIds?.forEach((id) => set.add(id));
     });
     return set;
-  }, [attendanceHistory]);
+  }, [attendanceHistory, userId]);
   const hasIdentity = currentParticipantIds.size > 0;
 
   useEffect(() => {

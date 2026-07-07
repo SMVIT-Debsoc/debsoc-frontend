@@ -176,7 +176,7 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "MyScoring" && (
-        <MyScoring role={role} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
+        <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}
     </div>
   );

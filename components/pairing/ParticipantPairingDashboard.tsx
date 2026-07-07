@@ -116,6 +116,7 @@ export default function ParticipantPairingDashboard({
       {activeTab === "MyScoring" && (
         <MyScoring
           role={role}
+          userId={userId}
           sessions={sessions}
           attendanceHistory={attendanceHistory}
           onRefresh={onRefresh}
