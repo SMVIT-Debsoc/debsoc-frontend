@@ -97,7 +97,10 @@ export default function HomeDashboard({
           return;
         }
 
-        const data = (await response.json()) as { publishedPairing?: PublishedPairingView };
+        const data = (await response.json()) as {
+          publishedPairing?: PublishedPairingView;
+          participantNames?: Record<string, string>;
+        };
         const publishedPairing = data.publishedPairing;
         if (!publishedPairing) {
           if (!cancelled) {
@@ -106,7 +109,7 @@ export default function HomeDashboard({
           return;
         }
 
-        const details = deriveLastSessionDetails(publishedPairing, currentParticipantId, participants, speakerLeaderboard, adjudicatorLeaderboard);
+        const details = deriveLastSessionDetails(publishedPairing, currentParticipantId, data.participantNames ?? {}, participants, speakerLeaderboard, adjudicatorLeaderboard);
         if (!cancelled) {
           setLastSessionDetails(details);
         }
@@ -248,7 +251,18 @@ export default function HomeDashboard({
                 label="Motion type"
                 value={lastSessionDetails?.motionType ?? lastSession.session.motiontype}
               />
-              <Info label="Chair" value={resolveParticipantName(lastSession.session.Chair, participants, speakerLeaderboard, adjudicatorLeaderboard, lastSessionDetails?.chair ?? lastSession.session.Chair)} />
+              <Info
+                label="Chair"
+                value={resolveParticipantName(
+                  lastSession.session.Chair,
+                  participants,
+                  speakerLeaderboard,
+                  adjudicatorLeaderboard,
+                  lastSessionDetails?.chair && lastSessionDetails.chair !== "TBD"
+                    ? lastSessionDetails.chair
+                    : lastSession.session.Chair,
+                )}
+              />
               <Info label="Status" value={lastSession.status} />
               <Info
                 label="Speaker score"
@@ -264,7 +278,7 @@ export default function HomeDashboard({
                           resolveParticipantName(participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, participantId),
                         )
                         .join(", ")
-                    : "No pair saved")
+                    : lastSession.assignmentLabel ?? "No pair saved")
                 }
               />
             </div>
@@ -414,12 +428,14 @@ function resolveParticipantName(
   speakerLeaderboard: SpeakerLeaderboardRow[],
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[],
   fallback: string,
+  names: Record<string, string> = {},
 ) {
   if (!id) {
     return fallback;
   }
 
   return (
+    names[id] ??
     participants.find((entry) => entry.id === id)?.name ??
     speakerLeaderboard.find((entry) => entry.id === id)?.name ??
     adjudicatorLeaderboard.find((entry) => entry.id === id)?.name ??
@@ -430,6 +446,7 @@ function resolveParticipantName(
 function deriveLastSessionDetails(
   publishedPairing: PublishedPairingView,
   participantId: string,
+  names: Record<string, string>,
   participants: { id: string; name: string }[],
   speakerLeaderboard: SpeakerLeaderboardRow[],
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[],
@@ -454,7 +471,7 @@ function deriveLastSessionDetails(
     room.adjudicators.find((adjudicator) => adjudicator.participantId === participantId) ?? null;
   const chair = room.adjudicators.find((adjudicator) => adjudicator.isChair) ?? null;
   const chairLabel = chair
-    ? resolveParticipantName(chair.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, chair.participantId)
+    ? resolveParticipantName(chair.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, "TBD", names)
     : "TBD";
 
   if (myTeam) {
@@ -462,7 +479,7 @@ function deriveLastSessionDetails(
       .filter((speaker) => speaker.participantId !== participantId)
       .map(
         (speaker) =>
-          `${resolveParticipantName(speaker.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, speaker.participantId)} (${speaker.speakingRole})`,
+          `${resolveParticipantName(speaker.participantId, participants, speakerLeaderboard, adjudicatorLeaderboard, "Teammate", names)} (${speaker.speakingRole})`,
       );
 
     return {
@@ -481,7 +498,8 @@ function deriveLastSessionDetails(
             participants,
             speakerLeaderboard,
             adjudicatorLeaderboard,
-            myAdjudicator.participantId,
+            "You",
+            names,
           )
         : chairLabel,
       pairingLabel: myAdjudicator.isChair ? `Chair - Room ${room.roomIndex}` : `Panel - Room ${room.roomIndex}`,

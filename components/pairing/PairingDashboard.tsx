@@ -92,6 +92,26 @@ export default function PairingDashboard({
   );
   const activeTab = isAdminView ? adminTab : participantTab;
 
+  // Restore the active tab from the URL on mount, then keep the URL in sync,
+  // so a browser refresh stays on the tab being viewed instead of Home.
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (!tab) return;
+    if (isAdminView && ADMIN_TABS.some((entry) => entry.key === tab)) {
+      setAdminTab(tab as AdminTab);
+    } else if (!isAdminView && PARTICIPANT_TABS.some((entry) => entry.key === tab)) {
+      setParticipantTab(tab as ParticipantTab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") === activeTab) return;
+    url.searchParams.set("tab", activeTab);
+    window.history.replaceState(null, "", url);
+  }, [activeTab]);
+
   const [primaryDataVersion, setPrimaryDataVersion] = useState(0);
   const refreshPrimaryData = () => setPrimaryDataVersion((v) => v + 1);
   const [leaderboardDataVersion, setLeaderboardDataVersion] = useState(0);

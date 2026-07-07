@@ -129,6 +129,7 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
         const candidateSessions = sessions.filter(isPublishedLike);
         const loaded = await Promise.all(
           candidateSessions.map(async (session): Promise<ScoringTaskView | null> => {
+            try {
             const [publishedResponse, scoringStatus] = await Promise.all([
               fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`),
               fetchJson<TaskStatusResponse>(`/api/sessions/${session.id}/scoring-status`),
@@ -218,6 +219,10 @@ export default function MyScoring({ role, sessions, attendanceHistory, onRefresh
                 })),
               ),
             } satisfies ScoringTaskView;
+            } catch {
+              // One broken session must not blank every scoring task.
+              return null;
+            }
           }),
         );
 

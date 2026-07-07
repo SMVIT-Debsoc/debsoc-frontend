@@ -142,20 +142,26 @@ export default function MyPairing({
       try {
         const loaded = await Promise.all(
           candidateSessions.map(async (session) => {
-            const response = await fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`);
-            const publishedPairing = response.publishedPairing;
-            const names = {
-              ...globalNameMapRef.current,
-              ...participantNameMap(session),
-              ...(response.participantNames ?? {}),
-            };
-            const room = buildParticipantRoomView(session, publishedPairing, currentParticipantIds, names);
-            return { session, publishedPairing, room };
+            // A single session with a missing/broken published pairing must
+            // not blank the whole tab; skip it and keep the rest.
+            try {
+              const response = await fetchJson<PublishedPairingResponse>(`/api/pairing/published/${session.id}`);
+              const publishedPairing = response.publishedPairing;
+              const names = {
+                ...globalNameMapRef.current,
+                ...participantNameMap(session),
+                ...(response.participantNames ?? {}),
+              };
+              const room = buildParticipantRoomView(session, publishedPairing, currentParticipantIds, names);
+              return { session, publishedPairing, room };
+            } catch {
+              return null;
+            }
           }),
         );
 
         const relevant = loaded
-          .filter((entry) => entry.room !== null)
+          .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.room !== null)
           .sort((a, b) => (b.session.date ?? "").localeCompare(a.session.date ?? ""))
           .slice(0, 1);
         if (cancelled) return;

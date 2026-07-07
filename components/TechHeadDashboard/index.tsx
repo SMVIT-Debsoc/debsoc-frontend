@@ -54,6 +54,22 @@ export default function TechHeadDashboard() {
     const [activeTab, setActiveTab] = useState<
         "pending" | "verified" | "pairing"
     >("pending");
+    // Restore the active tab from the URL on mount, then keep the URL in
+    // sync, so a browser refresh stays on the tab being viewed.
+    useEffect(() => {
+        const tab = new URLSearchParams(window.location.search).get("tab");
+        if (tab === "pending" || tab === "verified" || tab === "pairing") {
+            setActiveTab(tab);
+        }
+    }, []);
+
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("tab") === activeTab) return;
+        url.searchParams.set("tab", activeTab);
+        window.history.replaceState(null, "", url);
+    }, [activeTab]);
+
     const [roleChange, setRoleChange] = useState<{
         user: UserRecord;
         fromRole: "President" | "Cabinet" | "Member";
