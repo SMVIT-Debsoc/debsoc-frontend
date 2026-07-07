@@ -147,32 +147,35 @@ export default function Leaderboards({
                 />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <div>
+                <table className="w-full text-sm table-fixed">
                   <thead className="bg-slate-50 dark:bg-white/[0.04] text-left text-slate-600 dark:text-slate-400">
                     <tr>
-                      <th className="px-4 py-3 font-medium">#</th>
-                      <th className="px-4 py-3 font-medium">Speaker</th>
-                      <th className="px-4 py-3 font-medium">Score</th>
-                      <th className="px-4 py-3 font-medium">Sessions</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium w-14">#</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium">Speaker</th>
+                      <th className="px-2 sm:px-4 py-3 font-medium w-20 sm:w-28">Score</th>
+                      <th className="hidden md:table-cell px-4 py-3 font-medium w-28">Sessions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {speakerLeaderboard.map((entry, index) => {
                       return (
                         <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-indigo-50/30 dark:hover:bg-indigo-400/10">
-                          <td className="px-4 py-3">
+                          <td className="px-2 sm:px-4 py-3">
                             <div className="inline-flex h-10 w-10 items-center justify-center">
                               <RankDoodle rank={entry.rank} />
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-slate-900 dark:text-slate-100">{entry.name}</div>
+                          <td className="px-2 sm:px-4 py-3">
+                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">{entry.name}</div>
+                            <div className="md:hidden text-xs text-slate-500 dark:text-slate-400">
+                              {entry.sessions} session{entry.sessions === 1 ? "" : "s"}
+                            </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-2 sm:px-4 py-3">
                             <div className="font-semibold text-slate-900 dark:text-slate-100">{entry.score.toFixed(1)}</div>
                           </td>
-                          <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
+                          <td className="hidden md:table-cell px-4 py-3 text-slate-700 dark:text-slate-300">{entry.sessions}</td>
                         </tr>
                       );
                     })}
