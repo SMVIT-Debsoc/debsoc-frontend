@@ -66,6 +66,8 @@ export type AttendanceHistoryItem = {
   pairingCode: string | null;
   debatedAlone: boolean;
   pairedWith?: string[];
+  /** Published-room role label (e.g. "PM (OG)", "Chair") when the session was engine-published. */
+  assignmentLabel?: string | null;
   session: {
     id: string;
     sessionDate: string;

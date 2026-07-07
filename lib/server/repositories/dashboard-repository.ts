@@ -175,6 +175,65 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
     return { attendance, publishedSessions };
   }
 
+  // The viewer's published room assignments (speaker + adjudicator) so the
+  // participant session view can show role/teammates when the legacy
+  // pairingCode fields are empty for engine-published sessions.
+  async function getPublishedSelfAssignments(where: ViewerWhere) {
+    const [speakerAssignments, adjudicatorAssignments] = await Promise.all([
+      client.teamSpeakerAssignment.findMany({
+        where: {
+          ...where,
+          teamAssignment: {
+            roomAssignment: { proposal: { publishedForSessions: { some: {} } } },
+          },
+        },
+        select: {
+          speakingRole: true,
+          teamAssignment: {
+            select: {
+              bpPosition: true,
+              speakerAssignments: {
+                select: {
+                  memberId: true,
+                  cabinetId: true,
+                  presidentId: true,
+                  member: { select: { name: true } },
+                  cabinet: { select: { name: true } },
+                  president: { select: { name: true } },
+                },
+              },
+              roomAssignment: {
+                select: {
+                  proposal: {
+                    select: { publishedForSessions: { select: { id: true } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      client.roomAdjudicatorAssignment.findMany({
+        where: {
+          ...where,
+          roomAssignment: { proposal: { publishedForSessions: { some: {} } } },
+        },
+        select: {
+          isChair: true,
+          roomAssignment: {
+            select: {
+              proposal: {
+                select: { publishedForSessions: { select: { id: true } } },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return { speakerAssignments, adjudicatorAssignments };
+  }
+
   // Co-participants sharing a pairing code within one session (for "paired with").
   async function getPairingPeers(sessionId: string, pairingCode: string) {
     return client.attendance.findMany({
@@ -190,7 +249,7 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
     });
   }
 
-  return { getBootstrapData, getSelfAttendanceBundle, getPairingPeers };
+  return { getBootstrapData, getSelfAttendanceBundle, getPublishedSelfAssignments, getPairingPeers };
 }
 
 export const dashboardRepository = createDashboardRepository();

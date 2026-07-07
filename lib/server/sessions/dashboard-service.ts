@@ -80,9 +80,53 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
             ? { presidentId: userId }
             : { memberId: userId };
 
-      const bundle = await dashboardRepository.getSelfAttendanceBundle(where);
+      const [bundle, publishedAssignments] = await Promise.all([
+        dashboardRepository.getSelfAttendanceBundle(where),
+        dashboardRepository.getPublishedSelfAssignments(where),
+      ]);
       const attendance = bundle.attendance as SelfAttendanceRecord[];
       const publishedSessions = bundle.publishedSessions as SelfPublishedSession[];
+
+      // Per-session published assignment view for the viewer: role label plus
+      // teammate names, used when the legacy pairingCode fields are empty.
+      const assignmentBySession = new Map<string, { label: string; teammates: string[] }>();
+      for (const record of publishedAssignments.speakerAssignments as Array<{
+        speakingRole: string;
+        teamAssignment: {
+          bpPosition: string;
+          speakerAssignments: Array<{
+            memberId: string | null;
+            cabinetId: string | null;
+            presidentId: string | null;
+            member: { name: string } | null;
+            cabinet: { name: string } | null;
+            president: { name: string } | null;
+          }>;
+          roomAssignment: { proposal: { publishedForSessions: Array<{ id: string }> } };
+        };
+      }>) {
+        const teammates = record.teamAssignment.speakerAssignments
+          .filter((peer) => !matchesViewer(peer, role, userId))
+          .map((peer) => peer.member?.name ?? peer.cabinet?.name ?? peer.president?.name ?? null)
+          .filter((name): name is string => Boolean(name));
+        for (const session of record.teamAssignment.roomAssignment.proposal.publishedForSessions) {
+          assignmentBySession.set(session.id, {
+            label: `${record.speakingRole} (${record.teamAssignment.bpPosition})`,
+            teammates,
+          });
+        }
+      }
+      for (const record of publishedAssignments.adjudicatorAssignments as Array<{
+        isChair: boolean;
+        roomAssignment: { proposal: { publishedForSessions: Array<{ id: string }> } };
+      }>) {
+        for (const session of record.roomAssignment.proposal.publishedForSessions) {
+          assignmentBySession.set(session.id, {
+            label: record.isChair ? "Chair" : "Panel adjudicator",
+            teammates: [],
+          });
+        }
+      }
 
       attendance.sort(
         (a, b) =>
@@ -91,8 +135,13 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
 
       const enrichedAttendance = await Promise.all(
         attendance.map(async (record) => {
+          const published = assignmentBySession.get(record.session.id) ?? null;
           if (!record.pairingCode || record.debatedAlone) {
-            return { ...record, pairedWith: [] as string[] };
+            return {
+              ...record,
+              pairedWith: published?.teammates ?? ([] as string[]),
+              assignmentLabel: published?.label ?? null,
+            };
           }
           const peers = (await dashboardRepository.getPairingPeers(
             record.session.id,
@@ -105,6 +154,7 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
           return {
             ...record,
             pairedWith,
+            assignmentLabel: published?.label ?? null,
             session: {
               ...record.session,
               motiontype: record.session.motionType ?? record.session.motiontype,

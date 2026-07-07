@@ -361,12 +361,16 @@ function SessionDetails({
                                 icon={<Users size={13} />}
                             />
                             <SummaryTile
-                                label="Pair code"
-                                value={myAttendance.pairingCode ?? "N/A"}
+                                label="Role"
+                                value={
+                                    myAttendance.assignmentLabel ??
+                                    myAttendance.pairingCode ??
+                                    "N/A"
+                                }
                                 icon={<Users size={13} />}
                             />
                             <SummaryTile
-                                label="Paired with"
+                                label="Teammates"
                                 value={
                                     myAttendance.pairedWith?.join(", ") ||
                                     "Solo / unavailable"

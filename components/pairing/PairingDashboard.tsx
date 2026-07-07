@@ -785,6 +785,7 @@ function normalizeAttendanceHistory(item: ApiAttendanceHistory): AttendanceHisto
     pairingCode: item.pairingCode ?? null,
     debatedAlone: Boolean(item.debatedAlone),
     pairedWith: item.pairedWith ?? [],
+    assignmentLabel: item.assignmentLabel ?? null,
     session: {
       id: item.session.id,
       sessionDate: formatDate(item.session.sessionDate),
@@ -1048,6 +1049,7 @@ type ApiAttendanceHistory = {
   pairingCode: string | null;
   debatedAlone: boolean;
   pairedWith?: string[];
+  assignmentLabel?: string | null;
   session: {
     id: string;
     sessionDate: string | Date;
