@@ -365,7 +365,13 @@ export function createSessionService(
 
     const speakerSubmittedIds = new Set(
       chairFeedbackRecords
-        .map((record) => resolveParticipantId(record))
+        // Resolve only the speaker identity columns; passing the whole record
+        // would match its sessionId first and mark nobody as submitted.
+        .map((record) => resolveParticipantId({
+          memberId: record.speakerMemberId,
+          cabinetId: record.speakerCabinetId,
+          presidentId: record.speakerPresidentId,
+        }))
         .filter((participantId): participantId is string => participantId !== null),
     );
 
