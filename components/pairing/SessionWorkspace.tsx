@@ -5,6 +5,7 @@ import {createPortal} from "react-dom";
 import {
     ArrowLeft,
     ArrowRight,
+    ChevronDown,
     ClipboardList,
     Gavel,
     ListChecks,
@@ -578,11 +579,71 @@ export default function SessionWorkspace({
                 </div>
             </Card>
 
-            <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-5">
+            {/* Mobile: dot breadcrumb + a step dropdown. Desktop keeps the
+                original 5-tile grid so the workflow reads at a glance. */}
+            <div className="mb-4 md:hidden">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                        {STEPS.map((entry, index) => {
+                            const isActive = step === entry.key;
+                            const isDone = STEP_INDEX[step] > index;
+                            return (
+                                <React.Fragment key={entry.key}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            stepAvailability[entry.key] &&
+                                            setStep(entry.key)
+                                        }
+                                        disabled={!stepAvailability[entry.key]}
+                                        aria-label={`Step ${index + 1}: ${entry.label}`}
+                                        aria-current={isActive ? "step" : undefined}
+                                        className={`h-2 rounded-full transition-all ${
+                                            isActive
+                                                ? "w-6 bg-indigo-600 dark:bg-indigo-400"
+                                                : isDone
+                                                  ? "w-2 bg-indigo-400 dark:bg-indigo-500"
+                                                  : "w-2 bg-slate-300 dark:bg-white/15"
+                                        }`}
+                                    />
+                                </React.Fragment>
+                            );
+                        })}
+                    </div>
+                    <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        Step {STEP_INDEX[step] + 1} of {STEPS.length}
+                    </span>
+                </div>
+                <div className="relative">
+                    <select
+                        value={step}
+                        onChange={(event) => {
+                            const next = event.target.value as StepKey;
+                            if (stepAvailability[next]) setStep(next);
+                        }}
+                        className="w-full appearance-none rounded-xl border border-indigo-200 bg-white px-3 py-2.5 pr-9 text-sm font-semibold text-indigo-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-indigo-400/25 dark:bg-white/[0.06] dark:text-indigo-200"
+                    >
+                        {STEPS.map((entry, index) => (
+                            <option
+                                key={entry.key}
+                                value={entry.key}
+                                disabled={!stepAvailability[entry.key]}
+                            >
+                                Step {index + 1} · {entry.label}
+                                {stepAvailability[entry.key] ? "" : " (locked)"}
+                            </option>
+                        ))}
+                    </select>
+                    <ChevronDown
+                        size={16}
+                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-300"
+                    />
+                </div>
+            </div>
+
+            <div className="mb-6 hidden gap-2 sm:gap-3 md:grid md:grid-cols-5">
                 {STEPS.map((entry, index) => {
                     const enabled = stepAvailability[entry.key];
-                    const isLastOdd =
-                        index === STEPS.length - 1 && STEPS.length % 2 === 1;
                     return (
                         <button
                             key={entry.key}
@@ -590,8 +651,6 @@ export default function SessionWorkspace({
                             onClick={() => enabled && setStep(entry.key)}
                             disabled={!enabled}
                             className={`rounded-xl border px-3 py-2.5 text-left text-sm md:px-4 md:py-3 ${
-                                isLastOdd ? "col-span-2 md:col-span-1" : ""
-                            } ${
                                 step === entry.key
                                     ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-400/10 text-indigo-900 dark:text-indigo-200"
                                     : enabled
