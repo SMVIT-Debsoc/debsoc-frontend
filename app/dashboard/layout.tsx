@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 
 export const metadata: Metadata = {
   robots: {
@@ -18,7 +19,7 @@ export default function DashboardLayout({
 }) {
   return (
     <>
-      <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      <Script id="theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       {children}
     </>
   );
