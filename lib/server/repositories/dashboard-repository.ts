@@ -143,6 +143,9 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
             // leftover/unassigned debaters, without forcing the wider
             // attendance-based branch on every published-session refresh.
             { sessionRoleAssignments: { some: where } },
+            // Sessions the viewer has an attendance row for (even "absent")
+            // still need server-derived lifecycle state and the real chair.
+            { attendance: { some: where } },
             {
               publishedProposal: {
                 roomAssignments: {
@@ -168,6 +171,22 @@ export function createDashboardRepository(client: PrismaClient = prisma) {
           pairingStatus: true,
           publicationStatus: true,
           scoringStatus: true,
+          publishedProposal: {
+            select: {
+              roomAssignments: {
+                select: {
+                  adjudicatorAssignments: {
+                    where: { isChair: true },
+                    select: {
+                      member: { select: { name: true } },
+                      cabinet: { select: { name: true } },
+                      president: { select: { name: true } },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       }),
     ]);

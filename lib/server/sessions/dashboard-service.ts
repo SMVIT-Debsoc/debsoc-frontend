@@ -59,6 +59,15 @@ type SelfPublishedSession = {
   pairingStatus: string | null;
   publicationStatus: string | null;
   scoringStatus: string | null;
+  publishedProposal: {
+    roomAssignments: Array<{
+      adjudicatorAssignments: Array<{
+        member: { name: string } | null;
+        cabinet: { name: string } | null;
+        president: { name: string } | null;
+      }>;
+    }>;
+  } | null;
 };
 
 // Cached, per-viewer "my attendance + published sessions" read used by the
@@ -171,6 +180,12 @@ export function getSelfAttendance(role: ViewerRole, userId: string) {
           motiontype: session.motionType ?? session.motiontype,
           motionText: session.motionText,
           Chair: session.Chair,
+          assignedChairLabel:
+            session.publishedProposal?.roomAssignments
+              .flatMap((room) => room.adjudicatorAssignments)
+              .map((chair) => chair.member?.name ?? chair.cabinet?.name ?? chair.president?.name ?? null)
+              .filter((name): name is string => Boolean(name))
+              .join(", ") || null,
           pairingStatus: session.pairingStatus,
           publicationStatus: session.publicationStatus,
           scoringStatus: session.scoringStatus,

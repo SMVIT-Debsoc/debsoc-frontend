@@ -876,6 +876,7 @@ function normalizeParticipantSession(session: ApiParticipantSession): SessionRow
     motionType: session.motionType ?? session.motiontype,
     motionText: session.motionText ?? undefined,
     chair: session.Chair,
+    assignedChairLabel: session.assignedChairLabel ?? undefined,
     state: deriveLifecycleState(session),
   };
 }
@@ -1086,6 +1087,7 @@ type ApiParticipantSession = {
   motionType?: string | null;
   motionText?: string | null;
   Chair: string;
+  assignedChairLabel?: string | null;
   pairingStatus?: string | null;
   publicationStatus?: string | null;
   scoringStatus?: string | null;
