@@ -185,18 +185,35 @@ export default function Sessions({
 
             {mounted && selectedSession
                 ? createPortal(
-                      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6">
+                      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
                           <div
                               className="overlay-fade absolute inset-0 bg-slate-950/60 backdrop-blur-md"
                               onClick={() => setSelectedSessionId(null)}
                           />
-                          <div className="lg-panel modal-pop relative flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl sm:max-h-[88vh]">
-                              <div className="flex shrink-0 items-start justify-between gap-2 border-b border-zinc-900/5 px-3 py-3 sm:px-5 sm:py-4 dark:border-white/10">
-                                  <div className="min-w-0">
+                          <div className="lg-panel modal-pop relative flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl">
+                              <div className="flex shrink-0 flex-col border-b border-zinc-900/5 px-5 py-4 dark:border-white/10">
+                                  <div className="flex items-start justify-between gap-3">
                                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                                           {selectedSession.date}
                                       </h3>
-                                      <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                                      <div className="flex items-center gap-2 shrink-0">
+                                          <StateBadge
+                                              state={selectedSession.state}
+                                          />
+                                          <button
+                                              type="button"
+                                              onClick={() =>
+                                                  setSelectedSessionId(null)
+                                              }
+                                              aria-label="Close"
+                                              className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-600 transition hover:bg-white/90 active:scale-95 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300"
+                                          >
+                                              <X size={16} />
+                                          </button>
+                                      </div>
+                                  </div>
+                                  <div className="mt-2 min-w-0">
+                                      <p className="text-sm text-slate-500 dark:text-slate-400">
                                           Motion type:{" "}
                                           {selectedSession.motionType}
                                           {(selectedSession.assignedChairLabel ??
@@ -205,7 +222,7 @@ export default function Sessions({
                                               : ""}
                                       </p>
                                       {selectedSession.motionText ? (
-                                          <p className="mt-2 max-w-2xl whitespace-normal break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                          <p className="mt-2 whitespace-normal break-words text-sm leading-6 text-slate-600 dark:text-slate-300">
                                               <span className="font-medium text-slate-700 dark:text-slate-200">
                                                   Motion:
                                               </span>{" "}
@@ -213,23 +230,8 @@ export default function Sessions({
                                           </p>
                                       ) : null}
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                      <StateBadge
-                                          state={selectedSession.state}
-                                      />
-                                      <button
-                                          type="button"
-                                          onClick={() =>
-                                              setSelectedSessionId(null)
-                                          }
-                                          aria-label="Close"
-                                          className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-600 transition hover:bg-white/90 active:scale-95 dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-300"
-                                      >
-                                          <X size={16} />
-                                      </button>
-                                  </div>
                               </div>
-                              <div className="overflow-y-auto p-3 sm:p-5">
+                              <div className="overflow-y-auto p-5">
                                   <SessionDetails
                                       mode={mode}
                                       session={selectedSession}
@@ -267,7 +269,7 @@ function SessionDetails({
         <>
             {mode === "admin" ? (
                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         <SummaryTile
                             label="Present"
                             value={presentCount}
