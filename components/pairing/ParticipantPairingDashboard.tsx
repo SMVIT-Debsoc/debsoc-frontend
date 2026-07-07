@@ -42,6 +42,7 @@ export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React
 type ParticipantPairingDashboardProps = {
   role: string;
   userName: string;
+  userId?: string | null;
   position?: string | null;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
@@ -64,6 +65,7 @@ type ParticipantPairingDashboardProps = {
 export default function ParticipantPairingDashboard({
   role,
   userName,
+  userId = null,
   position = null,
   sessions,
   attendanceHistory,
@@ -103,6 +105,7 @@ export default function ParticipantPairingDashboard({
       {activeTab === "MyPairing" && (
         <MyPairing
           role={role}
+          userId={userId}
           sessions={sessions}
           attendanceHistory={attendanceHistory}
           participants={participants}

@@ -37,6 +37,7 @@ export default async function DashboardPage() {
     <PairingDashboard
       role={session.user.role}
       userName={session.user.name ?? ""}
+      userId={session.user.id ?? null}
       position={position}
     />
   );

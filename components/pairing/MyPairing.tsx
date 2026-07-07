@@ -13,6 +13,7 @@ import type { PublishedPairingView } from "@/types/pairing";
 
 type MyPairingProps = {
   role: string;
+  userId?: string | null;
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   participants?: Participant[];
@@ -76,6 +77,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 
 export default function MyPairing({
   role,
+  userId,
   sessions,
   attendanceHistory,
   participants = [],
@@ -84,12 +86,13 @@ export default function MyPairing({
 }: MyPairingProps) {
   const currentParticipantIds = useMemo(() => {
     const ids = new Set<string>();
+    if (userId) ids.add(userId);
     attendanceHistory.forEach((item) => {
       if (item.participantId) ids.add(item.participantId);
       item.participantIds?.forEach((id) => ids.add(id));
     });
     return ids;
-  }, [attendanceHistory]);
+  }, [attendanceHistory, userId]);
 
   const globalNameMap = useMemo(() => {
     const map: Record<string, string> = {};

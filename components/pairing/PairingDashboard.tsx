@@ -29,6 +29,7 @@ import type { RealtimeEventEnvelope, RealtimeSubscription } from "@/types/realti
 type PairingDashboardProps = {
   role: string;
   userName: string;
+  userId?: string | null;
   position?: string | null;
   embedded?: boolean;
 };
@@ -76,6 +77,7 @@ const INITIAL_STATE: PairingDataState = {
 export default function PairingDashboard({
   role,
   userName,
+  userId = null,
   position = null,
   embedded = false,
 }: PairingDashboardProps) {
@@ -401,6 +403,7 @@ export default function PairingDashboard({
     <AdminPairingDashboard
       role={role}
       userName={userName}
+      userId={userId}
       position={position}
       participants={state.participants}
       sessions={state.sessions}
@@ -431,6 +434,7 @@ export default function PairingDashboard({
     <ParticipantPairingDashboard
       role={role}
       userName={userName}
+      userId={userId}
       position={position}
       sessions={state.sessions}
       attendanceHistory={state.attendanceHistory}

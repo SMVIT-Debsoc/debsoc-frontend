@@ -52,6 +52,7 @@ export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }
 type AdminPairingDashboardProps = {
   role: string;
   userName: string;
+  userId?: string | null;
   position?: string | null;
   participants: Participant[];
   sessions: SessionRow[];
@@ -78,6 +79,7 @@ type AdminPairingDashboardProps = {
 export default function AdminPairingDashboard({
   role,
   userName,
+  userId = null,
   position = null,
   participants,
   sessions,
@@ -165,6 +167,7 @@ export default function AdminPairingDashboard({
       {activeTab === "MyPairing" && (
         <MyPairing
           role={role}
+          userId={userId}
           sessions={sessions}
           attendanceHistory={attendanceHistory}
           participants={participants}
