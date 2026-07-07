@@ -140,15 +140,18 @@ export default function SessionWorkspace({
     const [nextTeamUpIsStrict, setNextTeamUpIsStrict] = useState(false);
     const [busyAction, setBusyAction] = useState<string | null>(null);
     const [feedback, setFeedback] = useState<string | null>(null);
-    // Raw backend errors are noisy internals — log them to the console for
-    // debugging but never surface them in the UI. Callers keep using the same
-    // Dispatch<SetStateAction<string|null>> signature; state is intentionally
-    // unused.
+    // Action errors are logged for debugging and kept in state so blocking
+    // domain failures (e.g. the pairing engine rejecting generation) are
+    // visible to the admin instead of leaving surfaces silently empty.
+    const [actionError, setActionErrorState] = useState<string | null>(null);
     const setActionError = React.useCallback<
         React.Dispatch<React.SetStateAction<string | null>>
     >((value) => {
-        const message = typeof value === "function" ? value(null) : value;
-        if (message) console.error("[pairing]", message);
+        setActionErrorState((current) => {
+            const message = typeof value === "function" ? value(current) : value;
+            if (message) console.error("[pairing]", message);
+            return message;
+        });
     }, []);
     const [overrideOpen, setOverrideOpen] = useState(false);
     const [overrideDraft, setOverrideDraft] =
@@ -189,6 +192,9 @@ export default function SessionWorkspace({
         }
     }, [selectedSessionId, sessions]);
 
+    // Keyed on eventId, not a boolean: the parent never clears the last
+    // realtime event, so a boolean would flip true once and stay true —
+    // swallowing every subsequent workspace-relevant event after the first.
     const shouldRefreshSelectedSession =
         realtimeEvent !== null &&
         realtimeEvent.sessionId !== null &&
@@ -196,6 +202,9 @@ export default function SessionWorkspace({
         (realtimeEvent.refetchHints.includes("session_detail") ||
             realtimeEvent.refetchHints.includes("published_pairing") ||
             realtimeEvent.refetchHints.includes("scoring_status"));
+    const workspaceRefreshKey = shouldRefreshSelectedSession
+        ? realtimeEvent.eventId
+        : null;
 
     useEffect(() => {
         let cancelled = false;
@@ -310,7 +319,7 @@ export default function SessionWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId, shouldRefreshSelectedSession]);
+    }, [selectedSessionId, workspaceRefreshKey]);
 
     useEffect(() => {
         setOverrideDraft(
@@ -366,6 +375,10 @@ export default function SessionWorkspace({
             return;
         }
 
+        // One auto-attempt per session: the id stays set after the run so a
+        // failed generation surfaces its error instead of retrying forever
+        // (each retry refetches session detail, which used to loop the page).
+        // Manual Generate/Regenerate buttons remain available for retries.
         setAutoGeneratingSessionId(selectedSessionId);
         void generateProposal(
             selectedSessionId,
@@ -373,11 +386,7 @@ export default function SessionWorkspace({
             setFeedback,
             setActionError,
             setBusyAction,
-        ).finally(() => {
-            setAutoGeneratingSessionId((current) =>
-                current === selectedSessionId ? null : current,
-            );
-        });
+        );
     }, [
         autoGeneratingSessionId,
         busyAction,
@@ -1321,10 +1330,46 @@ export default function SessionWorkspace({
                             />
                         </>
                     ) : (
-                        <EmptyState
-                            title="No proposal generated yet"
-                            body="Generating the proposal automatically for review. If it does not appear, use Regenerate once the first pass completes."
-                        />
+                        <div className="space-y-4">
+                            {actionError ? (
+                                <EmptyState
+                                    title="Pairing generation failed"
+                                    body={actionError}
+                                />
+                            ) : (
+                                <EmptyState
+                                    title="No proposal generated yet"
+                                    body="Generating the proposal automatically for review. If it does not appear, use the button below to run it manually."
+                                />
+                            )}
+                            {/* Auto-generation runs once per session; after a
+                                failure (or a skipped auto pass) this is the only
+                                path back into generation without a full reload. */}
+                            <div className="flex justify-center">
+                                <PrimaryButton
+                                    type="button"
+                                    disabled={busyAction !== null}
+                                    onClick={() => {
+                                        if (!selectedSessionId) return;
+                                        setAutoGeneratingSessionId(
+                                            selectedSessionId,
+                                        );
+                                        void generateProposal(
+                                            selectedSessionId,
+                                            setWorkspace,
+                                            setFeedback,
+                                            setActionError,
+                                            setBusyAction,
+                                        );
+                                    }}
+                                >
+                                    <Wand2 size={16} />{" "}
+                                    {actionError
+                                        ? "Retry generation"
+                                        : "Generate now"}
+                                </PrimaryButton>
+                            </div>
+                        </div>
                     )}
                 </Card>
             )}
@@ -2029,20 +2074,34 @@ async function generateProposal(
     setActionError(null);
     setFeedback(null);
     try {
-        const generated = await fetchJson<{proposal: PairingProposalView}>(
-            "/api/pairing/generate",
-            {
-                method: "POST",
-                body: JSON.stringify({sessionId}),
-            },
-        );
+        // The engine reports domain failures (insufficient speakers, hard-rule
+        // violations, ...) as HTTP 200 with { ok: false, reason, detail }, so a
+        // status check alone treats failures as success and the review step
+        // silently ends up with no proposal.
+        const generated = await fetchJson<{
+            ok?: boolean;
+            reason?: string;
+            detail?: string;
+            proposal?: PairingProposalView;
+        }>("/api/pairing/generate", {
+            method: "POST",
+            body: JSON.stringify({sessionId}),
+        });
+        const proposal = generated.ok === false ? null : generated.proposal;
+        if (!proposal) {
+            throw new Error(
+                generated.detail ??
+                    generated.reason ??
+                    "Proposal generation failed.",
+            );
+        }
         const context = await fetchJson<SessionPreparationContextResponse>(
             `/api/sessions/${sessionId}`,
         );
         setWorkspace((current) => ({
             ...current,
             context,
-            proposal: generated.proposal,
+            proposal,
         }));
         setFeedback("Proposal generated. Review it below.");
     } catch (caught) {
