@@ -201,11 +201,17 @@ export default function SessionWorkspace({
         realtimeEvent.sessionId === selectedSessionId &&
         (realtimeEvent.refetchHints.includes("session_detail") ||
             realtimeEvent.refetchHints.includes("published_pairing") ||
-            realtimeEvent.refetchHints.includes("scoring_status") ||
             realtimeEvent.refetchHints.includes("dashboard"));
     const workspaceRefreshKey = shouldRefreshSelectedSession
         ? realtimeEvent.eventId
         : null;
+    const scoringStatusRefreshKey =
+        realtimeEvent !== null &&
+        realtimeEvent.sessionId !== null &&
+        realtimeEvent.sessionId === selectedSessionId &&
+        realtimeEvent.refetchHints.includes("scoring_status")
+            ? realtimeEvent.eventId
+            : null;
     const selectedSessionRefreshKey = useMemo(() => {
         if (!selectedSessionId) {
             return null;
@@ -340,6 +346,40 @@ export default function SessionWorkspace({
             cancelled = true;
         };
     }, [selectedSessionId, selectedSessionRefreshKey, workspaceRefreshKey]);
+
+    useEffect(() => {
+        if (!selectedSessionId || !scoringStatusRefreshKey) {
+            return;
+        }
+
+        let cancelled = false;
+
+        async function loadScoringStatus(sessionId: string) {
+            try {
+                const scoringStatus =
+                    await fetchJson<SessionScoringStatusResponse>(
+                        `/api/sessions/${sessionId}/scoring-status`,
+                    );
+                if (!cancelled) {
+                    setWorkspace((current) => ({...current, scoringStatus}));
+                }
+            } catch (caught) {
+                if (!cancelled) {
+                    setActionError(
+                        caught instanceof Error
+                            ? caught.message
+                            : "Scoring status refresh failed.",
+                    );
+                }
+            }
+        }
+
+        void loadScoringStatus(selectedSessionId);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [scoringStatusRefreshKey, selectedSessionId, setActionError]);
 
     useEffect(() => {
         setOverrideDraft(
