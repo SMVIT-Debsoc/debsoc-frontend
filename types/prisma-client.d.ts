@@ -22,6 +22,8 @@ declare module "@prisma/client" {
     proposalReviewLog: any;
     proposalRating: any;
     speakerScoreRecord: any;
+    sparRecord: any;
+    sparSpeakerScore: any;
     chairFeedbackRecord: any;
     adjudicatorScoreRecord: any;
     pairingMetricDefinition: any;
