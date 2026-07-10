@@ -129,6 +129,9 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
   usePairingRealtime({
     enabled: hasIdentity && realtimeSubscriptions.length > 0,
     subscriptions: realtimeSubscriptions,
+    onBootstrap() {
+      setRealtimeVersion((current) => current + 1);
+    },
     onEvent(event) {
       if (
         event.refetchHints.includes("published_pairing") ||

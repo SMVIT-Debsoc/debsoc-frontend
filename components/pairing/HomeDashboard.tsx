@@ -89,6 +89,10 @@ export default function HomeDashboard({
   usePairingRealtime({
     enabled: realtimeSubscriptions.length > 0,
     subscriptions: realtimeSubscriptions,
+    onBootstrap() {
+      setPublishedPairingVersion((current) => current + 1);
+      setProfileVersion((current) => current + 1);
+    },
     onEvent(event) {
       if (
         event.refetchHints.includes("published_pairing") ||
@@ -545,6 +549,5 @@ function deriveLastSessionDetails(
     pairingLabel: `Room ${room.roomIndex}`,
   };
 }
-
 
 
