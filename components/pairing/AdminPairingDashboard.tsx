@@ -72,6 +72,7 @@ type AdminPairingDashboardProps = {
   onOpenLeaderboards: () => void;
   onOpenAdjudicatorLeaderboards: () => void;
   onRefresh?: () => void;
+  onLeaderboardRefresh?: () => void;
   workspaceRealtimeEvent?: RealtimeEventEnvelope | null;
   activeTab?: AdminTab;
 };
@@ -99,6 +100,7 @@ export default function AdminPairingDashboard({
   onOpenLeaderboards,
   onOpenAdjudicatorLeaderboards,
   onRefresh,
+  onLeaderboardRefresh,
   workspaceRealtimeEvent = null,
   activeTab = "Home",
 }: AdminPairingDashboardProps) {
@@ -131,7 +133,7 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "Sessions" && (
-        <Sessions mode="admin" sessions={sessions} loading={loading} error={error} />
+        <Sessions mode="admin" sessions={sessions} loading={loading} error={error} onRealtimeRefresh={onRefresh} />
       )}
       {activeTab === "Roster" && (
         <Roster
@@ -139,6 +141,7 @@ export default function AdminPairingDashboard({
           progressSummaries={progressSummaries}
           loading={loading}
           error={error}
+          onRealtimeRefresh={onRefresh}
         />
       )}
       {activeTab === "SpeakerLeaderboard" && (
@@ -151,6 +154,7 @@ export default function AdminPairingDashboard({
           error={leaderboardError}
           onScopeChange={onLeaderboardScopeChange}
           view="speakers"
+          onRealtimeRefresh={onLeaderboardRefresh}
         />
       )}
       {activeTab === "AdjudicatorLeaderboard" && (
@@ -162,6 +166,7 @@ export default function AdminPairingDashboard({
           error={leaderboardError}
           onScopeChange={onLeaderboardScopeChange}
           view="adjudicators"
+          onRealtimeRefresh={onLeaderboardRefresh}
         />
       )}
       {activeTab === "MyPairing" && (
@@ -181,7 +186,6 @@ export default function AdminPairingDashboard({
     </div>
   );
 }
-
 
 
 

@@ -5,7 +5,9 @@ import {createPortal} from "react-dom";
 import {Calendar, Crown, Users, X} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {Card, EmptyState, SectionHeader, StateBadge} from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type {AttendanceHistoryItem, SessionRow} from "./types";
+import type { RealtimeSubscription } from "@/types/realtime";
 
 type SessionsProps = {
     mode: "admin" | "participant";
@@ -13,6 +15,7 @@ type SessionsProps = {
     attendanceHistory?: AttendanceHistoryItem[];
     loading: boolean;
     error: string | null;
+    onRealtimeRefresh?: () => void;
 };
 
 export default function Sessions({
@@ -21,13 +24,12 @@ export default function Sessions({
     attendanceHistory = [],
     loading,
     error,
+    onRealtimeRefresh,
 }: SessionsProps) {
     const [selectedSessionId, setSelectedSessionId] = useState<string | null>(
         null,
     );
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => setMounted(true), []);
+    const mounted = typeof document !== "undefined";
 
     const selectedSession = useMemo(
         () =>
@@ -35,6 +37,36 @@ export default function Sessions({
             null,
         [selectedSessionId, sessions],
     );
+    const realtimeSubscriptions = useMemo(
+        () => [
+            { scope: "DASHBOARD" as const },
+            ...[...new Set(sessions.map((session) => session.id))]
+                .filter(Boolean)
+                .map(
+                    (sessionId) =>
+                        ({ scope: "SESSION_PUBLISHED", sessionId }) satisfies RealtimeSubscription,
+                ),
+        ],
+        [sessions],
+    );
+
+    usePairingRealtime({
+        enabled: Boolean(onRealtimeRefresh) && realtimeSubscriptions.length > 0,
+        subscriptions: realtimeSubscriptions,
+        onBootstrap() {
+            onRealtimeRefresh?.();
+        },
+        onEvent(event) {
+            if (
+                event.refetchHints.includes("session_detail") ||
+                event.refetchHints.includes("published_pairing") ||
+                event.refetchHints.includes("scoring_status") ||
+                event.refetchHints.includes("dashboard")
+            ) {
+                onRealtimeRefresh?.();
+            }
+        },
+    });
 
     useEffect(() => {
         if (!selectedSessionId) return;

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Card, EmptyState, Pill, SectionHeader } from "./ui";
+import { Card, EmptyState, SectionHeader } from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type {
   AdjudicatorLeaderboardRow,
   SpeakerLeaderboardRow,
@@ -16,6 +17,7 @@ type LeaderboardsProps = {
   error: string | null;
   onScopeChange: (scope: "all" | "bi-monthly") => void;
   view?: "speakers" | "adjudicators";
+  onRealtimeRefresh?: () => void;
 };
 
 export default function Leaderboards({
@@ -27,7 +29,21 @@ export default function Leaderboards({
   error,
   onScopeChange,
   view = "speakers",
+  onRealtimeRefresh,
 }: LeaderboardsProps) {
+  usePairingRealtime({
+    enabled: Boolean(onRealtimeRefresh),
+    subscriptions: [{ scope: "LEADERBOARD" }, { scope: "DASHBOARD" }],
+    onBootstrap() {
+      onRealtimeRefresh?.();
+    },
+    onEvent(event) {
+      if (event.refetchHints.includes("leaderboard") || event.refetchHints.includes("dashboard")) {
+        onRealtimeRefresh?.();
+      }
+    },
+  });
+
   const speakerSummary = useMemo(() => {
     const topSpeaker = speakerLeaderboard[0]?.name ?? "No speaker yet";
 
@@ -158,7 +174,7 @@ export default function Leaderboards({
                     </tr>
                   </thead>
                   <tbody>
-                    {speakerLeaderboard.map((entry, index) => {
+                    {speakerLeaderboard.map((entry) => {
                       return (
                         <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-indigo-50/30 dark:hover:bg-indigo-400/10">
                           <td className="px-2 sm:px-4 py-3">
@@ -250,7 +266,7 @@ export default function Leaderboards({
                     </tr>
                   </thead>
                   <tbody>
-                    {adjudicatorLeaderboard.map((entry, index) => (
+                    {adjudicatorLeaderboard.map((entry) => (
                       <tr key={entry.id} className="border-t border-slate-100 dark:border-white/[0.06] hover:bg-amber-50/30 dark:hover:bg-amber-400/10">
                         <td className="px-2 sm:px-4 py-3">
                           <div className="inline-flex h-10 w-10 items-center justify-center">
@@ -347,8 +363,6 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
-
-
 
 
 

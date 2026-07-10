@@ -6,6 +6,7 @@ import {motion, useReducedMotion} from "framer-motion";
 import {Crown, ShieldCheck, User} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {EmptyState, SectionHeader} from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type {Participant, ProgressProfile, ProgressSummary} from "./types";
 
 type RosterProps = {
@@ -13,6 +14,7 @@ type RosterProps = {
     progressSummaries: ProgressSummary[];
     loading: boolean;
     error: string | null;
+    onRealtimeRefresh?: () => void;
 };
 
 export default function Roster({
@@ -20,6 +22,7 @@ export default function Roster({
     progressSummaries,
     loading,
     error,
+    onRealtimeRefresh,
 }: RosterProps) {
     const [filter, setFilter] = useState("");
     const [selectedParticipantId, setSelectedParticipantId] = useState<
@@ -29,13 +32,28 @@ export default function Roster({
         useState<ProgressProfile | null>(null);
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileError, setProfileError] = useState<string | null>(null);
-    const [mounted, setMounted] = useState(false);
     const [modalTab, setModalTab] = useState<
         "overview" | "insights" | "metrics"
     >("overview");
     const reduce = useReducedMotion();
+    const mounted = typeof document !== "undefined";
 
-    useEffect(() => setMounted(true), []);
+    usePairingRealtime({
+        enabled: Boolean(onRealtimeRefresh),
+        subscriptions: [{ scope: "DASHBOARD" }, { scope: "LEADERBOARD" }],
+        onBootstrap() {
+            onRealtimeRefresh?.();
+        },
+        onEvent(event) {
+            if (
+                event.refetchHints.includes("dashboard") ||
+                event.refetchHints.includes("leaderboard") ||
+                event.refetchHints.includes("scoring_status")
+            ) {
+                onRealtimeRefresh?.();
+            }
+        },
+    });
 
     const filteredParticipants = useMemo(
         () =>
@@ -72,9 +90,6 @@ export default function Roster({
 
     useEffect(() => {
         if (!selectedParticipantId) {
-            setSelectedProfile(null);
-            setProfileError(null);
-            setProfileLoading(false);
             return;
         }
 
@@ -136,6 +151,9 @@ export default function Roster({
     }, [progressSummaries, selectedParticipantId]);
 
     function closeProfile() {
+        setSelectedProfile(null);
+        setProfileError(null);
+        setProfileLoading(false);
         setSelectedParticipantId(null);
     }
 
