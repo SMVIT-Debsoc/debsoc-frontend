@@ -43,6 +43,8 @@ model President {
   pairMetricAsBPresident                PairMetricSnapshot[]        @relation("PairMetricSnapshotPresidentB")
   teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterPresident")
   teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammatePresident")
+  sparRecords                           SparRecord[]                @relation("SparRecordPresident")
+  sparRecordsAsTeammate                 SparRecord[]                @relation("SparTeammatePresident")
   createdAt                             DateTime                    @default(now())
   updatedAt                             DateTime                    @updatedAt
 }
@@ -149,6 +151,8 @@ model cabinet {
   pairMetricAsBCabinet                  PairMetricSnapshot[]        @relation("PairMetricSnapshotCabinetB")
   teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterCabinet")
   teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammateCabinet")
+  sparRecords                           SparRecord[]                @relation("SparRecordCabinet")
+  sparRecordsAsTeammate                 SparRecord[]                @relation("SparTeammateCabinet")
   createdAt                             DateTime                    @default(now())
   updatedAt                             DateTime                    @updatedAt
 }
@@ -177,6 +181,8 @@ model Member {
   pairMetricAsBMember                   PairMetricSnapshot[]        @relation("PairMetricSnapshotMemberB")
   teamDynamicsRatingsAsRater            TeamDynamicsRating[]        @relation("TeamDynamicsRatingRaterMember")
   teamDynamicsRatingsAsTeammate         TeamDynamicsRating[]        @relation("TeamDynamicsRatingTeammateMember")
+  sparRecords                           SparRecord[]                @relation("SparRecordMember")
+  sparRecordsAsTeammate                 SparRecord[]                @relation("SparTeammateMember")
   createdAt                             DateTime                    @default(now())
   updatedAt                             DateTime                    @updatedAt
 }
@@ -348,6 +354,45 @@ model SpeakerScoreRecord {
   @@index([scoredByMemberId, scoredByCabinetId, scoredByPresidentId])
 }
 
+model SparRecord {
+  id                   String              @id @default(uuid())
+  sparDate             DateTime
+  motionType           String
+  motionText           String?
+  bpPosition           String
+  isIronMan            Boolean             @default(false)
+  teamRank             Int
+  teamResultPoints     Int
+  memberId             String?
+  member               Member?             @relation("SparRecordMember", fields: [memberId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cabinetId            String?
+  cabinet              cabinet?            @relation("SparRecordCabinet", fields: [cabinetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  presidentId          String?
+  president            President?          @relation("SparRecordPresident", fields: [presidentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  teammateMemberId     String?
+  teammateMember       Member?             @relation("SparTeammateMember", fields: [teammateMemberId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  teammateCabinetId    String?
+  teammateCabinet      cabinet?            @relation("SparTeammateCabinet", fields: [teammateCabinetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  teammatePresidentId  String?
+  teammatePresident    President?          @relation("SparTeammatePresident", fields: [teammatePresidentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sparSpeakerScores    SparSpeakerScore[]
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([memberId, cabinetId, presidentId])
+  @@index([teammateMemberId, teammateCabinetId, teammatePresidentId])
+  @@index([sparDate])
+}
+
+model SparSpeakerScore {
+  id              String      @id @default(uuid())
+  sparRecordId    String
+  sparRecord      SparRecord  @relation(fields: [sparRecordId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  speakingRole    String
+  speakerScore    Float
+
+  @@index([sparRecordId])
+}
 model ChairFeedbackRecord {
   id                  String        @id @default(uuid())
   sessionId           String
