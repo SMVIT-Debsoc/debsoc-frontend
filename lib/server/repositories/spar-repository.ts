@@ -50,6 +50,7 @@ export interface SparAggregateRow {
   participantRole: SparParticipantRole;
   participantName: string;
   sparDates: Date[];
+  spars: Array<{ sparDate: Date; isIronMan: boolean }>;
   ironManCount: number;
   totalSpars: number;
 }
@@ -286,11 +287,13 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
         participantRole,
         participantName,
         sparDates: [],
+        spars: [],
         ironManCount: 0,
         totalSpars: 0,
       };
 
       current.sparDates.push(record.sparDate);
+      current.spars.push({ sparDate: record.sparDate, isIronMan: record.isIronMan });
       current.totalSpars += 1;
       if (record.isIronMan) {
         current.ironManCount += 1;
