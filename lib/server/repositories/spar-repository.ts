@@ -87,11 +87,6 @@ const sparRecordSelect = {
   },
 } as const;
 
-function toParticipantRole(type: ParticipantType): SparParticipantRole {
-  if (type === "member") return "Member";
-  if (type === "cabinet") return "cabinet";
-  return "President";
-}
 
 function participantRefForType(participantId: string, participantType: ParticipantType): ParticipantRef {
   return {
