@@ -319,6 +319,96 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       },
     });
   }
+
+  async function getSparSpeakerScoresForParticipants(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    const records = await client.sparRecord.findMany({
+      where: {
+        OR: [
+          { memberId: { in: participantIds } },
+          { cabinetId: { in: participantIds } },
+          { presidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        id: true,
+        sparDate: true,
+        motionType: true,
+        bpPosition: true,
+        teamResultPoints: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        sparSpeakerScores: { select: { speakingRole: true, speakerScore: true } },
+      },
+    });
+
+    return records.flatMap((record: { id: string; sparDate: Date; motionType: string; bpPosition: string; teamResultPoints: number; memberId: string | null; cabinetId: string | null; presidentId: string | null; sparSpeakerScores: Array<{ speakingRole: string; speakerScore: number }> }) =>
+      record.sparSpeakerScores.map((score: { speakingRole: string; speakerScore: number }) => ({
+        sparRecordId: record.id,
+        sparDate: record.sparDate,
+        motionType: record.motionType,
+        bpPosition: record.bpPosition,
+        teamResultPoints: record.teamResultPoints,
+        memberId: record.memberId,
+        cabinetId: record.cabinetId,
+        presidentId: record.presidentId,
+        speakingRole: score.speakingRole,
+        speakerScore: score.speakerScore,
+      })),
+    );
+  }
+
+  async function getSparRecordForMetricUpdate(sparRecordId: string) {
+    return client.sparRecord.findUnique({
+      where: { id: sparRecordId },
+      select: {
+        id: true,
+        motionType: true,
+        bpPosition: true,
+        teamResultPoints: true,
+        isIronMan: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+        sparSpeakerScores: { select: { speakingRole: true, speakerScore: true } },
+      },
+    });
+  }
+
+  async function getSparRecordsByTeammate(participantIdA: MemberId, participantIdB: MemberId) {
+    return client.sparRecord.findMany({
+      where: {
+        isIronMan: false,
+        OR: [
+          {
+            OR: [{ memberId: participantIdA }, { cabinetId: participantIdA }, { presidentId: participantIdA }],
+            AND: [{ OR: [{ teammateMemberId: participantIdB }, { teammateCabinetId: participantIdB }, { teammatePresidentId: participantIdB }] }],
+          },
+          {
+            OR: [{ memberId: participantIdB }, { cabinetId: participantIdB }, { presidentId: participantIdB }],
+            AND: [{ OR: [{ teammateMemberId: participantIdA }, { teammateCabinetId: participantIdA }, { teammatePresidentId: participantIdA }] }],
+          },
+        ],
+      },
+      select: {
+        motionType: true,
+        teamResultPoints: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+      },
+    });
+  }
   async function createChairFeedbackRecord(input: {
     sessionId: string;
     proposalId: string;
@@ -1207,6 +1297,9 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     getExistingSpeakerScoreRecords,
     getSpeakerScoreRecordsBySession,
     getSpeakerScoreRecordsForParticipants,
+    getSparSpeakerScoresForParticipants,
+    getSparRecordForMetricUpdate,
+    getSparRecordsByTeammate,
     createChairFeedbackRecord,
     getChairFeedbackBySpeaker,
     getChairFeedbackBySession,

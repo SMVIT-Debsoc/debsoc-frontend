@@ -5,6 +5,7 @@ import { buildSparLeaderboard } from "./spar-leaderboard.ts";
 import { teamRankToResultPoints } from "../validations/spar-validation.ts";
 import { invalidateTags } from "../cache/cache.ts";
 import { CACHE_TAGS } from "../cache/keys.ts";
+import { updateLearnedMetricsFromSpar, updatePairMetricFromSpar } from "../scoring/metric-update-service.ts";
 
 type ParticipantType = "member" | "cabinet" | "president";
 
@@ -133,7 +134,10 @@ export function createSparService(
   return { submitSpar, getSparHistory, getSparLeaderboard, deleteSpar };
 }
 
-const service = createSparService();
+const service = createSparService(sparRepository, {
+  updateLearnedMetricsFromSpar,
+  updatePairMetricFromSpar,
+});
 
 export const submitSpar = service.submitSpar;
 export const getSparHistory = service.getSparHistory;
