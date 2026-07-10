@@ -10,6 +10,7 @@ import {
   Users,
   ClipboardCheck,
   UserCircle,
+  Swords,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
 import SessionWorkspace from "./SessionWorkspace";
@@ -18,6 +19,7 @@ import Leaderboards from "./Leaderboards";
 import Roster from "./Roster";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
+import SparManagement from "./SparManagement";
 import type { RealtimeEventEnvelope } from "@/types/realtime";
 import type {
   AdjudicatorLeaderboardRow,
@@ -36,7 +38,8 @@ export type AdminTab =
   | "SpeakerLeaderboard"
   | "AdjudicatorLeaderboard"
   | "MyPairing"
-  | "MyScoring";
+  | "MyScoring"
+  | "Spars";
 
 export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
@@ -47,6 +50,7 @@ export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }
   { key: "AdjudicatorLeaderboard", label: "Adj Leaderboard", icon: <Scale size={18} /> },
   { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={18} /> },
   { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
+  { key: "Spars", label: "Spars", icon: <Swords size={18} /> },
 ];
 
 type AdminPairingDashboardProps = {
@@ -175,6 +179,7 @@ export default function AdminPairingDashboard({
           adjudicatorLeaderboard={adjudicatorLeaderboard}
         />
       )}
+      {activeTab === "Spars" && <SparManagement participants={participants} />}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}

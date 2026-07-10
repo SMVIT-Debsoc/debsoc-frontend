@@ -57,6 +57,7 @@ const BOTTOM_NAV_LABELS: Record<string, string> = {
   SpeakerLeaderboard: "Ranks",
   MyPairing: "Pairing",
   MyScoring: "Scoring",
+  Spars: "Spars",
 };
 
 const INITIAL_STATE: PairingDataState = {
