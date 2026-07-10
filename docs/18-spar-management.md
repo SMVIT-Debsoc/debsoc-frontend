@@ -69,7 +69,7 @@ Each BP position has exactly two speaking roles:
 | OG | PM | DPM |
 | OO | LO | DLO |
 | CG | MG | GW |
-| CO | MW | OW |
+| CO | MO | OW |
 
 - **Normal spar (with teammate):** User picks ONE of the two roles. One speaker score entered.
 - **Iron-man spar:** BOTH roles are auto-selected. Two speaker scores entered (one per role).
@@ -121,7 +121,7 @@ SparSpeakerScore
   id              String      @id @default(uuid())
   sparRecordId    String
   sparRecord      SparRecord  @relation(fields: [sparRecordId], references: [id], onDelete: Cascade)
-  speakingRole    String                            // PM | DPM | LO | DLO | MG | GW | MW | OW
+  speakingRole    String                            // PM | DPM | LO | DLO | MG | GW | MO | OW
   speakerScore    Float
 
   @@index([sparRecordId])
