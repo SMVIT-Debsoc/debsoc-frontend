@@ -59,7 +59,6 @@ type ParticipantPairingDashboardProps = {
   onOpenLeaderboards: () => void;
   onOpenAdjudicatorLeaderboards: () => void;
   onRefresh?: () => void;
-  onLeaderboardRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
 
@@ -83,7 +82,6 @@ export default function ParticipantPairingDashboard({
   onOpenLeaderboards,
   onOpenAdjudicatorLeaderboards,
   onRefresh,
-  onLeaderboardRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
   return (
@@ -134,7 +132,6 @@ export default function ParticipantPairingDashboard({
           error={leaderboardError}
           onScopeChange={onLeaderboardScopeChange}
           view="speakers"
-          onRealtimeRefresh={onLeaderboardRefresh}
         />
       )}
       {activeTab === "AdjudicatorLeaderboard" && (
@@ -146,7 +143,6 @@ export default function ParticipantPairingDashboard({
           error={leaderboardError}
           onScopeChange={onLeaderboardScopeChange}
           view="adjudicators"
-          onRealtimeRefresh={onLeaderboardRefresh}
         />
       )}
       {activeTab === "Sessions" && (
@@ -156,7 +152,6 @@ export default function ParticipantPairingDashboard({
           attendanceHistory={attendanceHistory}
           loading={loading}
           error={error}
-          onRealtimeRefresh={onRefresh}
         />
       )}
     </div>

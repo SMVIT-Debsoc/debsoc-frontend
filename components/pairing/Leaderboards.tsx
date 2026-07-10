@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { Card, EmptyState, SectionHeader } from "./ui";
-import { usePairingRealtime } from "./usePairingRealtime";
 import type {
   AdjudicatorLeaderboardRow,
   SpeakerLeaderboardRow,
@@ -17,7 +16,6 @@ type LeaderboardsProps = {
   error: string | null;
   onScopeChange: (scope: "all" | "bi-monthly") => void;
   view?: "speakers" | "adjudicators";
-  onRealtimeRefresh?: () => void;
 };
 
 export default function Leaderboards({
@@ -29,21 +27,7 @@ export default function Leaderboards({
   error,
   onScopeChange,
   view = "speakers",
-  onRealtimeRefresh,
 }: LeaderboardsProps) {
-  usePairingRealtime({
-    enabled: Boolean(onRealtimeRefresh),
-    subscriptions: [{ scope: "LEADERBOARD" }, { scope: "DASHBOARD" }],
-    onBootstrap() {
-      onRealtimeRefresh?.();
-    },
-    onEvent(event) {
-      if (event.refetchHints.includes("leaderboard") || event.refetchHints.includes("dashboard")) {
-        onRealtimeRefresh?.();
-      }
-    },
-  });
-
   const speakerSummary = useMemo(() => {
     const topSpeaker = speakerLeaderboard[0]?.name ?? "No speaker yet";
 
@@ -363,7 +347,6 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
-
 
 
 

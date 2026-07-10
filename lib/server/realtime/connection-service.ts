@@ -37,7 +37,7 @@ function parseSubscriptionToken(token: string): RealtimeSubscription | null {
     return null;
   }
 
-  if (scope === "LEADERBOARD") {
+  if (scope === "LEADERBOARD" || scope === "DASHBOARD") {
     return { scope };
   }
 
@@ -51,7 +51,7 @@ function parseSubscriptionToken(token: string): RealtimeSubscription | null {
   };
 }
 
-function parseRealtimeSubscriptions(searchParams: URLSearchParams): RealtimeSubscription[] {
+export function parseRealtimeSubscriptions(searchParams: URLSearchParams): RealtimeSubscription[] {
   const parsed = searchParams
     .getAll("subscription")
     .map(parseSubscriptionToken)

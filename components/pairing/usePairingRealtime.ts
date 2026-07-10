@@ -61,11 +61,46 @@ export function usePairingRealtime(options: {
       return;
     }
 
+    const openSseFallback = () => {
+      const source = new EventSource(buildSseUrl(subscriptions), { withCredentials: true });
+
+      source.addEventListener("bootstrap", (event) => {
+        try {
+          const parsed = JSON.parse((event as MessageEvent).data) as RealtimeConnectionBootstrap & { subscriptions: RealtimeSubscription[] };
+          handleBootstrap(parsed);
+        } catch {
+          // Ignore malformed bootstrap payloads.
+        }
+      });
+
+      source.addEventListener("message", (event) => {
+        try {
+          const parsed = JSON.parse((event as MessageEvent).data) as RealtimeEventEnvelope;
+          handleEvent(parsed);
+        } catch {
+          // Ignore malformed event payloads.
+        }
+      });
+
+      return source;
+    };
+
     if (transport === "ws") {
       const socket = new WebSocket(buildWsUrl(subscriptions));
+      let fallbackSource: EventSource | null = null;
+      let cleanedUp = false;
+      let receivedFrame = false;
+
+      const startFallback = () => {
+        if (cleanedUp || fallbackSource) {
+          return;
+        }
+        fallbackSource = openSseFallback();
+      };
 
       socket.addEventListener("message", (event) => {
         try {
+          receivedFrame = true;
           const frame = JSON.parse((event as MessageEvent).data) as { event: string; data: unknown };
           if (frame.event === "bootstrap") {
             handleBootstrap(frame.data as RealtimeConnectionBootstrap & { subscriptions: RealtimeSubscription[] });
@@ -78,30 +113,24 @@ export function usePairingRealtime(options: {
         }
       });
 
+      socket.addEventListener("error", () => {
+        if (!receivedFrame) {
+          startFallback();
+        }
+      });
+
+      socket.addEventListener("close", () => {
+        startFallback();
+      });
+
       return () => {
+        cleanedUp = true;
         socket.close();
+        fallbackSource?.close();
       };
     }
 
-    const source = new EventSource(buildSseUrl(subscriptions), { withCredentials: true });
-
-    source.addEventListener("bootstrap", (event) => {
-      try {
-        const parsed = JSON.parse((event as MessageEvent).data) as RealtimeConnectionBootstrap & { subscriptions: RealtimeSubscription[] };
-        handleBootstrap(parsed);
-      } catch {
-        // Ignore malformed bootstrap payloads.
-      }
-    });
-
-    source.addEventListener("message", (event) => {
-      try {
-        const parsed = JSON.parse((event as MessageEvent).data) as RealtimeEventEnvelope;
-        handleEvent(parsed);
-      } catch {
-        // Ignore malformed event payloads.
-      }
-    });
+    const source = openSseFallback();
 
     return () => {
       source.close();

@@ -427,7 +427,6 @@ export default function PairingDashboard({
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
       onRefresh={refreshPrimaryData}
-      onLeaderboardRefresh={refreshLeaderboardData}
       workspaceRealtimeEvent={workspaceRealtimeEvent}
       activeTab={adminTab}
     />
@@ -454,7 +453,6 @@ export default function PairingDashboard({
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
       onRefresh={refreshPrimaryData}
-      onLeaderboardRefresh={refreshLeaderboardData}
       activeTab={participantTab}
     />
   );
@@ -1128,5 +1126,4 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
-
 

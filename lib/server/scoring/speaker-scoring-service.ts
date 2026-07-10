@@ -187,7 +187,7 @@ export function createSpeakerScoringService(
       sessionId: input.sessionId,
       proposalId: context.proposalId,
       visibility: "SESSION_ROLE_ONLY",
-      refetchHints: ["scoring_status"],
+      refetchHints: ["scoring_status", "leaderboard", "dashboard"],
       entityVersion: context.proposalId,
       audienceParticipantIds: context.roles.map((entry) => entry.participantId),
     });
@@ -202,5 +202,4 @@ export function createSpeakerScoringService(
 }
 
 export const { submitSpeakerScore, submitSpeakerChairRating } = createSpeakerScoringService();
-
 

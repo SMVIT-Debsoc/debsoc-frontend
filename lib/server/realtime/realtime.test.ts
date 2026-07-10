@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createPairingPublishService } from "../pairing/publish.ts";
 import { createPairingReviewService } from "../pairing/review.ts";
+import { parseRealtimeSubscriptions } from "./connection-service.ts";
 import { publishRealtimeEvent } from "./event-publisher.ts";
 import { acceptRealtimeConnection, RealtimeConnectionError } from "./websocket-hub.ts";
 
@@ -53,6 +54,22 @@ test("unauthorized connection or subscription is rejected", () => {
     (error: unknown) => error instanceof RealtimeConnectionError && error.code === "SUBSCRIPTION_FORBIDDEN",
   );
   memberConnection.close();
+});
+
+test("global dashboard and leaderboard subscriptions parse from client query params", () => {
+  const subscriptions = parseRealtimeSubscriptions(
+    new URLSearchParams([
+      ["subscription", "DASHBOARD"],
+      ["subscription", "LEADERBOARD"],
+      ["subscription", "SESSION_PUBLISHED:session-1"],
+    ]),
+  );
+
+  assert.deepEqual(subscriptions, [
+    { scope: "DASHBOARD" },
+    { scope: "LEADERBOARD" },
+    { scope: "SESSION_PUBLISHED", sessionId: "session-1" },
+  ]);
 });
 
 test("admin subscribers receive post-commit proposal lifecycle events", async () => {

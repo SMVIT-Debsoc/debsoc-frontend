@@ -6,7 +6,6 @@ import {motion, useReducedMotion} from "framer-motion";
 import {Crown, ShieldCheck, User} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {EmptyState, SectionHeader} from "./ui";
-import { usePairingRealtime } from "./usePairingRealtime";
 import type {Participant, ProgressProfile, ProgressSummary} from "./types";
 
 type RosterProps = {
@@ -14,7 +13,6 @@ type RosterProps = {
     progressSummaries: ProgressSummary[];
     loading: boolean;
     error: string | null;
-    onRealtimeRefresh?: () => void;
 };
 
 export default function Roster({
@@ -22,7 +20,6 @@ export default function Roster({
     progressSummaries,
     loading,
     error,
-    onRealtimeRefresh,
 }: RosterProps) {
     const [filter, setFilter] = useState("");
     const [selectedParticipantId, setSelectedParticipantId] = useState<
@@ -37,23 +34,6 @@ export default function Roster({
     >("overview");
     const reduce = useReducedMotion();
     const mounted = typeof document !== "undefined";
-
-    usePairingRealtime({
-        enabled: Boolean(onRealtimeRefresh),
-        subscriptions: [{ scope: "DASHBOARD" }, { scope: "LEADERBOARD" }],
-        onBootstrap() {
-            onRealtimeRefresh?.();
-        },
-        onEvent(event) {
-            if (
-                event.refetchHints.includes("dashboard") ||
-                event.refetchHints.includes("leaderboard") ||
-                event.refetchHints.includes("scoring_status")
-            ) {
-                onRealtimeRefresh?.();
-            }
-        },
-    });
 
     const filteredParticipants = useMemo(
         () =>
