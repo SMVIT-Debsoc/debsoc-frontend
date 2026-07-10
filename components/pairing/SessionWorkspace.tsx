@@ -201,10 +201,30 @@ export default function SessionWorkspace({
         realtimeEvent.sessionId === selectedSessionId &&
         (realtimeEvent.refetchHints.includes("session_detail") ||
             realtimeEvent.refetchHints.includes("published_pairing") ||
-            realtimeEvent.refetchHints.includes("scoring_status"));
+            realtimeEvent.refetchHints.includes("scoring_status") ||
+            realtimeEvent.refetchHints.includes("dashboard"));
     const workspaceRefreshKey = shouldRefreshSelectedSession
         ? realtimeEvent.eventId
         : null;
+    const selectedSessionRefreshKey = useMemo(() => {
+        if (!selectedSessionId) {
+            return null;
+        }
+        const selectedSession =
+            sessions.find((session) => session.id === selectedSessionId) ?? null;
+        if (!selectedSession) {
+            return `${selectedSessionId}:missing`;
+        }
+        return [
+            selectedSession.id,
+            selectedSession.state,
+            selectedSession.date,
+            selectedSession.motionType,
+            selectedSession.motionText ?? "",
+            selectedSession.assignedChairLabel ?? "",
+            selectedSession.chair ?? "",
+        ].join("|");
+    }, [selectedSessionId, sessions]);
 
     useEffect(() => {
         let cancelled = false;
@@ -319,7 +339,7 @@ export default function SessionWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId, workspaceRefreshKey]);
+    }, [selectedSessionId, selectedSessionRefreshKey, workspaceRefreshKey]);
 
     useEffect(() => {
         setOverrideDraft(

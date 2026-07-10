@@ -41,10 +41,6 @@ type ParticipantRoomView = {
   }>;
 };
 
-function isPublishedLike(session: SessionRow) {
-  return session.state === "Published" || session.state === "Scored" || session.state === "Completed";
-}
-
 function participantNameMap(session: SessionRow) {
   return Object.fromEntries(
     (session.attendance ?? []).flatMap((entry) => {
@@ -111,16 +107,37 @@ export default function MyPairing({
     return map;
   }, [participants, speakerLeaderboard, adjudicatorLeaderboard, sessions]);
 
-  const candidateSessions = useMemo(
-    () => sessions.filter(isPublishedLike),
-    [sessions],
+  const trackedSessions = useMemo(
+    () => {
+      const byId = new Map<string, SessionRow>();
+      for (const session of sessions) {
+        if (session.id) {
+          byId.set(session.id, session);
+        }
+      }
+      for (const item of attendanceHistory) {
+        const sessionId = item.session.id;
+        if (!sessionId || byId.has(sessionId)) {
+          continue;
+        }
+        byId.set(sessionId, {
+          id: sessionId,
+          date: item.session.sessionDate,
+          motionType: item.session.motiontype,
+          chair: item.session.Chair,
+          state: item.speakerScore !== null ? "Scored" : "Preparation",
+        });
+      }
+      return [...byId.values()];
+    },
+    [attendanceHistory, sessions],
   );
   const realtimeSubscriptions = useMemo(
     () =>
-      [...new Set(candidateSessions.map((session) => session.id))]
+      [...new Set(trackedSessions.map((session) => session.id))]
         .filter(Boolean)
         .map((sessionId) => ({ scope: "SESSION_PUBLISHED", sessionId }) satisfies RealtimeSubscription),
-    [candidateSessions],
+    [trackedSessions],
   );
   const globalNameMapRef = useRef(globalNameMap);
   useEffect(() => {
@@ -172,7 +189,7 @@ export default function MyPairing({
 
       try {
         const loaded = await Promise.all(
-          candidateSessions.map(async (session) => {
+          trackedSessions.map(async (session) => {
             // A single session with a missing/broken published pairing must
             // not blank the whole tab; skip it and keep the rest.
             try {
@@ -212,7 +229,7 @@ export default function MyPairing({
     return () => {
       cancelled = true;
     };
-  }, [candidateSessions, currentParticipantIds, realtimeVersion]);
+  }, [currentParticipantIds, realtimeVersion, trackedSessions]);
 
   const selected = useMemo(
     () => sessionViews.find((entry) => entry.session.id === selectedSessionId) ?? sessionViews[0] ?? null,
