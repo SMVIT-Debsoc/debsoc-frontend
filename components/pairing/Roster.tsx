@@ -133,7 +133,7 @@ export default function Roster({
         void loadProfile();
 
         return () => controller.abort();
-    }, [selectedParticipantId]);
+    }, [progressSummaries, selectedParticipantId]);
 
     function closeProfile() {
         setSelectedParticipantId(null);

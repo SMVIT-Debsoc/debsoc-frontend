@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, Trophy, Users } from "lucide-react";
 import { Card, EmptyState, Pill, PrimaryButton } from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -11,6 +12,7 @@ import type {
   SpeakerLeaderboardRow,
 } from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
+import type { RealtimeSubscription } from "@/types/realtime";
 
 type HomeDashboardProps = {
   role: string;
@@ -74,6 +76,37 @@ export default function HomeDashboard({
           new Date(right.session.sessionDate).getTime() - new Date(left.session.sessionDate).getTime(),
       )[0] ?? null;
   }, [attendanceHistory]);
+  const realtimeSubscriptions = useMemo(
+    () =>
+      [...new Set(sessions.map((session) => session.id))]
+        .filter(Boolean)
+        .map((sessionId) => ({ scope: "SESSION_PUBLISHED", sessionId }) satisfies RealtimeSubscription),
+    [sessions],
+  );
+  const [publishedPairingVersion, setPublishedPairingVersion] = useState(0);
+  const [profileVersion, setProfileVersion] = useState(0);
+
+  usePairingRealtime({
+    enabled: realtimeSubscriptions.length > 0,
+    subscriptions: realtimeSubscriptions,
+    onEvent(event) {
+      if (
+        event.refetchHints.includes("published_pairing") ||
+        event.refetchHints.includes("session_detail") ||
+        event.refetchHints.includes("dashboard")
+      ) {
+        setPublishedPairingVersion((current) => current + 1);
+      }
+
+      if (
+        event.refetchHints.includes("leaderboard") ||
+        event.refetchHints.includes("scoring_status") ||
+        event.refetchHints.includes("dashboard")
+      ) {
+        setProfileVersion((current) => current + 1);
+      }
+    },
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -124,7 +157,7 @@ export default function HomeDashboard({
     return () => {
       cancelled = true;
     };
-  }, [adjudicatorLeaderboard, currentParticipantId, lastSession?.session.id, participants, speakerLeaderboard]);
+  }, [adjudicatorLeaderboard, currentParticipantId, lastSession?.session.id, participants, publishedPairingVersion, speakerLeaderboard]);
 
   useEffect(() => {
     if (!currentParticipantId) {
@@ -161,7 +194,7 @@ export default function HomeDashboard({
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantId]);
+  }, [currentParticipantId, profileVersion]);
 
   const motionPerformance = useMemo<MotionPerformance[]>(() => {
     if (!progressProfile) {
@@ -512,7 +545,6 @@ function deriveLastSessionDetails(
     pairingLabel: `Room ${room.roomIndex}`,
   };
 }
-
 
 
 

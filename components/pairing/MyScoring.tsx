@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Card, EmptyState, Field, PrimaryButton, SectionHeader, SecondaryButton } from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type { AttendanceHistoryItem, SessionRow } from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
+import type { RealtimeSubscription } from "@/types/realtime";
 
 type MyScoringProps = {
   role: string;
@@ -113,6 +115,31 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
     return set;
   }, [attendanceHistory, userId]);
   const hasIdentity = currentParticipantIds.size > 0;
+  const candidateSessions = useMemo(() => sessions.filter(isPublishedLike), [sessions]);
+  const realtimeSubscriptions = useMemo(() => {
+    const subscriptions: RealtimeSubscription[] = [];
+    for (const sessionId of [...new Set(candidateSessions.map((session) => session.id))].filter(Boolean)) {
+      subscriptions.push({ scope: "SESSION_PUBLISHED", sessionId });
+      subscriptions.push({ scope: "SESSION_SCORING", sessionId });
+    }
+    return subscriptions;
+  }, [candidateSessions]);
+  const [realtimeVersion, setRealtimeVersion] = useState(0);
+
+  usePairingRealtime({
+    enabled: hasIdentity && realtimeSubscriptions.length > 0,
+    subscriptions: realtimeSubscriptions,
+    onEvent(event) {
+      if (
+        event.refetchHints.includes("published_pairing") ||
+        event.refetchHints.includes("scoring_status") ||
+        event.refetchHints.includes("session_detail") ||
+        event.refetchHints.includes("dashboard")
+      ) {
+        setRealtimeVersion((current) => current + 1);
+      }
+    },
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +155,6 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
       }
 
       try {
-        const candidateSessions = sessions.filter(isPublishedLike);
         const loaded = await Promise.all(
           candidateSessions.map(async (session): Promise<ScoringTaskView | null> => {
             try {
@@ -252,7 +278,7 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
     return () => {
       cancelled = true;
     };
-  }, [currentParticipantIds, hasIdentity, sessions]);
+  }, [candidateSessions, currentParticipantIds, hasIdentity, realtimeVersion, sessions]);
 
   const selectedTask = useMemo(
     () => tasks.find((task) => task.sessionId === selectedSessionId) ?? tasks[0] ?? null,

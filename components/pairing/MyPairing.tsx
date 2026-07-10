@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
+import { usePairingRealtime } from "./usePairingRealtime";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -10,6 +11,7 @@ import type {
   SpeakerLeaderboardRow,
 } from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
+import type { RealtimeSubscription } from "@/types/realtime";
 
 type MyPairingProps = {
   role: string;
@@ -113,8 +115,11 @@ export default function MyPairing({
     () => sessions.filter(isPublishedLike),
     [sessions],
   );
-  const candidateSessionKey = useMemo(
-    () => candidateSessions.map((session) => `${session.id}:${session.date}:${session.state}`).join("|") ,
+  const realtimeSubscriptions = useMemo(
+    () =>
+      [...new Set(candidateSessions.map((session) => session.id))]
+        .filter(Boolean)
+        .map((sessionId) => ({ scope: "SESSION_PUBLISHED", sessionId }) satisfies RealtimeSubscription),
     [candidateSessions],
   );
   const globalNameMapRef = useRef(globalNameMap);
@@ -123,17 +128,37 @@ export default function MyPairing({
   }, [globalNameMap]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [realtimeVersion, setRealtimeVersion] = useState(0);
   const [sessionViews, setSessionViews] = useState<Array<{
     session: SessionRow;
     publishedPairing: PublishedPairingView;
     room: ParticipantRoomView | null;
   }>>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const sessionViewsLengthRef = useRef(0);
+  useEffect(() => {
+    sessionViewsLengthRef.current = sessionViews.length;
+  }, [sessionViews]);
+
+  usePairingRealtime({
+    enabled: currentParticipantIds.size > 0 && realtimeSubscriptions.length > 0,
+    subscriptions: realtimeSubscriptions,
+    onEvent(event) {
+      if (
+        event.refetchHints.includes("published_pairing") ||
+        event.refetchHints.includes("session_detail") ||
+        event.refetchHints.includes("dashboard")
+      ) {
+        setRealtimeVersion((current) => current + 1);
+      }
+    },
+  });
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadPairings() {
-      setLoading((current) => current || sessionViews.length === 0);
+      setLoading((current) => current || sessionViewsLengthRef.current === 0);
       setError(null);
 
       if (currentParticipantIds.size === 0) {
@@ -184,7 +209,7 @@ export default function MyPairing({
     return () => {
       cancelled = true;
     };
-  }, [candidateSessionKey, currentParticipantIds]);
+  }, [candidateSessions, currentParticipantIds, realtimeVersion]);
 
   const selected = useMemo(
     () => sessionViews.find((entry) => entry.session.id === selectedSessionId) ?? sessionViews[0] ?? null,
@@ -399,5 +424,3 @@ function Info({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-
