@@ -25,7 +25,7 @@ export interface SubmitSparRequest {
   isIronMan: boolean;
   teammateId?: MemberId | null;
   teammateRole?: SparParticipantRole | null;
-  teamRank: 1 | 2 | 3 | 4;
+  teamRank: number;
   speakerScores: SparSpeakerScoreInput[];
 }
 
