@@ -6,6 +6,7 @@ This document proposes production improvements to the implemented pairing system
 
 - strict, non-relaxable session constraints;
 - higher pairing accuracy and candidate diversity;
+- structured, non-LLM learning from verdicts, outcomes, and proposal feedback;
 - lower generation, publication, read, and realtime latency;
 - database-enforced integrity and concurrency safety;
 - reliable WebSocket/SSE delivery across single- and multi-instance deployments;
@@ -222,6 +223,55 @@ Maintain recomputable snapshots rather than loading raw score history during gen
 - last-updated session/version.
 
 Any new formula is forbidden until its status is finalized in the authoritative formula docs.
+
+### 4.7 Non-LLM feedback and outcome improvement plan
+
+The production learning path does not require an LLM. The engine should improve first from structured,
+auditable evidence already produced by the session lifecycle:
+
+- BP result points and chair-entered raw speaker scores;
+- speaker ratings of chairs and chair ratings of adjudicators;
+- optional team-dynamics ratings;
+- proposal approval, override, and regeneration actions;
+- numeric proposal ratings and structured issue tags; and
+- participant, pair, role, motion, repetition, and assignment history.
+
+Keep two learning targets separate:
+
+1. **Performance evidence** updates participant, pair, role, motion, and adjudication metrics.
+2. **Proposal-quality evidence** evaluates whether the generated assignment looked sensible and met
+   the selected objective before noisy debate outcomes occurred.
+
+A verdict or strong speaker score must not directly count as proof that the pairing algorithm made a
+good decision. Tuning should instead compare the engine's predicted quality dimensions with both
+post-session outcomes and proposal-quality feedback across the documented multi-session review
+window.
+
+The improvement workflow is:
+
+```text
+store raw structured evidence
+  -> recompute learned metrics and confidence
+  -> aggregate a multi-session review window
+  -> measure prediction, admin-rating, and outcome alignment
+  -> create bounded adjustment suggestions
+  -> replay against historical and synthetic baselines
+  -> human review
+  -> versioned application or rejection
+```
+
+The current review-assisted `+/- 0.03` adjustment bound remains authoritative. No single session or
+single free-text comment may change an effective weight.
+
+An LLM is optional future scope only. If introduced, it may classify free-text feedback into a
+predefined taxonomy—for example scope, issue category, severity, affected assignment, and extraction
+confidence. It must not generate or apply weights, formulas, hard rules, or pairings. The original
+text, extractor version, confidence, and any human correction must remain auditable, and unreviewed or
+low-confidence extraction must be excluded from tuning.
+
+Before semantic feedback affects the engine, its taxonomy, storage contract, access rules, retention,
+and derived metric/formula status must be explicitly added to the authoritative numbered docs. Until
+then, free text is review context only; structured ratings and issue tags are the tuning inputs.
 
 ## 5. Database and concurrency improvements
 
@@ -555,10 +605,12 @@ appropriate retention/access controls.
 4. Introduce the new generator behind a versioned feature flag.
 5. Shadow-run old and new generators on the same context without publishing the shadow result.
 6. Compare feasibility, strict-rule compliance, quality, diversity, and latency in eval.
-7. Enable for admin review only on a small session cohort.
-8. Keep publication manual.
-9. Expand after regression thresholds pass.
-10. Preserve engine/rule versions so rollback does not make historical proposals unreadable.
+7. Validate non-LLM tuning suggestions against admin-rating and outcome alignment over a
+   multi-session window.
+8. Enable for admin review only on a small session cohort.
+9. Keep publication and tuning application manual.
+10. Expand after regression thresholds pass.
+11. Preserve engine/rule/metric versions so rollback does not make historical proposals unreadable.
 
 Rollback should select the previous engine version; it must never rewrite historical proposals or
 metric evidence.
@@ -578,6 +630,10 @@ The improvement is production-ready only when:
 - multi-instance delivery is verified when supported;
 - Redis failure does not add unbounded response latency;
 - generation and publish p95 budgets pass under representative load;
+- structured verdict, outcome, and proposal-quality evidence remain separate and auditable;
+- no tuning adjustment is applied from one session, one free-text note, or an unreviewed semantic
+  extraction;
+- non-LLM tuning suggestions pass historical/synthetic replay and human review before application;
 - member views recover authoritatively after missed events;
 - real PostgreSQL integration, concurrency, eval, and migration tests pass;
 - the knowledge graph records actual paths, status, and verification evidence.
@@ -592,4 +648,3 @@ C7/D1-D19, C8/A1-A17, C9/B1-B12/B-rt, C10/V1-V5, C11/Q1-Q18;
 `docs/13-pairing-learning-loop.md`, `docs/14-api-routing-map.md`,
 `docs/15-pairing-engineering-quality-standard.md`, `docs/17-pairing-ui-concept.md`, and
 `docs/17-websocket-realtime-flow.md`.
-
