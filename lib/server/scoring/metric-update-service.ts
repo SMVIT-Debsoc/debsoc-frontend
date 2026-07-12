@@ -69,6 +69,9 @@ type SparPairRow = {
   teammatePresidentId: string | null;
 };
 
+const SPAR_SPEAKER_METRIC_KEYS = ["speaker_total_score", "speaker_strength", "speaker_motion_type_score", "role_score", "motion_type_x_role_score"] as const;
+const SPAR_PAIR_METRIC_KEYS = ["partner_dynamics_overall", "partner_dynamics_by_motion_type"] as const;
+
 type TeamDynamicsRow = {
   sessionId: string;
   raterMemberId: string | null;
@@ -93,6 +96,8 @@ interface MetricRepositoryContract {
   getTeamDynamicsRatingsBySession(sessionId: string): Promise<TeamDynamicsRow[]>;
   getTeamDynamicsRatingsForParticipants(participantIds: string[]): Promise<TeamDynamicsRow[]>;
   getParticipantTypes(participantIds: string[]): Promise<Map<string, ParticipantType>>;
+  deleteMemberMetricSnapshots(input: { participantId: string; participantType: ParticipantType; metricKeys: readonly string[] }): Promise<unknown>;
+  deletePairMetricSnapshots(input: { memberAId: string; memberAType: ParticipantType; memberBId: string; memberBType: ParticipantType; metricKeys: readonly string[] }): Promise<unknown>;
   upsertMemberMetricSnapshot(input: {
     participantId: string;
     participantType: ParticipantType;
@@ -456,31 +461,32 @@ export function createMetricUpdateService(
     }
   }
 
-  async function updateLearnedMetricsFromSpar(sparRecordId: string) {
-    const sparRecord = await repository.getSparRecordForMetricUpdate(sparRecordId);
-    if (!sparRecord) return;
-
-    const participantId = resolveParticipantId(sparRecord);
-    if (!participantId) return;
-
+  async function updateLearnedMetricsForParticipant(participantId: string) {
     const [sessionScores, sparScores, participantTypes] = await Promise.all([
       repository.getSpeakerScoreRecordsForParticipants([participantId]),
       repository.getSparSpeakerScoresForParticipants([participantId]),
       repository.getParticipantTypes([participantId]),
     ]);
     const participantType = participantTypes.get(participantId) ?? "member";
+
+    await repository.deleteMemberMetricSnapshots({
+      participantId,
+      participantType,
+      metricKeys: SPAR_SPEAKER_METRIC_KEYS,
+    });
+
     const sparWeight = 0.6;
     const weightedObservationCount = sessionScores.length + sparScores.length * sparWeight;
+    if (weightedObservationCount === 0) return;
+
     const storedObservationCount = Math.max(1, Math.round(weightedObservationCount));
     const weightedTotal = sessionScores.reduce((sum, row) => sum + row.rawScore, 0) + sparScores.reduce((sum, row) => sum + row.speakerScore * sparWeight, 0);
     const allScores = [
       ...sessionScores.map((row) => ({ motionType: buildMotionType(row), speakingRole: row.speakingRole, score: row.rawScore, weight: 1 })),
       ...sparScores.map((row) => ({ motionType: row.motionType, speakingRole: row.speakingRole, score: row.speakerScore, weight: sparWeight })),
     ];
-    const weightedMean = weightedObservationCount > 0 ? weightedTotal / weightedObservationCount : 0;
-    const variance = weightedObservationCount > 0
-      ? allScores.reduce((sum, row) => sum + row.weight * (row.score - weightedMean) ** 2, 0) / weightedObservationCount
-      : 0;
+    const weightedMean = weightedTotal / weightedObservationCount;
+    const variance = allScores.reduce((sum, row) => sum + row.weight * (row.score - weightedMean) ** 2, 0) / weightedObservationCount;
     const consistencyScore = 1 / (1 + Math.sqrt(variance) / 80);
     const confidenceScore = computeConfidence(weightedObservationCount, 6);
     const speakerStrength =
@@ -533,19 +539,33 @@ export function createMetricUpdateService(
     }
   }
 
-  async function updatePairMetricFromSpar(sparRecordId: string) {
+  async function updateLearnedMetricsFromSpar(sparRecordId: string) {
     const sparRecord = await repository.getSparRecordForMetricUpdate(sparRecordId);
-    if (!sparRecord || sparRecord.isIronMan) return;
+    if (!sparRecord) return;
 
-    const submitterId = resolveParticipantId(sparRecord);
-    const teammateId = resolveParticipantId({ memberId: sparRecord.teammateMemberId, cabinetId: sparRecord.teammateCabinetId, presidentId: sparRecord.teammatePresidentId });
-    if (!submitterId || !teammateId) return;
+    const participantId = resolveParticipantId(sparRecord);
+    if (!participantId) return;
 
-    const [a, b] = [submitterId, teammateId].sort();
+    await updateLearnedMetricsForParticipant(participantId);
+  }
+
+  async function updatePairMetricForParticipants(firstParticipantId: string, secondParticipantId: string) {
+    const [a, b] = [firstParticipantId, secondParticipantId].sort();
     const [pairRows, participantTypes] = await Promise.all([
       repository.getSparRecordsByTeammate(a, b),
       repository.getParticipantTypes([a, b]),
     ]);
+    const memberAType = participantTypes.get(a) ?? "member";
+    const memberBType = participantTypes.get(b) ?? "member";
+
+    await repository.deletePairMetricSnapshots({
+      memberAId: a,
+      memberAType,
+      memberBId: b,
+      memberBType,
+      metricKeys: SPAR_PAIR_METRIC_KEYS,
+    });
+
     const sparWeight = 0.6;
     const resultPoints = pairRows.map((row) => row.teamResultPoints * sparWeight);
     const observationWeight = pairRows.length * sparWeight;
@@ -553,9 +573,9 @@ export function createMetricUpdateService(
 
     await repository.upsertPairMetricSnapshot({
       memberAId: a,
-      memberAType: participantTypes.get(a) ?? "member",
+      memberAType,
       memberBId: b,
-      memberBType: participantTypes.get(b) ?? "member",
+      memberBType,
       metricKey: "partner_dynamics_overall",
       contextKey: null,
       value: resultPoints.reduce((sum, value) => sum + value, 0) / observationWeight,
@@ -571,9 +591,9 @@ export function createMetricUpdateService(
       const weight = points.length * sparWeight;
       await repository.upsertPairMetricSnapshot({
         memberAId: a,
-        memberAType: participantTypes.get(a) ?? "member",
+        memberAType,
         memberBId: b,
-        memberBType: participantTypes.get(b) ?? "member",
+        memberBType,
         metricKey: "partner_dynamics_by_motion_type",
         contextKey: motionType,
         value: points.reduce((sum, value) => sum + value, 0) / weight,
@@ -583,11 +603,24 @@ export function createMetricUpdateService(
     }
   }
 
+  async function updatePairMetricFromSpar(sparRecordId: string) {
+    const sparRecord = await repository.getSparRecordForMetricUpdate(sparRecordId);
+    if (!sparRecord || sparRecord.isIronMan) return;
+
+    const submitterId = resolveParticipantId(sparRecord);
+    const teammateId = resolveParticipantId({ memberId: sparRecord.teammateMemberId, cabinetId: sparRecord.teammateCabinetId, presidentId: sparRecord.teammatePresidentId });
+    if (!submitterId || !teammateId) return;
+
+    await updatePairMetricForParticipants(submitterId, teammateId);
+  }
+
   return {
     updateLearnedMetricsFromSession,
     updatePairMetricSnapshotsFromSession,
     updateRolePerformanceFromSession,
+    updateLearnedMetricsForParticipant,
     updateLearnedMetricsFromSpar,
+    updatePairMetricForParticipants,
     updatePairMetricFromSpar,
   };
 }
@@ -596,7 +629,9 @@ export const {
   updateLearnedMetricsFromSession,
   updatePairMetricSnapshotsFromSession,
   updateRolePerformanceFromSession,
+  updateLearnedMetricsForParticipant,
   updateLearnedMetricsFromSpar,
+  updatePairMetricForParticipants,
   updatePairMetricFromSpar,
 } = createMetricUpdateService();
 

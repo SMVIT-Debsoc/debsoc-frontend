@@ -327,3 +327,36 @@ test("chair scoring rejects non-chair session participants", async () => {
   );
 });
 
+
+test("spar metric recompute clears stale snapshots when spar evidence is deleted", async () => {
+  const deletedMemberMetrics: unknown[] = [];
+  const deletedPairMetrics: unknown[] = [];
+  const memberUpserts: unknown[] = [];
+  const pairUpserts: unknown[] = [];
+  const service = createMetricUpdateService({
+    async getSpeakerScoreRecordsBySession() { return []; },
+    async getSpeakerScoreRecordsForParticipants() { return []; },
+    async getSparSpeakerScoresForParticipants() { return []; },
+    async getSparRecordForMetricUpdate() { return null; },
+    async getSparRecordsByTeammate() { return []; },
+    async getChairFeedbackBySession() { return []; },
+    async getChairFeedbackForChairs() { return []; },
+    async getAdjudicatorScoreRecordsBySession() { return []; },
+    async getAdjudicatorScoreRecordsForAdjudicators() { return []; },
+    async getTeamDynamicsRatingsBySession() { return []; },
+    async getTeamDynamicsRatingsForParticipants() { return []; },
+    async getParticipantTypes() { return new Map([["speaker-1", "member"], ["speaker-2", "member"]]); },
+    async deleteMemberMetricSnapshots(input: unknown) { deletedMemberMetrics.push(input); return {}; },
+    async deletePairMetricSnapshots(input: unknown) { deletedPairMetrics.push(input); return {}; },
+    async upsertMemberMetricSnapshot(input: unknown) { memberUpserts.push(input); return {}; },
+    async upsertPairMetricSnapshot(input: unknown) { pairUpserts.push(input); return {}; },
+  } as never);
+
+  await service.updateLearnedMetricsForParticipant("speaker-1");
+  await service.updatePairMetricForParticipants("speaker-1", "speaker-2");
+
+  assert.equal(deletedMemberMetrics.length, 1);
+  assert.equal(deletedPairMetrics.length, 1);
+  assert.equal(memberUpserts.length, 0);
+  assert.equal(pairUpserts.length, 0);
+});

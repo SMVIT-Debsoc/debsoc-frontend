@@ -1,11 +1,16 @@
 import type { DebsocRole } from "../roles.ts";
 import type { SparHistoryQuery, SparHistoryResponse, SparLeaderboardResponse, SubmitSparRequest } from "../../../types/spar.ts";
-import { sparRepository } from "../repositories/spar-repository.ts";
+import { sparRepository, type DeletedSparInfo } from "../repositories/spar-repository.ts";
 import { buildSparLeaderboard } from "./spar-leaderboard.ts";
 import { teamRankToResultPoints } from "../validations/spar-validation.ts";
 import { invalidateTags } from "../cache/cache.ts";
 import { CACHE_TAGS } from "../cache/keys.ts";
-import { updateLearnedMetricsFromSpar, updatePairMetricFromSpar } from "../scoring/metric-update-service.ts";
+import {
+  updateLearnedMetricsForParticipant,
+  updateLearnedMetricsFromSpar,
+  updatePairMetricForParticipants,
+  updatePairMetricFromSpar,
+} from "../scoring/metric-update-service.ts";
 
 type ParticipantType = "member" | "cabinet" | "president";
 
@@ -18,13 +23,15 @@ interface SparRepositoryContract {
   createSpar(input: Parameters<typeof sparRepository.createSpar>[0]): ReturnType<typeof sparRepository.createSpar>;
   getSparsByUser(participantId: string, participantType: ParticipantType, query: SparHistoryQuery): Promise<SparHistoryResponse>;
   checkDuplicate(input: Parameters<typeof sparRepository.checkDuplicate>[0]): Promise<boolean>;
-  deleteSpar(input: Parameters<typeof sparRepository.deleteSpar>[0]): Promise<boolean>;
+  deleteSpar(input: Parameters<typeof sparRepository.deleteSpar>[0]): Promise<DeletedSparInfo | null>;
   participantExists(participantId: string, participantType: ParticipantType): Promise<boolean>;
   getSparAggregates(): ReturnType<typeof sparRepository.getSparAggregates>;
 }
 
 interface SparMetricHooks {
+  updateLearnedMetricsForParticipant?(participantId: string): Promise<void>;
   updateLearnedMetricsFromSpar?(sparRecordId: string): Promise<void>;
+  updatePairMetricForParticipants?(firstParticipantId: string, secondParticipantId: string): Promise<void>;
   updatePairMetricFromSpar?(sparRecordId: string): Promise<void>;
 }
 
@@ -127,15 +134,22 @@ export function createSparService(
     if (!deleted) {
       throw new Error("Spar record not found or not allowed.");
     }
+
+    await metricHooks.updateLearnedMetricsForParticipant?.(deleted.participantId);
+    if (!deleted.isIronMan && deleted.teammateId) {
+      await metricHooks.updatePairMetricForParticipants?.(deleted.participantId, deleted.teammateId);
+    }
     await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
-    return { deleted };
+    return { deleted: true };
   }
 
   return { submitSpar, getSparHistory, getSparLeaderboard, deleteSpar };
 }
 
 const service = createSparService(sparRepository, {
+  updateLearnedMetricsForParticipant,
   updateLearnedMetricsFromSpar,
+  updatePairMetricForParticipants,
   updatePairMetricFromSpar,
 });
 

@@ -684,6 +684,48 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       },
     });
   }
+  function memberMetricWhere(participantId: MemberId, participantType: ParticipantType) {
+    return participantType === "member"
+      ? { memberId: participantId }
+      : participantType === "cabinet"
+        ? { cabinetId: participantId }
+        : { presidentId: participantId };
+  }
+
+  function pairMetricWhere(firstId: MemberId, firstType: ParticipantType, secondId: MemberId, secondType: ParticipantType) {
+    return {
+      ...(firstType === "member" ? { memberAId: firstId } : firstType === "cabinet" ? { cabinetAId: firstId } : { presidentAId: firstId }),
+      ...(secondType === "member" ? { memberBId: secondId } : secondType === "cabinet" ? { cabinetBId: secondId } : { presidentBId: secondId }),
+    };
+  }
+
+  async function deleteMemberMetricSnapshots(input: {
+    participantId: MemberId;
+    participantType: ParticipantType;
+    metricKeys: readonly string[];
+  }) {
+    return client.memberMetricSnapshot.deleteMany({
+      where: {
+        ...memberMetricWhere(input.participantId, input.participantType),
+        metricKey: { in: [...input.metricKeys] },
+      },
+    });
+  }
+
+  async function deletePairMetricSnapshots(input: {
+    memberAId: MemberId;
+    memberAType: ParticipantType;
+    memberBId: MemberId;
+    memberBType: ParticipantType;
+    metricKeys: readonly string[];
+  }) {
+    return client.pairMetricSnapshot.deleteMany({
+      where: {
+        ...pairMetricWhere(input.memberAId, input.memberAType, input.memberBId, input.memberBType),
+        metricKey: { in: [...input.metricKeys] },
+      },
+    });
+  }
   async function upsertMemberMetricSnapshot(input: {
     participantId: MemberId;
     participantType: ParticipantType;
@@ -693,11 +735,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     observationCount: number;
     confidence: number;
   }) {
-    const where = input.participantType === "member"
-      ? { memberId: input.participantId }
-      : input.participantType === "cabinet"
-        ? { cabinetId: input.participantId }
-        : { presidentId: input.participantId };
+    const where = memberMetricWhere(input.participantId, input.participantType);
 
     const existing = await client.memberMetricSnapshot.findFirst({
       where: {
@@ -744,8 +782,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }) {
     const existing = await client.pairMetricSnapshot.findFirst({
       where: {
-        ...(input.memberAType === "member" ? { memberAId: input.memberAId } : input.memberAType === "cabinet" ? { cabinetAId: input.memberAId } : { presidentAId: input.memberAId }),
-        ...(input.memberBType === "member" ? { memberBId: input.memberBId } : input.memberBType === "cabinet" ? { cabinetBId: input.memberBId } : { presidentBId: input.memberBId }),
+        ...pairMetricWhere(input.memberAId, input.memberAType, input.memberBId, input.memberBType),
         metricKey: input.metricKey,
         contextKey: input.contextKey,
       },
@@ -1312,6 +1349,8 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     getExistingAdjudicatorScoreRecords,
     getAdjudicatorScoreRecordsBySession,
     getAdjudicatorScoreRecordsForAdjudicators,
+    deleteMemberMetricSnapshots,
+    deletePairMetricSnapshots,
     upsertMemberMetricSnapshot,
     upsertPairMetricSnapshot,
     getParticipantTypes,

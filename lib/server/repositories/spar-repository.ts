@@ -31,6 +31,12 @@ interface SparCreateInput {
   speakerScores: SparSpeakerScoreInput[];
 }
 
+export interface DeletedSparInfo {
+  participantId: string;
+  teammateId: string | null;
+  isIronMan: boolean;
+}
+
 interface SparOwnershipInput {
   sparId: string;
   participantId: string;
@@ -231,22 +237,28 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
     return existing !== null;
   }
 
-  async function deleteSpar(input: SparOwnershipInput): Promise<boolean> {
+  async function deleteSpar(input: SparOwnershipInput): Promise<DeletedSparInfo | null> {
     const existing = await client.sparRecord.findUnique({
       where: { id: input.sparId },
-      select: { id: true, ...participantSelect },
+      select: { id: true, isIronMan: true, ...participantSelect, teammateMemberId: true, teammateCabinetId: true, teammatePresidentId: true },
     });
     if (!existing) {
-      return false;
+      return null;
     }
 
     const ownerId = resolveParticipantId(existing);
     if (!input.canModerate && ownerId !== input.participantId) {
-      return false;
+      return null;
     }
 
+    const teammateId = resolveParticipantId({
+      memberId: existing.teammateMemberId,
+      cabinetId: existing.teammateCabinetId,
+      presidentId: existing.teammatePresidentId,
+    }) || null;
+
     await client.sparRecord.delete({ where: { id: input.sparId } });
-    return true;
+    return { participantId: ownerId, teammateId, isIronMan: existing.isIronMan };
   }
 
   async function participantExists(participantId: string, participantType: ParticipantType): Promise<boolean> {
