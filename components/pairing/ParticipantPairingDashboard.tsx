@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -8,12 +8,14 @@ import {
   Scale,
   ClipboardCheck,
   UserCircle,
+  Swords,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
 import Sessions from "./Sessions";
 import Leaderboards from "./Leaderboards";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
+import SparManagement from "./SparManagement";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -28,7 +30,8 @@ export type ParticipantTab =
   | "MyScoring"
   | "SpeakerLeaderboard"
   | "AdjudicatorLeaderboard"
-  | "Sessions";
+  | "Sessions"
+  | "Spars";
 
 export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
@@ -37,6 +40,7 @@ export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React
   { key: "SpeakerLeaderboard", label: "Leaderboards", icon: <Mic2 size={18} /> },
   { key: "AdjudicatorLeaderboard", label: "Adj Leaderboard", icon: <Scale size={18} /> },
   { key: "Sessions", label: "Session History", icon: <Calendar size={18} /> },
+  { key: "Spars", label: "Spars", icon: <Swords size={18} /> },
 ];
 
 type ParticipantPairingDashboardProps = {
@@ -145,6 +149,7 @@ export default function ParticipantPairingDashboard({
           view="adjudicators"
         />
       )}
+      {activeTab === "Spars" && <SparManagement participants={participants} />}
       {activeTab === "Sessions" && (
         <Sessions
           mode="participant"

@@ -319,6 +319,96 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       },
     });
   }
+
+  async function getSparSpeakerScoresForParticipants(participantIds: MemberId[]) {
+    if (participantIds.length === 0) {
+      return [];
+    }
+
+    const records = await client.sparRecord.findMany({
+      where: {
+        OR: [
+          { memberId: { in: participantIds } },
+          { cabinetId: { in: participantIds } },
+          { presidentId: { in: participantIds } },
+        ],
+      },
+      select: {
+        id: true,
+        sparDate: true,
+        motionType: true,
+        bpPosition: true,
+        teamResultPoints: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        sparSpeakerScores: { select: { speakingRole: true, speakerScore: true } },
+      },
+    });
+
+    return records.flatMap((record: { id: string; sparDate: Date; motionType: string; bpPosition: string; teamResultPoints: number; memberId: string | null; cabinetId: string | null; presidentId: string | null; sparSpeakerScores: Array<{ speakingRole: string; speakerScore: number }> }) =>
+      record.sparSpeakerScores.map((score: { speakingRole: string; speakerScore: number }) => ({
+        sparRecordId: record.id,
+        sparDate: record.sparDate,
+        motionType: record.motionType,
+        bpPosition: record.bpPosition,
+        teamResultPoints: record.teamResultPoints,
+        memberId: record.memberId,
+        cabinetId: record.cabinetId,
+        presidentId: record.presidentId,
+        speakingRole: score.speakingRole,
+        speakerScore: score.speakerScore,
+      })),
+    );
+  }
+
+  async function getSparRecordForMetricUpdate(sparRecordId: string) {
+    return client.sparRecord.findUnique({
+      where: { id: sparRecordId },
+      select: {
+        id: true,
+        motionType: true,
+        bpPosition: true,
+        teamResultPoints: true,
+        isIronMan: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+        sparSpeakerScores: { select: { speakingRole: true, speakerScore: true } },
+      },
+    });
+  }
+
+  async function getSparRecordsByTeammate(participantIdA: MemberId, participantIdB: MemberId) {
+    return client.sparRecord.findMany({
+      where: {
+        isIronMan: false,
+        OR: [
+          {
+            OR: [{ memberId: participantIdA }, { cabinetId: participantIdA }, { presidentId: participantIdA }],
+            AND: [{ OR: [{ teammateMemberId: participantIdB }, { teammateCabinetId: participantIdB }, { teammatePresidentId: participantIdB }] }],
+          },
+          {
+            OR: [{ memberId: participantIdB }, { cabinetId: participantIdB }, { presidentId: participantIdB }],
+            AND: [{ OR: [{ teammateMemberId: participantIdA }, { teammateCabinetId: participantIdA }, { teammatePresidentId: participantIdA }] }],
+          },
+        ],
+      },
+      select: {
+        motionType: true,
+        teamResultPoints: true,
+        memberId: true,
+        cabinetId: true,
+        presidentId: true,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+      },
+    });
+  }
   async function createChairFeedbackRecord(input: {
     sessionId: string;
     proposalId: string;
@@ -594,6 +684,48 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       },
     });
   }
+  function memberMetricWhere(participantId: MemberId, participantType: ParticipantType) {
+    return participantType === "member"
+      ? { memberId: participantId }
+      : participantType === "cabinet"
+        ? { cabinetId: participantId }
+        : { presidentId: participantId };
+  }
+
+  function pairMetricWhere(firstId: MemberId, firstType: ParticipantType, secondId: MemberId, secondType: ParticipantType) {
+    return {
+      ...(firstType === "member" ? { memberAId: firstId } : firstType === "cabinet" ? { cabinetAId: firstId } : { presidentAId: firstId }),
+      ...(secondType === "member" ? { memberBId: secondId } : secondType === "cabinet" ? { cabinetBId: secondId } : { presidentBId: secondId }),
+    };
+  }
+
+  async function deleteMemberMetricSnapshots(input: {
+    participantId: MemberId;
+    participantType: ParticipantType;
+    metricKeys: readonly string[];
+  }) {
+    return client.memberMetricSnapshot.deleteMany({
+      where: {
+        ...memberMetricWhere(input.participantId, input.participantType),
+        metricKey: { in: [...input.metricKeys] },
+      },
+    });
+  }
+
+  async function deletePairMetricSnapshots(input: {
+    memberAId: MemberId;
+    memberAType: ParticipantType;
+    memberBId: MemberId;
+    memberBType: ParticipantType;
+    metricKeys: readonly string[];
+  }) {
+    return client.pairMetricSnapshot.deleteMany({
+      where: {
+        ...pairMetricWhere(input.memberAId, input.memberAType, input.memberBId, input.memberBType),
+        metricKey: { in: [...input.metricKeys] },
+      },
+    });
+  }
   async function upsertMemberMetricSnapshot(input: {
     participantId: MemberId;
     participantType: ParticipantType;
@@ -603,11 +735,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     observationCount: number;
     confidence: number;
   }) {
-    const where = input.participantType === "member"
-      ? { memberId: input.participantId }
-      : input.participantType === "cabinet"
-        ? { cabinetId: input.participantId }
-        : { presidentId: input.participantId };
+    const where = memberMetricWhere(input.participantId, input.participantType);
 
     const existing = await client.memberMetricSnapshot.findFirst({
       where: {
@@ -654,8 +782,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
   }) {
     const existing = await client.pairMetricSnapshot.findFirst({
       where: {
-        ...(input.memberAType === "member" ? { memberAId: input.memberAId } : input.memberAType === "cabinet" ? { cabinetAId: input.memberAId } : { presidentAId: input.memberAId }),
-        ...(input.memberBType === "member" ? { memberBId: input.memberBId } : input.memberBType === "cabinet" ? { cabinetBId: input.memberBId } : { presidentBId: input.memberBId }),
+        ...pairMetricWhere(input.memberAId, input.memberAType, input.memberBId, input.memberBType),
         metricKey: input.metricKey,
         contextKey: input.contextKey,
       },
@@ -1207,6 +1334,9 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     getExistingSpeakerScoreRecords,
     getSpeakerScoreRecordsBySession,
     getSpeakerScoreRecordsForParticipants,
+    getSparSpeakerScoresForParticipants,
+    getSparRecordForMetricUpdate,
+    getSparRecordsByTeammate,
     createChairFeedbackRecord,
     getChairFeedbackBySpeaker,
     getChairFeedbackBySession,
@@ -1219,6 +1349,8 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
     getExistingAdjudicatorScoreRecords,
     getAdjudicatorScoreRecordsBySession,
     getAdjudicatorScoreRecordsForAdjudicators,
+    deleteMemberMetricSnapshots,
+    deletePairMetricSnapshots,
     upsertMemberMetricSnapshot,
     upsertPairMetricSnapshot,
     getParticipantTypes,

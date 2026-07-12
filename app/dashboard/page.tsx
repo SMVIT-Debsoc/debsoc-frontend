@@ -20,17 +20,22 @@ export default async function DashboardPage() {
 
   let position: string | null = null;
   if (session.user.role === "cabinet") {
-    const record = await prisma.cabinet.findFirst({
-      where: {
-        OR: [
-          ...(session.user.id ? [{ id: session.user.id }] : []),
-          ...(session.user.email ? [{ email: session.user.email }] : []),
-        ],
-      },
-      select: { position: true },
-    });
-    position = record?.position?.trim() || null;
-    console.log("[dashboard] cabinet position lookup", { id: session.user.id, email: session.user.email, position });
+    try {
+      const record = await prisma.cabinet.findFirst({
+        where: {
+          OR: [
+            ...(session.user.id ? [{ id: session.user.id }] : []),
+            ...(session.user.email ? [{ email: session.user.email }] : []),
+          ],
+        },
+        select: { position: true },
+      });
+      position = record?.position?.trim() || null;
+    } catch (caught) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[dashboard] Continuing without cabinet position because lookup failed.", caught);
+      }
+    }
   }
 
   return (
