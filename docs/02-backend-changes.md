@@ -281,7 +281,12 @@ Retired in backend cleanup:
   `AnonymousFeedback` tables have been retired from the active schema
 - task assignment routes now return `410 Gone`, and the unused `task` table has been retired from
   the active schema
-
+- attendance-linked manual pairing and legacy attendance endpoints now return `410 Gone` with
+  replacements pointing to published pairing and pairing attendance routes
+- old non-proposal session/admin endpoints now return `410 Gone` with replacements pointing to
+  the pairing-system session and attendance preparation routes
+- the old aggregate leaderboard route now returns `410 Gone` with replacements pointing to the
+  derived speaker and adjudicator leaderboard routes
 
 ## Summary
 

@@ -79,15 +79,16 @@ What still needs final confirmation:
 - do we want to relax any threshold until real data distribution is observed
 - how many repeated runs per scenario should be required in V1
 
-## 6. Cleanup Scope Confirmation
+## 6. Cleanup Scope Confirmation - RESOLVED
 
-We know some old features will be reduced or removed.
+Phase 12 cleanup keeps historical readability and retires legacy surfaces behind explicit `410 Gone`
+responses instead of destructive route deletion. The confirmed retired surfaces are anonymous
+feedback, task assignment, attendance-linked manual pairing/attendance endpoints, old
+non-proposal session/admin endpoints, and the old aggregate leaderboard route.
 
-What still needs final confirmation:
-
-- exact routes to deprecate
-- exact schema remnants to retire
-- whether old data is archived, migrated, or ignored
+Schema retirement is limited to the unused anonymous feedback and task tables already removed from
+the active Prisma schema by the backend cleanup migration. Other historical session, attendance,
+score, and pairing data remains readable through the replacement pairing-system flows.
 
 ## 7. Progress Verdict Thresholds
 
