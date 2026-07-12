@@ -652,16 +652,21 @@ async function fetchPrimaryData(role: string) {
     };
   }
 
-  const attendance = await fetchJson<{
-    attendance: ApiAttendanceHistory[];
-    publishedSessions?: ApiParticipantSession[];
-  }>(
-    "/api/pairing/attendance/self",
-  );
+  const [attendance, sparRoster] = await Promise.all([
+    fetchJson<{
+      attendance: ApiAttendanceHistory[];
+      publishedSessions?: ApiParticipantSession[];
+    }>("/api/pairing/attendance/self"),
+    fetchJson<{
+      members: ApiMember[];
+      cabinet: ApiCabinet[];
+      presidents?: ApiPresident[];
+    }>("/api/spar/participants"),
+  ]);
   const attendanceHistory = (attendance.attendance ?? []).map(normalizeAttendanceHistory);
 
   return {
-    participants: [],
+    participants: normalizeParticipants(sparRoster),
     sessions: mergeParticipantSessions(
       deriveSessionsFromAttendance(attendanceHistory),
       (attendance.publishedSessions ?? []).map(normalizeParticipantSession),
@@ -1127,4 +1132,3 @@ type ApiAdjudicatorLeaderboardEntry = {
   chairedCount: number;
   adjudicatedCount: number;
 };
-

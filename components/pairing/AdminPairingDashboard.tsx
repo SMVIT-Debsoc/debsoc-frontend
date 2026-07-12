@@ -179,7 +179,7 @@ export default function AdminPairingDashboard({
           adjudicatorLeaderboard={adjudicatorLeaderboard}
         />
       )}
-      {activeTab === "Spars" && <SparManagement participants={participants} />}
+      {activeTab === "Spars" && <SparManagement participants={participants} currentUserId={userId} />}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}

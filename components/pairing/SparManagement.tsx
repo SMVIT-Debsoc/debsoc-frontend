@@ -23,7 +23,13 @@ function participantRoleForApi(account: Participant["account"]) {
   return account;
 }
 
-export default function SparManagement({ participants }: { participants: Participant[] }) {
+export default function SparManagement({
+  participants,
+  currentUserId = null,
+}: {
+  participants: Participant[];
+  currentUserId?: string | null;
+}) {
   const [sparDate, setSparDate] = useState(todayInputValue());
   const [motionType, setMotionType] = useState("");
   const [motionText, setMotionText] = useState("");
@@ -48,13 +54,15 @@ export default function SparManagement({ participants }: { participants: Partici
   }, [bpPosition]);
 
   const teammateOptions = useMemo(
-    () => participants.map((participant) => ({
-      key: `${participant.account}:${participant.id}`,
-      id: participant.id,
-      role: participantRoleForApi(participant.account),
-      label: `${participant.name} (${participant.account})`,
-    })),
-    [participants],
+    () => participants
+      .filter((participant) => participant.id !== currentUserId)
+      .map((participant) => ({
+        key: `${participant.account}:${participant.id}`,
+        id: participant.id,
+        role: participantRoleForApi(participant.account),
+        label: `${participant.name} (${participant.account})`,
+      })),
+    [currentUserId, participants],
   );
 
   async function loadSparData() {

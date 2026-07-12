@@ -149,7 +149,7 @@ export default function ParticipantPairingDashboard({
           view="adjudicators"
         />
       )}
-      {activeTab === "Spars" && <SparManagement participants={participants} />}
+      {activeTab === "Spars" && <SparManagement participants={participants} currentUserId={userId} />}
       {activeTab === "Sessions" && (
         <Sessions
           mode="participant"

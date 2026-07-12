@@ -26,6 +26,7 @@ interface SparRepositoryContract {
   deleteSpar(input: Parameters<typeof sparRepository.deleteSpar>[0]): Promise<DeletedSparInfo | null>;
   participantExists(participantId: string, participantType: ParticipantType): Promise<boolean>;
   getSparAggregates(): ReturnType<typeof sparRepository.getSparAggregates>;
+  getSparParticipantRoster(): ReturnType<typeof sparRepository.getSparParticipantRoster>;
 }
 
 interface SparMetricHooks {
@@ -119,6 +120,10 @@ export function createSparService(
     return repository.getSparsByUser(user.id, toParticipantType(user.role), query);
   }
 
+  async function getSparParticipants() {
+    return repository.getSparParticipantRoster();
+  }
+
   async function getSparLeaderboard(user: SparServiceUser, page: number, limit: number): Promise<SparLeaderboardResponse> {
     const rows = await repository.getSparAggregates();
     return buildSparLeaderboard(rows, user.id, page, limit);
@@ -143,7 +148,7 @@ export function createSparService(
     return { deleted: true };
   }
 
-  return { submitSpar, getSparHistory, getSparLeaderboard, deleteSpar };
+  return { submitSpar, getSparHistory, getSparParticipants, getSparLeaderboard, deleteSpar };
 }
 
 const service = createSparService(sparRepository, {
@@ -155,5 +160,6 @@ const service = createSparService(sparRepository, {
 
 export const submitSpar = service.submitSpar;
 export const getSparHistory = service.getSparHistory;
+export const getSparParticipants = service.getSparParticipants;
 export const getSparLeaderboard = service.getSparLeaderboard;
 export const deleteSpar = service.deleteSpar;

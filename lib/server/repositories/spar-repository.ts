@@ -271,6 +271,28 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
     return (await client.president.count({ where: { id: participantId, isVerified: true } })) > 0;
   }
 
+  async function getSparParticipantRoster() {
+    const [members, cabinet, presidents] = await Promise.all([
+      client.member.findMany({
+        where: { isVerified: true },
+        select: { id: true, name: true, email: true, isVerified: true },
+        orderBy: { name: "asc" },
+      }),
+      client.cabinet.findMany({
+        where: { isVerified: true },
+        select: { id: true, name: true, email: true, position: true, isVerified: true },
+        orderBy: { name: "asc" },
+      }),
+      client.president.findMany({
+        where: { isVerified: true },
+        select: { id: true, name: true, email: true, isVerified: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    return { members, cabinet, presidents };
+  }
+
   async function getSparAggregates(): Promise<SparAggregateRow[]> {
     const records = await client.sparRecord.findMany({
       select: {
@@ -322,6 +344,7 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
     checkDuplicate,
     deleteSpar,
     participantExists,
+    getSparParticipantRoster,
     getSparAggregates,
   };
 }
