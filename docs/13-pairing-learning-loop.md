@@ -384,6 +384,47 @@ What it is doing is:
 - comparing predicted quality with observed quality
 - adjusting small tunable weights over time
 
+## Non-LLM Learning Decision
+
+The primary learning loop MUST work without an LLM. Structured session evidence is sufficient for
+the engine to become more accurate when it is collected consistently, evaluated across multiple
+sessions, and used only through bounded review-assisted tuning.
+
+The primary inputs are:
+
+- BP result points and raw speaker scores
+- chair feedback and adjudicator scores
+- optional team-dynamics ratings
+- proposal approval, override, and regeneration actions
+- numeric proposal ratings and structured issue tags
+- assignment, repetition, role, motion, and participation history
+
+Verdicts and performance outcomes update participant, pair, role, motion, and adjudication metrics.
+They MUST NOT be treated as direct proof that the generated pairing itself was good or bad: debate
+outcomes are noisy and can be affected by individual performance, motion fit, and room conditions.
+Proposal-quality evidence such as admin ratings, issue tags, overrides, and regenerations remains a
+separate tuning signal.
+
+The non-LLM improvement path is:
+
+1. store raw structured evidence as the source of truth;
+2. update recomputable learned metrics and observation confidence after completed sessions;
+3. aggregate evidence over the documented multi-session tuning window;
+4. compare predicted proposal quality with admin review and observed outcomes;
+5. produce small bounded tuning suggestions;
+6. validate suggestions against historical and synthetic replay baselines; and
+7. require human review before applying any adjustment.
+
+An LLM is not required for this path and MUST NOT directly change weights, formulas, hard rules, or
+published pairings. A future LLM may be introduced only as an optional semantic extraction layer for
+free-text notes. If introduced, it must map text into a predefined structured taxonomy, preserve the
+original text, record extraction confidence and version, support human correction, and remain
+auditable. Low-confidence or unreviewed extracted signals must not influence tuning.
+
+Any semantic taxonomy, derived semantic metric, or use of extracted feedback in a formula requires
+an explicit documented specification before implementation. It must also pass the same replay,
+regression, review, and rollback controls as every other tuning change.
+
 ## Learning Stages Across Product Maturity
 
 ## Early Stage
@@ -448,4 +489,3 @@ The pairing system becomes better after each use through a structured learning l
 
 This learning loop is not just a feature detail.
 It affects the entire backend design, data model, and implementation structure.
-
