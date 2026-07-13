@@ -23,6 +23,14 @@ function participantRoleForApi(account: Participant["account"]) {
   return account;
 }
 
+function formatSparDate(value: string) {
+  return value.slice(0, 10);
+}
+
+function formatSparScores(record: SparHistoryResponse["records"][number]) {
+  return record.speakerScores.map((score) => `${score.speakingRole} ${score.speakerScore}`).join(", ");
+}
+
 export default function SparManagement({
   participants,
   currentUserId = null,
@@ -150,7 +158,7 @@ export default function SparManagement({
       {(message || error) && <div className={`rounded-xl px-4 py-3 text-sm ${error ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"}`}>{error ?? message}</div>}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <Card className="p-5 sm:p-6">
+        <Card className="p-4 sm:p-6">
           <SectionHeader title="Submit Spar" />
           <form onSubmit={submit} className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
             <Field label="Date"><input className={inputClass} type="date" value={sparDate} max={todayInputValue()} onChange={(event) => setSparDate(event.target.value)} required /></Field>
@@ -166,15 +174,44 @@ export default function SparManagement({
           </form>
         </Card>
 
-        <Card className="p-5 sm:p-6">
+        <Card className="p-4 sm:p-6">
           <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : undefined} />
-          {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="flex items-center justify-between rounded-xl bg-white/55 px-3 py-2 text-sm dark:bg-white/[0.04]"><div><span className="font-semibold text-slate-900 dark:text-slate-100">#{entry.rank} {entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
+          {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-white/55 px-3 py-2 text-sm dark:bg-white/[0.04]"><div className="min-w-0"><span className="block truncate font-semibold text-slate-900 dark:text-slate-100">#{entry.rank} {entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
         </Card>
       </div>
 
-      <Card className="p-5 sm:p-6">
+      <Card className="p-4 sm:p-6">
         <SectionHeader title="My Spar History" />
-        {loading ? <EmptyState title="Loading" body="Fetching your spar history." /> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : <div className="overflow-x-auto"><table className="min-w-full text-sm"><thead className="text-left text-xs uppercase text-slate-500"><tr><th className="px-3 py-2">Date</th><th className="px-3 py-2">Motion</th><th className="px-3 py-2">Position</th><th className="px-3 py-2">Rank</th><th className="px-3 py-2">Scores</th><th className="px-3 py-2"></th></tr></thead><tbody>{history.records.map((record) => <tr key={record.id} className="border-t border-slate-200/70 dark:border-white/10"><td className="px-3 py-3">{record.sparDate.slice(0, 10)}</td><td className="px-3 py-3">{record.motionType}</td><td className="px-3 py-3">{record.bpPosition}{record.isIronMan ? " - Iron Man" : ""}</td><td className="px-3 py-3">{record.teamRank}</td><td className="px-3 py-3">{record.speakerScores.map((score) => `${score.speakingRole} ${score.speakerScore}`).join(", ")}</td><td className="px-3 py-3 text-right"><button className="inline-flex min-h-[36px] items-center rounded-lg px-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10" onClick={() => void removeSpar(record.id)} type="button" aria-label="Delete spar"><Trash2 size={16} /></button></td></tr>)}</tbody></table></div>}
+        {loading ? <EmptyState title="Loading" body="Fetching your spar history." /> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : (
+          <>
+            <div className="space-y-3 sm:hidden">
+              {history.records.map((record) => (
+                <div key={record.id} className="rounded-xl border border-slate-200/70 bg-white/55 p-3 text-sm dark:border-white/10 dark:bg-white/[0.04]">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-slate-900 dark:text-slate-100">{record.motionType}</div>
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatSparDate(record.sparDate)}</div>
+                    </div>
+                    <button className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10" onClick={() => void removeSpar(record.id)} type="button" aria-label="Delete spar"><Trash2 size={16} /></button>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div><span className="block text-slate-500 dark:text-slate-400">Position</span><span className="font-medium text-slate-800 dark:text-slate-100">{record.bpPosition}{record.isIronMan ? " - Iron Man" : ""}</span></div>
+                    <div><span className="block text-slate-500 dark:text-slate-400">Rank</span><span className="font-medium text-slate-800 dark:text-slate-100">{record.teamRank}</span></div>
+                    <div className="col-span-2"><span className="block text-slate-500 dark:text-slate-400">Scores</span><span className="break-words font-medium text-slate-800 dark:text-slate-100">{formatSparScores(record)}</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block">
+              <table className="min-w-full table-fixed text-sm">
+                <thead className="text-left text-xs uppercase text-slate-500">
+                  <tr><th className="w-[15%] px-3 py-2">Date</th><th className="w-[22%] px-3 py-2">Motion</th><th className="w-[22%] px-3 py-2">Position</th><th className="w-[10%] px-3 py-2">Rank</th><th className="px-3 py-2">Scores</th><th className="w-12 px-3 py-2"></th></tr>
+                </thead>
+                <tbody>{history.records.map((record) => <tr key={record.id} className="border-t border-slate-200/70 dark:border-white/10"><td className="px-3 py-3">{formatSparDate(record.sparDate)}</td><td className="truncate px-3 py-3">{record.motionType}</td><td className="px-3 py-3">{record.bpPosition}{record.isIronMan ? " - Iron Man" : ""}</td><td className="px-3 py-3">{record.teamRank}</td><td className="px-3 py-3">{formatSparScores(record)}</td><td className="px-3 py-3 text-right"><button className="inline-flex min-h-[36px] items-center rounded-lg px-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10" onClick={() => void removeSpar(record.id)} type="button" aria-label="Delete spar"><Trash2 size={16} /></button></td></tr>)}</tbody>
+              </table>
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );
