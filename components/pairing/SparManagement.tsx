@@ -41,6 +41,50 @@ function formatSparScores(record: SparHistoryResponse["records"][number]) {
   return record.speakerScores.map((score) => `${score.speakingRole.replace("_", " ")} ${score.speakerScore}`).join(", ");
 }
 
+function RankDoodle({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="1st place trophy">
+        <path d="M12 6h16v6a8 8 0 0 1-16 0V6Z" fill="#facc15" stroke="#78350f" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M12 8H8a4 4 0 0 0 4 4M28 8h4a4 4 0 0 1-4 4" stroke="#78350f" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M17 20v4h6v-4" stroke="#78350f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="13" y="24" width="14" height="4" rx="1" fill="#f59e0b" stroke="#78350f" strokeWidth="1.5" />
+        <rect x="11" y="28" width="18" height="4" rx="1" fill="#b45309" stroke="#78350f" strokeWidth="1.5" />
+        <path d="M18 9l1.2 2.2 2.4.4-1.7 1.7.4 2.4L18 14.6l-2.2 1.1.4-2.4-1.7-1.7 2.4-.4L18 9Z" fill="#fef3c7" stroke="#78350f" strokeWidth="1" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="2nd place medal">
+        <path d="M14 6l3 8M26 6l-3 8" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="20" cy="24" r="9" fill="#cbd5e1" stroke="#334155" strokeWidth="1.5" />
+        <circle cx="20" cy="24" r="5.5" fill="#e2e8f0" stroke="#334155" strokeWidth="1.2" />
+        <text x="20" y="27" textAnchor="middle" fontSize="7" fontWeight="700" fill="#334155" fontFamily="ui-sans-serif, system-ui">2</text>
+      </svg>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="3rd place medal">
+        <path d="M14 6l3 8M26 6l-3 8" stroke="#7c2d12" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="20" cy="24" r="9" fill="#d97706" stroke="#7c2d12" strokeWidth="1.5" />
+        <circle cx="20" cy="24" r="5.5" fill="#f59e0b" stroke="#7c2d12" strokeWidth="1.2" />
+        <text x="20" y="27" textAnchor="middle" fontSize="7" fontWeight="700" fill="#7c2d12" fontFamily="ui-sans-serif, system-ui">3</text>
+      </svg>
+    );
+  }
+  const label = String(rank);
+  return (
+    <svg viewBox="0 0 40 40" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label={`rank ${rank}`}>
+      <path d="M20 5c4 0 8 1.4 11 4.2 3.1 3 4.2 6.9 3.9 10.8-.3 3.9-2 7.6-5 10-3.3 2.6-7.2 3.4-11 3-3.8-.3-7.4-2-9.8-5-2.5-3-3.5-6.8-3-10.5.5-3.7 2.5-7.1 5.6-9.2C14.4 6.1 17.1 5 20 5Z" fill="#e0e7ff" stroke="#4338ca" strokeWidth="1.6" strokeLinejoin="round" strokeDasharray="0.1 0" />
+      <path d="M10.5 12c1.5-1.5 3-2.6 4.8-3.4M32 15.5c.4 1.5.5 3 .3 4.5" stroke="#4338ca" strokeWidth="1.2" strokeLinecap="round" opacity="0.6" />
+      <text x="20" y={label.length > 1 ? 25 : 26} textAnchor="middle" fontSize={label.length > 2 ? 10 : label.length > 1 ? 13 : 15} fontWeight="800" fill="#3730a3" fontFamily="ui-sans-serif, system-ui">
+        {label}
+      </text>
+    </svg>
+  );
+}
 function formatSparPosition(record: SparHistoryResponse["records"][number]) {
   const base = record.debateFormat === "AP" ? `AP ${record.apSide ?? ""}` : `BP ${record.bpPosition ?? ""}`;
   return `${base}${record.isIronMan ? " - Iron Man" : ""}`;
@@ -211,9 +255,14 @@ export default function SparManagement({
           </form>
         </Card>
 
-        <Card className="p-4 sm:p-6">
-          <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : undefined} />
-          {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-white/55 px-3 py-2 text-sm dark:bg-white/[0.04]"><div className="min-w-0"><span className="block truncate font-semibold text-slate-900 dark:text-slate-100">#{entry.rank} {entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
+        <Card className="relative min-h-[360px] overflow-hidden p-4 sm:p-6">
+          <div aria-hidden className="pointer-events-none absolute -left-10 top-16 h-44 w-44 rounded-full border border-indigo-400/20 opacity-60 dark:border-indigo-300/20" />
+          <div aria-hidden className="pointer-events-none absolute -right-20 bottom-14 h-24 w-80 -rotate-12 rounded-full border border-sky-400/20 bg-sky-400/[0.04] shadow-[0_0_40px_rgba(59,130,246,0.12)] dark:border-sky-300/15 dark:bg-sky-300/[0.04]" />
+          <div aria-hidden className="pointer-events-none absolute right-28 top-10 h-16 w-56 rotate-20 rounded-full border border-sky-400/20 bg-sky-400/[0.04] dark:border-sky-300/15" />
+          <div className="relative">
+            <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : undefined} />
+            {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/60 px-3 py-3 text-sm shadow-sm shadow-slate-950/5 dark:bg-white/[0.045]"><div className="flex h-10 w-10 items-center justify-center"><RankDoodle rank={entry.rank} /></div><div className="min-w-0"><span className="block truncate font-semibold text-slate-900 dark:text-slate-100">{entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
+          </div>
         </Card>
       </div>
 
