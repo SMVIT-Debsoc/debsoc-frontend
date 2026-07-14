@@ -337,7 +337,9 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         id: true,
         sparDate: true,
         motionType: true,
+        debateFormat: true,
         bpPosition: true,
+        apSide: true,
         teamResultPoints: true,
         memberId: true,
         cabinetId: true,
@@ -346,12 +348,14 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       },
     });
 
-    return records.flatMap((record: { id: string; sparDate: Date; motionType: string; bpPosition: string; teamResultPoints: number; memberId: string | null; cabinetId: string | null; presidentId: string | null; sparSpeakerScores: Array<{ speakingRole: string; speakerScore: number }> }) =>
+    return records.flatMap((record: { id: string; sparDate: Date; motionType: string; debateFormat: string; bpPosition: string | null; apSide: string | null; teamResultPoints: number; memberId: string | null; cabinetId: string | null; presidentId: string | null; sparSpeakerScores: Array<{ speakingRole: string; speakerScore: number }> }) =>
       record.sparSpeakerScores.map((score: { speakingRole: string; speakerScore: number }) => ({
         sparRecordId: record.id,
         sparDate: record.sparDate,
         motionType: record.motionType,
+        debateFormat: record.debateFormat || "BP",
         bpPosition: record.bpPosition,
+        apSide: record.apSide,
         teamResultPoints: record.teamResultPoints,
         memberId: record.memberId,
         cabinetId: record.cabinetId,
@@ -368,7 +372,9 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
       select: {
         id: true,
         motionType: true,
+        debateFormat: true,
         bpPosition: true,
+        apSide: true,
         teamResultPoints: true,
         isIronMan: true,
         memberId: true,
@@ -377,6 +383,7 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         teammateMemberId: true,
         teammateCabinetId: true,
         teammatePresidentId: true,
+        sparTeammates: { select: { memberId: true, cabinetId: true, presidentId: true } },
         sparSpeakerScores: { select: { speakingRole: true, speakerScore: true } },
       },
     });
@@ -389,16 +396,17 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         OR: [
           {
             OR: [{ memberId: participantIdA }, { cabinetId: participantIdA }, { presidentId: participantIdA }],
-            AND: [{ OR: [{ teammateMemberId: participantIdB }, { teammateCabinetId: participantIdB }, { teammatePresidentId: participantIdB }] }],
+            AND: [{ OR: [{ teammateMemberId: participantIdB }, { teammateCabinetId: participantIdB }, { teammatePresidentId: participantIdB }, { sparTeammates: { some: { OR: [{ memberId: participantIdB }, { cabinetId: participantIdB }, { presidentId: participantIdB }] } } }] }],
           },
           {
             OR: [{ memberId: participantIdB }, { cabinetId: participantIdB }, { presidentId: participantIdB }],
-            AND: [{ OR: [{ teammateMemberId: participantIdA }, { teammateCabinetId: participantIdA }, { teammatePresidentId: participantIdA }] }],
+            AND: [{ OR: [{ teammateMemberId: participantIdA }, { teammateCabinetId: participantIdA }, { teammatePresidentId: participantIdA }, { sparTeammates: { some: { OR: [{ memberId: participantIdA }, { cabinetId: participantIdA }, { presidentId: participantIdA }] } } }] }],
           },
         ],
       },
       select: {
         motionType: true,
+        debateFormat: true,
         teamResultPoints: true,
         memberId: true,
         cabinetId: true,
@@ -406,9 +414,11 @@ export function createScoringRepository(client: ScoringRepositoryClient = prisma
         teammateMemberId: true,
         teammateCabinetId: true,
         teammatePresidentId: true,
+        sparTeammates: { select: { memberId: true, cabinetId: true, presidentId: true } },
       },
     });
   }
+
   async function createChairFeedbackRecord(input: {
     sessionId: string;
     proposalId: string;

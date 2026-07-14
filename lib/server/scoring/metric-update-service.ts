@@ -1,4 +1,5 @@
 import { scoringRepository } from "../repositories/scoring-repository.ts";
+import { mapApRoleToBpRole } from "../../../types/spar.ts";
 
 type ParticipantType = "member" | "cabinet" | "president";
 
@@ -34,7 +35,9 @@ type SparScoreRow = {
   sparRecordId: string;
   sparDate: Date;
   motionType: string;
-  bpPosition: string;
+  debateFormat: string;
+  bpPosition: string | null;
+  apSide: string | null;
   memberId: string | null;
   cabinetId: string | null;
   presidentId: string | null;
@@ -46,7 +49,9 @@ type SparScoreRow = {
 type SparRecordWithScores = {
   id: string;
   motionType: string;
-  bpPosition: string;
+  debateFormat: string;
+  bpPosition: string | null;
+  apSide: string | null;
   teamResultPoints: number;
   isIronMan: boolean;
   memberId: string | null;
@@ -55,11 +60,13 @@ type SparRecordWithScores = {
   teammateMemberId: string | null;
   teammateCabinetId: string | null;
   teammatePresidentId: string | null;
+  sparTeammates: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null }>;
   sparSpeakerScores: Array<{ speakingRole: string; speakerScore: number }>;
 };
 
 type SparPairRow = {
   motionType: string;
+  debateFormat: string;
   teamResultPoints: number;
   memberId: string | null;
   cabinetId: string | null;
@@ -67,10 +74,14 @@ type SparPairRow = {
   teammateMemberId: string | null;
   teammateCabinetId: string | null;
   teammatePresidentId: string | null;
+  sparTeammates: Array<{ memberId: string | null; cabinetId: string | null; presidentId: string | null }>;
 };
 
 const SPAR_SPEAKER_METRIC_KEYS = ["speaker_total_score", "speaker_strength", "speaker_motion_type_score", "role_score", "motion_type_x_role_score"] as const;
 const SPAR_PAIR_METRIC_KEYS = ["partner_dynamics_overall", "partner_dynamics_by_motion_type"] as const;
+const BP_SPAR_WEIGHT = 0.6;
+const AP_SPAR_WEIGHT = 0.5;
+const AP_ROLE_MAPPING_WEIGHT = 0.35;
 
 type TeamDynamicsRow = {
   sessionId: string;
@@ -475,18 +486,32 @@ export function createMetricUpdateService(
       metricKeys: SPAR_SPEAKER_METRIC_KEYS,
     });
 
-    const sparWeight = 0.6;
-    const weightedObservationCount = sessionScores.length + sparScores.length * sparWeight;
+    const allScores = [
+      ...sessionScores.map((row) => ({
+        motionType: buildMotionType(row),
+        speakingRole: row.speakingRole,
+        score: row.rawScore,
+        generalWeight: 1,
+        roleWeight: 1,
+      })),
+      ...sparScores.map((row) => {
+        const isAp = row.debateFormat === "AP";
+        return {
+          motionType: row.motionType,
+          speakingRole: isAp ? mapApRoleToBpRole(row.speakingRole as never) : row.speakingRole,
+          score: row.speakerScore,
+          generalWeight: isAp ? AP_SPAR_WEIGHT : BP_SPAR_WEIGHT,
+          roleWeight: isAp ? AP_ROLE_MAPPING_WEIGHT : BP_SPAR_WEIGHT,
+        };
+      }),
+    ];
+    const weightedObservationCount = allScores.reduce((sum, row) => sum + row.generalWeight, 0);
     if (weightedObservationCount === 0) return;
 
     const storedObservationCount = Math.max(1, Math.round(weightedObservationCount));
-    const weightedTotal = sessionScores.reduce((sum, row) => sum + row.rawScore, 0) + sparScores.reduce((sum, row) => sum + row.speakerScore * sparWeight, 0);
-    const allScores = [
-      ...sessionScores.map((row) => ({ motionType: buildMotionType(row), speakingRole: row.speakingRole, score: row.rawScore, weight: 1 })),
-      ...sparScores.map((row) => ({ motionType: row.motionType, speakingRole: row.speakingRole, score: row.speakerScore, weight: sparWeight })),
-    ];
+    const weightedTotal = allScores.reduce((sum, row) => sum + row.score * row.generalWeight, 0);
     const weightedMean = weightedTotal / weightedObservationCount;
-    const variance = allScores.reduce((sum, row) => sum + row.weight * (row.score - weightedMean) ** 2, 0) / weightedObservationCount;
+    const variance = allScores.reduce((sum, row) => sum + row.generalWeight * (row.score - weightedMean) ** 2, 0) / weightedObservationCount;
     const consistencyScore = 1 / (1 + Math.sqrt(variance) / 80);
     const confidenceScore = computeConfidence(weightedObservationCount, 6);
     const speakerStrength =
@@ -519,9 +544,9 @@ export function createMetricUpdateService(
       grouped.set(key, [...(grouped.get(key) ?? []), { score, weight }]);
     };
     for (const row of allScores) {
-      add("speaker_motion_type_score", row.motionType, row.score, row.weight);
-      add("role_score", row.speakingRole, row.score, row.weight);
-      add("motion_type_x_role_score", `${row.motionType}:${row.speakingRole}`, row.score, row.weight);
+      add("speaker_motion_type_score", row.motionType, row.score, row.generalWeight);
+      add("role_score", row.speakingRole, row.score, row.roleWeight);
+      add("motion_type_x_role_score", `${row.motionType}:${row.speakingRole}`, row.score, row.roleWeight);
     }
 
     for (const [key, values] of grouped.entries()) {
@@ -566,10 +591,12 @@ export function createMetricUpdateService(
       metricKeys: SPAR_PAIR_METRIC_KEYS,
     });
 
-    const sparWeight = 0.6;
-    const resultPoints = pairRows.map((row) => row.teamResultPoints * sparWeight);
-    const observationWeight = pairRows.length * sparWeight;
-    if (resultPoints.length === 0) return;
+    const weightedRows = pairRows.map((row) => {
+      const weight = row.debateFormat === "AP" ? AP_SPAR_WEIGHT : BP_SPAR_WEIGHT;
+      return { motionType: row.motionType, points: row.teamResultPoints * weight, weight };
+    });
+    const observationWeight = weightedRows.reduce((sum, row) => sum + row.weight, 0);
+    if (weightedRows.length === 0 || observationWeight === 0) return;
 
     await repository.upsertPairMetricSnapshot({
       memberAId: a,
@@ -578,17 +605,17 @@ export function createMetricUpdateService(
       memberBType,
       metricKey: "partner_dynamics_overall",
       contextKey: null,
-      value: resultPoints.reduce((sum, value) => sum + value, 0) / observationWeight,
+      value: weightedRows.reduce((sum, row) => sum + row.points, 0) / observationWeight,
       observationCount: Math.max(1, Math.round(observationWeight)),
       confidence: computeConfidence(observationWeight, 4),
     });
 
-    const byMotionType = new Map<string, number[]>();
-    for (const row of pairRows) {
-      byMotionType.set(row.motionType, [...(byMotionType.get(row.motionType) ?? []), row.teamResultPoints * sparWeight]);
+    const byMotionType = new Map<string, Array<{ points: number; weight: number }>>();
+    for (const row of weightedRows) {
+      byMotionType.set(row.motionType, [...(byMotionType.get(row.motionType) ?? []), { points: row.points, weight: row.weight }]);
     }
     for (const [motionType, points] of byMotionType.entries()) {
-      const weight = points.length * sparWeight;
+      const weight = points.reduce((sum, row) => sum + row.weight, 0);
       await repository.upsertPairMetricSnapshot({
         memberAId: a,
         memberAType,
@@ -596,7 +623,7 @@ export function createMetricUpdateService(
         memberBType,
         metricKey: "partner_dynamics_by_motion_type",
         contextKey: motionType,
-        value: points.reduce((sum, value) => sum + value, 0) / weight,
+        value: points.reduce((sum, row) => sum + row.points, 0) / weight,
         observationCount: Math.max(1, Math.round(weight)),
         confidence: computeConfidence(weight, 6),
       });
@@ -608,10 +635,15 @@ export function createMetricUpdateService(
     if (!sparRecord || sparRecord.isIronMan) return;
 
     const submitterId = resolveParticipantId(sparRecord);
-    const teammateId = resolveParticipantId({ memberId: sparRecord.teammateMemberId, cabinetId: sparRecord.teammateCabinetId, presidentId: sparRecord.teammatePresidentId });
-    if (!submitterId || !teammateId) return;
+    const teammateIds = [
+      resolveParticipantId({ memberId: sparRecord.teammateMemberId, cabinetId: sparRecord.teammateCabinetId, presidentId: sparRecord.teammatePresidentId }),
+      ...sparRecord.sparTeammates.map((teammate) => resolveParticipantId(teammate)),
+    ].filter((id): id is string => Boolean(id));
+    if (!submitterId || teammateIds.length === 0) return;
 
-    await updatePairMetricForParticipants(submitterId, teammateId);
+    for (const teammateId of [...new Set(teammateIds)]) {
+      await updatePairMetricForParticipants(submitterId, teammateId);
+    }
   }
 
   return {

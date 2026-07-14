@@ -2,6 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 
 import { prisma } from "../prisma.ts";
 import type {
+  ApSide,
+  SparDebateFormat,
   SparHistoryQuery,
   SparParticipantRole,
   SparRecordView,
@@ -22,18 +24,22 @@ interface SparCreateInput {
   sparDate: Date;
   motionType: string;
   motionText: string | null;
-  bpPosition: string;
+  debateFormat: SparDebateFormat;
+  bpPosition: string | null;
+  apSide: ApSide | null;
   isIronMan: boolean;
   teamRank: number;
   teamResultPoints: number;
   submitter: ParticipantRef;
   teammate: ParticipantRef | null;
+  teammates: ParticipantRef[];
   speakerScores: SparSpeakerScoreInput[];
 }
 
 export interface DeletedSparInfo {
   participantId: string;
   teammateId: string | null;
+  teammateIds: string[];
   isIronMan: boolean;
 }
 
@@ -46,7 +52,9 @@ interface SparOwnershipInput {
 
 interface SparDuplicateInput {
   sparDate: Date;
-  bpPosition: string;
+  debateFormat: SparDebateFormat;
+  bpPosition: string | null;
+  apSide: ApSide | null;
   submitter: ParticipantRef;
   teammate: ParticipantRef | null;
 }
@@ -72,7 +80,9 @@ const sparRecordSelect = {
   sparDate: true,
   motionType: true,
   motionText: true,
+  debateFormat: true,
   bpPosition: true,
+  apSide: true,
   isIronMan: true,
   teamRank: true,
   teamResultPoints: true,
@@ -84,6 +94,15 @@ const sparRecordSelect = {
   teammatePresidentId: true,
   createdAt: true,
   updatedAt: true,
+  sparTeammates: {
+    select: {
+      id: true,
+      memberId: true,
+      cabinetId: true,
+      presidentId: true,
+    },
+    orderBy: { createdAt: "asc" },
+  },
   sparSpeakerScores: {
     select: {
       id: true,
@@ -93,7 +112,6 @@ const sparRecordSelect = {
     orderBy: { speakingRole: "asc" },
   },
 } as const;
-
 
 function participantRefForType(participantId: string, participantType: ParticipantType): ParticipantRef {
   return {
@@ -119,6 +137,13 @@ function participantWhere(ref: ParticipantRef) {
   };
 }
 
+function participantRoleFromRef(ref: ParticipantRef): SparParticipantRole | null {
+  if (ref.memberId) return "Member";
+  if (ref.cabinetId) return "cabinet";
+  if (ref.presidentId) return "President";
+  return null;
+}
+
 function toIsoDate(value: Date): string {
   return value.toISOString();
 }
@@ -128,7 +153,9 @@ function toSparRecordView(record: {
   sparDate: Date;
   motionType: string;
   motionText: string | null;
-  bpPosition: string;
+  debateFormat: string;
+  bpPosition: string | null;
+  apSide: string | null;
   isIronMan: boolean;
   teamRank: number;
   teamResultPoints: number;
@@ -137,32 +164,40 @@ function toSparRecordView(record: {
   teammatePresidentId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  sparTeammates?: Array<{ id: string; memberId: string | null; cabinetId: string | null; presidentId: string | null }>;
   sparSpeakerScores: Array<{ id: string; speakingRole: string; speakerScore: number }>;
 }): SparRecordView {
-  const teammateId = resolveParticipantId({
+  const legacyTeammateRef = {
     memberId: record.teammateMemberId,
     cabinetId: record.teammateCabinetId,
     presidentId: record.teammatePresidentId,
-  }) || null;
-  const teammateRole = record.teammateMemberId
-    ? "Member"
-    : record.teammateCabinetId
-      ? "cabinet"
-      : record.teammatePresidentId
-        ? "President"
+  };
+  const teammateId = resolveParticipantId(legacyTeammateRef) || null;
+  const teammateRole = participantRoleFromRef(legacyTeammateRef);
+  const teammates = (record.sparTeammates ?? [])
+    .map((teammate) => {
+      const participantId = resolveParticipantId(teammate);
+      const participantRole = participantRoleFromRef(teammate);
+      return participantId && participantRole
+        ? { id: teammate.id, participantId, participantRole }
         : null;
+    })
+    .filter((teammate): teammate is NonNullable<typeof teammate> => teammate !== null);
 
   return {
     id: record.id,
     sparDate: toIsoDate(record.sparDate),
     motionType: record.motionType,
     motionText: record.motionText,
+    debateFormat: (record.debateFormat || "BP") as SparRecordView["debateFormat"],
     bpPosition: record.bpPosition as SparRecordView["bpPosition"],
+    apSide: record.apSide as SparRecordView["apSide"],
     isIronMan: record.isIronMan,
     teamRank: record.teamRank,
     teamResultPoints: record.teamResultPoints,
-    teammateId,
-    teammateRole,
+    teammateId: teammateId ?? teammates[0]?.participantId ?? null,
+    teammateRole: teammateRole ?? teammates[0]?.participantRole ?? null,
+    teammates,
     speakerScores: record.sparSpeakerScores.map((score) => ({
       id: score.id,
       speakingRole: score.speakingRole as SparRecordView["speakerScores"][number]["speakingRole"],
@@ -180,12 +215,19 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
         sparDate: input.sparDate,
         motionType: input.motionType,
         motionText: input.motionText,
+        debateFormat: input.debateFormat,
         bpPosition: input.bpPosition,
+        apSide: input.apSide,
         isIronMan: input.isIronMan,
         teamRank: input.teamRank,
         teamResultPoints: input.teamResultPoints,
         ...input.submitter,
         ...teammateColumns(input.teammate),
+        sparTeammates: input.teammates.length > 0
+          ? {
+              create: input.teammates.map((teammate) => ({ ...teammate })),
+            }
+          : undefined,
         sparSpeakerScores: {
           create: input.speakerScores.map((score) => ({
             speakingRole: score.speakingRole,
@@ -228,9 +270,11 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
     const existing = await client.sparRecord.findFirst({
       where: {
         sparDate: input.sparDate,
+        debateFormat: input.debateFormat,
         bpPosition: input.bpPosition,
+        apSide: input.apSide,
         ...participantWhere(input.submitter),
-        ...teammateColumns(input.teammate),
+        ...(input.debateFormat === "BP" ? teammateColumns(input.teammate) : {}),
       },
       select: { id: true },
     });
@@ -240,25 +284,37 @@ export function createSparRepository(client: SparRepositoryClient = prisma) {
   async function deleteSpar(input: SparOwnershipInput): Promise<DeletedSparInfo | null> {
     const existing = await client.sparRecord.findUnique({
       where: { id: input.sparId },
-      select: { id: true, isIronMan: true, ...participantSelect, teammateMemberId: true, teammateCabinetId: true, teammatePresidentId: true },
+      select: {
+        id: true,
+        isIronMan: true,
+        ...participantSelect,
+        teammateMemberId: true,
+        teammateCabinetId: true,
+        teammatePresidentId: true,
+        sparTeammates: { select: { memberId: true, cabinetId: true, presidentId: true } },
+      },
     });
     if (!existing) {
       return null;
     }
 
     const ownerId = resolveParticipantId(existing);
-    if (!input.canModerate && ownerId !== input.participantId) {
+    if (!ownerId || (!input.canModerate && ownerId !== input.participantId)) {
       return null;
     }
 
-    const teammateId = resolveParticipantId({
+    const legacyTeammateId = resolveParticipantId({
       memberId: existing.teammateMemberId,
       cabinetId: existing.teammateCabinetId,
       presidentId: existing.teammatePresidentId,
     }) || null;
+    const teammateIds = [
+      legacyTeammateId,
+      ...existing.sparTeammates.map((teammate: { memberId: string | null; cabinetId: string | null; presidentId: string | null }) => resolveParticipantId(teammate) || null),
+    ].filter((id): id is string => id !== null);
 
     await client.sparRecord.delete({ where: { id: input.sparId } });
-    return { participantId: ownerId, teammateId, isIronMan: existing.isIronMan };
+    return { participantId: ownerId, teammateId: legacyTeammateId ?? teammateIds[0] ?? null, teammateIds, isIronMan: existing.isIronMan };
   }
 
   async function participantExists(participantId: string, participantType: ParticipantType): Promise<boolean> {

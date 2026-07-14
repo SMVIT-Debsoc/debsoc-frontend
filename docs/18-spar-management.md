@@ -25,8 +25,16 @@ This is the single source of truth for all spar-related work.
 
 A spar is a practice debate that members do outside official club sessions. It is informal, self-organized, and not managed by cabinet or president.
 
-Spars follow the same British Parliamentary (BP) format as club sessions: 4 teams, 2 speakers per team, 8 speakers total per round. A member may spar with a teammate (normal) or speak both positions alone (iron-man).
+Spars support both British Parliamentary (BP) and Asian Parliamentary (AP) practice formats. BP spars follow the club-session format: 4 teams, 2 speakers per team, 8 speakers total per round. AP spars use Gov/Opp teams with 3 speakers per team. A member may submit a normal spar with teammate metadata, or an iron-man spar where they speak every role for the selected position/side.
 
+'
+
+### AP Spar Extension
+
+AP spar support is evidence-only in this phase. Users may submit AP Gov/Opp practice rounds with AP roles (`PM`, `DPM`, `GOV_WHIP`, `LO`, `DLO`, `OPP_WHIP`). AP submissions are stored beside BP spars with `debateFormat = "AP"` and `apSide = "GOV" | "OPP"`; BP records keep `debateFormat = "BP"` and `bpPosition = "OG" | "OO" | "CG" | "CO"`.
+
+AP data feeds the existing metric snapshots at a lower confidence weight. General AP speaker evidence contributes to speaker strength and motion-type exposure at `0.5x`; AP role-specific evidence maps into nearest BP role keys at `0.35x` (`GOV_WHIP -> GW`, `OPP_WHIP -> OW`). The BP pairing engine remains unchanged and continues to generate BP rooms from `MemberMetricSnapshot` and `PairMetricSnapshot`, not raw spar rows.
+'
 ### Why Spars Matter
 
 **For the pairing engine:** The club runs ~1 session per week. That gives the pairing engine limited data points per member. Spar submissions multiply the available data — position history, speaker scores, motion-type exposure, team result points — so the engine's learned metrics converge faster and fallback logic is needed less often.

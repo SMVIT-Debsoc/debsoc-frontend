@@ -1,5 +1,5 @@
 import type { DebsocRole } from "../roles.ts";
-import type { SparHistoryQuery, SparHistoryResponse, SparLeaderboardResponse, SubmitSparRequest } from "../../../types/spar.ts";
+import type { SparHistoryQuery, SparHistoryResponse, SparLeaderboardResponse, SparTeammateInput, SubmitSparRequest } from "../../../types/spar.ts";
 import { sparRepository, type DeletedSparInfo } from "../repositories/spar-repository.ts";
 import { buildSparLeaderboard } from "./spar-leaderboard.ts";
 import { teamRankToResultPoints } from "../validations/spar-validation.ts";
@@ -58,6 +58,16 @@ function toTeammateType(role: SubmitSparRequest["teammateRole"]): ParticipantTyp
   return null;
 }
 
+function normalizeTeammates(input: SubmitSparRequest): SparTeammateInput[] {
+  if (input.teammates && input.teammates.length > 0) {
+    return input.teammates;
+  }
+  if (input.teammateId && input.teammateRole) {
+    return [{ id: input.teammateId, role: input.teammateRole }];
+  }
+  return [];
+}
+
 export function createSparService(
   repository: SparRepositoryContract = sparRepository,
   metricHooks: SparMetricHooks = {},
@@ -65,45 +75,65 @@ export function createSparService(
   async function submitSpar(input: SubmitSparRequest, user: SparServiceUser) {
     const participantType = toParticipantType(user.role);
     const submitter = toParticipantRef(user.id, participantType);
-    const teammateType = toTeammateType(input.teammateRole ?? null);
-    const teammate = input.isIronMan || !input.teammateId || !teammateType
-      ? null
-      : toParticipantRef(input.teammateId, teammateType);
+    const debateFormat = input.debateFormat ?? "BP";
+    const teammatesInput = input.isIronMan ? [] : normalizeTeammates(input);
+    const teammateRefs = [];
+    const teammateKeys = new Set<string>();
 
-    if (input.teammateId === user.id) {
-      throw new Error("Teammate cannot be the submitter.");
-    }
-
-    if (!input.isIronMan) {
-      if (!input.teammateId || !teammateType || !teammate) {
-        throw new Error("Normal spars require a valid teammate.");
+    for (const teammateInput of teammatesInput) {
+      const teammateType = toTeammateType(teammateInput.role);
+      if (!teammateType) {
+        throw new Error("Selected teammate role is invalid.");
       }
-      const teammateExists = await repository.participantExists(input.teammateId, teammateType);
+      if (teammateInput.id === user.id) {
+        throw new Error("Teammate cannot be the submitter.");
+      }
+      const key = `${teammateInput.role}:${teammateInput.id}`;
+      if (teammateKeys.has(key)) {
+        throw new Error("Teammates cannot be duplicated.");
+      }
+      teammateKeys.add(key);
+
+      const teammateExists = await repository.participantExists(teammateInput.id, teammateType);
       if (!teammateExists) {
         throw new Error("Selected teammate does not exist or is not verified.");
       }
+      teammateRefs.push(toParticipantRef(teammateInput.id, teammateType));
     }
 
+    if (debateFormat === "BP" && !input.isIronMan && teammateRefs.length !== 1) {
+      throw new Error("Normal BP spars require exactly one teammate.");
+    }
+    if (debateFormat === "AP" && teammateRefs.length > 2) {
+      throw new Error("AP spars can include at most two teammates.");
+    }
+
+    const primaryTeammate = teammateRefs[0] ?? null;
     const duplicateExists = await repository.checkDuplicate({
       sparDate: new Date(input.sparDate),
-      bpPosition: input.bpPosition,
+      debateFormat,
+      bpPosition: debateFormat === "BP" ? input.bpPosition ?? null : null,
+      apSide: debateFormat === "AP" ? input.apSide ?? null : null,
       submitter,
-      teammate,
+      teammate: primaryTeammate,
     });
     if (duplicateExists) {
-      throw new Error("Duplicate spar submission for this date, position, and teammate.");
+      throw new Error("Duplicate spar submission for this date and format.");
     }
 
     const created = await repository.createSpar({
       sparDate: new Date(input.sparDate),
       motionType: input.motionType,
       motionText: input.motionText ?? null,
-      bpPosition: input.bpPosition,
+      debateFormat,
+      bpPosition: debateFormat === "BP" ? input.bpPosition ?? null : null,
+      apSide: debateFormat === "AP" ? input.apSide ?? null : null,
       isIronMan: input.isIronMan,
       teamRank: input.teamRank,
-      teamResultPoints: teamRankToResultPoints(input.teamRank),
+      teamResultPoints: teamRankToResultPoints(input.teamRank, debateFormat),
       submitter,
-      teammate,
+      teammate: primaryTeammate,
+      teammates: teammateRefs,
       speakerScores: input.speakerScores,
     });
 
@@ -141,8 +171,8 @@ export function createSparService(
     }
 
     await metricHooks.updateLearnedMetricsForParticipant?.(deleted.participantId);
-    if (!deleted.isIronMan && deleted.teammateId) {
-      await metricHooks.updatePairMetricForParticipants?.(deleted.participantId, deleted.teammateId);
+    for (const teammateId of deleted.teammateIds) {
+      await metricHooks.updatePairMetricForParticipants?.(deleted.participantId, teammateId);
     }
     await invalidateTags([CACHE_TAGS.leaderboard, CACHE_TAGS.progress]);
     return { deleted: true };
