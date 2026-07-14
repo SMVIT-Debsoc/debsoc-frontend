@@ -36,6 +36,7 @@ type PairingDashboardProps = {
 
 type PairingDataState = {
   participants: Participant[];
+  sparParticipants: Participant[];
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
@@ -62,6 +63,7 @@ const BOTTOM_NAV_LABELS: Record<string, string> = {
 
 const INITIAL_STATE: PairingDataState = {
   participants: [],
+  sparParticipants: [],
   sessions: [],
   attendanceHistory: [],
   speakerLeaderboard: [],
@@ -407,6 +409,7 @@ export default function PairingDashboard({
       userId={userId}
       position={position}
       participants={state.participants}
+      sparParticipants={state.sparParticipants}
       sessions={state.sessions}
       onSessionsChange={(sessions) =>
         setState((current) => ({ ...current, sessions }))
@@ -440,6 +443,7 @@ export default function PairingDashboard({
       sessions={state.sessions}
       attendanceHistory={state.attendanceHistory}
       participants={state.participants}
+      sparParticipants={state.sparParticipants}
       speakerLeaderboard={state.speakerLeaderboard}
       speakerRounds={state.speakerRounds}
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
@@ -631,7 +635,7 @@ function LogoutButton() {
 
 async function fetchPrimaryData(role: string) {
   if (role === "cabinet" || role === "President" || role === "TechHead") {
-    const [bootstrap, attendance, progress] = await Promise.all([
+    const [bootstrap, attendance, progress, sparRoster] = await Promise.all([
       fetchJson<{
         members: ApiMember[];
         cabinet: ApiCabinet[];
@@ -642,10 +646,19 @@ async function fetchPrimaryData(role: string) {
       role === "TechHead"
         ? Promise.resolve({ participants: [] as ApiProgressSummary[] })
         : fetchJson<{ participants: ApiProgressSummary[] }>("/api/progress/members"),
+      role === "TechHead"
+        ? Promise.resolve(null)
+        : fetchJson<{
+            members: ApiMember[];
+            cabinet: ApiCabinet[];
+            presidents?: ApiPresident[];
+          }>("/api/spar/participants"),
     ]);
+    const participants = normalizeParticipants(bootstrap);
 
     return {
-      participants: normalizeParticipants(bootstrap),
+      participants,
+      sparParticipants: sparRoster ? normalizeParticipants(sparRoster) : participants,
       sessions: bootstrap.sessions.map(normalizeAdminSession),
       attendanceHistory: (attendance.attendance ?? []).map(normalizeAttendanceHistory),
       progressSummaries: (progress.participants ?? []).map(normalizeProgressSummary),
@@ -667,6 +680,7 @@ async function fetchPrimaryData(role: string) {
 
   return {
     participants: normalizeParticipants(sparRoster),
+    sparParticipants: normalizeParticipants(sparRoster),
     sessions: mergeParticipantSessions(
       deriveSessionsFromAttendance(attendanceHistory),
       (attendance.publishedSessions ?? []).map(normalizeParticipantSession),

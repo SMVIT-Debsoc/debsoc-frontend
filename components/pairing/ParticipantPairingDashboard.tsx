@@ -51,6 +51,7 @@ type ParticipantPairingDashboardProps = {
   sessions: SessionRow[];
   attendanceHistory: AttendanceHistoryItem[];
   participants: Participant[];
+  sparParticipants: Participant[];
   speakerLeaderboard: SpeakerLeaderboardRow[];
   speakerRounds: number;
   adjudicatorLeaderboard: AdjudicatorLeaderboardRow[];
@@ -74,6 +75,7 @@ export default function ParticipantPairingDashboard({
   sessions,
   attendanceHistory,
   participants,
+  sparParticipants,
   speakerLeaderboard,
   speakerRounds,
   adjudicatorLeaderboard,
@@ -149,7 +151,7 @@ export default function ParticipantPairingDashboard({
           view="adjudicators"
         />
       )}
-      {activeTab === "Spars" && <SparManagement participants={participants} currentUserId={userId} />}
+      {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
       {activeTab === "Sessions" && (
         <Sessions
           mode="participant"

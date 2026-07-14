@@ -59,6 +59,7 @@ type AdminPairingDashboardProps = {
   userId?: string | null;
   position?: string | null;
   participants: Participant[];
+  sparParticipants: Participant[];
   sessions: SessionRow[];
   onSessionsChange: (sessions: SessionRow[]) => void;
   attendanceHistory: AttendanceHistoryItem[];
@@ -86,6 +87,7 @@ export default function AdminPairingDashboard({
   userId = null,
   position = null,
   participants,
+  sparParticipants,
   sessions,
   onSessionsChange,
   attendanceHistory,
@@ -179,7 +181,7 @@ export default function AdminPairingDashboard({
           adjudicatorLeaderboard={adjudicatorLeaderboard}
         />
       )}
-      {activeTab === "Spars" && <SparManagement participants={participants} currentUserId={userId} />}
+      {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}
