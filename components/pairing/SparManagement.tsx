@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Card, EmptyState, Field, Pill, PrimaryButton, SecondaryButton, SectionHeader } from "./ui";
 import type { Participant } from "./types";
 import { benchPositions } from "@/types/pairing";
@@ -12,12 +12,10 @@ import {
   sparRolesByPosition,
   type ApSide,
   type SparDebateFormat,
-  type SparHistoryResponse,
   type SparLeaderboardResponse,
   type SparSpeakingRole,
 } from "@/types/spar";
 
-const DEFAULT_HISTORY: SparHistoryResponse = { records: [], pagination: { page: 1, limit: 20, totalPages: 0, totalRecords: 0 } };
 const DEFAULT_LEADERBOARD: SparLeaderboardResponse = { rankings: [], myRank: null, totalParticipants: 0, pagination: { page: 1, limit: 20, totalPages: 0 } };
 
 const inputClass =
@@ -31,14 +29,6 @@ function todayInputValue() {
 function participantRoleForApi(account: Participant["account"]) {
   if (account === "Cabinet") return "cabinet";
   return account;
-}
-
-function formatSparDate(value: string) {
-  return value.slice(0, 10);
-}
-
-function formatSparScores(record: SparHistoryResponse["records"][number]) {
-  return record.speakerScores.map((score) => `${score.speakingRole.replace("_", " ")} ${score.speakerScore}`).join(", ");
 }
 
 function RankDoodle({ rank }: { rank: number }) {
@@ -85,11 +75,6 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
-function formatSparPosition(record: SparHistoryResponse["records"][number]) {
-  const base = record.debateFormat === "AP" ? `AP ${record.apSide ?? ""}` : `BP ${record.bpPosition ?? ""}`;
-  return `${base}${record.isIronMan ? " - Iron Man" : ""}`;
-}
-
 export default function SparManagement({
   participants,
   currentUserId = null,
@@ -114,13 +99,13 @@ export default function SparManagement({
   const [secondScore, setSecondScore] = useState("");
   const [thirdScore, setThirdScore] = useState("");
   const [teamRank, setTeamRank] = useState("1");
-  const [history, setHistory] = useState<SparHistoryResponse>(DEFAULT_HISTORY);
   const [leaderboard, setLeaderboard] = useState<SparLeaderboardResponse>(DEFAULT_LEADERBOARD);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const roles = debateFormat === "AP" ? sparRolesByApSide[apSide] : sparRolesByPosition[bpPosition];
     setSelectedRole(roles[0]);
@@ -150,13 +135,8 @@ export default function SparManagement({
     setLoading(true);
     setError(null);
     try {
-      const [historyResponse, leaderboardResponse] = await Promise.all([
-        fetch("/api/spar/history", { cache: "no-store" }),
-        fetch("/api/spar/leaderboard", { cache: "no-store" }),
-      ]);
-      if (!historyResponse.ok) throw new Error("Could not load spar history.");
+      const leaderboardResponse = await fetch("/api/spar/leaderboard", { cache: "no-store" });
       if (!leaderboardResponse.ok) throw new Error("Could not load spar leaderboard.");
-      setHistory(await historyResponse.json());
       setLeaderboard(await leaderboardResponse.json());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not load spar data.");
@@ -168,6 +148,7 @@ export default function SparManagement({
   useEffect(() => {
     void loadSparData();
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -219,20 +200,9 @@ export default function SparManagement({
     }
   }
 
-  async function removeSpar(sparId: string) {
-    setError(null);
-    const response = await fetch(`/api/spar/${sparId}`, { method: "DELETE" });
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      setError(typeof body.message === "string" ? body.message : "Spar delete failed.");
-      return;
-    }
-    await loadSparData();
-  }
-
   return (
     <div className="space-y-5">
-      <SectionHeader title="Spars" subtitle="Submit practice rounds and track spar ranking." right={<SecondaryButton type="button" onClick={() => void loadSparData()}>Refresh</SecondaryButton>} />
+      <SectionHeader title="Spars" subtitle="Submit practice rounds and track spar ranking." right={<SecondaryButton type="button" disabled={loading} onClick={() => void loadSparData()}><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</SecondaryButton>} />
       {(message || error) && <div className={`rounded-xl px-4 py-3 text-sm ${error ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"}`}>{error ?? message}</div>}
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
@@ -265,23 +235,6 @@ export default function SparManagement({
           </div>
         </Card>
       </div>
-
-      <Card className="p-4 sm:p-6">
-        <SectionHeader title="My Spar History" />
-        {loading ? <EmptyState title="Loading" body="Fetching your spar history." /> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : (
-          <>
-            <div className="space-y-3 sm:hidden">
-              {history.records.map((record) => (
-                <div key={record.id} className="rounded-xl border border-slate-200/70 bg-white/55 p-3 text-sm dark:border-white/10 dark:bg-white/[0.04]">
-                  <div className="flex min-w-0 items-start justify-between gap-3"><div className="min-w-0"><div className="truncate font-semibold text-slate-900 dark:text-slate-100">{record.motionType}</div><div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{formatSparDate(record.sparDate)}</div></div><button className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10" onClick={() => void removeSpar(record.id)} type="button" aria-label="Delete spar"><Trash2 size={16} /></button></div>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div><span className="block text-slate-500 dark:text-slate-400">Format</span><span className="font-medium text-slate-800 dark:text-slate-100">{formatSparPosition(record)}</span></div><div><span className="block text-slate-500 dark:text-slate-400">Rank</span><span className="font-medium text-slate-800 dark:text-slate-100">{record.teamRank}</span></div><div className="col-span-2"><span className="block text-slate-500 dark:text-slate-400">Scores</span><span className="break-words font-medium text-slate-800 dark:text-slate-100">{formatSparScores(record)}</span></div></div>
-                </div>
-              ))}
-            </div>
-            <div className="hidden sm:block"><table className="min-w-full table-fixed text-sm"><thead className="text-left text-xs uppercase text-slate-500"><tr><th className="w-[15%] px-3 py-2">Date</th><th className="w-[20%] px-3 py-2">Motion</th><th className="w-[24%] px-3 py-2">Format</th><th className="w-[10%] px-3 py-2">Rank</th><th className="px-3 py-2">Scores</th><th className="w-12 px-3 py-2"></th></tr></thead><tbody>{history.records.map((record) => <tr key={record.id} className="border-t border-slate-200/70 dark:border-white/10"><td className="px-3 py-3">{formatSparDate(record.sparDate)}</td><td className="truncate px-3 py-3">{record.motionType}</td><td className="px-3 py-3">{formatSparPosition(record)}</td><td className="px-3 py-3">{record.teamRank}</td><td className="px-3 py-3">{formatSparScores(record)}</td><td className="px-3 py-3 text-right"><button className="inline-flex min-h-[36px] items-center rounded-lg px-2 text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10" onClick={() => void removeSpar(record.id)} type="button" aria-label="Delete spar"><Trash2 size={16} /></button></td></tr>)}</tbody></table></div>
-          </>
-        )}
-      </Card>
     </div>
   );
 }

@@ -93,7 +93,7 @@ export default function ParticipantPairingDashboard({
   return (
     // The dashboard shell's <main> already applies page padding; padding here
     // doubled every margin on mobile.
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto w-full max-w-[1440px]">
       {activeTab === "Home" && (
         <HomeDashboard
           role={role}

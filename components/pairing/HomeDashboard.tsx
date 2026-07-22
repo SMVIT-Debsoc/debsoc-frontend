@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, Trophy, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Calendar, ChevronRight, Gauge, MessageCircle, Swords, Trophy, Users } from "lucide-react";
 import { Card, EmptyState, Pill, PrimaryButton } from "./ui";
 import { usePairingRealtime } from "./usePairingRealtime";
 import type {
@@ -112,6 +112,7 @@ export default function HomeDashboard({
     },
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let cancelled = false;
 
@@ -199,6 +200,7 @@ export default function HomeDashboard({
       cancelled = true;
     };
   }, [currentParticipantId, profileVersion]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const motionPerformance = useMemo<MotionPerformance[]>(() => {
     if (!progressProfile) {
@@ -233,16 +235,13 @@ export default function HomeDashboard({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-          Welcome, {positionLabel}
-        </h1>
-        {isAdmin && onOpenWorkspace ? (
-          <PrimaryButton onClick={onOpenWorkspace}>
-            Open session workspace
-            <ArrowRight size={16} />
-          </PrimaryButton>
-        ) : null}
+      <div className="mb-6 flex flex-col gap-5 rounded-[28px] border border-white/10 bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,.06)] sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+        <div><p className="mb-2 text-xs font-medium uppercase tracking-[.2em] text-slate-500">{positionLabel}</p><h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-4xl">Welcome, {userName.trim() || positionLabel}</h1><p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Your debating workspace, pairing progress, and latest performance.</p></div>
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <button type="button" disabled title="Chat / New Q&A (coming soon)" aria-label="Chat / New Q&A (coming soon)" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 text-sm font-medium text-slate-800 transition hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-100"><MessageCircle size={16} /> Chat / New Q&A</button>
+          <button type="button" disabled title="Mock Drill / Start Drill (coming soon)" aria-label="Mock Drill / Start Drill (coming soon)" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:cursor-not-allowed disabled:opacity-60"><Swords size={16} /> Mock Drill / Start Drill</button>
+          {isAdmin && onOpenWorkspace ? <PrimaryButton onClick={onOpenWorkspace}>Open session workspace <ArrowRight size={16} /></PrimaryButton> : null}
+        </div>
       </div>
 
       <div className="stagger-children grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -549,5 +548,3 @@ function deriveLastSessionDetails(
     pairingLabel: `Room ${room.roomIndex}`,
   };
 }
-
-

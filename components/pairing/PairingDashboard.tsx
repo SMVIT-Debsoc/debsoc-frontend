@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
@@ -86,6 +86,7 @@ export default function PairingDashboard({
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<AdminTab>("Home");
   const [participantTab, setParticipantTab] = useState<ParticipantTab>("Home");
@@ -96,6 +97,8 @@ export default function PairingDashboard({
     [isAdminView],
   );
   const activeTab = isAdminView ? adminTab : participantTab;
+  useEffect(() => { setSidebarCollapsed(window.localStorage.getItem("debsoc-dashboard-sidebar") !== "expanded"); }, []);
+  const toggleSidebar = () => setSidebarCollapsed((value) => { const next = !value; window.localStorage.setItem("debsoc-dashboard-sidebar", next ? "collapsed" : "expanded"); return next; });
 
   // Restore the active tab from the URL on mount, then keep the URL in sync,
   // so a browser refresh stays on the tab being viewed instead of Home.
@@ -354,7 +357,7 @@ export default function PairingDashboard({
       .filter((tab): tab is (typeof navTabs)[number] => Boolean(tab));
   }, [isAdminView, navTabs]);
 
-  const renderNav = (pillId: string, onSelect: (key: string) => void = selectTab) => (
+  const renderNav = (pillId: string, onSelect: (key: string) => void = selectTab, collapsed = false) => (
     <nav className="flex flex-col gap-1">
       {navTabs.map((entry) => {
         const isActive = activeTab === entry.key;
@@ -363,22 +366,24 @@ export default function PairingDashboard({
             key={entry.key}
             type="button"
             onClick={() => onSelect(entry.key)}
-            className={`relative flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+            title={collapsed ? entry.label : undefined}
+            aria-label={entry.label}
+            className={`relative flex min-h-[44px] items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} rounded-2xl py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50 ${
               isActive
-                ? "text-white"
-                : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
+                ? "text-slate-950 bg-slate-900/[0.08] ring-1 ring-slate-900/10 dark:text-white dark:bg-white/[0.10] dark:ring-white/10"
+                : "text-slate-700 hover:bg-slate-900/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
             }`}
           >
             {isActive && (
               <motion.span
                 layoutId={pillId}
-                className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 shadow-sm shadow-indigo-600/30"
+                className="absolute inset-0 rounded-2xl bg-transparent dark:bg-white/[0.04]"
                 transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
               />
             )}
             <span className="relative z-10 flex items-center gap-3">
               {entry.icon}
-              <span>{entry.label}</span>
+              {!collapsed && <span>{entry.label}</span>}
             </span>
           </button>
         );
@@ -488,7 +493,7 @@ export default function PairingDashboard({
 
   return (
     <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
-      <PairingBackdrop key={activeTab} />
+      <PairingBackdrop />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
         <div className="-ml-1 flex min-w-0 items-center gap-2 font-semibold tracking-tight">
@@ -509,17 +514,16 @@ export default function PairingDashboard({
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="glass-sidebar relative z-10 hidden w-72 flex-col p-5 lg:sticky lg:top-0 lg:flex lg:h-screen">
-        <div className="mb-8 flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
+      <aside className={`glass-sidebar relative z-10 hidden shrink-0 flex-col p-4 transition-[width] duration-300 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:rounded-[28px] ${sidebarCollapsed ? "w-[76px]" : "w-72"}`}>
+        <div className="mb-5 flex flex-wrap items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
           <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
-          <span>{brand}</span>
+          {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
         </div>
-
-        {renderNav("pairing-nav-pill-desktop")}
-
-        <div className="mt-auto flex items-center gap-2 pt-6">
-          <ThemeToggle />
-          <LogoutButton />
+        {!sidebarCollapsed && <div className="mb-4"><ThemeToggle /></div>}
+        <div className="mb-3 flex justify-end"><button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500"><>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</></button></div>
+        {renderNav("pairing-nav-pill-desktop", selectTab, sidebarCollapsed)}
+        <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-5">
+          <LogoutButton collapsed={sidebarCollapsed} />
         </div>
       </aside>
 
@@ -597,13 +601,13 @@ export default function PairingDashboard({
               aria-current={isActive ? "page" : undefined}
               className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 px-1 pt-1.5 text-[10px] font-medium transition-colors ${
                 isActive
-                  ? "text-indigo-600 dark:text-indigo-400"
-                  : "text-slate-500 dark:text-slate-400"
+                  ? "text-slate-950 dark:text-white"
+                  : "text-slate-600 dark:text-slate-400"
               }`}
             >
               <span
                 className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${
-                  isActive ? "bg-indigo-600/10 dark:bg-indigo-400/15" : ""
+                  isActive ? "bg-slate-900/10 ring-1 ring-slate-900/10 dark:bg-white/15 dark:ring-white/10" : ""
                 }`}
               >
                 {entry.icon}
@@ -619,16 +623,17 @@ export default function PairingDashboard({
   );
 }
 
-function LogoutButton() {
+function LogoutButton({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <button
       type="button"
       aria-label="Log out"
       onClick={() => signOut({ callbackUrl: "/" })}
-      className="inline-flex h-10 items-center gap-2 rounded-xl border border-red-500/40 bg-red-500 px-4 text-sm font-semibold text-white shadow-sm shadow-red-500/25 transition hover:bg-red-600 active:scale-95 dark:border-red-400/40 dark:bg-red-500/90 dark:hover:bg-red-500"
+      title="Log out"
+      className={`inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-sm font-semibold text-red-700 backdrop-blur-md transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] ${collapsed ? "w-10 px-0" : "flex-1"}`}
     >
       <LogOut size={16} />
-      Logout
+      {!collapsed && "Logout"}
     </button>
   );
 }
@@ -742,8 +747,8 @@ async function fetchJson<T>(url: string): Promise<T> {
     });
 
     if (!response.ok) {
-      const fallback = `Request failed for ${url}`;
-      throw new Error(await readApiError(response, fallback));
+      const fallback = `Request failed for ${url} (HTTP ${response.status})`;
+      throw new Error(await readApiError(response, fallback, response.status));
     }
 
     return (await response.json()) as T;
@@ -758,11 +763,11 @@ async function fetchJson<T>(url: string): Promise<T> {
   }
 }
 
-async function readApiError(response: Response, fallback: string) {
+async function readApiError(response: Response, fallback: string, status: number) {
   try {
     const data = (await response.json()) as { message?: string };
     if (data.message && data.message.trim()) {
-      return data.message;
+      return process.env.NODE_ENV === "development" ? `${data.message} (HTTP ${status})` : data.message;
     }
   } catch {
     return fallback;
