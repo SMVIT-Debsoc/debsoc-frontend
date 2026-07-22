@@ -519,10 +519,10 @@ export default function PairingDashboard({
           <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
           {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
         </div>
-        {!sidebarCollapsed && <div className="mb-4"><ThemeToggle /></div>}
-        <div className="mb-3 flex justify-end"><button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500"><>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</></button></div>
+        <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="absolute -right-5 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:border-white/15 dark:bg-[#171717]/90 dark:text-slate-200 dark:hover:bg-[#222]"><>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</></button>
         {renderNav("pairing-nav-pill-desktop", selectTab, sidebarCollapsed)}
-        <div className="mt-auto flex items-center gap-2 border-t border-white/10 pt-5">
+        <div className="mt-auto flex flex-col items-stretch gap-2 border-t border-black/10 pt-5 dark:border-white/10">
+          {!sidebarCollapsed && <ThemeToggle />}
           <LogoutButton collapsed={sidebarCollapsed} />
         </div>
       </aside>

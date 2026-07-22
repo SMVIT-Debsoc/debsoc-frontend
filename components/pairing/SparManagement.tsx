@@ -13,10 +13,12 @@ import {
   type ApSide,
   type SparDebateFormat,
   type SparLeaderboardResponse,
+  type SparHistoryResponse,
   type SparSpeakingRole,
 } from "@/types/spar";
 
 const DEFAULT_LEADERBOARD: SparLeaderboardResponse = { rankings: [], myRank: null, totalParticipants: 0, pagination: { page: 1, limit: 20, totalPages: 0 } };
+const DEFAULT_HISTORY: SparHistoryResponse = { records: [], pagination: { page: 1, limit: 20, totalPages: 0, totalRecords: 0 } };
 
 const inputClass =
   "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400";
@@ -30,6 +32,10 @@ function participantRoleForApi(account: Participant["account"]) {
   if (account === "Cabinet") return "cabinet";
   return account;
 }
+
+function formatSparDate(value: string) { return value.slice(0, 10); }
+function formatSparScores(record: SparHistoryResponse["records"][number]) { return record.speakerScores.map((score) => `${score.speakingRole.replace("_", " ")} ${score.speakerScore}`).join(", "); }
+function formatSparPosition(record: SparHistoryResponse["records"][number]) { return `${record.debateFormat === "AP" ? `AP ${record.apSide ?? ""}` : `BP ${record.bpPosition ?? ""}`}${record.isIronMan ? " - Iron Man" : ""}`; }
 
 function RankDoodle({ rank }: { rank: number }) {
   if (rank === 1) {
@@ -100,6 +106,10 @@ export default function SparManagement({
   const [thirdScore, setThirdScore] = useState("");
   const [teamRank, setTeamRank] = useState("1");
   const [leaderboard, setLeaderboard] = useState<SparLeaderboardResponse>(DEFAULT_LEADERBOARD);
+  const [history, setHistory] = useState<SparHistoryResponse>(DEFAULT_HISTORY);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -143,6 +153,13 @@ export default function SparManagement({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadHistory() {
+    setHistoryLoading(true); setHistoryError(null);
+    try { const response = await fetch("/api/spar/history", { cache: "no-store" }); if (!response.ok) throw new Error("Could not load spar history."); setHistory(await response.json()); }
+    catch (caught) { setHistoryError(caught instanceof Error ? caught.message : "Could not load spar history."); }
+    finally { setHistoryLoading(false); }
   }
 
   useEffect(() => {
@@ -225,16 +242,19 @@ export default function SparManagement({
           </form>
         </Card>
 
-        <Card className="relative min-h-[360px] overflow-hidden p-4 sm:p-6">
-          <div aria-hidden className="pointer-events-none absolute -left-10 top-16 h-44 w-44 rounded-full border border-indigo-400/20 opacity-60 dark:border-indigo-300/20" />
-          <div aria-hidden className="pointer-events-none absolute -right-20 bottom-14 h-24 w-80 -rotate-12 rounded-full border border-sky-400/20 bg-sky-400/[0.04] shadow-[0_0_40px_rgba(59,130,246,0.12)] dark:border-sky-300/15 dark:bg-sky-300/[0.04]" />
-          <div aria-hidden className="pointer-events-none absolute right-28 top-10 h-16 w-56 rotate-20 rounded-full border border-sky-400/20 bg-sky-400/[0.04] dark:border-sky-300/15" />
-          <div className="relative">
+        <Card className="min-h-[360px] overflow-hidden p-4 sm:p-6">
+          <div>
             <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : undefined} />
             {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/60 px-3 py-3 text-sm shadow-sm shadow-slate-950/5 dark:bg-white/[0.045]"><div className="flex h-10 w-10 items-center justify-center"><RankDoodle rank={entry.rank} /></div><div className="min-w-0"><span className="block truncate font-semibold text-slate-900 dark:text-slate-100">{entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
           </div>
         </Card>
       </div>
+      <section className="overflow-hidden rounded-[24px] border border-black/10 bg-white/[0.04] dark:border-white/10" aria-labelledby="spar-history-heading">
+        <button type="button" aria-expanded={historyOpen} aria-controls="spar-history-panel" onClick={() => { const next = !historyOpen; setHistoryOpen(next); if (next && history.records.length === 0 && !historyLoading) void loadHistory(); }} className="flex min-h-[52px] w-full items-center justify-between px-4 text-left text-sm font-medium text-slate-800 transition hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:text-slate-200 dark:hover:bg-white/[0.06]"><span id="spar-history-heading">{historyOpen ? "Hide Spar History" : "Show Spar History"}</span><span aria-hidden>{historyOpen ? "−" : "+"}</span></button>
+        <div id="spar-history-panel" aria-hidden={!historyOpen} className={`pairing-history-panel overflow-hidden ${historyOpen ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
+          {historyOpen && <div className="border-t border-black/10 p-4 dark:border-white/10"><div className="mb-3 flex items-center justify-between"><p className="text-xs text-slate-500">Your submitted practice rounds</p>{historyError && <button type="button" onClick={() => void loadHistory()} className="text-xs font-medium text-red-700 underline dark:text-red-300">Retry</button>}</div>{historyLoading ? <EmptyState title="Loading history" body="Fetching your submitted spars." /> : historyError ? <p className="text-sm text-red-700 dark:text-red-300">{historyError}</p> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : <div className="space-y-2">{history.records.map((record) => <div key={record.id} className="rounded-xl border border-black/10 p-3 text-sm dark:border-white/10"><div className="flex justify-between gap-3"><span className="font-medium">{record.motionType}</span><span className="text-xs text-slate-500">{formatSparDate(record.sparDate)}</span></div><p className="mt-1 text-xs text-slate-500">{formatSparPosition(record)} · rank {record.teamRank} · {formatSparScores(record)}</p></div>)}</div>}</div>}
+        </div>
+      </section>
     </div>
   );
 }

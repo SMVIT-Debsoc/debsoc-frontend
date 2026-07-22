@@ -539,6 +539,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pairing-history-panel {
+    transition: none;
+  }
   .content-enter,
   .stagger-children > *,
   .overlay-fade,
@@ -552,5 +555,15 @@ body {
   }
   .glass-card-hover:hover {
     transform: none;
+  }
+}
+
+.pairing-history-panel {
+  transition: max-height 220ms ease, opacity 180ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pairing-history-panel {
+    transition: none;
   }
 }
