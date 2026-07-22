@@ -2,7 +2,6 @@ import { requireSessionUser } from "@/lib/server/guards";
 import { error, ok } from "@/lib/server/http";
 import { getSparHistory } from "@/lib/server/spar/spar-service";
 import { sparHistoryQuerySchema } from "@/lib/server/validations/spar-validation";
-import { demoSparHistory, isDemoDataEnabled } from "@/lib/server/demo-data";
 
 export async function GET(request: Request) {
   const sessionResult = await requireSessionUser({ roles: ["Member", "cabinet", "President"], requireVerified: true });
@@ -10,8 +9,6 @@ export async function GET(request: Request) {
 
   const parsed = sparHistoryQuerySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) return error("Invalid spar history query", 400, { issues: parsed.error.flatten() });
-
-  if (isDemoDataEnabled()) return ok(demoSparHistory);
 
   try {
     return ok(await getSparHistory(sessionResult.user, parsed.data));
