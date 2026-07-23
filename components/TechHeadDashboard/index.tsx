@@ -25,6 +25,8 @@ import {signOut} from "next-auth/react";
 import Image from "next/image";
 import PairingDashboard from "@/components/pairing/PairingDashboard";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import PairingBackdrop from "@/components/pairing/PairingBackdrop";
+import ThemeToggle from "@/components/pairing/ThemeToggle";
 
 interface UserRecord {
     id: string;
@@ -56,6 +58,7 @@ export default function TechHeadDashboard() {
     >("pending");
     // Restore the active tab from the URL on mount, then keep the URL in
     // sync, so a browser refresh stays on the tab being viewed.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         const tab = new URLSearchParams(window.location.search).get("tab");
         if (tab === "pending" || tab === "verified" || tab === "pairing") {
@@ -90,7 +93,7 @@ export default function TechHeadDashboard() {
                 setUnverified(await unres.json());
                 setVerified(await verres.json());
             }
-        } catch (error) {
+        } catch {
             toast.error("Failed to fetch users");
         } finally {
             setLoading(false);
@@ -100,6 +103,7 @@ export default function TechHeadDashboard() {
     useEffect(() => {
         fetchData();
     }, []);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handleAction = async (
         role: string,
@@ -125,7 +129,7 @@ export default function TechHeadDashboard() {
                 const err = await res.json();
                 toast.error(err.message || `Failed to ${action} user`);
             }
-        } catch (error) {
+        } catch {
             toast.error("An error occurred");
         }
     };
@@ -225,7 +229,7 @@ export default function TechHeadDashboard() {
                             animate={{opacity: 1, y: 0}}
                             exit={{opacity: 0, scale: 0.95}}
                             key={user.id}
-                            className="group relative flex items-center justify-between p-4 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.05] rounded-2xl transition-all duration-300"
+                            className="glass-card group relative flex items-center justify-between rounded-[20px] p-4 transition-all duration-300 hover:-translate-y-0.5"
                         >
                             <div className="flex items-center gap-4">
                                 <ProfileAvatar
@@ -236,16 +240,16 @@ export default function TechHeadDashboard() {
                                 />
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm font-medium text-white">
+                                        <p className="text-sm font-medium text-slate-950 dark:text-white">
                                             {user.name}
                                         </p>
                                         {user.position && (
-                                            <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[9px] uppercase tracking-tighter rounded-md border border-indigo-500/20">
+                                            <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[9px] uppercase tracking-tight text-violet-800 dark:text-violet-300">
                                                 {user.position}
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-zinc-500 font-light">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {user.email}
                                     </p>
                                 </div>
@@ -261,7 +265,7 @@ export default function TechHeadDashboard() {
                                                 "verify",
                                             )
                                         }
-                                        className="p-2 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white rounded-lg transition-all"
+                                        className="rounded-full border border-emerald-600/20 bg-emerald-500/10 p-2 text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white dark:text-emerald-300"
                                         title="Verify User"
                                     >
                                         <UserCheck size={16} />
@@ -275,7 +279,7 @@ export default function TechHeadDashboard() {
                                                 "unverify",
                                             )
                                         }
-                                        className="p-2 bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white rounded-lg transition-all"
+                                        className="rounded-full border border-amber-600/20 bg-amber-500/10 p-2 text-amber-700 transition-all hover:bg-amber-500 hover:text-white dark:text-amber-300"
                                         title="Unverify User"
                                     >
                                         <UserMinus size={16} />
@@ -302,8 +306,8 @@ export default function TechHeadDashboard() {
                                             }
                                             className={`p-2 rounded-lg transition-all ${
                                                 t.direction === "promote"
-                                                    ? "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500 hover:text-white"
-                                                    : "bg-sky-500/10 text-sky-400 hover:bg-sky-500 hover:text-white"
+                                                    ? "border border-violet-600/20 bg-violet-500/10 text-violet-800 hover:bg-violet-500 hover:text-white dark:text-violet-300"
+                                                    : "border border-sky-600/20 bg-sky-500/10 text-sky-800 hover:bg-sky-500 hover:text-white dark:text-sky-300"
                                             }`}
                                             title={`${t.direction === "promote" ? "Promote" : "Demote"} to ${t.toRole}`}
                                         >
@@ -318,7 +322,7 @@ export default function TechHeadDashboard() {
                                     onClick={() =>
                                         handleAction(role, user.id, "delete")
                                     }
-                                    className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all"
+                                    className="rounded-full border border-red-600/20 bg-red-500/10 p-2 text-red-700 transition-all hover:bg-red-500 hover:text-white dark:text-red-300"
                                     title="Delete User"
                                 >
                                     <Trash2 size={16} />
@@ -326,7 +330,7 @@ export default function TechHeadDashboard() {
                             </div>
 
                             <div className="text-right group-hover:opacity-0 transition-opacity pr-2 hidden sm:block">
-                                <p className="text-[10px] text-zinc-600 font-mono">
+                                <p className="font-mono text-[10px] text-slate-500 dark:text-slate-500">
                                     {new Date(
                                         user.createdAt,
                                     ).toLocaleDateString()}
@@ -340,7 +344,8 @@ export default function TechHeadDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-[#030303] text-zinc-100 p-6 md:p-12 lg:p-20 font-sans">
+        <div className="pairing-shell relative min-h-screen overflow-x-hidden bg-[#f2eee8] p-4 text-slate-900 dark:bg-[#0a0a0a] dark:text-slate-100 sm:p-6 lg:p-8">
+            <PairingBackdrop />
             <Toaster
                 position="bottom-right"
                 toastOptions={{
@@ -351,17 +356,17 @@ export default function TechHeadDashboard() {
                     },
                 }}
             />
-            <div className="max-w-6xl mx-auto">
-                <header className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-8">
+            <div className="relative z-10 mx-auto w-full max-w-[1440px]">
+                <header className="glass-card mb-6 flex flex-col gap-5 rounded-[28px] p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <motion.div
                             initial={{x: -20, opacity: 0}}
                             animate={{x: 0, opacity: 1}}
-                            className="flex items-center gap-2 text-zinc-500 text-xs uppercase tracking-[0.3em] font-light mb-2"
+                            className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400"
                         >
                             <ShieldCheck
                                 size={14}
-                                className="text-white opacity-50"
+                                className="text-slate-700 dark:text-slate-200"
                             />
                             Technical Administration
                         </motion.div>
@@ -373,23 +378,23 @@ export default function TechHeadDashboard() {
                                 height={36}
                                 className="object-contain"
                             />
-                            <h1 className="text-3xl md:text-4xl font-extralight tracking-tight text-white italic">
+                            <h1 className="text-3xl font-medium tracking-tight text-slate-950 dark:text-white sm:text-4xl">
                                 Tech Head{" "}
-                                <span className="font-bold not-italic">
+                                    <span className="font-semibold">
                                     Dashboard
                                 </span>
                             </h1>
                         </div>
-                        <p className="text-zinc-500 text-sm font-light">
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
                             Verify and manage all society members and
                             executives.
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="relative flex-1 sm:flex-none">
                             <Search
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
                                 size={16}
                             />
                             <input
@@ -397,16 +402,16 @@ export default function TechHeadDashboard() {
                                 placeholder="Search users..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-6 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20 transition-all w-full sm:w-64"
+                                className="h-11 w-full rounded-full border border-slate-900/10 bg-white/70 py-3 pl-12 pr-6 text-sm text-slate-950 outline-none transition focus:ring-2 focus:ring-violet-400/60 dark:border-white/10 dark:bg-white/[0.08] dark:text-white sm:w-64"
                             />
                         </div>
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setActiveTab("pairing")}
-                                className={`flex-1 sm:flex-none px-4 py-3.5 border rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 text-sm ${
+                                    className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm transition-all active:scale-95 sm:flex-none ${
                                     activeTab === "pairing"
-                                        ? "bg-white text-black border-white"
-                                        : "bg-white/5 border-white/10 text-white hover:bg-white/10"
+                                        ? "border-slate-900/10 bg-slate-950 text-white dark:border-white/10 dark:bg-white dark:text-slate-950"
+                                        : "border-slate-900/10 bg-white/60 text-slate-800 hover:bg-white dark:border-white/10 dark:bg-white/[0.08] dark:text-slate-100 dark:hover:bg-white/[0.14]"
                                 }`}
                                 title="Pairing dashboard"
                             >
@@ -415,16 +420,17 @@ export default function TechHeadDashboard() {
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="flex-1 sm:flex-none p-3.5 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all active:scale-95 text-white flex items-center justify-center"
+                                className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-slate-900/10 bg-white/60 px-4 text-slate-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:border-white/10 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.14] sm:flex-none"
                             >
                                 <RefreshCw
                                     size={18}
                                     className={loading ? "animate-spin" : ""}
                                 />
                             </button>
+                            <ThemeToggle />
                             <button
                                 onClick={() => signOut({callbackUrl: "/login"})}
-                                className="flex-1 sm:flex-none p-3.5 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl hover:bg-red-500 hover:text-white transition-all active:scale-95 flex items-center justify-center"
+                                className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-red-700 transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] sm:flex-none"
                                 title="Log Out"
                             >
                                 <LogOut size={18} />
@@ -433,7 +439,7 @@ export default function TechHeadDashboard() {
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                     {[
                         {
                             label: "Pending Verification",
@@ -465,17 +471,17 @@ export default function TechHeadDashboard() {
                             animate={{y: 0, opacity: 1}}
                             transition={{delay: i * 0.1}}
                             key={stat.label}
-                            className="bg-white/[0.02] border border-white/[0.05] p-6 rounded-3xl"
+                            className="glass-card rounded-[24px] p-5 sm:p-6"
                         >
                             <stat.icon
-                                className={`${stat.color} mb-4 opacity-80`}
+                                className={`${stat.color} mb-4 opacity-80 dark:brightness-125`}
                                 size={24}
                                 strokeWidth={1.5}
                             />
-                            <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-bold mb-1">
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
                                 {stat.label}
                             </p>
-                            <p className="text-3xl font-light text-white">
+                            <p className="text-3xl font-medium text-slate-950 dark:text-white">
                                 {stat.count !== undefined
                                     ? stat.count
                                     : stat.value}
@@ -484,8 +490,8 @@ export default function TechHeadDashboard() {
                     ))}
                 </div>
 
-                <div className="mb-10">
-                    <div className="flex gap-8 border-b border-white/5">
+                <div className="glass-card mb-6 rounded-[24px] p-2">
+                    <div className="flex flex-wrap gap-1 border-b border-slate-900/10 dark:border-white/10">
                         {[
                             {id: "pending", label: "Pending", icon: Clock},
                             {
@@ -496,15 +502,15 @@ export default function TechHeadDashboard() {
                         ].map((tab) => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2 pb-4 text-[10px] uppercase tracking-[0.2em] font-bold transition-all relative ${activeTab === tab.id ? "text-white" : "text-zinc-600 hover:text-zinc-400"}`}
+                                onClick={() => setActiveTab(tab.id as "pending" | "verified" | "pairing")}
+                                className={`relative flex min-h-11 items-center gap-2 rounded-full px-4 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 ${activeTab === tab.id ? "bg-slate-950 text-white dark:bg-white/[0.12] dark:text-white" : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"}`}
                             >
                                 <tab.icon size={12} />
                                 {tab.label}
                                 {activeTab === tab.id && (
                                     <motion.div
                                         layoutId="tab-active"
-                                        className="absolute bottom-0 left-0 w-full h-0.5 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                    className="hidden"
                                     />
                                 )}
                             </button>

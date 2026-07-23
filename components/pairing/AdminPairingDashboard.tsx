@@ -109,7 +109,7 @@ export default function AdminPairingDashboard({
   activeTab = "Home",
 }: AdminPairingDashboardProps) {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto w-full max-w-[1440px]">
       {activeTab === "Home" && (
         <HomeDashboard
           role={role}
@@ -188,7 +188,6 @@ export default function AdminPairingDashboard({
     </div>
   );
 }
-
 
 
 

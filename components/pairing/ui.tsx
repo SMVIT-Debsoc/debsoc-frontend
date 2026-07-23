@@ -11,7 +11,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`glass-card rounded-2xl transition-shadow ${className}`}>
+    <div className={`glass-card rounded-[24px] transition-[transform,box-shadow,border-color] ${className}`}>
       {children}
     </div>
   );
@@ -117,7 +117,7 @@ export function PrimaryButton(
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-indigo-600/25 transition-colors hover:bg-indigo-500 active:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none dark:disabled:bg-white/10 dark:disabled:text-slate-500 ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-45 dark:bg-white ${className}`}
     />
   );
 }
@@ -129,7 +129,7 @@ export function SecondaryButton(
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white/60 px-4 py-2 text-sm font-medium text-slate-800 backdrop-blur-sm transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/10 ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-sm font-medium text-slate-800 backdrop-blur-sm transition hover:bg-black/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/10 ${className}`}
     />
   );
 }
