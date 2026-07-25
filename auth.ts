@@ -6,14 +6,15 @@ import { cookies } from "next/headers";
 
 const isProduction = process.env.NODE_ENV === "production";
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-const nextAuthUrl = process.env.NEXTAUTH_URL;
+const productionAuthUrl = "https://www.smvitdebsoc.com";
+const nextAuthUrl = process.env.NEXTAUTH_URL?.trim().replace(/\/+$/, "");
 
 if (isProduction && !nextAuthSecret) {
   throw new Error("NEXTAUTH_SECRET is required in production.");
 }
 
-if (isProduction && !nextAuthUrl) {
-  throw new Error("NEXTAUTH_URL is required in production.");
+if (isProduction && nextAuthUrl !== productionAuthUrl) {
+  throw new Error(`NEXTAUTH_URL must be ${productionAuthUrl} in production.`);
 }
 
 export const authOptions: NextAuthOptions = {
