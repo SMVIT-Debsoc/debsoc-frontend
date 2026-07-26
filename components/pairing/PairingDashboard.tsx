@@ -381,7 +381,7 @@ export default function PairingDashboard({
                 transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
               />
             )}
-            <span className="relative z-10 flex items-center gap-3">
+            <span className={`relative z-10 flex items-center gap-3 ${collapsed ? "[&>svg]:h-[22px] [&>svg]:w-[22px]" : ""}`}>
               {entry.icon}
               {!collapsed && <span>{entry.label}</span>}
             </span>
@@ -514,16 +514,22 @@ export default function PairingDashboard({
       </div>
 
       {/* Desktop sidebar */}
-      <aside className={`glass-sidebar relative z-10 hidden shrink-0 flex-col p-4 transition-[width] duration-300 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:rounded-[28px] ${sidebarCollapsed ? "w-[76px]" : "w-72"}`}>
-        <div className="mb-5 flex flex-wrap items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
+      <aside className={`glass-sidebar relative z-10 hidden shrink-0 flex-col p-4 transition-[width] duration-300 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:rounded-[28px] ${sidebarCollapsed ? "w-[88px]" : "w-80"}`}>
+        <div className={`mb-5 flex min-h-10 w-full items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "justify-center" : ""}`}>
           <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
           {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
         </div>
-        <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="absolute -right-5 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:border-white/15 dark:bg-[#171717]/90 dark:text-slate-200 dark:hover:bg-[#222]"><>{sidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}</></button>
+        <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="absolute -right-9 top-1/2 z-30 flex h-32 w-20 -translate-y-1/2 items-center justify-center rounded-full bg-transparent p-3 text-slate-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-200">
+          <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/90 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white dark:border-white/15 dark:bg-[#171717]/95 dark:hover:bg-[#252525]">
+            {sidebarCollapsed ? <PanelLeftOpen size={24} /> : <PanelLeftClose size={24} />}
+          </span>
+        </button>
         {renderNav("pairing-nav-pill-desktop", selectTab, sidebarCollapsed)}
-        <div className="mt-auto flex flex-col items-stretch gap-2 border-t border-black/10 pt-5 dark:border-white/10">
+        <div className={`mt-auto flex flex-col gap-2 border-t border-black/10 pt-5 dark:border-white/10 ${sidebarCollapsed ? "items-center" : "items-stretch"}`}>
           {!sidebarCollapsed && <ThemeToggle />}
-          <LogoutButton collapsed={sidebarCollapsed} />
+          <div className={sidebarCollapsed ? "flex w-full justify-center" : "w-full"}>
+            <LogoutButton collapsed={sidebarCollapsed} />
+          </div>
         </div>
       </aside>
 
