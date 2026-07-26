@@ -2,22 +2,38 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { ensureRoleUserByEmail, findRoleUserById, createOrPromoteToTechHead, findRoleUserByEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
+import { PRODUCTION_SITE_URL } from "@/lib/site";
 import { cookies } from "next/headers";
 
 const isProduction = process.env.NODE_ENV === "production";
-const nextAuthSecret = process.env.NEXTAUTH_SECRET;
-const nextAuthUrl = process.env.NEXTAUTH_URL;
+export const isAuthBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+const configuredNextAuthUrl = process.env.NEXTAUTH_URL?.trim().replace(/\/+$/, "");
+const nextAuthUrl = isProduction
+  ? PRODUCTION_SITE_URL
+  : configuredNextAuthUrl || "http://localhost:3000";
 
-if (isProduction && !nextAuthSecret) {
-  throw new Error("NEXTAUTH_SECRET is required in production.");
+// Auth.js reads NEXTAUTH_URL from the environment when it builds OAuth URLs.
+// Supply a safe default without requiring Vercel to expose it during `next build`.
+if (process.env.NEXTAUTH_URL !== nextAuthUrl) {
+  process.env.NEXTAUTH_URL = nextAuthUrl;
 }
 
-if (isProduction && !nextAuthUrl) {
-  throw new Error("NEXTAUTH_URL is required in production.");
+function getRuntimeAuthSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+
+  if (isProduction && !secret) {
+    throw new Error("Authentication is unavailable: NEXTAUTH_SECRET is required at runtime.");
+  }
+
+  return secret;
 }
 
 export const authOptions: NextAuthOptions = {
-  secret: nextAuthSecret,
+  // Lazy evaluation keeps static page-data collection build-safe while still
+  // failing clearly and securely when production authentication is requested.
+  get secret() {
+    return getRuntimeAuthSecret();
+  },
   session: {
     strategy: "jwt",
   },

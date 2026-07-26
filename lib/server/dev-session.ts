@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
-import { authOptions } from "@/auth";
+import { authOptions, isAuthBuildPhase } from "@/auth";
 import { prisma } from "@/lib/server/prisma";
 import type { DebsocRole } from "@/lib/server/roles";
 
@@ -120,6 +120,10 @@ export async function getDevBypassSession(): Promise<Session | null> {
 }
 
 export async function getAppSession(): Promise<Session | null> {
+  if (isAuthBuildPhase) {
+    return null;
+  }
+
   const session = await getServerSession(authOptions);
 
   if (session?.user) {

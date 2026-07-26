@@ -1,7 +1,13 @@
-export const SITE_URL =
+export const PRODUCTION_SITE_URL = "https://www.smvitdebsoc.com";
+
+const configuredSiteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "") ||
-  process.env.NEXTAUTH_URL?.trim().replace(/\/+$/, "") ||
-  "https://www.smvitdebsoc.com";
+  process.env.NEXTAUTH_URL?.trim().replace(/\/+$/, "");
+
+export const SITE_URL =
+  process.env.NODE_ENV === "production"
+    ? PRODUCTION_SITE_URL
+    : configuredSiteUrl || "http://localhost:3000";
 
 export const SITE_NAME = "SMVIT DebSoc";
 export const SITE_DESCRIPTION =

@@ -3,11 +3,13 @@ import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-import { authOptions } from "@/auth";
+import { authOptions, isAuthBuildPhase } from "@/auth";
 import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -73,7 +75,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+  const session = isAuthBuildPhase ? null : await getServerSession(authOptions);
 
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
