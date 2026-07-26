@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
+import { authOptions, isAuthBuildPhase } from "@/auth";
 import { redirect } from "next/navigation";
 
 export const metadata = {
@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default async function PairingDashboardPage() {
-  const session = await getServerSession(authOptions);
+  const session = isAuthBuildPhase ? null : await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/login");
