@@ -33,7 +33,7 @@ export default function LoginClient() {
       document.cookie = `debsoc_promotion_key=${secretKey}; path=/; max-age=60; SameSite=Lax`;
     }
 
-    signIn("google", {callbackUrl: "/dashboard"});
+    signIn("google", {callbackUrl: "https://www.smvitdebsoc.com/dashboard"});
   };
 
   return (

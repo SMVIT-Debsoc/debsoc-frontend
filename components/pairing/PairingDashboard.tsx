@@ -381,7 +381,11 @@ export default function PairingDashboard({
                 transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
               />
             )}
-            <span className={`relative z-10 flex items-center gap-3 ${collapsed ? "[&>svg]:h-[22px] [&>svg]:w-[22px]" : ""}`}>
+            <span
+              className={`relative z-10 flex items-center gap-3 ${
+                collapsed ? "[&>svg]:h-[22px] [&>svg]:w-[22px]" : ""
+              }`}
+            >
               {entry.icon}
               {!collapsed && <span>{entry.label}</span>}
             </span>
@@ -515,7 +519,7 @@ export default function PairingDashboard({
 
       {/* Desktop sidebar */}
       <aside className={`glass-sidebar relative z-10 hidden shrink-0 flex-col p-4 transition-[width] duration-300 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:rounded-[28px] ${sidebarCollapsed ? "w-[88px]" : "w-80"}`}>
-        <div className={`mb-5 flex min-h-10 w-full items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "justify-center" : ""}`}>
+        <div className={`mb-5 flex min-h-9 w-full items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "justify-center" : ""}`}>
           <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
           {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
         </div>
@@ -636,7 +640,7 @@ function LogoutButton({ collapsed = false }: { collapsed?: boolean }) {
       aria-label="Log out"
       onClick={() => signOut({ callbackUrl: "/" })}
       title="Log out"
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-sm font-semibold text-red-700 backdrop-blur-md transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] ${collapsed ? "w-10 px-0" : "flex-1"}`}
+      className={`inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-sm font-semibold text-red-700 backdrop-blur-md transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] ${collapsed ? "h-11 w-11 shrink-0 px-0" : "w-full flex-1"}`}
     >
       <LogOut size={16} />
       {!collapsed && "Logout"}
