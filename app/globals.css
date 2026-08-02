@@ -297,11 +297,7 @@ body {
 .dark .glass-card { background:rgba(22,22,22,.72); border-color:rgba(255,255,255,.1); box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 44px -28px rgba(0,0,0,.7); }
 .glass-sidebar { background:rgba(22,22,22,.72); border:1px solid rgba(255,255,255,.1); box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 20px 60px -32px rgba(0,0,0,.65); }
 :root:not(.dark) .glass-sidebar { background:rgba(255,255,255,.72); border-color:rgba(0,0,0,.08); }
-.ambient-orb { position:absolute; width:min(48vw,42rem); aspect-ratio:1; border-radius:999px; filter:blur(80px); opacity:.16; animation:ambient-drift 18s ease-in-out infinite alternate; }
-.ambient-orb-warm { left:-12rem; top:-12rem; background:#ff9b73; }.ambient-orb-cool { right:-14rem; top:28%; background:#655cff; animation-delay:-7s; }
-.ambient-grain { position:absolute; inset:0; opacity:.035; background-image:radial-gradient(rgba(255,255,255,.12) .5px,transparent .5px); background-size:4px 4px; }
-@keyframes ambient-drift { from{transform:translate3d(0,0,0) scale(1)} to{transform:translate3d(3rem,2rem,0) scale(1.08)} }
-@media (prefers-reduced-motion:reduce){.ambient-orb{animation:none}.glass-card{transition:none}}
+@media (prefers-reduced-motion:reduce){.glass-card{transition:none}}
 
 /* Final dashboard-only surface and native-control contract. */
 .pairing-shell { position: relative; isolation: isolate; overflow-x: clip; background-image: linear-gradient(135deg, rgba(255,164,112,.12), transparent 38%), linear-gradient(315deg, rgba(91,83,242,.12), transparent 42%); background-attachment: fixed; }
