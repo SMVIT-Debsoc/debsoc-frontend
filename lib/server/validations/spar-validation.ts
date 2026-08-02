@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { benchPositions } from "@/types/pairing";
+import { approvedSparMotionCategoryValues } from "@/types/spar-motions";
 import {
   apSides,
   getSparRolesForApSide,
@@ -25,7 +26,7 @@ export const submitSparSchema = z.object({
   sparDate: z.coerce.date().refine((value) => value.getTime() <= Date.now(), {
     message: "Spar date cannot be in the future.",
   }),
-  motionType: z.string().trim().min(1),
+  motionType: z.enum(approvedSparMotionCategoryValues),
   motionText: z.string().trim().min(1).nullable().optional(),
   debateFormat: z.enum(sparDebateFormats).default("BP"),
   bpPosition: z.enum(benchPositions).nullable().optional(),
