@@ -133,6 +133,13 @@ export const sparMotionCategories = [
     searchTerms: ["philosophy", "medical", "ethics", "healthcare", "objection", "abortion", "euthanasia", "contraception"],
   },
   {
+    id: "education",
+    label: "Education",
+    description: "School policy, higher education, curriculum, examinations, teaching methods, access, and education reform.",
+    motionCount: 0,
+    searchTerms: ["education", "school", "higher education", "curriculum", "examinations", "teaching", "access", "reform"],
+  },
+  {
     id: "family-parenting-children",
     label: "Family / Parenting / Children",
     description: "Parenting, childhood, education, school safety, competition, and children's media.",

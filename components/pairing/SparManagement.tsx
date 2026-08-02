@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  BookOpen,
   Church,
   Globe2,
   Landmark,
@@ -46,6 +47,7 @@ const motionCategoryIcons = {
   feminism: <VenusAndMars className="h-4 w-4 shrink-0" aria-hidden="true" />,
   religion: <Church className="h-4 w-4 shrink-0" aria-hidden="true" />,
   "philosophy-medical-ethics": <Scale className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  education: <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />,
   "family-parenting-children": <UsersRound className="h-4 w-4 shrink-0" aria-hidden="true" />,
   environment: <Leaf className="h-4 w-4 shrink-0" aria-hidden="true" />,
   art: <Palette className="h-4 w-4 shrink-0" aria-hidden="true" />,
@@ -57,7 +59,7 @@ const motionCategoryIcons = {
 } satisfies Record<(typeof sparMotionCategories)[number]["id"], React.ReactNode>;
 
 const motionOptions = sparMotionCategories.map((category) => ({
-  description: `${category.description} (${category.motionCount} motions)`,
+  description: category.motionCount > 0 ? `${category.description} (${category.motionCount} motions)` : category.description,
   icon: motionCategoryIcons[category.id],
   id: category.id,
   label: category.label,
@@ -177,6 +179,22 @@ export default function SparManagement({
       })),
     [currentUserId, participants],
   );
+  const teammateDropdownItems = useMemo(() => [
+    {
+      id: "iron",
+      label: "Iron Man",
+      value: "iron",
+      description: "Submit this practice round as a solo Iron Man spar.",
+      searchTerms: ["solo", "iron man"],
+    },
+    ...teammateOptions.map((option) => ({
+      id: option.key,
+      label: option.label,
+      value: option.key,
+      description: option.role,
+      searchTerms: [option.role],
+    })),
+  ], [teammateOptions]);
 
   const firstTeammate = teammateOptions.find((option) => option.key === teammateKey) ?? null;
   const secondTeammate = teammateOptions.find((option) => option.key === secondTeammateKey) ?? null;
@@ -317,8 +335,37 @@ export default function SparManagement({
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Debate setup</p>
             </div>
             {debateFormat === "BP" ? <Field label="BP Position"><select className={selectClass} value={bpPosition} onChange={(event) => setBpPosition(event.target.value as typeof bpPosition)}>{benchPositions.map((position) => <option key={position}>{position}</option>)}</select></Field> : <Field label="AP Side"><select className={selectClass} value={apSide} onChange={(event) => setApSide(event.target.value as ApSide)}><option value="GOV">Gov</option><option value="OPP">Opp</option></select></Field>}
-            <Field label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}><select className={selectClass} value={isIronMan ? "iron" : teammateKey} onChange={(event) => { const value = event.target.value; setIsIronMan(value === "iron"); setTeammateKey(value === "iron" ? "" : value); }}><option value="">{debateFormat === "AP" ? "Solo / no teammate" : "Select teammate"}</option><option value="iron">Iron Man</option>{teammateOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select></Field>
-            {debateFormat === "AP" && !isIronMan && <Field label="Teammate 2"><select className={selectClass} value={secondTeammateKey} onChange={(event) => setSecondTeammateKey(event.target.value)}><option value="">Optional teammate</option>{teammateOptions.filter((option) => option.key !== teammateKey).map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select></Field>}
+            <Field label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}>
+              <SearchableDropdown
+                emptyMessage="No teammates found"
+                items={teammateDropdownItems}
+                label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}
+                placeholder={debateFormat === "AP" ? "Solo / no teammate" : "Search teammates..."}
+                value={isIronMan ? "iron" : teammateKey}
+                onSelect={(item) => {
+                  const value = item.id;
+                  setIsIronMan(value === "iron");
+                  setTeammateKey(value === "iron" ? "" : value);
+                }}
+                clearable
+                onClear={() => {
+                  setIsIronMan(false);
+                  setTeammateKey("");
+                }}
+              />
+            </Field>
+            {debateFormat === "AP" && !isIronMan && <Field label="Teammate 2">
+              <SearchableDropdown
+                emptyMessage="No teammates found"
+                items={teammateDropdownItems.filter((option) => option.id !== "iron" && option.id !== teammateKey)}
+                label="Teammate 2"
+                placeholder="Optional teammate"
+                value={secondTeammateKey}
+                onSelect={(item) => setSecondTeammateKey(item.id)}
+                clearable
+                onClear={() => setSecondTeammateKey("")}
+              />
+            </Field>}
             {!isIronMan && <Field label="Speaking Role"><select className={selectClass} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value as SparSpeakingRole)}>{activeRoles.map((role) => <option key={role}>{role}</option>)}</select></Field>}
             <div className="pt-1 lg:col-span-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Speaker scores and result</p>

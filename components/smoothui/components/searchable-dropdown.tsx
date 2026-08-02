@@ -20,6 +20,8 @@ type SearchableDropdownProps = {
   placeholder: string;
   value?: string;
   onSelect?: (item: SearchableDropdownItem) => void;
+  clearable?: boolean;
+  onClear?: () => void;
 };
 
 export default function SearchableDropdown({
@@ -29,6 +31,8 @@ export default function SearchableDropdown({
   placeholder,
   value,
   onSelect,
+  clearable = false,
+  onClear,
 }: SearchableDropdownProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -75,6 +79,13 @@ export default function SearchableDropdown({
     setInternalValue(item.id);
     onSelect?.(item);
     closeAndFocusTrigger();
+  }
+
+  function clearSelection() {
+    setInternalValue("");
+    setSearch("");
+    onClear?.();
+    triggerRef.current?.focus();
   }
 
   function openDropdown() {
@@ -131,7 +142,7 @@ export default function SearchableDropdown({
         aria-haspopup="listbox"
         onClick={() => (open ? closeAndFocusTrigger() : openDropdown())}
         onKeyDown={handleTriggerKeyDown}
-        className="flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:border-white/25 dark:focus-visible:border-indigo-400"
+        className={`flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:border-white/25 dark:focus-visible:border-indigo-400 ${clearable && selectedItem ? "pr-16" : ""}`}
       >
         <span className="flex min-w-0 items-center gap-2">
           {selectedItem?.icon && <span aria-hidden>{selectedItem.icon}</span>}
@@ -139,6 +150,17 @@ export default function SearchableDropdown({
         </span>
         <ChevronDown size={17} aria-hidden className={`shrink-0 transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} />
       </button>
+      {clearable && selectedItem && (
+        <button
+          type="button"
+          aria-label={`Clear ${label}`}
+          title={`Clear ${label}`}
+          onClick={clearSelection}
+          className="absolute right-8 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-400 dark:hover:bg-white/10"
+        >
+          <X size={15} aria-hidden />
+        </button>
+      )}
 
       {open && (
         <div className="absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10 dark:border-white/15 dark:bg-[#171717] dark:shadow-black/40">
