@@ -7,7 +7,11 @@ import type { DebsocRole } from "@/lib/server/roles";
 const allowedRoles: DebsocRole[] = ["TechHead", "President", "cabinet", "Member"];
 
 function getDevBypassRole(): DebsocRole {
-  const configuredRole = process.env.DEV_AUTH_BYPASS_ROLE;
+  // Development role testing:
+  // NODE_ENV=development DEV_AUTH_BYPASS=true DEV_AUTH_ROLE=Member
+  // Supported values are Member, cabinet, President, and TechHead. The
+  // legacy DEV_AUTH_BYPASS_ROLE name remains as a compatibility fallback.
+  const configuredRole = process.env.DEV_AUTH_ROLE ?? process.env.DEV_AUTH_BYPASS_ROLE;
 
   if (configuredRole && allowedRoles.includes(configuredRole as DebsocRole)) {
     return configuredRole as DebsocRole;
@@ -96,11 +100,7 @@ async function resolveDevBypassId(role: DebsocRole) {
 }
 
 export async function getDevBypassSession(): Promise<Session | null> {
-  if (process.env.NODE_ENV !== "development") {
-    return null;
-  }
-
-  if (process.env.DEV_AUTH_BYPASS !== "true") {
+  if (!isDevBypassEnabled()) {
     return null;
   }
 
@@ -119,7 +119,17 @@ export async function getDevBypassSession(): Promise<Session | null> {
   };
 }
 
+export function isDevBypassEnabled() {
+  return process.env.NODE_ENV === "development" && process.env.DEV_AUTH_BYPASS === "true";
+}
+
 export async function getAppSession(): Promise<Session | null> {
+  // An explicit local bypass must win over stale NextAuth cookies so changing
+  // DEV_AUTH_ROLE reliably changes the role used by pages and API guards.
+  if (isDevBypassEnabled()) {
+    return getDevBypassSession();
+  }
+
   if (isAuthBuildPhase) {
     return null;
   }

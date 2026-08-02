@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { Card, EmptyState, Field, Pill, PrimaryButton, SecondaryButton, SectionHeader } from "./ui";
 import type { Participant } from "./types";
 import { benchPositions } from "@/types/pairing";
@@ -110,6 +110,7 @@ export default function SparManagement({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [deletingSparId, setDeletingSparId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -160,6 +161,27 @@ export default function SparManagement({
     try { const response = await fetch("/api/spar/history", { cache: "no-store" }); if (!response.ok) throw new Error("Could not load spar history."); setHistory(await response.json()); }
     catch (caught) { setHistoryError(caught instanceof Error ? caught.message : "Could not load spar history."); }
     finally { setHistoryLoading(false); }
+  }
+
+  async function removeSpar(sparId: string) {
+    if (deletingSparId !== null) return;
+    if (!window.confirm("Delete this Spar record? This cannot be undone.")) return;
+
+    setDeletingSparId(sparId);
+    setHistoryError(null);
+    try {
+      const response = await fetch(`/api/spar/${encodeURIComponent(sparId)}`, { method: "DELETE" });
+      const body = await response.json().catch(() => null) as { message?: unknown } | null;
+      if (!response.ok) {
+        throw new Error(typeof body?.message === "string" ? body.message : "Spar delete failed.");
+      }
+      setMessage("Spar deleted.");
+      await Promise.all([loadHistory(), loadSparData()]);
+    } catch (caught) {
+      setHistoryError(caught instanceof Error ? caught.message : "Spar delete failed.");
+    } finally {
+      setDeletingSparId(null);
+    }
   }
 
   useEffect(() => {
@@ -252,7 +274,7 @@ export default function SparManagement({
       <section className="overflow-hidden rounded-[24px] border border-black/10 bg-white/[0.04] dark:border-white/10" aria-labelledby="spar-history-heading">
         <button type="button" aria-expanded={historyOpen} aria-controls="spar-history-panel" onClick={() => { const next = !historyOpen; setHistoryOpen(next); if (next && history.records.length === 0 && !historyLoading) void loadHistory(); }} className="flex min-h-[52px] w-full items-center justify-between px-4 text-left text-sm font-medium text-slate-800 transition hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:text-slate-200 dark:hover:bg-white/[0.06]"><span id="spar-history-heading">{historyOpen ? "Hide Spar History" : "Show Spar History"}</span><span aria-hidden>{historyOpen ? "−" : "+"}</span></button>
         <div id="spar-history-panel" aria-hidden={!historyOpen} className={`pairing-history-panel overflow-hidden ${historyOpen ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
-          {historyOpen && <div className="border-t border-black/10 p-4 dark:border-white/10"><div className="mb-3 flex items-center justify-between"><p className="text-xs text-slate-500">Your submitted practice rounds</p>{historyError && <button type="button" onClick={() => void loadHistory()} className="text-xs font-medium text-red-700 underline dark:text-red-300">Retry</button>}</div>{historyLoading ? <EmptyState title="Loading history" body="Fetching your submitted spars." /> : historyError ? <p className="text-sm text-red-700 dark:text-red-300">{historyError}</p> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : <div className="space-y-2">{history.records.map((record) => <div key={record.id} className="rounded-xl border border-black/10 p-3 text-sm dark:border-white/10"><div className="flex justify-between gap-3"><span className="font-medium">{record.motionType}</span><span className="text-xs text-slate-500">{formatSparDate(record.sparDate)}</span></div><p className="mt-1 text-xs text-slate-500">{formatSparPosition(record)} · rank {record.teamRank} · {formatSparScores(record)}</p></div>)}</div>}</div>}
+          {historyOpen && <div className="border-t border-black/10 p-4 dark:border-white/10"><div className="mb-3 flex items-center justify-between"><p className="text-xs text-slate-500">Your submitted practice rounds</p>{historyError && <button type="button" onClick={() => void loadHistory()} className="text-xs font-medium text-red-700 underline dark:text-red-300">Retry</button>}</div>{historyLoading ? <EmptyState title="Loading history" body="Fetching your submitted spars." /> : historyError ? <p className="text-sm text-red-700 dark:text-red-300">{historyError}</p> : history.records.length === 0 ? <EmptyState title="No spars yet" body="Your submitted spars will appear here." /> : <div className="space-y-2">{history.records.map((record) => <div key={record.id} className="rounded-xl border border-black/10 p-3 text-sm dark:border-white/10"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><span className="block truncate font-medium">{record.motionType}</span><span className="text-xs text-slate-500">{formatSparDate(record.sparDate)}</span></div><button type="button" onClick={() => void removeSpar(record.id)} disabled={deletingSparId !== null} aria-label={`Delete Spar from ${formatSparDate(record.sparDate)}`} title="Delete Spar" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-red-700 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/70 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-400/10"><span aria-hidden>{deletingSparId === record.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</span></button></div><p className="mt-1 text-xs text-slate-500">{formatSparPosition(record)} · rank {record.teamRank} · {formatSparScores(record)}</p></div>)}</div>}</div>}
         </div>
       </section>
     </div>

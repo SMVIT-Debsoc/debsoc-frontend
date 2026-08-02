@@ -15,10 +15,10 @@ import type { DebsocRole, SessionUser } from "../roles.ts";
 const DEV_BYPASS_ROLES: DebsocRole[] = ["TechHead", "President", "cabinet", "Member"];
 
 function getEnvDevBypassUser(): SessionUser | null {
-  if (process.env.NODE_ENV === "production") return null;
+  if (process.env.NODE_ENV !== "development") return null;
   if (process.env.DEV_AUTH_BYPASS !== "true") return null;
 
-  const configuredRole = process.env.DEV_AUTH_BYPASS_ROLE as DebsocRole | undefined;
+  const configuredRole = (process.env.DEV_AUTH_ROLE ?? process.env.DEV_AUTH_BYPASS_ROLE) as DebsocRole | undefined;
   const role = configuredRole && DEV_BYPASS_ROLES.includes(configuredRole) ? configuredRole : "TechHead";
 
   return {
@@ -37,9 +37,9 @@ export async function getRealtimeUserFromRequest(req: IncomingMessage): Promise<
     secret: process.env.NEXTAUTH_SECRET,
   }).catch(() => null);
 
-  let user: SessionUser | null = null;
+  let user: SessionUser | null = getEnvDevBypassUser();
 
-  if (token?.id && token.role) {
+  if (!user && token?.id && token.role) {
     user = {
       id: String(token.id),
       name: (token.name as string) ?? "",
