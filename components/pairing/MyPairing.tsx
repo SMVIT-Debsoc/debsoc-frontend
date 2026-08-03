@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { fetchJson } from "@/lib/client/fetch-json";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
 import { usePairingRealtime } from "./usePairingRealtime";
 import type {
@@ -49,28 +50,6 @@ function participantNameMap(session: SessionRow) {
       return participantId && name ? [[participantId, name]] : [];
     }),
   ) as Record<string, string>;
-}
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    credentials: "same-origin",
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    let message = `Request failed for ${url}`;
-    try {
-      const data = (await response.json()) as { message?: string };
-      if (data.message) {
-        message = data.message;
-      }
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-
-  return (await response.json()) as T;
 }
 
 export default function MyPairing({

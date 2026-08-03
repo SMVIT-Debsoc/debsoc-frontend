@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { fetchJson } from "@/lib/client/fetch-json";
 import { Card, EmptyState, Field, PrimaryButton, SectionHeader, SecondaryButton } from "./ui";
 import { usePairingRealtime } from "./usePairingRealtime";
 import type { AttendanceHistoryItem, SessionRow } from "./types";
@@ -60,29 +61,6 @@ function participantNameMap(session: SessionRow) {
 
 function isPublishedLike(session: SessionRow) {
   return session.state === "Published" || session.state === "Scored" || session.state === "Completed";
-}
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    credentials: "same-origin",
-    cache: "no-store",
-    ...init,
-  });
-
-  if (!response.ok) {
-    let message = `Request failed for ${url}`;
-    try {
-      const data = (await response.json()) as { message?: string };
-      if (data.message) {
-        message = data.message;
-      }
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-
-  return (await response.json()) as T;
 }
 
 export default function MyScoring({ role, userId, sessions, attendanceHistory, onRefresh }: MyScoringProps) {

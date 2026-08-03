@@ -40,6 +40,7 @@ import type {
 } from "@/types/session";
 import type { RealtimeEventEnvelope } from "@/types/realtime";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
 
 type StepKey = "prepare" | "setup" | "review" | "publish" | "post";
 
@@ -99,6 +100,16 @@ type OverrideRoomDraft = {
 type ManualOverrideDraft = {
     rooms: OverrideRoomDraft[];
 };
+
+function participantDropdownItems(participants: readonly Participant[]) {
+    return participants.map((participant) => ({
+        id: participant.id,
+        label: participant.name,
+        value: participant.id,
+        description: participant.account,
+        searchTerms: [participant.account],
+    }));
+}
 
 export default function SessionWorkspace({
     userName,
@@ -488,6 +499,10 @@ export default function SessionWorkspace({
                     attendanceDraft[participant.id]?.sessionRole === "speaker",
             ),
         [attendanceDraft, participants],
+    );
+    const presentSpeakerItems = useMemo(
+        () => participantDropdownItems(presentSpeakers),
+        [presentSpeakers],
     );
 
     const stepAvailability = computeStepAvailability(
@@ -1019,36 +1034,27 @@ export default function SessionWorkspace({
                                 session-day constraint.
                             </p>
                             <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-                                <select
+                                <SearchableDropdown
+                                    emptyMessage="No available speakers found"
+                                    items={presentSpeakerItems.filter(
+                                        (participant) =>
+                                            !timeConstraints.some(
+                                                (constraint) =>
+                                                    constraint.participantId ===
+                                                    participant.id,
+                                            ),
+                                    )}
+                                    label="Select a present speaker"
+                                    placeholder="Search present speakers..."
                                     value={selectedTimeConstraintId}
-                                    onChange={(event) =>
-                                        setSelectedTimeConstraintId(
-                                            event.target.value,
-                                        )
+                                    onSelect={(item) =>
+                                        setSelectedTimeConstraintId(item.id)
                                     }
-                                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                                >
-                                    <option value="">
-                                        Select a present speaker
-                                    </option>
-                                    {presentSpeakers
-                                        .filter(
-                                            (participant) =>
-                                                !timeConstraints.some(
-                                                    (constraint) =>
-                                                        constraint.participantId ===
-                                                        participant.id,
-                                                ),
-                                        )
-                                        .map((participant) => (
-                                            <option
-                                                key={participant.id}
-                                                value={participant.id}
-                                            >
-                                                {participant.name}
-                                            </option>
-                                        ))}
-                                </select>
+                                    clearable
+                                    onClear={() =>
+                                        setSelectedTimeConstraintId("")
+                                    }
+                                />
                                 <SecondaryButton
                                     type="button"
                                     disabled={!selectedTimeConstraintId}
@@ -1154,50 +1160,38 @@ export default function SessionWorkspace({
                                 positions.
                             </p>
                             <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
-                                <select
+                                <SearchableDropdown
+                                    emptyMessage="No present speakers found"
+                                    items={presentSpeakerItems}
+                                    label="First speaker"
+                                    placeholder="Search first speaker..."
                                     value={teamUpFirstParticipantId}
-                                    onChange={(event) =>
-                                        setTeamUpFirstParticipantId(
-                                            event.target.value,
-                                        )
+                                    onSelect={(item) =>
+                                        setTeamUpFirstParticipantId(item.id)
                                     }
-                                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                                >
-                                    <option value="">First speaker</option>
-                                    {presentSpeakers.map((participant) => (
-                                        <option
-                                            key={participant.id}
-                                            value={participant.id}
-                                        >
-                                            {participant.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
+                                    clearable
+                                    onClear={() =>
+                                        setTeamUpFirstParticipantId("")
+                                    }
+                                />
+                                <SearchableDropdown
+                                    emptyMessage="No available second speakers found"
+                                    items={presentSpeakerItems.filter(
+                                        (participant) =>
+                                            participant.id !==
+                                            teamUpFirstParticipantId,
+                                    )}
+                                    label="Second speaker"
+                                    placeholder="Search second speaker..."
                                     value={teamUpSecondParticipantId}
-                                    onChange={(event) =>
-                                        setTeamUpSecondParticipantId(
-                                            event.target.value,
-                                        )
+                                    onSelect={(item) =>
+                                        setTeamUpSecondParticipantId(item.id)
                                     }
-                                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                                >
-                                    <option value="">Second speaker</option>
-                                    {presentSpeakers
-                                        .filter(
-                                            (participant) =>
-                                                participant.id !==
-                                                teamUpFirstParticipantId,
-                                        )
-                                        .map((participant) => (
-                                            <option
-                                                key={participant.id}
-                                                value={participant.id}
-                                            >
-                                                {participant.name}
-                                            </option>
-                                        ))}
-                                </select>
+                                    clearable
+                                    onClear={() =>
+                                        setTeamUpSecondParticipantId("")
+                                    }
+                                />
                                 <SecondaryButton
                                     type="button"
                                     disabled={
@@ -2933,6 +2927,11 @@ function OverridePanel({
             name: findParticipantName(participants, participantId),
         }))
         .sort((left, right) => left.name.localeCompare(right.name));
+    const searchableOptions = options.map((option) => ({
+        id: option.id,
+        label: option.name,
+        value: option.id,
+    }));
 
     const derived = deriveManualOverrideState(draft, presentParticipantIds);
     const canSubmit =
@@ -3020,25 +3019,20 @@ function OverridePanel({
                                                                 }
                                                                 label={role}
                                                             >
-                                                                <select
-                                                                    value={
-                                                                        slot?.participantId ??
-                                                                        ""
-                                                                    }
-                                                                    onChange={(
-                                                                        event,
-                                                                    ) =>
+                                                                <SearchableDropdown
+                                                                    emptyMessage="No participants found"
+                                                                    items={searchableOptions}
+                                                                    label={`${role} participant`}
+                                                                    placeholder="Search participants..."
+                                                                    value={slot?.participantId ?? ""}
+                                                                    onSelect={(item) =>
                                                                         onDraftChange(
-                                                                            (
-                                                                                current,
-                                                                            ) =>
+                                                                            (current) =>
                                                                                 current
                                                                                     ? {
                                                                                           ...current,
                                                                                           rooms: current.rooms.map(
-                                                                                              (
-                                                                                                  entry,
-                                                                                              ) =>
+                                                                                              (entry) =>
                                                                                                   entry.roomIndex !==
                                                                                                   room.roomIndex
                                                                                                       ? entry
@@ -3046,17 +3040,13 @@ function OverridePanel({
                                                                                                             ...entry,
                                                                                                             speakerSlots:
                                                                                                                 entry.speakerSlots.map(
-                                                                                                                    (
-                                                                                                                        speakerSlot,
-                                                                                                                    ) =>
+                                                                                                                    (speakerSlot) =>
                                                                                                                         speakerSlot.slotKey ===
                                                                                                                         slot?.slotKey
                                                                                                                             ? {
                                                                                                                                   ...speakerSlot,
                                                                                                                                   participantId:
-                                                                                                                                      event
-                                                                                                                                          .target
-                                                                                                                                          .value,
+                                                                                                                                      item.id,
                                                                                                                               }
                                                                                                                             : speakerSlot,
                                                                                                                 ),
@@ -3066,31 +3056,30 @@ function OverridePanel({
                                                                                     : current,
                                                                         )
                                                                     }
-                                                                    className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                                                                >
-                                                                    <option value="">
-                                                                        Select
-                                                                        participant
-                                                                    </option>
-                                                                    {options.map(
-                                                                        (
-                                                                            option,
-                                                                        ) => (
-                                                                            <option
-                                                                                key={
-                                                                                    option.id
-                                                                                }
-                                                                                value={
-                                                                                    option.id
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    option.name
-                                                                                }
-                                                                            </option>
-                                                                        ),
-                                                                    )}
-                                                                </select>
+                                                                    clearable
+                                                                    onClear={() =>
+                                                                        onDraftChange(
+                                                                            (current) =>
+                                                                                current
+                                                                                    ? {
+                                                                                          ...current,
+                                                                                          rooms: current.rooms.map((entry) =>
+                                                                                              entry.roomIndex !== room.roomIndex
+                                                                                                  ? entry
+                                                                                                  : {
+                                                                                                        ...entry,
+                                                                                                        speakerSlots: entry.speakerSlots.map((speakerSlot) =>
+                                                                                                            speakerSlot.slotKey === slot?.slotKey
+                                                                                                                ? { ...speakerSlot, participantId: "" }
+                                                                                                                : speakerSlot,
+                                                                                                        ),
+                                                                                                    },
+                                                                                          ),
+                                                                                      }
+                                                                                    : current,
+                                                                        )
+                                                                    }
+                                                                />
                                                             </Field>
                                                         );
                                                     })}
@@ -3157,22 +3146,20 @@ function OverridePanel({
                                                                 : `Panel ${slotIndex}`
                                                         }
                                                     >
-                                                        <select
-                                                            value={
-                                                                slot.participantId
-                                                            }
-                                                            onChange={(event) =>
+                                                        <SearchableDropdown
+                                                            emptyMessage="No participants found"
+                                                            items={searchableOptions}
+                                                            label={`${slot.isChair ? "Chair" : `Panel ${slotIndex}`} participant`}
+                                                            placeholder="Search participants..."
+                                                            value={slot.participantId}
+                                                            onSelect={(item) =>
                                                                 onDraftChange(
-                                                                    (
-                                                                        current,
-                                                                    ) =>
+                                                                    (current) =>
                                                                         current
                                                                             ? {
                                                                                   ...current,
                                                                                   rooms: current.rooms.map(
-                                                                                      (
-                                                                                          entry,
-                                                                                      ) =>
+                                                                                      (entry) =>
                                                                                           entry.roomIndex !==
                                                                                           room.roomIndex
                                                                                               ? entry
@@ -3180,17 +3167,13 @@ function OverridePanel({
                                                                                                     ...entry,
                                                                                                     adjudicatorSlots:
                                                                                                         entry.adjudicatorSlots.map(
-                                                                                                            (
-                                                                                                                adjudicatorSlot,
-                                                                                                            ) =>
+                                                                                                            (adjudicatorSlot) =>
                                                                                                                 adjudicatorSlot.slotKey ===
                                                                                                                 slot.slotKey
                                                                                                                     ? {
                                                                                                                           ...adjudicatorSlot,
                                                                                                                           participantId:
-                                                                                                                              event
-                                                                                                                                  .target
-                                                                                                                                  .value,
+                                                                                                                              item.id,
                                                                                                                       }
                                                                                                                     : adjudicatorSlot,
                                                                                                         ),
@@ -3200,29 +3183,30 @@ function OverridePanel({
                                                                             : current,
                                                                 )
                                                             }
-                                                            className="w-full rounded-md border border-slate-300 dark:border-white/15 px-3 py-2 text-sm"
-                                                        >
-                                                            <option value="">
-                                                                Select
-                                                                participant
-                                                            </option>
-                                                            {options.map(
-                                                                (option) => (
-                                                                    <option
-                                                                        key={
-                                                                            option.id
-                                                                        }
-                                                                        value={
-                                                                            option.id
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            option.name
-                                                                        }
-                                                                    </option>
-                                                                ),
-                                                            )}
-                                                        </select>
+                                                            clearable
+                                                            onClear={() =>
+                                                                onDraftChange(
+                                                                    (current) =>
+                                                                        current
+                                                                            ? {
+                                                                                  ...current,
+                                                                                  rooms: current.rooms.map((entry) =>
+                                                                                      entry.roomIndex !== room.roomIndex
+                                                                                          ? entry
+                                                                                          : {
+                                                                                                ...entry,
+                                                                                                adjudicatorSlots: entry.adjudicatorSlots.map((adjudicatorSlot) =>
+                                                                                                    adjudicatorSlot.slotKey === slot.slotKey
+                                                                                                        ? { ...adjudicatorSlot, participantId: "" }
+                                                                                                        : adjudicatorSlot,
+                                                                                                ),
+                                                                                            },
+                                                                                  ),
+                                                                              }
+                                                                            : current,
+                                                                )
+                                                            }
+                                                        />
                                                     </Field>
                                                     <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
                                                         <input

@@ -1,10 +1,28 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  Church,
+  Globe2,
+  Landmark,
+  Leaf,
+  Loader2,
+  Newspaper,
+  Palette,
+  Scale,
+  Trophy,
+  UsersRound,
+  VenusAndMars,
+  WandSparkles,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
 import { Card, EmptyState, Field, Pill, PrimaryButton, SecondaryButton, SectionHeader } from "./ui";
 import type { Participant } from "./types";
 import { benchPositions } from "@/types/pairing";
+import { sparMotionCategories } from "@/types/spar-motions";
 import {
   getSparRolesForApSide,
   getSparRolesForPosition,
@@ -23,6 +41,31 @@ const DEFAULT_HISTORY: SparHistoryResponse = { records: [], pagination: { page: 
 const inputClass =
   "h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400";
 const selectClass = `${inputClass} appearance-none pr-9`;
+
+const motionCategoryIcons = {
+  "economics-development": <Landmark className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  feminism: <VenusAndMars className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  religion: <Church className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  "philosophy-medical-ethics": <Scale className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  education: <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  "family-parenting-children": <UsersRound className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  environment: <Leaf className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  art: <Palette className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  sports: <Trophy className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  media: <Newspaper className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  culture: <Globe2 className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  "international-relations": <Globe2 className="h-4 w-4 shrink-0" aria-hidden="true" />,
+  hypotheticals: <WandSparkles className="h-4 w-4 shrink-0" aria-hidden="true" />,
+} satisfies Record<(typeof sparMotionCategories)[number]["id"], React.ReactNode>;
+
+const motionOptions = sparMotionCategories.map((category) => ({
+  description: category.motionCount > 0 ? `${category.description} (${category.motionCount} motions)` : category.description,
+  icon: motionCategoryIcons[category.id],
+  id: category.id,
+  label: category.label,
+  searchTerms: category.searchTerms,
+  value: category.label,
+}));
 
 function todayInputValue() {
   return new Date().toISOString().slice(0, 10);
@@ -90,7 +133,6 @@ export default function SparManagement({
 }) {
   const [sparDate, setSparDate] = useState(todayInputValue());
   const [motionType, setMotionType] = useState("");
-  const [motionText, setMotionText] = useState("");
   const [debateFormat, setDebateFormat] = useState<SparDebateFormat>("BP");
   const [bpPosition, setBpPosition] = useState<(typeof benchPositions)[number]>("OG");
   const [apSide, setApSide] = useState<ApSide>("GOV");
@@ -137,9 +179,26 @@ export default function SparManagement({
       })),
     [currentUserId, participants],
   );
+  const teammateDropdownItems = useMemo(() => [
+    {
+      id: "iron",
+      label: "Iron Man",
+      value: "iron",
+      description: "Submit this practice round as a solo Iron Man spar.",
+      searchTerms: ["solo", "iron man"],
+    },
+    ...teammateOptions.map((option) => ({
+      id: option.key,
+      label: option.label,
+      value: option.key,
+      description: option.role,
+      searchTerms: [option.role],
+    })),
+  ], [teammateOptions]);
 
   const firstTeammate = teammateOptions.find((option) => option.key === teammateKey) ?? null;
   const secondTeammate = teammateOptions.find((option) => option.key === secondTeammateKey) ?? null;
+  const selectedMotionCategory = sparMotionCategories.find((category) => category.id === motionType) ?? null;
   const rankOptions = debateFormat === "AP" ? [1, 2] : [1, 2, 3, 4];
 
   async function loadSparData() {
@@ -191,6 +250,10 @@ export default function SparManagement({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!selectedMotionCategory) {
+      setError("Select an approved motion category before submitting.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setMessage(null);
@@ -209,8 +272,8 @@ export default function SparManagement({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sparDate: new Date(`${sparDate}T00:00:00.000Z`).toISOString(),
-          motionType,
-          motionText: motionText.trim() || null,
+          motionType: selectedMotionCategory.label,
+          motionText: null,
           debateFormat,
           bpPosition: debateFormat === "BP" ? bpPosition : null,
           apSide: debateFormat === "AP" ? apSide : null,
@@ -230,7 +293,6 @@ export default function SparManagement({
       setFirstScore("");
       setSecondScore("");
       setThirdScore("");
-      setMotionText("");
       await loadSparData();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Spar submission failed.");
@@ -244,29 +306,81 @@ export default function SparManagement({
       <SectionHeader title="Spars" subtitle="Submit practice rounds and track spar ranking." right={<SecondaryButton type="button" disabled={loading} onClick={() => void loadSparData()}><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</SecondaryButton>} />
       {(message || error) && <div className={`rounded-xl px-4 py-3 text-sm ${error ? "bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"}`}>{error ?? message}</div>}
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <Card className="p-4 sm:p-6">
-          <SectionHeader title="Submit Spar" />
-          <form onSubmit={submit} className="grid gap-x-5 gap-y-4 sm:grid-cols-2">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(280px,1.25fr)]">
+        <Card className="min-w-0 overflow-hidden border border-black/10 bg-white/[0.08] p-4 shadow-xl shadow-slate-950/5 dark:border-white/10 dark:bg-[#151515]/80 dark:shadow-black/20 sm:p-6">
+          <div className="mb-6 border-b border-black/10 pb-5 dark:border-white/10">
+            <SectionHeader title="Submit Spar" subtitle="Record a practice round with validated debate details and scores." />
+            <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Fields marked as required must be completed before your round can be submitted.</p>
+          </div>
+          <form onSubmit={submit} className="grid min-w-0 gap-x-5 gap-y-5 lg:grid-cols-2">
+            <div className="lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Round details</p>
+            </div>
             <Field label="Date"><input className={inputClass} type="date" value={sparDate} max={todayInputValue()} onChange={(event) => setSparDate(event.target.value)} required /></Field>
             <Field label="Debate Format"><select className={selectClass} value={debateFormat} onChange={(event) => { setDebateFormat(event.target.value as SparDebateFormat); setIsIronMan(false); setTeammateKey(""); }}><option value="BP">BP</option><option value="AP">AP</option></select></Field>
-            <Field label="Motion Type"><input className={inputClass} value={motionType} onChange={(event) => setMotionType(event.target.value)} placeholder="e.g. International Relations" required /></Field>
-            <div className="sm:col-span-2"><Field label="Motion Text"><input className={inputClass} value={motionText} onChange={(event) => setMotionText(event.target.value)} placeholder="Optional full motion" /></Field></div>
+            <div className="space-y-3 lg:col-span-2">
+              <Field label="Motion Type">
+                <SearchableDropdown
+                  emptyMessage="No motions found"
+                  items={motionOptions}
+                  label="Select a motion"
+                  placeholder="Search motions..."
+                  value={motionType}
+                  onSelect={(item) => setMotionType(item.id)}
+                />
+              </Field>
+              {selectedMotionCategory && <p aria-live="polite" className="text-xs text-slate-600 dark:text-slate-400">Selected category: <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedMotionCategory.label}</span> · {selectedMotionCategory.description}</p>}
+            </div>
+            <div className="pt-1 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Debate setup</p>
+            </div>
             {debateFormat === "BP" ? <Field label="BP Position"><select className={selectClass} value={bpPosition} onChange={(event) => setBpPosition(event.target.value as typeof bpPosition)}>{benchPositions.map((position) => <option key={position}>{position}</option>)}</select></Field> : <Field label="AP Side"><select className={selectClass} value={apSide} onChange={(event) => setApSide(event.target.value as ApSide)}><option value="GOV">Gov</option><option value="OPP">Opp</option></select></Field>}
-            <Field label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}><select className={selectClass} value={isIronMan ? "iron" : teammateKey} onChange={(event) => { const value = event.target.value; setIsIronMan(value === "iron"); setTeammateKey(value === "iron" ? "" : value); }}><option value="">{debateFormat === "AP" ? "Solo / no teammate" : "Select teammate"}</option><option value="iron">Iron Man</option>{teammateOptions.map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select></Field>
-            {debateFormat === "AP" && !isIronMan && <Field label="Teammate 2"><select className={selectClass} value={secondTeammateKey} onChange={(event) => setSecondTeammateKey(event.target.value)}><option value="">Optional teammate</option>{teammateOptions.filter((option) => option.key !== teammateKey).map((option) => <option key={option.key} value={option.key}>{option.label}</option>)}</select></Field>}
+            <Field label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}>
+              <SearchableDropdown
+                emptyMessage="No teammates found"
+                items={teammateDropdownItems}
+                label={debateFormat === "AP" ? "Teammate 1" : "Teammate"}
+                placeholder={debateFormat === "AP" ? "Solo / no teammate" : "Search teammates..."}
+                value={isIronMan ? "iron" : teammateKey}
+                onSelect={(item) => {
+                  const value = item.id;
+                  setIsIronMan(value === "iron");
+                  setTeammateKey(value === "iron" ? "" : value);
+                }}
+                clearable
+                onClear={() => {
+                  setIsIronMan(false);
+                  setTeammateKey("");
+                }}
+              />
+            </Field>
+            {debateFormat === "AP" && !isIronMan && <Field label="Teammate 2">
+              <SearchableDropdown
+                emptyMessage="No teammates found"
+                items={teammateDropdownItems.filter((option) => option.id !== "iron" && option.id !== teammateKey)}
+                label="Teammate 2"
+                placeholder="Optional teammate"
+                value={secondTeammateKey}
+                onSelect={(item) => setSecondTeammateKey(item.id)}
+                clearable
+                onClear={() => setSecondTeammateKey("")}
+              />
+            </Field>}
             {!isIronMan && <Field label="Speaking Role"><select className={selectClass} value={selectedRole} onChange={(event) => setSelectedRole(event.target.value as SparSpeakingRole)}>{activeRoles.map((role) => <option key={role}>{role}</option>)}</select></Field>}
+            <div className="pt-1 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Speaker scores and result</p>
+            </div>
             <Field label={isIronMan ? `${activeRoles[0]} Score` : "Speaker Score"}><input className={inputClass} type="number" min="50" max="100" step="0.1" value={firstScore} onChange={(event) => setFirstScore(event.target.value)} placeholder="50-100" required /></Field>
             {isIronMan && <Field label={`${activeRoles[1]} Score`}><input className={inputClass} type="number" min="50" max="100" step="0.1" value={secondScore} onChange={(event) => setSecondScore(event.target.value)} placeholder="50-100" required /></Field>}
             {isIronMan && debateFormat === "AP" && <Field label={`${activeRoles[2]} Score`}><input className={inputClass} type="number" min="50" max="100" step="0.1" value={thirdScore} onChange={(event) => setThirdScore(event.target.value)} placeholder="50-100" required /></Field>}
             <Field label="Team Rank"><select className={selectClass} value={teamRank} onChange={(event) => setTeamRank(event.target.value)}>{rankOptions.map((rank) => <option key={rank} value={rank}>{rank}</option>)}</select></Field>
-            <div className="flex pt-2 sm:col-span-2"><PrimaryButton type="submit" disabled={submitting || (debateFormat === "BP" && !isIronMan && !teammateKey)}>{submitting ? "Submitting..." : "Submit Spar"}</PrimaryButton></div>
+            <div className="flex justify-end border-t border-black/10 pt-5 lg:col-span-2 dark:border-white/10"><PrimaryButton type="submit" disabled={submitting || (debateFormat === "BP" && !isIronMan && !teammateKey)} className="min-h-[48px] min-w-[200px] w-full rounded-2xl !bg-emerald-600 px-7 py-3 !text-white shadow-lg shadow-emerald-950/15 hover:!bg-emerald-800 focus-visible:ring-emerald-400/70 dark:!bg-emerald-600 dark:hover:!bg-emerald-800 lg:w-auto">{submitting ? "Submitting..." : "Submit Spar"}</PrimaryButton></div>
           </form>
         </Card>
 
-        <Card className="min-h-[360px] overflow-hidden p-4 sm:p-6">
+        <Card className="min-w-0 self-start overflow-hidden border border-black/10 bg-white/[0.06] p-4 shadow-lg shadow-slate-950/5 dark:border-white/10 dark:bg-[#151515]/75 dark:shadow-black/20 sm:p-5">
           <div>
-            <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : undefined} />
+            <SectionHeader title="Spar Leaderboard" subtitle={leaderboard.myRank ? `Your rank: #${leaderboard.myRank.rank}` : "Recent practice rankings"} />
             {loading ? <EmptyState title="Loading" body="Fetching spar rankings." /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Submit a spar to start the board." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="grid min-w-0 grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/60 px-3 py-3 text-sm shadow-sm shadow-slate-950/5 dark:bg-white/[0.045]"><div className="flex h-10 w-10 items-center justify-center"><RankDoodle rank={entry.rank} /></div><div className="min-w-0"><span className="block truncate font-semibold text-slate-900 dark:text-slate-100">{entry.userName}</span><div className="text-xs text-slate-500">{entry.totalSpars} spars - streak {entry.currentStreak}</div></div><Pill tone="blue">{entry.userRole}</Pill></div>)}</div>}
           </div>
         </Card>
