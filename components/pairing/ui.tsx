@@ -110,14 +110,23 @@ export function Pill({
   );
 }
 
+type PrimaryButtonVariant = "default" | "success" | "danger";
+
 export function PrimaryButton(
-  props: React.ButtonHTMLAttributes<HTMLButtonElement>
+  props: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: PrimaryButtonVariant;
+  }
 ) {
-  const { className = "", ...rest } = props;
+  const { className = "", variant = "default", ...rest } = props;
+  const variants: Record<PrimaryButtonVariant, string> = {
+    default: "bg-white text-neutral-950 hover:bg-neutral-200 dark:bg-white",
+    success: "bg-emerald-600 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-800",
+    danger: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
+  };
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 disabled:opacity-45 dark:bg-white ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-45 ${variants[variant]} ${className}`}
     />
   );
 }

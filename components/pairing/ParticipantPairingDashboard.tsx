@@ -9,6 +9,9 @@ import {
   ClipboardCheck,
   UserCircle,
   Swords,
+  ClipboardPenLine,
+  MessageCircle,
+  Gavel,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
 import Sessions from "./Sessions";
@@ -16,6 +19,9 @@ import Leaderboards from "./Leaderboards";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
 import SparManagement from "./SparManagement";
+import MockDrillWorkspace from "./MockDrillWorkspace";
+import MockJudgeWorkspace from "./MockJudgeWorkspace";
+import ChatWorkspace from "./ChatWorkspace";
 import type {
   AdjudicatorLeaderboardRow,
   AttendanceHistoryItem,
@@ -31,10 +37,16 @@ export type ParticipantTab =
   | "SpeakerLeaderboard"
   | "AdjudicatorLeaderboard"
   | "Sessions"
-  | "Spars";
+  | "Spars"
+  | "Chat"
+  | "MockDrill"
+  | "MockJudge";
 
 export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
+  { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={18} /> },
+  { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={18} /> },
+  { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={18} /> },
   { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={18} /> },
   { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
   { key: "SpeakerLeaderboard", label: "Leaderboards", icon: <Mic2 size={18} /> },
@@ -63,6 +75,10 @@ type ParticipantPairingDashboardProps = {
   onLeaderboardScopeChange: (scope: "all" | "bi-monthly") => void;
   onOpenLeaderboards: () => void;
   onOpenAdjudicatorLeaderboards: () => void;
+  onOpenChat: () => void;
+  onOpenMockDrill: () => void;
+  onOpenMockJudge: () => void;
+  developmentDebassMockEnabled: boolean;
   onRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
@@ -87,6 +103,10 @@ export default function ParticipantPairingDashboard({
   onLeaderboardScopeChange,
   onOpenLeaderboards,
   onOpenAdjudicatorLeaderboards,
+  onOpenChat,
+  onOpenMockDrill,
+  onOpenMockJudge,
+  developmentDebassMockEnabled,
   onRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
@@ -106,6 +126,9 @@ export default function ParticipantPairingDashboard({
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}
           onOpenAdjudicatorLeaderboards={onOpenAdjudicatorLeaderboards}
+          onOpenChat={onOpenChat}
+          onOpenMockDrill={onOpenMockDrill}
+          onOpenMockJudge={onOpenMockJudge}
         />
       )}
       {activeTab === "MyPairing" && (
@@ -152,6 +175,9 @@ export default function ParticipantPairingDashboard({
         />
       )}
       {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
+      {activeTab === "Chat" && <ChatWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "MockDrill" && <MockDrillWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "MockJudge" && <MockJudgeWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
       {activeTab === "Sessions" && (
         <Sessions
           mode="participant"

@@ -7,6 +7,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
 import PairingBackdrop from "./PairingBackdrop";
+import DebassWorkspaceProvider, { useDebassWorkspace } from "./DebassWorkspaceProvider";
+import AssistantSettings from "./AssistantSettings";
+import { InlineLoader, PageSkeleton } from "./Loading";
 import { usePairingRealtime } from "./usePairingRealtime";
 import AdminPairingDashboard, {
   ADMIN_TABS,
@@ -32,6 +35,7 @@ type PairingDashboardProps = {
   userId?: string | null;
   position?: string | null;
   embedded?: boolean;
+  developmentDebassMockEnabled?: boolean;
 };
 
 type PairingDataState = {
@@ -83,6 +87,7 @@ export default function PairingDashboard({
   userId = null,
   position = null,
   embedded = false,
+  developmentDebassMockEnabled = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -100,18 +105,26 @@ export default function PairingDashboard({
   useEffect(() => { setSidebarCollapsed(window.localStorage.getItem("debsoc-dashboard-sidebar") !== "expanded"); }, []);
   const toggleSidebar = () => setSidebarCollapsed((value) => { const next = !value; window.localStorage.setItem("debsoc-dashboard-sidebar", next ? "collapsed" : "expanded"); return next; });
 
-  // Restore the active tab from the URL on mount, then keep the URL in sync,
-  // so a browser refresh stays on the tab being viewed instead of Home.
+  // Restore the active tab from the URL and listen for browser navigation so
+  // Back/Forward changes the rendered workspace as well as the address bar.
   useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get("tab");
-    if (!tab) return;
-    if (isAdminView && ADMIN_TABS.some((entry) => entry.key === tab)) {
-      setAdminTab(tab as AdminTab);
-    } else if (!isAdminView && PARTICIPANT_TABS.some((entry) => entry.key === tab)) {
-      setParticipantTab(tab as ParticipantTab);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const syncTabFromLocation = () => {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (isAdminView && tab && ADMIN_TABS.some((entry) => entry.key === tab)) {
+        setAdminTab(tab as AdminTab);
+      } else if (!isAdminView && tab && PARTICIPANT_TABS.some((entry) => entry.key === tab)) {
+        setParticipantTab(tab as ParticipantTab);
+      } else if (isAdminView) {
+        setAdminTab("Home");
+      } else {
+        setParticipantTab("Home");
+      }
+    };
+
+    syncTabFromLocation();
+    window.addEventListener("popstate", syncTabFromLocation);
+    return () => window.removeEventListener("popstate", syncTabFromLocation);
+  }, [isAdminView]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -124,6 +137,8 @@ export default function PairingDashboard({
   const refreshPrimaryData = () => setPrimaryDataVersion((v) => v + 1);
   const [leaderboardDataVersion, setLeaderboardDataVersion] = useState(0);
   const refreshLeaderboardData = () => setLeaderboardDataVersion((v) => v + 1);
+  const initialDataLoading = state.loading && primaryDataVersion === 0;
+  const initialLeaderboardLoading = state.loadingLeaderboard && leaderboardDataVersion === 0;
   const [workspaceRealtimeEvent, setWorkspaceRealtimeEvent] = useState<RealtimeEventEnvelope | null>(null);
   const primaryRefreshTimeoutRef = useRef<number | null>(null);
   const leaderboardRefreshTimeoutRef = useRef<number | null>(null);
@@ -332,9 +347,18 @@ export default function PairingDashboard({
     }
   };
 
+  const navigateToTab = (key: string) => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") !== key) {
+      url.searchParams.set("tab", key);
+      window.history.pushState(null, "", url);
+    }
+    applyTab(key);
+  };
+
   // Desktop sidebar / mobile bottom bar: no drawer to animate, switch at once.
   const selectTab = (key: string) => {
-    applyTab(key);
+    navigateToTab(key);
     setSidebarOpen(false);
   };
 
@@ -396,22 +420,14 @@ export default function PairingDashboard({
   );
 
   const openLeaderboards = () => {
-    if (isAdminView) {
-      setAdminTab("SpeakerLeaderboard");
-    } else {
-      setParticipantTab("SpeakerLeaderboard");
-    }
+    navigateToTab("SpeakerLeaderboard");
   };
 
   const openAdjudicatorLeaderboards = () => {
-    if (isAdminView) {
-      setAdminTab("AdjudicatorLeaderboard");
-    } else {
-      setParticipantTab("AdjudicatorLeaderboard");
-    }
+    navigateToTab("AdjudicatorLeaderboard");
   };
 
-  const content = isAdminView ? (
+  const dashboardContent = isAdminView ? (
     <AdminPairingDashboard
       role={role}
       userName={userName}
@@ -429,16 +445,20 @@ export default function PairingDashboard({
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
       progressSummaries={state.progressSummaries}
       leaderboardScope={state.leaderboardScope}
-      loading={state.loading}
-      loadingLeaderboard={state.loadingLeaderboard}
+      loading={initialDataLoading}
+      loadingLeaderboard={initialLeaderboardLoading}
       error={state.error}
       leaderboardError={state.leaderboardError}
       onLeaderboardScopeChange={(scope) =>
         setState((current) => ({ ...current, leaderboardScope: scope }))
       }
-      onOpenWorkspace={() => setAdminTab("Workspace")}
+      onOpenWorkspace={() => navigateToTab("Workspace")}
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
+      onOpenChat={() => navigateToTab("Chat")}
+      onOpenMockDrill={() => navigateToTab("MockDrill")}
+      onOpenMockJudge={() => navigateToTab("MockJudge")}
+      developmentDebassMockEnabled={developmentDebassMockEnabled}
       onRefresh={refreshPrimaryData}
       workspaceRealtimeEvent={workspaceRealtimeEvent}
       activeTab={adminTab}
@@ -457,8 +477,8 @@ export default function PairingDashboard({
       speakerRounds={state.speakerRounds}
       adjudicatorLeaderboard={state.adjudicatorLeaderboard}
       leaderboardScope={state.leaderboardScope}
-      loading={state.loading}
-      loadingLeaderboard={state.loadingLeaderboard}
+      loading={initialDataLoading}
+      loadingLeaderboard={initialLeaderboardLoading}
       error={state.error}
       leaderboardError={state.leaderboardError}
       onLeaderboardScopeChange={(scope) =>
@@ -466,10 +486,20 @@ export default function PairingDashboard({
       }
       onOpenLeaderboards={openLeaderboards}
       onOpenAdjudicatorLeaderboards={openAdjudicatorLeaderboards}
+      onOpenChat={() => navigateToTab("Chat")}
+      onOpenMockDrill={() => navigateToTab("MockDrill")}
+      onOpenMockJudge={() => navigateToTab("MockJudge")}
+      developmentDebassMockEnabled={developmentDebassMockEnabled}
       onRefresh={refreshPrimaryData}
       activeTab={participantTab}
     />
   );
+
+  const content = initialDataLoading ? (
+    <PageSkeleton
+      variant={activeTab === "Workspace" ? "workspace" : activeTab === "Sessions" || activeTab === "Roster" || activeTab.includes("Leaderboard") ? "table" : "dashboard"}
+    />
+  ) : dashboardContent;
 
   const contentRef = useRef<HTMLElement | null>(null);
 
@@ -496,7 +526,8 @@ export default function PairingDashboard({
   const brand = `${firstName}'s Dashboard`;
 
   return (
-    <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
+    <DebassWorkspaceProvider developmentMockEnabled={developmentDebassMockEnabled}>
+      <div className="pairing-shell relative min-h-screen overflow-x-clip text-slate-900 dark:text-slate-100 lg:flex">
       <PairingBackdrop />
       {/* Mobile top bar */}
       <div className="glass-topbar sticky top-0 z-30 flex items-center justify-between gap-2 px-4 py-3 text-slate-900 dark:text-slate-100 lg:hidden">
@@ -519,18 +550,20 @@ export default function PairingDashboard({
 
       {/* Desktop sidebar */}
       <aside className={`glass-sidebar relative z-10 hidden shrink-0 flex-col p-4 transition-[width] duration-300 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:rounded-[28px] ${sidebarCollapsed ? "w-[88px]" : "w-80"}`}>
-        <div className={`mb-5 flex min-h-9 w-full items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
-          {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
+        <div className={`mb-5 flex w-full font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "flex-col items-center gap-3" : "min-h-11 items-center gap-2.5"}`}>
+          <div className={`flex min-w-0 items-center gap-2.5 ${sidebarCollapsed ? "w-full justify-center" : "flex-1"}`}>
+            <ProfileAvatar name={userName || firstName} className="h-9 w-9 shrink-0 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
+            {!sidebarCollapsed && <div className="min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
+          </div>
+          <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className={`inline-flex shrink-0 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-900/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-200 dark:hover:bg-white/10 ${sidebarCollapsed ? "min-h-[60px] w-full" : "h-11 w-11"}`}>
+            <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/90 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white dark:border-white/15 dark:bg-[#171717]/95 dark:hover:bg-[#252525]">
+              {sidebarCollapsed ? <PanelLeftOpen size={24} /> : <PanelLeftClose size={24} />}
+            </span>
+          </button>
         </div>
-        <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className="absolute -right-9 top-1/2 z-30 flex h-32 w-20 -translate-y-1/2 items-center justify-center rounded-full bg-transparent p-3 text-slate-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-200">
-          <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/90 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white dark:border-white/15 dark:bg-[#171717]/95 dark:hover:bg-[#252525]">
-            {sidebarCollapsed ? <PanelLeftOpen size={24} /> : <PanelLeftClose size={24} />}
-          </span>
-        </button>
         {renderNav("pairing-nav-pill-desktop", selectTab, sidebarCollapsed)}
         <div className={`mt-auto flex flex-col gap-2 border-t border-black/10 pt-5 dark:border-white/10 ${sidebarCollapsed ? "items-center" : "items-stretch"}`}>
-          {!sidebarCollapsed && <ThemeToggle />}
+          {!sidebarCollapsed ? <div className="flex items-center gap-2"><ThemeToggle /><AssistantSettings /></div> : <AssistantSettings collapsed />}
           <div className={sidebarCollapsed ? "flex w-full justify-center" : "w-full"}>
             <LogoutButton collapsed={sidebarCollapsed} />
           </div>
@@ -541,7 +574,7 @@ export default function PairingDashboard({
       <AnimatePresence
         onExitComplete={() => {
           if (pendingTab) {
-            applyTab(pendingTab);
+            navigateToTab(pendingTab);
             setPendingTab(null);
           }
         }}
@@ -582,7 +615,8 @@ export default function PairingDashboard({
                 {renderNav("pairing-nav-pill-drawer", selectTabFromDrawer)}
               </div>
 
-              <div className="mt-4 flex border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
+              <div className="mt-4 flex flex-col gap-2 border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
+                <AssistantSettings />
                 <div className="[&>button]:w-full flex-1">
                   <LogoutButton />
                 </div>
@@ -596,6 +630,12 @@ export default function PairingDashboard({
         ref={contentRef}
         className="content-enter relative z-10 min-w-0 flex-1 p-4 pb-24 sm:p-6 lg:p-8 lg:pb-8"
       >
+        {!initialDataLoading && (state.loading || state.loadingLeaderboard) && (
+          <div className="mb-4 flex items-center justify-end gap-2 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
+            <InlineLoader label="Refreshing dashboard data" />
+            <span>Refreshing live data</span>
+          </div>
+        )}
         {content}
       </main>
 
@@ -629,16 +669,23 @@ export default function PairingDashboard({
           );
         })}
       </nav>
-    </div>
+      </div>
+    </DebassWorkspaceProvider>
   );
 }
 
 function LogoutButton({ collapsed = false }: { collapsed?: boolean }) {
+  const { clearKey, clearAssistantSession } = useDebassWorkspace();
+
   return (
     <button
       type="button"
       aria-label="Log out"
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick={() => {
+        clearKey();
+        clearAssistantSession();
+        void signOut({ callbackUrl: "/" });
+      }}
       title="Log out"
       className={`inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-sm font-semibold text-red-700 backdrop-blur-md transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] ${collapsed ? "h-11 w-11 shrink-0 px-0" : "w-full flex-1"}`}
     >
