@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { fetchJson } from "@/lib/client/fetch-json";
 import { Card, EmptyState, SectionHeader, StateBadge } from "./ui";
+import { LoadingRegion, PageSkeleton } from "./Loading";
 import { usePairingRealtime } from "./usePairingRealtime";
 import type {
   AdjudicatorLeaderboardRow,
@@ -216,7 +217,7 @@ export default function MyPairing({
   );
 
   if (loading) {
-    return <EmptyState title="Loading pairing" body="Fetching your published room assignment." />;
+    return <LoadingRegion label="Loading pairing"><PageSkeleton variant="workspace" /></LoadingRegion>;
   }
 
   if (error) {

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Card, EmptyState, SectionHeader } from "./ui";
+import { LoadingRegion, TableSkeleton } from "./Loading";
 import type {
   AdjudicatorLeaderboardRow,
   SpeakerLeaderboardRow,
@@ -91,7 +92,9 @@ export default function Leaderboards({
       </div>
 
       {loading ? (
-        <EmptyState title="Loading leaderboard" body="Fetching live leaderboard data." />
+        <LoadingRegion label="Loading leaderboard">
+          <TableSkeleton columns={view === "speakers" ? 4 : 5} rows={6} />
+        </LoadingRegion>
       ) : error ? (
         <EmptyState title="Leaderboard unavailable" body={error} />
       ) : view === "speakers" ? (
@@ -347,6 +350,5 @@ function RankDoodle({ rank }: { rank: number }) {
     </svg>
   );
 }
-
 
 

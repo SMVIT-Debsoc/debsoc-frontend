@@ -91,7 +91,7 @@ async function resolveDevBypassId(role: DebsocRole) {
       return match.id;
     }
   } catch (caught) {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === "development" && process.env.DEV_AUTH_DEBUG === "true") {
       console.warn("[dev-session] Falling back to dev-user because dev auth lookup failed.", caught);
     }
   }

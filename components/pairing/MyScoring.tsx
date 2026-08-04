@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { fetchJson } from "@/lib/client/fetch-json";
 import { Card, EmptyState, Field, PrimaryButton, SectionHeader, SecondaryButton } from "./ui";
+import { FormSkeleton, LoadingRegion } from "./Loading";
 import { usePairingRealtime } from "./usePairingRealtime";
 import type { AttendanceHistoryItem, SessionRow } from "./types";
 import type { PublishedPairingView } from "@/types/pairing";
@@ -335,7 +336,12 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
   }
 
   if (loading) {
-    return <EmptyState title="Loading scoring tasks" body="Fetching your live role-based scoring tasks." />;
+    return (
+      <LoadingRegion label="Loading scoring tasks">
+        <SectionHeader title="My Scoring Tasks" subtitle="Fetching your live role-based scoring tasks." />
+        <Card className="p-5"><FormSkeleton /></Card>
+      </LoadingRegion>
+    );
   }
 
   if (error) {

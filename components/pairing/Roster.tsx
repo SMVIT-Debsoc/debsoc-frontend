@@ -6,6 +6,7 @@ import {motion, useReducedMotion} from "framer-motion";
 import {Crown, ShieldCheck, User} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {EmptyState, SectionHeader} from "./ui";
+import { LoadingRegion, ListSkeleton } from "./Loading";
 import type {Participant, ProgressProfile, ProgressSummary} from "./types";
 
 type RosterProps = {
@@ -153,10 +154,10 @@ export default function Roster({
 
     if (loading) {
         return (
-            <EmptyState
-                title="Loading roster"
-                body="Fetching live members, cabinet, and president records."
-            />
+            <LoadingRegion label="Loading roster">
+                <SectionHeader title="Members & Cabinet" subtitle="Fetching live members, cabinet, and president records." />
+                <ListSkeleton count={6} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4" />
+            </LoadingRegion>
         );
     }
 

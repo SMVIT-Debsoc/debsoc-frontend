@@ -3,7 +3,8 @@
 import React, {useEffect, useRef, useState} from "react";
 import {motion, AnimatePresence} from "framer-motion";
 import toast, {Toaster} from "react-hot-toast";
-import {Clock3, Sparkles, ShieldAlert, Timer, Gauge, ChevronDown} from "lucide-react";
+import {Clock3, Sparkles, ShieldAlert, Timer, Gauge} from "lucide-react";
+import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
 
 type ClockType = "" | "Timer" | "Stopwatch";
 
@@ -37,80 +38,24 @@ function CustomDropdown({
     onChange: (val: string) => void;
     placeholder: string;
 }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () =>
-            document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
     return (
-        <div className="relative space-y-2" ref={dropdownRef}>
+        <div className="space-y-2">
             <label className="text-[10px] sm:text-xs uppercase tracking-[0.22em] text-zinc-400">
                 {label}
             </label>
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between rounded-xl border border-white/10 bg-zinc-900/40 px-4 py-3.5 text-white backdrop-blur-md transition-all hover:bg-white/5 active:scale-[0.98] outline-none group ${
-                    isOpen ? "ring-2 ring-white/20 border-white/20" : ""
-                }`}
-            >
-                <span
-                    className={`text-sm sm:text-base font-medium transition-colors ${
-                        value ? "text-white" : "text-zinc-500"
-                    }`}
-                >
-                    {value || placeholder}
-                </span>
-                <ChevronDown
-                    className={`w-4 h-4 text-zinc-500 transition-transform duration-300 group-hover:text-zinc-300 ${
-                        isOpen ? "rotate-180" : ""
-                    }`}
-                />
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{opacity: 0, y: 10, scale: 0.95}}
-                        animate={{opacity: 1, y: 0, scale: 1}}
-                        exit={{opacity: 0, y: 10, scale: 0.95}}
-                        transition={{duration: 0.2, ease: "easeOut"}}
-                        className="absolute z-50 w-full mt-2 rounded-xl border border-white/10 bg-zinc-900/95 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
-                    >
-                        <div className="py-1">
-                            {options.map((opt) => (
-                                <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={() => {
-                                        onChange(opt);
-                                        setIsOpen(false);
-                                    }}
-                                    className={`w-full text-left px-4 py-3 text-sm sm:text-base transition-all hover:bg-white/10 ${
-                                        value === opt
-                                            ? "text-emerald-400 bg-white/5"
-                                            : "text-zinc-300"
-                                    }`}
-                                >
-                                    {opt}
-                                </button>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <SearchableDropdown
+                emptyMessage="No options found"
+                items={options.map((option) => ({
+                    id: option,
+                    label: option,
+                    value: option,
+                }))}
+                label={label}
+                placeholder={placeholder}
+                value={value}
+                onSelect={(item) => onChange(item.value ?? item.id)}
+                className="!rounded-xl !border-white/10 !bg-zinc-900/40 !py-1 !text-white backdrop-blur-md"
+            />
         </div>
     );
 }

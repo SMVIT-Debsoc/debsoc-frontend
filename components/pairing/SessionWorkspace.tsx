@@ -41,6 +41,7 @@ import type {
 import type { RealtimeEventEnvelope } from "@/types/realtime";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
+import { PageSkeleton } from "./Loading";
 
 type StepKey = "prepare" | "setup" | "review" | "publish" | "post";
 
@@ -543,12 +544,7 @@ export default function SessionWorkspace({
     };
 
     if (loading) {
-        return (
-            <EmptyState
-                title="Loading workspace"
-                body="Fetching live session and roster data."
-            />
-        );
+        return <PageSkeleton variant="workspace" />;
     }
 
     if (error) {

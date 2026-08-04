@@ -5,6 +5,7 @@ import {createPortal} from "react-dom";
 import {Calendar, Crown, Users, X} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {Card, EmptyState, SectionHeader, StateBadge} from "./ui";
+import { LoadingRegion, TableSkeleton } from "./Loading";
 import type {AttendanceHistoryItem, SessionRow} from "./types";
 
 type SessionsProps = {
@@ -49,10 +50,10 @@ export default function Sessions({
 
     if (loading) {
         return (
-            <EmptyState
-                title="Loading sessions"
-                body="Fetching live session history."
-            />
+            <LoadingRegion label="Loading session history">
+                <SectionHeader title={mode === "admin" ? "Sessions" : "Session History"} subtitle="Fetching live session history." />
+                <TableSkeleton columns={5} rows={6} />
+            </LoadingRegion>
         );
     }
 

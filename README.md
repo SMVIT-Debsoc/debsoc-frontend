@@ -100,6 +100,16 @@ For collaborations, queries, or participation:
 
 We welcome ideas, collaborations, and enthusiastic members who want to make a difference through dialogue and debate.
 
+## Debass workspace integration
+
+The authenticated Chat, Mock Drill, Mock Judge, and document surfaces use the API-only Debass service when configured. Set the frontend URL in a local, uncommitted environment file:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000/api
+```
+
+Use an HTTPS Debass API URL in production. Members enter their own OpenRouter key in the workspace; the frontend keeps it in component memory and sends it only to the configured Debass backend. For local UI testing without Debass, the mock preview is enabled only when both `NODE_ENV=development` and `DEV_DEBASS_MOCK=true` are set. Never add either local setting to production environment configuration.
+
 ---
 
 ## ⭐ Acknowledgements
