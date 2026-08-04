@@ -1,7 +1,8 @@
 "use client";
 
 import { Check, ChevronDown, Search, X } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 
 export type SearchableDropdownItem = {
   id: string;
@@ -22,7 +23,22 @@ type SearchableDropdownProps = {
   onSelect?: (item: SearchableDropdownItem) => void;
   clearable?: boolean;
   onClear?: () => void;
+  disabled?: boolean;
+  className?: string;
+  searchable?: boolean;
 };
+
+type DropdownPosition = {
+  left: number;
+  maxHeight: number;
+  placement: "above" | "below";
+  top: number;
+  width: number;
+};
+
+const VIEWPORT_PADDING = 8;
+const MENU_GAP = 6;
+const DEFAULT_MENU_HEIGHT = 288;
 
 export default function SearchableDropdown({
   emptyMessage,
@@ -33,13 +49,18 @@ export default function SearchableDropdown({
   onSelect,
   clearable = false,
   onClear,
+  disabled = false,
+  className = "",
+  searchable = true,
 }: SearchableDropdownProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [internalValue, setInternalValue] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [position, setPosition] = useState<DropdownPosition | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const listId = useId();
@@ -47,23 +68,101 @@ export default function SearchableDropdown({
   const selectedItem = items.find((item) => item.id === selectedId);
 
   const filteredItems = useMemo(() => {
+    if (!searchable) return [...items];
     const query = search.trim().toLowerCase();
     if (!query) return [...items];
     return items.filter((item) => [item.label, item.category, item.description, item.value, ...(item.searchTerms ?? [])]
       .filter(Boolean)
       .some((text) => text?.toLowerCase().includes(query)));
-  }, [items, search]);
+  }, [items, search, searchable]);
   const safeActiveIndex = Math.min(activeIndex, Math.max(filteredItems.length - 1, 0));
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (
+        rootRef.current &&
+        !rootRef.current.contains(target) &&
+        !menuRef.current?.contains(target)
+      ) {
+        setOpen(false);
+        setSearch("");
+        setPosition(null);
+      }
+    };
+    const onEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      closeAndFocusTrigger();
     };
     document.addEventListener("pointerdown", onPointerDown);
-    searchRef.current?.focus();
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+    document.addEventListener("keydown", onEscape);
+    if (searchable) searchRef.current?.focus();
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onEscape);
+    };
+  }, [open, searchable]);
+
+  const measurePosition = useCallback((): DropdownPosition | null => {
+    const trigger = triggerRef.current;
+    if (!trigger || typeof window === "undefined") return null;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const width = Math.min(
+      Math.max(rect.width, 180),
+      Math.max(viewportWidth - VIEWPORT_PADDING * 2, 0),
+    );
+    const left = Math.min(
+      Math.max(rect.left, VIEWPORT_PADDING),
+      Math.max(viewportWidth - VIEWPORT_PADDING - width, VIEWPORT_PADDING),
+    );
+    const availableAbove = Math.max(rect.top - VIEWPORT_PADDING - MENU_GAP, 0);
+    const availableBelow = Math.max(viewportHeight - rect.bottom - VIEWPORT_PADDING - MENU_GAP, 0);
+    const measuredHeight = menuRef.current?.scrollHeight || DEFAULT_MENU_HEIGHT;
+    const opensAbove = availableBelow < measuredHeight && availableAbove > availableBelow;
+    const availableHeight = opensAbove ? availableAbove : availableBelow;
+    const maxHeight = Math.min(availableHeight, Math.max(viewportHeight - VIEWPORT_PADDING * 2, 0));
+    const top = opensAbove
+      ? Math.max(rect.top - MENU_GAP - maxHeight, VIEWPORT_PADDING)
+      : Math.min(
+          rect.bottom + MENU_GAP,
+          Math.max(viewportHeight - VIEWPORT_PADDING - maxHeight, VIEWPORT_PADDING),
+        );
+
+    return { left, maxHeight, placement: opensAbove ? "above" : "below", top, width };
+  }, []);
+
+  const updatePosition = useCallback(() => {
+    const nextPosition = measurePosition();
+    if (nextPosition) setPosition(nextPosition);
+  }, [measurePosition]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(updatePosition);
+    const onViewportChange = () => updatePosition();
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
+    };
+  }, [open, search, filteredItems.length, updatePosition]);
+
+  useEffect(() => {
+    if (!open || !menuRef.current) return;
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(menuRef.current);
+    return () => observer.disconnect();
+  }, [open, updatePosition]);
 
   useEffect(() => {
     if (open) optionRefs.current[safeActiveIndex]?.scrollIntoView({ block: "nearest" });
@@ -72,6 +171,7 @@ export default function SearchableDropdown({
   function closeAndFocusTrigger() {
     setOpen(false);
     setSearch("");
+    setPosition(null);
     triggerRef.current?.focus();
   }
 
@@ -89,8 +189,10 @@ export default function SearchableDropdown({
   }
 
   function openDropdown() {
+    if (disabled) return;
     setOpen(true);
     setActiveIndex(Math.max(items.findIndex((item) => item.id === selectedId), 0));
+    setPosition(measurePosition());
   }
 
   function moveActive(direction: 1 | -1) {
@@ -99,7 +201,25 @@ export default function SearchableDropdown({
   }
 
   function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+    if (open) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeAndFocusTrigger();
+        return;
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        moveActive(event.key === "ArrowDown" ? 1 : -1);
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        const item = filteredItems[safeActiveIndex];
+        if (item) selectItem(item);
+        return;
+      }
+    }
+    if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       openDropdown();
     }
@@ -131,6 +251,25 @@ export default function SearchableDropdown({
   }
 
   let previousCategory: string | undefined;
+  const menuStyle: CSSProperties = position
+    ? {
+        left: position.left,
+        maxHeight: position.maxHeight,
+        top: position.top,
+        width: position.width,
+      }
+    : {
+        left: VIEWPORT_PADDING,
+        maxHeight: DEFAULT_MENU_HEIGHT,
+        top: VIEWPORT_PADDING,
+        visibility: "hidden",
+        width: typeof window === "undefined"
+          ? 220
+          : Math.min(
+              triggerRef.current?.getBoundingClientRect().width ?? 220,
+              window.innerWidth - VIEWPORT_PADDING * 2,
+            ),
+      };
 
   return (
     <div ref={rootRef} className="relative w-full">
@@ -140,9 +279,12 @@ export default function SearchableDropdown({
         aria-label={`${label}: ${selectedItem?.label ?? placeholder}`}
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls={open ? listId : undefined}
+        aria-activedescendant={!searchable && open && filteredItems[safeActiveIndex] ? `${listId}-option-${filteredItems[safeActiveIndex].id}` : undefined}
+        disabled={disabled}
         onClick={() => (open ? closeAndFocusTrigger() : openDropdown())}
         onKeyDown={handleTriggerKeyDown}
-        className={`flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/25 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:border-white/25 dark:focus-visible:border-indigo-400 ${clearable && selectedItem ? "pr-16" : ""}`}
+        className={`flex h-11 w-full items-center justify-between gap-3 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm text-slate-900 shadow-sm outline-none transition hover:border-slate-400 focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-indigo-500/25 disabled:cursor-not-allowed disabled:opacity-55 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:border-white/25 dark:focus-visible:border-indigo-400 ${clearable && selectedItem ? "pr-16" : ""} ${className}`}
       >
         <span className="flex min-w-0 items-center gap-2">
           {selectedItem?.icon && <span aria-hidden>{selectedItem.icon}</span>}
@@ -156,15 +298,21 @@ export default function SearchableDropdown({
           aria-label={`Clear ${label}`}
           title={`Clear ${label}`}
           onClick={clearSelection}
+          disabled={disabled}
           className="absolute right-8 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-400 dark:hover:bg-white/10"
         >
           <X size={15} aria-hidden />
         </button>
       )}
 
-      {open && (
-        <div className="absolute inset-x-0 top-[calc(100%+0.35rem)] z-50 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10 dark:border-white/15 dark:bg-[#171717] dark:shadow-black/40">
-          <div className="border-b border-slate-200 p-2 dark:border-white/10">
+      {open && typeof document !== "undefined" && createPortal(
+        <div
+          ref={menuRef}
+          data-placement={position?.placement ?? "below"}
+          style={menuStyle}
+          className={`fixed z-[200] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10 dark:border-white/15 dark:bg-[#171717] dark:shadow-black/40 ${position ? "" : "invisible"}`}
+        >
+          {searchable && <div className="border-b border-slate-200 p-2 dark:border-white/10">
             <div className="relative">
               <Search size={16} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -178,13 +326,20 @@ export default function SearchableDropdown({
                 aria-autocomplete="list"
                 aria-controls={listId}
                 aria-expanded={open}
+                aria-activedescendant={filteredItems[safeActiveIndex] ? `${listId}-option-${filteredItems[safeActiveIndex].id}` : undefined}
                 placeholder={placeholder}
                 className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-9 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400"
               />
               {search && <button type="button" aria-label="Clear search" title="Clear search" onClick={() => { setSearch(""); setActiveIndex(0); searchRef.current?.focus(); }} className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:hover:bg-white/10"><X size={15} aria-hidden /></button>}
             </div>
-          </div>
-          <div id={listId} role="listbox" aria-label={label} className="max-h-72 overflow-y-auto p-1">
+          </div>}
+          <div
+            id={listId}
+            role="listbox"
+            aria-label={label}
+            className="min-h-0 overflow-y-auto overscroll-contain p-1"
+            style={{ maxHeight: position ? Math.max(position.maxHeight - (searchable ? 58 : 8), 0) : DEFAULT_MENU_HEIGHT - (searchable ? 58 : 8) }}
+          >
             {filteredItems.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">{emptyMessage}</p>
             ) : filteredItems.map((item, index) => {
@@ -194,6 +349,7 @@ export default function SearchableDropdown({
                 <div key={item.id}>
                   {showCategory && <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">{item.category}</p>}
                   <button
+                    id={`${listId}-option-${item.id}`}
                     ref={(element) => { optionRefs.current[index] = element; }}
                     type="button"
                     role="option"
@@ -210,7 +366,8 @@ export default function SearchableDropdown({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

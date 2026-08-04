@@ -27,6 +27,9 @@ import PairingDashboard from "@/components/pairing/PairingDashboard";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import PairingBackdrop from "@/components/pairing/PairingBackdrop";
 import ThemeToggle from "@/components/pairing/ThemeToggle";
+import DebassWorkspaceProvider from "@/components/pairing/DebassWorkspaceProvider";
+import AssistantSettings from "@/components/pairing/AssistantSettings";
+import { PageSkeleton } from "@/components/pairing/Loading";
 
 interface UserRecord {
     id: string;
@@ -48,7 +51,7 @@ interface VerifiedData {
     verifiedMembers: UserRecord[];
 }
 
-export default function TechHeadDashboard() {
+export default function TechHeadDashboard({ developmentDebassMockEnabled = false }: { developmentDebassMockEnabled?: boolean }) {
     const [unverified, setUnverified] = useState<UnverifiedData | null>(null);
     const [verified, setVerified] = useState<VerifiedData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -344,6 +347,7 @@ export default function TechHeadDashboard() {
     };
 
     return (
+        <DebassWorkspaceProvider developmentMockEnabled={developmentDebassMockEnabled}>
         <div className="pairing-shell relative min-h-screen overflow-x-hidden bg-[#f2eee8] p-4 text-slate-900 dark:bg-[#0a0a0a] dark:text-slate-100 sm:p-6 lg:p-8">
             <PairingBackdrop />
             <Toaster
@@ -428,6 +432,7 @@ export default function TechHeadDashboard() {
                                 />
                             </button>
                             <ThemeToggle />
+                            <AssistantSettings collapsed />
                             <button
                                 onClick={() => signOut({callbackUrl: "/login"})}
                                 className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-red-700 transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] sm:flex-none"
@@ -534,6 +539,7 @@ export default function TechHeadDashboard() {
                                 role="TechHead"
                                 userName="Tech Head"
                                 embedded
+                                developmentDebassMockEnabled={developmentDebassMockEnabled}
                             />
                         </motion.div>
                     ) : loading ? (
@@ -542,15 +548,8 @@ export default function TechHeadDashboard() {
                             initial={{opacity: 0}}
                             animate={{opacity: 1}}
                             exit={{opacity: 0}}
-                            className="flex flex-col items-center justify-center py-20"
                         >
-                            <Loader2
-                                className="animate-spin text-zinc-700 mb-4"
-                                size={40}
-                            />
-                            <p className="text-zinc-600 text-sm font-light uppercase tracking-widest">
-                                Accessing records...
-                            </p>
+                            <PageSkeleton variant="table" />
                         </motion.div>
                     ) : (
                         <motion.div
@@ -716,5 +715,6 @@ export default function TechHeadDashboard() {
                 )}
             </AnimatePresence>
         </div>
+        </DebassWorkspaceProvider>
     );
 }

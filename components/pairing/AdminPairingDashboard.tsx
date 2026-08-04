@@ -11,6 +11,9 @@ import {
   ClipboardCheck,
   UserCircle,
   Swords,
+  ClipboardPenLine,
+  MessageCircle,
+  Gavel,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
 import SessionWorkspace from "./SessionWorkspace";
@@ -20,6 +23,9 @@ import Roster from "./Roster";
 import MyPairing from "./MyPairing";
 import MyScoring from "./MyScoring";
 import SparManagement from "./SparManagement";
+import MockDrillWorkspace from "./MockDrillWorkspace";
+import MockJudgeWorkspace from "./MockJudgeWorkspace";
+import ChatWorkspace from "./ChatWorkspace";
 import type { RealtimeEventEnvelope } from "@/types/realtime";
 import type {
   AdjudicatorLeaderboardRow,
@@ -39,10 +45,16 @@ export type AdminTab =
   | "AdjudicatorLeaderboard"
   | "MyPairing"
   | "MyScoring"
-  | "Spars";
+  | "Spars"
+  | "Chat"
+  | "MockDrill"
+  | "MockJudge";
 
 export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
+  { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={18} /> },
+  { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={18} /> },
+  { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={18} /> },
   { key: "Workspace", label: "Session Workspace", icon: <LayoutDashboard size={18} /> },
   { key: "Sessions", label: "Sessions", icon: <Calendar size={18} /> },
   { key: "Roster", label: "Members & Cabinet", icon: <Users size={18} /> },
@@ -76,6 +88,10 @@ type AdminPairingDashboardProps = {
   onOpenWorkspace: () => void;
   onOpenLeaderboards: () => void;
   onOpenAdjudicatorLeaderboards: () => void;
+  onOpenChat: () => void;
+  onOpenMockDrill: () => void;
+  onOpenMockJudge: () => void;
+  developmentDebassMockEnabled: boolean;
   onRefresh?: () => void;
   workspaceRealtimeEvent?: RealtimeEventEnvelope | null;
   activeTab?: AdminTab;
@@ -104,6 +120,10 @@ export default function AdminPairingDashboard({
   onOpenWorkspace,
   onOpenLeaderboards,
   onOpenAdjudicatorLeaderboards,
+  onOpenChat,
+  onOpenMockDrill,
+  onOpenMockJudge,
+  developmentDebassMockEnabled,
   onRefresh,
   workspaceRealtimeEvent = null,
   activeTab = "Home",
@@ -122,6 +142,9 @@ export default function AdminPairingDashboard({
           adjudicatorLeaderboard={adjudicatorLeaderboard}
           onOpenLeaderboards={onOpenLeaderboards}
           onOpenAdjudicatorLeaderboards={onOpenAdjudicatorLeaderboards}
+          onOpenChat={onOpenChat}
+          onOpenMockDrill={onOpenMockDrill}
+          onOpenMockJudge={onOpenMockJudge}
           onOpenWorkspace={onOpenWorkspace}
         />
       )}
@@ -182,12 +205,12 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
+      {activeTab === "Chat" && <ChatWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "MockDrill" && <MockDrillWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "MockJudge" && <MockJudgeWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}
     </div>
   );
 }
-
-
-
