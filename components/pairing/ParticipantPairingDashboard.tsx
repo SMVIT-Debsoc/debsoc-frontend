@@ -78,7 +78,6 @@ type ParticipantPairingDashboardProps = {
   onOpenChat: () => void;
   onOpenMockDrill: () => void;
   onOpenMockJudge: () => void;
-  developmentDebassMockEnabled: boolean;
   onRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
@@ -106,7 +105,6 @@ export default function ParticipantPairingDashboard({
   onOpenChat,
   onOpenMockDrill,
   onOpenMockJudge,
-  developmentDebassMockEnabled,
   onRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
@@ -175,9 +173,9 @@ export default function ParticipantPairingDashboard({
         />
       )}
       {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
-      {activeTab === "Chat" && <ChatWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
-      {activeTab === "MockDrill" && <MockDrillWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
-      {activeTab === "MockJudge" && <MockJudgeWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "Chat" && <ChatWorkspace />}
+      {activeTab === "MockDrill" && <MockDrillWorkspace />}
+      {activeTab === "MockJudge" && <MockJudgeWorkspace />}
       {activeTab === "Sessions" && (
         <Sessions
           mode="participant"

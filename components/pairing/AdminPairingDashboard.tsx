@@ -91,7 +91,6 @@ type AdminPairingDashboardProps = {
   onOpenChat: () => void;
   onOpenMockDrill: () => void;
   onOpenMockJudge: () => void;
-  developmentDebassMockEnabled: boolean;
   onRefresh?: () => void;
   workspaceRealtimeEvent?: RealtimeEventEnvelope | null;
   activeTab?: AdminTab;
@@ -123,7 +122,6 @@ export default function AdminPairingDashboard({
   onOpenChat,
   onOpenMockDrill,
   onOpenMockJudge,
-  developmentDebassMockEnabled,
   onRefresh,
   workspaceRealtimeEvent = null,
   activeTab = "Home",
@@ -205,9 +203,9 @@ export default function AdminPairingDashboard({
         />
       )}
       {activeTab === "Spars" && <SparManagement participants={sparParticipants} currentUserId={userId} />}
-      {activeTab === "Chat" && <ChatWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
-      {activeTab === "MockDrill" && <MockDrillWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
-      {activeTab === "MockJudge" && <MockJudgeWorkspace developmentDebassMockEnabled={developmentDebassMockEnabled} />}
+      {activeTab === "Chat" && <ChatWorkspace />}
+      {activeTab === "MockDrill" && <MockDrillWorkspace />}
+      {activeTab === "MockJudge" && <MockJudgeWorkspace />}
       {activeTab === "MyScoring" && (
         <MyScoring role={role} userId={userId} sessions={sessions} attendanceHistory={attendanceHistory} onRefresh={onRefresh} />
       )}

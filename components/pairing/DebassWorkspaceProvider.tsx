@@ -9,7 +9,6 @@ export type DebassHealthState = "Connected" | "Connecting" | "Disconnected" | "U
 export type DebassKeyState = "empty" | "validating" | "valid" | "invalid";
 
 type DebassWorkspaceContextValue = {
-  developmentMockEnabled: boolean;
   healthState: DebassHealthState;
   keyState: DebassKeyState;
   keyError: string | null;
@@ -34,13 +33,11 @@ const DebassWorkspaceContext = createContext<DebassWorkspaceContextValue | null>
 
 export default function DebassWorkspaceProvider({
   children,
-  developmentMockEnabled,
 }: {
   children: ReactNode;
-  developmentMockEnabled: boolean;
 }) {
   const backendConfigured = hasDebassBackendUrl();
-  const [healthState, setHealthState] = useState<DebassHealthState>(developmentMockEnabled ? "Unavailable" : backendConfigured ? "Connecting" : "Unavailable");
+  const [healthState, setHealthState] = useState<DebassHealthState>(backendConfigured ? "Connecting" : "Unavailable");
   const [draftKey, setDraftKeyState] = useState("");
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null);
   const [keyState, setKeyState] = useState<DebassKeyState>("empty");
@@ -69,7 +66,7 @@ export default function DebassWorkspaceProvider({
   }, []);
 
   const refreshHealth = useCallback(async () => {
-    if (developmentMockEnabled || !backendConfigured) {
+    if (!backendConfigured) {
       setHealthState("Unavailable");
       return;
     }
@@ -81,10 +78,10 @@ export default function DebassWorkspaceProvider({
     } catch (caught) {
       if (!(caught instanceof DebassApiError && caught.kind === "cancelled")) setHealthState("Disconnected");
     }
-  }, [backendConfigured, developmentMockEnabled]);
+  }, [backendConfigured]);
 
   useEffect(() => {
-    if (developmentMockEnabled || !backendConfigured) return;
+    if (!backendConfigured) return;
     const controller = new AbortController();
     void debassClient.health(controller.signal).then((response) => {
       if (response.status === "ok") setHealthState("Connected");
@@ -93,7 +90,7 @@ export default function DebassWorkspaceProvider({
       if (!(caught instanceof DebassApiError && caught.kind === "cancelled")) setHealthState("Disconnected");
     });
     return () => controller.abort();
-  }, [backendConfigured, developmentMockEnabled]);
+  }, [backendConfigured]);
 
   const setDraftKey = useCallback((value: string) => {
     validationController.current?.abort();
@@ -199,7 +196,6 @@ export default function DebassWorkspaceProvider({
   }, []);
 
   const value = useMemo<DebassWorkspaceContextValue>(() => ({
-    developmentMockEnabled,
     healthState,
     keyState,
     keyError,
@@ -214,11 +210,11 @@ export default function DebassWorkspaceProvider({
     validateKey,
     clearKey,
     refreshHealth,
-    canUseDebass: developmentMockEnabled || keyState === "valid",
+    canUseDebass: keyState === "valid",
     model: DEBASS_MODEL,
     assistantSessionVersion,
     clearAssistantSession,
-  }), [acceptedKey, assistantSessionVersion, clearAssistantSession, clearKey, developmentMockEnabled, draftKey, hasRememberedKey, healthState, keyError, keyState, rememberKey, refreshHealth, removeRememberedKey, setDraftKey, setRememberKey, storageError, validateKey]);
+  }), [acceptedKey, assistantSessionVersion, clearAssistantSession, clearKey, draftKey, hasRememberedKey, healthState, keyError, keyState, rememberKey, refreshHealth, removeRememberedKey, setDraftKey, setRememberKey, storageError, validateKey]);
 
   return <DebassWorkspaceContext.Provider value={value}>{children}</DebassWorkspaceContext.Provider>;
 }
