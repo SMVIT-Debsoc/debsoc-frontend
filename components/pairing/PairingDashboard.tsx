@@ -364,7 +364,7 @@ export default function PairingDashboard({
   };
 
   const navGroups = useMemo(() => {
-    const primaryKeys = new Set(["Home", "Chat", "MyPairing", "SpeakerLeaderboard"]);
+    const primaryKeys = new Set(["Home", "Digest", "Chat", "MyPairing", "SpeakerLeaderboard"]);
     return [
       {
         key: "primary",
@@ -513,6 +513,7 @@ export default function PairingDashboard({
       onOpenChat={() => navigateToTab("Chat")}
       onOpenMockDrill={() => navigateToTab("MockDrill")}
       onOpenMockJudge={() => navigateToTab("MockJudge")}
+      onOpenDigest={() => navigateToTab("Digest")}
       onRefresh={refreshPrimaryData}
       workspaceRealtimeEvent={workspaceRealtimeEvent}
       activeTab={adminTab}
@@ -543,6 +544,7 @@ export default function PairingDashboard({
       onOpenChat={() => navigateToTab("Chat")}
       onOpenMockDrill={() => navigateToTab("MockDrill")}
       onOpenMockJudge={() => navigateToTab("MockJudge")}
+      onOpenDigest={() => navigateToTab("Digest")}
       onRefresh={refreshPrimaryData}
       activeTab={participantTab}
     />

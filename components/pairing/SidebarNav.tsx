@@ -25,7 +25,7 @@ type SidebarNavProps = {
   onSelect: (key: string) => void;
 };
 
-const PRIMARY_KEYS = ["Home", "Chat", "MockDrill", "MyPairing", "SpeakerLeaderboard"];
+const PRIMARY_KEYS = ["Home", "Digest", "Chat", "MockDrill", "MyPairing", "SpeakerLeaderboard"];
 const PRIMARY_KEY_SET = new Set(PRIMARY_KEYS);
 
 export default function SidebarNav({ entries, activeKey, collapsed, pillId, onSelect }: SidebarNavProps) {

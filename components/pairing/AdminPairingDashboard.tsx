@@ -14,8 +14,10 @@ import {
   ClipboardPenLine,
   MessageCircle,
   Gavel,
+  Newspaper,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
+import DigestPanel from "@/components/digest/DigestPanel";
 import SessionWorkspace from "./SessionWorkspace";
 import Sessions from "./Sessions";
 import Leaderboards from "./Leaderboards";
@@ -48,10 +50,12 @@ export type AdminTab =
   | "Spars"
   | "Chat"
   | "MockDrill"
-  | "MockJudge";
+  | "MockJudge"
+  | "Digest";
 
 export const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
+  { key: "Digest", label: "Debate Digest", icon: <Newspaper size={18} /> },
   { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={18} /> },
   { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={18} /> },
   { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={18} /> },
@@ -91,6 +95,7 @@ type AdminPairingDashboardProps = {
   onOpenChat: () => void;
   onOpenMockDrill: () => void;
   onOpenMockJudge: () => void;
+  onOpenDigest: () => void;
   onRefresh?: () => void;
   workspaceRealtimeEvent?: RealtimeEventEnvelope | null;
   activeTab?: AdminTab;
@@ -122,6 +127,7 @@ export default function AdminPairingDashboard({
   onOpenChat,
   onOpenMockDrill,
   onOpenMockJudge,
+  onOpenDigest,
   onRefresh,
   workspaceRealtimeEvent = null,
   activeTab = "Home",
@@ -144,8 +150,10 @@ export default function AdminPairingDashboard({
           onOpenMockDrill={onOpenMockDrill}
           onOpenMockJudge={onOpenMockJudge}
           onOpenWorkspace={onOpenWorkspace}
+          onOpenDigest={onOpenDigest}
         />
       )}
+      {activeTab === "Digest" && <DigestPanel />}
       {activeTab === "Workspace" && (
         <SessionWorkspace
           userName={userName}

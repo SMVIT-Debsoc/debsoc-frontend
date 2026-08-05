@@ -12,8 +12,10 @@ import {
   ClipboardPenLine,
   MessageCircle,
   Gavel,
+  Newspaper,
 } from "lucide-react";
 import HomeDashboard from "./HomeDashboard";
+import DigestPanel from "@/components/digest/DigestPanel";
 import Sessions from "./Sessions";
 import Leaderboards from "./Leaderboards";
 import MyPairing from "./MyPairing";
@@ -40,10 +42,12 @@ export type ParticipantTab =
   | "Spars"
   | "Chat"
   | "MockDrill"
-  | "MockJudge";
+  | "MockJudge"
+  | "Digest";
 
 export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React.ReactNode }[] = [
   { key: "Home", label: "Home", icon: <House size={18} /> },
+  { key: "Digest", label: "Debate Digest", icon: <Newspaper size={18} /> },
   { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={18} /> },
   { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={18} /> },
   { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={18} /> },
@@ -78,6 +82,7 @@ type ParticipantPairingDashboardProps = {
   onOpenChat: () => void;
   onOpenMockDrill: () => void;
   onOpenMockJudge: () => void;
+  onOpenDigest: () => void;
   onRefresh?: () => void;
   activeTab?: ParticipantTab;
 };
@@ -105,6 +110,7 @@ export default function ParticipantPairingDashboard({
   onOpenChat,
   onOpenMockDrill,
   onOpenMockJudge,
+  onOpenDigest,
   onRefresh,
   activeTab = "Home",
 }: ParticipantPairingDashboardProps) {
@@ -127,8 +133,10 @@ export default function ParticipantPairingDashboard({
           onOpenChat={onOpenChat}
           onOpenMockDrill={onOpenMockDrill}
           onOpenMockJudge={onOpenMockJudge}
+          onOpenDigest={onOpenDigest}
         />
       )}
+      {activeTab === "Digest" && <DigestPanel />}
       {activeTab === "MyPairing" && (
         <MyPairing
           role={role}
