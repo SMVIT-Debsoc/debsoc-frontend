@@ -11,7 +11,7 @@ import { Card, Pill, SecondaryButton } from "./ui";
 
 export default function AssistantSettings({ collapsed = false }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
-  const { developmentMockEnabled, healthState, keyState, clearAssistantSession, refreshHealth, model } = useDebassWorkspace();
+  const { developmentMockEnabled, healthState, keyState, hasRememberedKey, clearAssistantSession, refreshHealth, model } = useDebassWorkspace();
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -78,7 +78,7 @@ export default function AssistantSettings({ collapsed = false }: { collapsed?: b
             {!developmentMockEnabled && <div className="mt-4"><DebassKeyPanel /></div>}
             {developmentMockEnabled && <div className="mt-4 rounded-xl border border-amber-300/60 bg-amber-50/70 px-3 py-3 text-xs leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200"><span className="font-semibold">Local development preview.</span> No Debass request or OpenRouter key is needed in this mode.</div>}
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10"><div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><KeyRound size={14} aria-hidden="true" /> Key is memory-only</div><SecondaryButton type="button" onClick={clearAssistantSession} className="min-h-9 px-3 text-xs"><Trash2 size={14} aria-hidden="true" /> Clear local assistant state</SecondaryButton></div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10"><div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><KeyRound size={14} aria-hidden="true" /> {hasRememberedKey ? "Key remembered on this device" : "Key stays in memory by default"}</div><SecondaryButton type="button" onClick={clearAssistantSession} className="min-h-9 px-3 text-xs"><Trash2 size={14} aria-hidden="true" /> Clear local assistant state</SecondaryButton></div>
             <p className="mt-3 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Clearing local assistant state resets conversation, drill, judge, and document status shown in this dashboard session. It does not delete Debass documents.</p>
           </div>
         </div>,
