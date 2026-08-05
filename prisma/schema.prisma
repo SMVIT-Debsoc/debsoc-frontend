@@ -685,3 +685,13 @@ model TuningReviewWindow {
   reviewedAt           DateTime?
 }
 
+/// Single-row store for the latest daily debate digest posted by the external
+/// GitHub Actions bot. Always upserted at id = 1 (overwrite model); createdAt is
+/// reset on every write so the 24h expiry clock restarts.
+model Digest {
+  id        Int      @id @default(1)
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
