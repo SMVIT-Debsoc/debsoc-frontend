@@ -27,7 +27,7 @@ import PairingDashboard from "@/components/pairing/PairingDashboard";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import PairingBackdrop from "@/components/pairing/PairingBackdrop";
 import ThemeToggle from "@/components/pairing/ThemeToggle";
-import DebassWorkspaceProvider from "@/components/pairing/DebassWorkspaceProvider";
+import DebassWorkspaceProvider, { useDebassWorkspace } from "@/components/pairing/DebassWorkspaceProvider";
 import AssistantSettings from "@/components/pairing/AssistantSettings";
 import { PageSkeleton } from "@/components/pairing/Loading";
 
@@ -428,18 +428,12 @@ export default function TechHeadDashboard({ developmentDebassMockEnabled = false
                             >
                                 <RefreshCw
                                     size={18}
-                                    className={loading ? "animate-spin" : ""}
+                                    className={loading ? "motion-safe:animate-spin" : ""}
                                 />
                             </button>
                             <ThemeToggle />
                             <AssistantSettings collapsed />
-                            <button
-                                onClick={() => signOut({callbackUrl: "/login"})}
-                                className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-red-700 transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] sm:flex-none"
-                                title="Log Out"
-                            >
-                                <LogOut size={18} />
-                            </button>
+                            <TechHeadLogoutButton />
                         </div>
                     </div>
                 </header>
@@ -704,7 +698,7 @@ export default function TechHeadDashboard({ developmentDebassMockEnabled = false
                                     {roleSubmitting && (
                                         <Loader2
                                             size={14}
-                                            className="animate-spin"
+                                            className="motion-safe:animate-spin"
                                         />
                                     )}
                                     Confirm
@@ -716,5 +710,24 @@ export default function TechHeadDashboard({ developmentDebassMockEnabled = false
             </AnimatePresence>
         </div>
         </DebassWorkspaceProvider>
+    );
+}
+
+function TechHeadLogoutButton() {
+    const {clearKey, clearAssistantSession} = useDebassWorkspace();
+
+    return (
+        <button
+            onClick={() => {
+                clearKey();
+                clearAssistantSession();
+                void signOut({callbackUrl: "/login"});
+            }}
+            className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-red-700 transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] sm:flex-none"
+            title="Log Out"
+            aria-label="Log out"
+        >
+            <LogOut size={18} aria-hidden="true" />
+        </button>
     );
 }
