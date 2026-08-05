@@ -37,6 +37,7 @@ declare module "@prisma/client" {
     verificationToken: any;
     anonymousMessage: any;
     anonymousFeedback: any;
+    digest: any;
     $transaction: any;
   }
 }

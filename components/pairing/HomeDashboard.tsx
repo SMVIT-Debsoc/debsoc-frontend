@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Calendar, ChevronRight, Gavel, Gauge, MessageCircle, Swords, Trophy, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Calendar, ChevronRight, Gavel, Gauge, MessageCircle, Newspaper, Swords, Trophy, Users } from "lucide-react";
 import { Card, EmptyState, Pill, PrimaryButton } from "./ui";
 import { LoadingRegion, Skeleton } from "./Loading";
 import { usePairingRealtime } from "./usePairingRealtime";
@@ -31,6 +31,7 @@ type HomeDashboardProps = {
   onOpenChat?: () => void;
   onOpenMockDrill?: () => void;
   onOpenMockJudge?: () => void;
+  onOpenDigest?: () => void;
 };
 
 type MotionPerformance = {
@@ -60,6 +61,7 @@ export default function HomeDashboard({
   onOpenChat,
   onOpenMockDrill,
   onOpenMockJudge,
+  onOpenDigest,
 }: HomeDashboardProps) {
   const [lastSessionDetails, setLastSessionDetails] = useState<LastSessionDetails | null>(null);
   const [progressProfile, setProgressProfile] = useState<ProgressProfile | null>(null);
@@ -256,6 +258,7 @@ export default function HomeDashboard({
       <div className="dashboard-hero mb-6 flex min-w-0 flex-col gap-5 rounded-[28px] border border-white/10 bg-white/[0.035] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,.06)] sm:p-7">
         <div className="min-w-0"><p className="mb-2 text-xs font-medium uppercase tracking-[.2em] text-slate-500">{positionLabel}</p><h1 className="text-[clamp(1.75rem,4vw,2.25rem)] font-semibold tracking-tight text-slate-900 dark:text-white">Welcome, {userName.trim() || positionLabel}</h1><p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">Your debating workspace, pairing progress, and latest performance.</p></div>
         <div className="hero-action-group flex min-w-0 flex-wrap items-center gap-2">
+          <Link href="/dashboard?tab=Digest" onClick={onOpenDigest ? (event) => { event.preventDefault(); onOpenDigest(); } : undefined} className="hero-action-button inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 text-sm font-medium text-slate-800 transition hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-100"><Newspaper size={16} aria-hidden="true" /> Debate Digest</Link>
           <Link href="/dashboard?tab=Chat" onClick={onOpenChat ? (event) => { event.preventDefault(); onOpenChat(); } : undefined} className="hero-action-button inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 text-sm font-medium text-slate-800 transition hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-100"><MessageCircle size={16} aria-hidden="true" /> Chat / New Q&A</Link>
           <Link href="/dashboard?tab=MockDrill" onClick={onOpenMockDrill ? (event) => { event.preventDefault(); onOpenMockDrill(); } : undefined} className="hero-action-button inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-950 transition hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60"><Swords size={16} aria-hidden="true" /> Mock Drill / Start Drill</Link>
           <Link href="/dashboard?tab=MockJudge" onClick={onOpenMockJudge ? (event) => { event.preventDefault(); onOpenMockJudge(); } : undefined} className="hero-action-button inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 text-sm font-medium text-slate-800 transition hover:bg-white/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-100"><Gavel size={16} aria-hidden="true" /> Mock Judge</Link>
