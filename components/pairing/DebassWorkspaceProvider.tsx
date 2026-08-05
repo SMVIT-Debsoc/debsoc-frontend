@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { debassClient, DebassApiError, hasDebassBackendUrl } from "@/lib/debass/client";
 import { DEBASS_MODEL } from "@/lib/debass/types";
+import { clearRememberedDeviceKey, loadRememberedDeviceKey, rememberDeviceKey } from "@/lib/debass/device-key";
 
 export type DebassHealthState = "Connected" | "Connecting" | "Disconnected" | "Unavailable";
 export type DebassKeyState = "empty" | "validating" | "valid" | "invalid";
@@ -14,6 +15,8 @@ type DebassWorkspaceContextValue = {
   keyError: string | null;
   draftKey: string;
   acceptedKey: string | null;
+  rememberKey: boolean;
+  setRememberKey: (value: boolean) => void;
   setDraftKey: (value: string) => void;
   validateKey: () => Promise<void>;
   clearKey: () => void;
@@ -39,8 +42,10 @@ export default function DebassWorkspaceProvider({
   const [acceptedKey, setAcceptedKey] = useState<string | null>(null);
   const [keyState, setKeyState] = useState<DebassKeyState>("empty");
   const [keyError, setKeyError] = useState<string | null>(null);
+  const [rememberKey, setRememberKeyState] = useState(false);
   const [assistantSessionVersion, setAssistantSessionVersion] = useState(0);
   const validationController = useRef<AbortController | null>(null);
+  const rememberedKeyLoaded = useRef(false);
 
   useEffect(() => () => validationController.current?.abort(), []);
 
@@ -77,10 +82,11 @@ export default function DebassWorkspaceProvider({
     setAcceptedKey(null);
     setKeyState("empty");
     setKeyError(null);
+    void clearRememberedDeviceKey();
   }, []);
 
-  const validateKey = useCallback(async () => {
-    const candidate = draftKey.trim();
+  const validateCandidate = useCallback(async (rawCandidate: string, persist = rememberKey) => {
+    const candidate = rawCandidate.trim();
     if (!candidate) {
       setKeyState("invalid");
       setKeyError("Enter an OpenRouter key to continue.");
@@ -103,20 +109,53 @@ export default function DebassWorkspaceProvider({
         setAcceptedKey(null);
         setKeyState("invalid");
         setKeyError(response.message || "The Debass service did not accept this key.");
+        if (persist) void clearRememberedDeviceKey();
         return;
       }
       setAcceptedKey(candidate);
       setDraftKeyState(candidate);
       setKeyState("valid");
+      if (persist) {
+        try {
+          await rememberDeviceKey(candidate);
+        } catch {
+          setKeyError("Key accepted for this session, but encrypted device storage is unavailable.");
+        }
+      }
     } catch (caught) {
       if (controller.signal.aborted) return;
       setAcceptedKey(null);
       setKeyState("invalid");
       setKeyError(caught instanceof Error ? caught.message : "The key could not be validated.");
+      if (persist) void clearRememberedDeviceKey();
     } finally {
       if (validationController.current === controller) validationController.current = null;
     }
-  }, [draftKey]);
+  }, [rememberKey]);
+
+  const validateKey = useCallback(async () => validateCandidate(draftKey, rememberKey), [draftKey, rememberKey, validateCandidate]);
+
+  useEffect(() => {
+    if (rememberedKeyLoaded.current || developmentMockEnabled || !backendConfigured) return;
+    rememberedKeyLoaded.current = true;
+    let active = true;
+    void loadRememberedDeviceKey().then((savedKey) => {
+      if (!active || !savedKey) return;
+      setRememberKeyState(true);
+      setDraftKeyState(savedKey);
+      void validateCandidate(savedKey, true);
+    });
+    return () => { active = false; };
+  }, [backendConfigured, developmentMockEnabled, validateCandidate]);
+
+  const setRememberKey = useCallback((value: boolean) => {
+    setRememberKeyState(value);
+    if (!value) {
+      void clearRememberedDeviceKey();
+    } else if (acceptedKey) {
+      void rememberDeviceKey(acceptedKey);
+    }
+  }, [acceptedKey]);
 
   const clearKey = useCallback(() => {
     validationController.current?.abort();
@@ -124,6 +163,8 @@ export default function DebassWorkspaceProvider({
     setAcceptedKey(null);
     setKeyState("empty");
     setKeyError(null);
+    setRememberKeyState(false);
+    void clearRememberedDeviceKey();
   }, []);
 
   const clearAssistantSession = useCallback(() => {
@@ -137,6 +178,8 @@ export default function DebassWorkspaceProvider({
     keyError,
     draftKey,
     acceptedKey,
+    rememberKey,
+    setRememberKey,
     setDraftKey,
     validateKey,
     clearKey,
@@ -145,7 +188,7 @@ export default function DebassWorkspaceProvider({
     model: DEBASS_MODEL,
     assistantSessionVersion,
     clearAssistantSession,
-  }), [acceptedKey, assistantSessionVersion, clearAssistantSession, clearKey, developmentMockEnabled, draftKey, healthState, keyError, keyState, refreshHealth, setDraftKey, validateKey]);
+  }), [acceptedKey, assistantSessionVersion, clearAssistantSession, clearKey, developmentMockEnabled, draftKey, healthState, keyError, keyState, refreshHealth, rememberKey, setDraftKey, setRememberKey, validateKey]);
 
   return <DebassWorkspaceContext.Provider value={value}>{children}</DebassWorkspaceContext.Provider>;
 }
