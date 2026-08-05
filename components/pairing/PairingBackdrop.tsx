@@ -60,6 +60,7 @@ export default function PairingBackdrop() {
           phase: Math.random() * Math.PI * 2,
         });
       }
+      if (reducedMotion && !paused && mounted) draw(performance.now());
     };
 
     const setPointerTarget = (clientX: number, clientY: number) => {
@@ -90,11 +91,22 @@ export default function PairingBackdrop() {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onMotionChange = () => {
       reducedMotion = motionQuery.matches;
-      if (reducedMotion) activity.energy = 0;
+      activity.energy = 0;
+      lastTime = 0;
+      if (reducedMotion) {
+        if (animationFrame !== null) {
+          window.cancelAnimationFrame(animationFrame);
+          animationFrame = null;
+        }
+        draw(performance.now());
+      } else {
+        if (reducedMotion) draw(performance.now());
+        else scheduleFrame();
+      }
     };
 
     const scheduleFrame = () => {
-      if (!mounted || paused || animationFrame !== null) return;
+      if (!mounted || paused || reducedMotion || animationFrame !== null) return;
       animationFrame = window.requestAnimationFrame(draw);
     };
 
@@ -174,8 +186,9 @@ export default function PairingBackdrop() {
         const waveX = reducedMotion ? 0 : Math.sin(elapsedSeconds * IDLE_WAVE_RATE + particle.phase) * 3;
         const waveY = reducedMotion ? 0 : Math.cos(elapsedSeconds * IDLE_WAVE_RATE * 0.9 + particle.phase) * 2.4;
 
-        particle.x += (particle.vx + pushX + waveX) * deltaSeconds;
-        particle.y += (particle.vy + pushY + waveY) * deltaSeconds;
+        const drift = reducedMotion ? 0 : 1;
+        particle.x += (particle.vx * drift + pushX + waveX) * deltaSeconds;
+        particle.y += (particle.vy * drift + pushY + waveY) * deltaSeconds;
 
         if (particle.x < -20) particle.x = width + 20;
         if (particle.x > width + 20) particle.x = -20;
@@ -212,19 +225,24 @@ export default function PairingBackdrop() {
     };
 
     const observer = new ResizeObserver(resize);
+    const themeObserver = new MutationObserver(() => {
+      if (reducedMotion && !paused && mounted) draw(performance.now());
+    });
     observer.observe(canvas);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     resize();
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
     window.addEventListener("keydown", onActivity);
     document.addEventListener("visibilitychange", onVisibility);
     motionQuery.addEventListener("change", onMotionChange);
-    scheduleFrame();
+    if (!reducedMotion) scheduleFrame();
 
     return () => {
       mounted = false;
       if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
       observer.disconnect();
+      themeObserver.disconnect();
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("keydown", onActivity);

@@ -7,7 +7,8 @@ import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import DebassDocumentsPanel from "./DebassDocumentsPanel";
 import { Card, PrimaryButton, SecondaryButton } from "./ui";
 import { ChatMessageSkeleton } from "./Loading";
-import { LocalMarkdown, LocalPreviewNotice, LocalSources, LocalWorkspaceHeader } from "./DebassWorkspaceUI";
+import HowToUseCard from "./HowToUseCard";
+import { LocalMarkdown, LocalPreviewNotice, LocalWorkspaceHeader } from "./DebassWorkspaceUI";
 import RealChatWorkspace from "./RealChatWorkspace";
 
 type ChatMessage = {
@@ -105,9 +106,9 @@ function LocalChatWorkspace({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className={`flex w-full min-w-0 flex-col gap-4 ${embedded ? "min-h-[620px]" : "mx-auto min-h-[min(760px,calc(100dvh-7rem))] max-w-6xl"}`}>
-      {!embedded && <LocalWorkspaceHeader title="DebSoc Debate Assistant" subtitle="A focused debate research workspace for questions, structure, and rebuttal practice." />}
+      {!embedded && <><LocalWorkspaceHeader title="DebSoc Debate Assistant" subtitle="A focused debate research workspace for questions, structure, and rebuttal practice." /><HowToUseCard kind="chat" /></>}
 
-      <div className={embedded ? "min-h-0 flex-1" : "grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,.38fr)]"}>
+      <div className={embedded ? "min-h-0 flex-1" : "grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(260px,.38fr)]"}>
       <Card className={`flex min-h-0 flex-col overflow-hidden p-0 ${embedded ? "" : "min-h-[min(720px,calc(100dvh-11rem))]"}`}>
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
@@ -148,7 +149,6 @@ function LocalChatWorkspace({ embedded = false }: { embedded?: boolean }) {
                   {message.role === "assistant" && <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300"><Sparkles size={15} aria-hidden="true" /></div>}
                   <div className={`max-w-[min(90%,680px)] rounded-2xl px-4 py-3 ${message.role === "user" ? "rounded-br-md bg-slate-900 text-white dark:bg-white dark:text-slate-950" : "rounded-bl-md border border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]"}`}>
                     {message.role === "assistant" ? <LocalMarkdown content={message.content} /> : <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>}
-                    {message.role === "assistant" && message.citations && <LocalSources citations={message.citations} />}
                   </div>
                 </div>
               ))}
@@ -170,9 +170,9 @@ function LocalChatWorkspace({ embedded = false }: { embedded?: boolean }) {
           </div>
         </div>
       </Card>
-      {!embedded && <aside className="min-w-0 lg:sticky lg:top-6" aria-label="Research Documents"><DebassDocumentsPanel /></aside>}
+      {!embedded && <aside className="min-w-0 xl:sticky xl:top-6" aria-label="Research Documents"><DebassDocumentsPanel /></aside>}
       </div>
-      {!embedded && <LocalPreviewNotice>Responses and sources are deterministic local fixtures for development UI testing.</LocalPreviewNotice>}
+      {!embedded && <LocalPreviewNotice>Responses are deterministic local fixtures for development UI testing.</LocalPreviewNotice>}
     </div>
   );
 }
