@@ -7,9 +7,9 @@ import { requestAssistantSettingsOpen } from "./AssistantSettingsEvents";
 import { Pill, SectionHeader } from "./ui";
 
 export function DebassWorkspaceHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  const { developmentMockEnabled, healthState, keyState } = useDebassWorkspace();
-  const label = developmentMockEnabled ? "Local development preview" : keyState !== "valid" && healthState === "Connected" ? "Key required" : healthState;
-  const tone = developmentMockEnabled || healthState === "Connecting" || label === "Key required" ? "amber" : healthState === "Connected" ? "emerald" : healthState === "Unavailable" ? "slate" : "red";
+  const { healthState, keyState } = useDebassWorkspace();
+  const label = keyState !== "valid" && healthState === "Connected" ? "Key required" : healthState;
+  const tone = healthState === "Connecting" || label === "Key required" ? "amber" : healthState === "Connected" ? "emerald" : healthState === "Unavailable" ? "slate" : "red";
 
   return (
     <SectionHeader
@@ -30,32 +30,9 @@ export function OpenAssistantSettingsButton({ label = "Open Assistant Settings" 
 }
 
 export function AssistantSettingsPrompt() {
-  const { developmentMockEnabled, keyState } = useDebassWorkspace();
-  if (developmentMockEnabled || keyState === "valid") return null;
+  const { keyState } = useDebassWorkspace();
+  if (keyState === "valid") return null;
   return <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300/60 bg-amber-50/70 px-3 py-2.5 text-xs leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200"><span>Validate an OpenRouter key in Assistant Settings before sending a request.</span><OpenAssistantSettingsButton /></div>;
-}
-
-export function LocalWorkspaceHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <SectionHeader
-      title={title}
-      subtitle={subtitle}
-      right={
-        <span className="inline-flex items-center gap-1.5" aria-label="Local development preview. Not connected to Debass.">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
-          <Pill tone="amber">Local development preview</Pill>
-        </span>
-      }
-    />
-  );
-}
-
-export function LocalPreviewNotice({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-amber-300/70 bg-amber-50/80 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200">
-      <span className="font-semibold">Not connected to Debass.</span> {children}
-    </div>
-  );
 }
 
 export function LocalMarkdown({ content }: { content: string }) {

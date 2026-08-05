@@ -13,7 +13,7 @@ const MAX_FILE_SIZE = 8 * 1024 * 1024;
 const ACCEPTED_TYPES = [".pdf", ".docx", ".md", ".markdown"];
 
 export default function DebassDocumentsPanel() {
-  const { developmentMockEnabled, acceptedKey, keyState, assistantSessionVersion } = useDebassWorkspace();
+  const { acceptedKey, keyState, assistantSessionVersion } = useDebassWorkspace();
   const [jobs, setJobs] = useState<DocumentJob[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -139,18 +139,14 @@ export default function DebassDocumentsPanel() {
           </div>
           <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Upload PDF, DOCX, or Markdown files for Debass ingestion. Searchable means the job is complete.</p>
         </div>
-        {developmentMockEnabled ? <Pill tone="amber">Local preview · uploads disabled</Pill> : <Pill tone="slate">Max 8 MB</Pill>}
+        <Pill tone="slate">Max 8 MB</Pill>
       </div>
 
-      {developmentMockEnabled ? (
-        <p className="mt-4 rounded-xl border border-amber-300/60 bg-amber-50/70 px-3 py-2 text-xs leading-5 text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/[0.08] dark:text-amber-200">Document ingestion is available when the real Debass backend is connected. This development preview does not upload files or simulate searchable data.</p>
-      ) : (
-        <label className={`mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 focus-within:ring-2 focus-within:ring-indigo-500/40 dark:border-white/15 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-indigo-400/50 dark:hover:bg-indigo-400/10 ${!acceptedKey || uploading ? "cursor-not-allowed opacity-60" : ""}`}>
+      <label className={`mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 focus-within:ring-2 focus-within:ring-indigo-500/40 dark:border-white/15 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-indigo-400/50 dark:hover:bg-indigo-400/10 ${!acceptedKey || uploading ? "cursor-not-allowed opacity-60" : ""}`}>
           {uploading ? <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : <FileUp size={16} aria-hidden="true" />}
           {uploading ? "Uploading…" : acceptedKey ? "Choose a document" : "Validate a key to upload"}
           <input type="file" accept={ACCEPTED_TYPES.join(",")} className="sr-only" disabled={!acceptedKey || uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.currentTarget.value = ""; }} />
-        </label>
-      )}
+      </label>
 
       {error && <p className="mt-3 text-xs text-red-700 dark:text-red-300" role="alert">{error}</p>}
       {jobs.length > 0 && <div className="mt-4 max-h-[min(440px,50dvh)] space-y-2 overflow-y-auto pr-1">{jobs.map((job) => <DocumentRow key={job.job_id} job={job} onRetry={() => retryJob(job.job_id)} />)}</div>}

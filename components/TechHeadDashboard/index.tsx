@@ -51,7 +51,7 @@ interface VerifiedData {
     verifiedMembers: UserRecord[];
 }
 
-export default function TechHeadDashboard({ developmentDebassMockEnabled = false }: { developmentDebassMockEnabled?: boolean }) {
+export default function TechHeadDashboard() {
     const [unverified, setUnverified] = useState<UnverifiedData | null>(null);
     const [verified, setVerified] = useState<VerifiedData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -347,7 +347,7 @@ export default function TechHeadDashboard({ developmentDebassMockEnabled = false
     };
 
     return (
-        <DebassWorkspaceProvider developmentMockEnabled={developmentDebassMockEnabled}>
+        <DebassWorkspaceProvider>
         <div className="pairing-shell relative min-h-screen overflow-x-hidden bg-[#f2eee8] p-4 text-slate-900 dark:bg-[#0a0a0a] dark:text-slate-100 sm:p-6 lg:p-8">
             <PairingBackdrop />
             <Toaster
@@ -533,7 +533,6 @@ export default function TechHeadDashboard({ developmentDebassMockEnabled = false
                                 role="TechHead"
                                 userName="Tech Head"
                                 embedded
-                                developmentDebassMockEnabled={developmentDebassMockEnabled}
                             />
                         </motion.div>
                     ) : loading ? (

@@ -38,7 +38,6 @@ type PairingDashboardProps = {
   userId?: string | null;
   position?: string | null;
   embedded?: boolean;
-  developmentDebassMockEnabled?: boolean;
 };
 
 type PairingDataState = {
@@ -79,7 +78,6 @@ export default function PairingDashboard({
   userId = null,
   position = null,
   embedded = false,
-  developmentDebassMockEnabled = false,
 }: PairingDashboardProps) {
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -515,7 +513,6 @@ export default function PairingDashboard({
       onOpenChat={() => navigateToTab("Chat")}
       onOpenMockDrill={() => navigateToTab("MockDrill")}
       onOpenMockJudge={() => navigateToTab("MockJudge")}
-      developmentDebassMockEnabled={developmentDebassMockEnabled}
       onRefresh={refreshPrimaryData}
       workspaceRealtimeEvent={workspaceRealtimeEvent}
       activeTab={adminTab}
@@ -546,7 +543,6 @@ export default function PairingDashboard({
       onOpenChat={() => navigateToTab("Chat")}
       onOpenMockDrill={() => navigateToTab("MockDrill")}
       onOpenMockJudge={() => navigateToTab("MockJudge")}
-      developmentDebassMockEnabled={developmentDebassMockEnabled}
       onRefresh={refreshPrimaryData}
       activeTab={participantTab}
     />
@@ -583,7 +579,7 @@ export default function PairingDashboard({
   const brand = `${firstName}'s Dashboard`;
 
   return (
-    <DebassWorkspaceProvider developmentMockEnabled={developmentDebassMockEnabled}>
+    <DebassWorkspaceProvider>
       <div className="pairing-shell dashboard-desktop-shell relative min-h-screen min-w-0 overflow-x-clip text-slate-900 dark:text-slate-100" data-density={role === "cabinet" || role === "President" ? "compact" : "comfortable"}>
       <PairingBackdrop />
       {/* Mobile top bar */}

@@ -6,10 +6,8 @@ import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Pill, PrimaryButton, SecondaryButton } from "./ui";
 
 export default function DebassKeyPanel() {
-  const { developmentMockEnabled, draftKey, keyError, storageError, keyState, rememberKey, hasRememberedKey, setDraftKey, setRememberKey, removeRememberedKey, validateKey, clearKey, refreshHealth } = useDebassWorkspace();
+  const { draftKey, keyError, storageError, keyState, rememberKey, hasRememberedKey, setDraftKey, setRememberKey, removeRememberedKey, validateKey, clearKey, refreshHealth } = useDebassWorkspace();
   const [showKey, setShowKey] = useState(false);
-
-  if (developmentMockEnabled) return null;
 
   return (
     <Card className="p-4">

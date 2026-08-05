@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import PairingDashboard from "@/components/pairing/PairingDashboard";
 import { getAppSession } from "@/lib/server/dev-session";
 import { prisma } from "@/lib/server/prisma";
-import { isDevelopmentDebassMockEnabled } from "@/lib/dev/debass-mock";
 
 export default async function DashboardPage() {
   const session = await getAppSession();
@@ -45,7 +44,6 @@ export default async function DashboardPage() {
       userName={session.user.name ?? ""}
       userId={session.user.id ?? null}
       position={position}
-      developmentDebassMockEnabled={isDevelopmentDebassMockEnabled()}
     />
   );
 }
