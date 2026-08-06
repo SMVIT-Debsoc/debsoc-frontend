@@ -89,7 +89,11 @@ export function buildSparLeaderboard(
   const totalParticipants = withRanks.length;
   const totalPages = Math.ceil(totalParticipants / limit);
   const start = (page - 1) * limit;
-  const rankings = withRanks.slice(start, start + limit).map(({ points: _points, ...entry }) => entry);
+  const rankings = withRanks.slice(start, start + limit).map((entry) => {
+    const ranking = {...entry};
+    Reflect.deleteProperty(ranking, "points");
+    return ranking;
+  });
   const viewerRank = withRanks.find((entry) => entry.userId === viewerId) ?? null;
 
   return {

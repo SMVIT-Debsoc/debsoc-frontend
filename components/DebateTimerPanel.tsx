@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useRef, useState} from "react";
+import React, {startTransition, useEffect, useRef, useState} from "react";
 import {motion, AnimatePresence} from "framer-motion";
 import toast, {Toaster} from "react-hot-toast";
 import {Clock3, Sparkles, ShieldAlert, Timer, Gauge, ChevronDown} from "lucide-react";
@@ -132,9 +132,11 @@ export default function DebateTimerPanel() {
     }, []);
 
     useEffect(() => {
-        setRunning(false);
-        setHasStarted(false);
-        setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
+        startTransition(() => {
+            setRunning(false);
+            setHasStarted(false);
+            setTimeMs(clockType === "Timer" ? TIMER_START_MS : 0);
+        });
     }, [clockType]);
 
     useEffect(() => {
@@ -226,7 +228,7 @@ export default function DebateTimerPanel() {
 
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
-        setMounted(true);
+        startTransition(() => setMounted(true));
     }, []);
 
     return (

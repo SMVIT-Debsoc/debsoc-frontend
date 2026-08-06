@@ -1,0 +1,96 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img "Local cabinet profile photo" [ref=e7]
+          - generic [ref=e114]:
+            - generic [ref=e115]: Local cabinet
+            - generic [ref=e116]: cabinet · Dashboard
+        - button "Collapse sidebar" [active] [ref=e117]
+      - navigation "Dashboard navigation" [ref=e14]:
+        - generic [ref=e15]:
+          - button "Home" [ref=e16]
+          - button "Debate Digest" [ref=e22]
+          - button "Debate Chat" [ref=e27]
+          - button "Mock Drill" [ref=e31]
+          - button "My Pairing" [ref=e38]
+          - button "Leaderboards" [ref=e44]
+        - generic [ref=e127]:
+          - paragraph [ref=e128]: More
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - paragraph [ref=e131]: Debate tools
+              - button "Mock Judge" [ref=e132]
+              - button "Spars" [ref=e141]
+            - generic [ref=e153]:
+              - paragraph [ref=e154]: Analytics & rankings
+              - button "Adj Leaderboard" [ref=e155]
+            - generic [ref=e162]:
+              - paragraph [ref=e163]: Sessions & scoring
+              - button "Sessions" [ref=e164]
+              - button "My Scoring Tasks" [ref=e169]
+            - generic [ref=e176]:
+              - paragraph [ref=e177]: Administration
+              - button "Session Workspace" [ref=e178]
+              - button "Members & Cabinet" [ref=e186]
+      - generic [ref=e57]:
+        - generic [ref=e194]:
+          - radiogroup "Theme" [ref=e195]:
+            - radio "Light theme" [checked] [ref=e197]
+            - radio "Dark theme" [ref=e204]
+          - button "Open Assistant Settings" [ref=e208]:
+            - generic [ref=e212]: Assistant Settings
+        - button "Log out" [ref=e64]:
+          - generic [ref=e213]: Logout
+    - main [ref=e68]:
+      - generic [ref=e215]:
+        - generic [ref=e216]:
+          - generic [ref=e217]:
+            - paragraph [ref=e218]: Cabinet
+            - heading "Welcome, Local cabinet" [level=1] [ref=e219]
+            - paragraph [ref=e220]: Your debating workspace, pairing progress, and latest performance.
+          - generic [ref=e221]:
+            - link "Debate Digest" [ref=e222] [cursor=pointer]:
+              - /url: /dashboard?tab=Digest
+            - link "Chat / New Q&A" [ref=e226] [cursor=pointer]:
+              - /url: /dashboard?tab=Chat
+            - link "Mock Drill / Start Drill" [ref=e229] [cursor=pointer]:
+              - /url: /dashboard?tab=MockDrill
+            - link "Mock Judge" [ref=e239] [cursor=pointer]:
+              - /url: /dashboard?tab=MockJudge
+            - button "Open session workspace" [ref=e246]
+        - generic [ref=e249]:
+          - generic [ref=e250]:
+            - generic [ref=e251]: Your attendance
+            - generic [ref=e257]: 0%
+            - generic [ref=e258]: 0 of 0 sessions attended
+          - generic [ref=e259]:
+            - generic [ref=e260]: Total sessions
+            - generic [ref=e265]: "0"
+            - generic [ref=e266]: Sessions recorded in the current dashboard
+          - button "Speaker rank -- View Current speaker leaderboard position" [ref=e268]:
+            - generic [ref=e269]: Speaker rank
+            - generic [ref=e278]:
+              - generic [ref=e279]: "--"
+              - generic [ref=e280]: View
+            - generic [ref=e284]: Current speaker leaderboard position
+          - button "Adjudicator rank -- View Current adjudicator leaderboard position" [ref=e286]:
+            - generic [ref=e287]: Adjudicator rank
+            - generic [ref=e295]:
+              - generic [ref=e296]: "--"
+              - generic [ref=e297]: View
+            - generic [ref=e301]: Current adjudicator leaderboard position
+        - generic [ref=e302]:
+          - generic [ref=e303]:
+            - heading "Last session you did" [level=3] [ref=e307]
+            - generic [ref=e308]:
+              - heading "No recent session yet" [level=3] [ref=e309]
+              - paragraph [ref=e310]: Once your attendance is recorded, your latest session summary will show here.
+          - generic [ref=e311]:
+            - heading "Motion-type performance" [level=3] [ref=e315]
+            - generic [ref=e316]:
+              - heading "No motion performance data yet" [level=3] [ref=e317]
+              - paragraph [ref=e318]: Once scored sessions exist for you, your motion-type performance will show here automatically.
+  - button "Open Next.js Dev Tools" [ref=e324] [cursor=pointer]
+  - alert [ref=e113]

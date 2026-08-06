@@ -3,6 +3,7 @@
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import DebsocOverlayScrollbar from "@/components/pairing/DebsocOverlayScrollbar";
 
 export type SearchableDropdownItem = {
   id: string;
@@ -333,13 +334,11 @@ export default function SearchableDropdown({
               {search && <button type="button" aria-label="Clear search" title="Clear search" onClick={() => { setSearch(""); setActiveIndex(0); searchRef.current?.focus(); }} className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:hover:bg-white/10"><X size={15} aria-hidden /></button>}
             </div>
           </div>}
-          <div
-            id={listId}
-            role="listbox"
-            aria-label={label}
-            className="min-h-0 overflow-y-auto overscroll-contain p-1"
-            style={{ maxHeight: position ? Math.max(position.maxHeight - (searchable ? 58 : 8), 0) : DEFAULT_MENU_HEIGHT - (searchable ? 58 : 8) }}
+          <DebsocOverlayScrollbar
+            className="min-h-0"
+            style={{ height: `${position ? Math.max(position.maxHeight - (searchable ? 58 : 8), 0) : DEFAULT_MENU_HEIGHT - (searchable ? 58 : 8)}px` }}
           >
+          <div id={listId} role="listbox" aria-label={label} className="overscroll-contain p-1">
             {filteredItems.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400">{emptyMessage}</p>
             ) : filteredItems.map((item, index) => {
@@ -366,6 +365,7 @@ export default function SearchableDropdown({
               );
             })}
           </div>
+          </DebsocOverlayScrollbar>
         </div>,
         document.body,
       )}

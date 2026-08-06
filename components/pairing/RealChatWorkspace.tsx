@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
+import { BookOpenText, FileText, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import DebassDocumentsPanel from "./DebassDocumentsPanel";
@@ -9,8 +9,18 @@ import { Card, PrimaryButton, SecondaryButton } from "./ui";
 import { ChatMessageSkeleton } from "./Loading";
 import { AssistantSettingsPrompt, DebassWorkspaceHeader, LocalMarkdown } from "./DebassWorkspaceUI";
 import HowToUseCard from "./HowToUseCard";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 
 type Message = { id: string; role: "user" | "assistant"; content: string; citations?: string[] };
+
+const SUGGESTED_QUESTIONS = [
+  "Explain Point of Information",
+  "Summarize BP Rules",
+  "Compare AP vs BP",
+  "What is burden of proof?",
+  "Explain adjudication criteria",
+  "Find arguments for AI regulation",
+];
 
 export default function RealChatWorkspace({ embedded = false }: { embedded?: boolean }) {
   const { acceptedKey, keyState, model, assistantSessionVersion } = useDebassWorkspace();
@@ -83,21 +93,52 @@ export default function RealChatWorkspace({ embedded = false }: { embedded?: boo
     composerRef.current?.focus();
   };
 
+  const selectSuggestion = (suggestion: string) => {
+    setComposer(suggestion);
+    window.requestAnimationFrame(() => composerRef.current?.focus());
+  };
+
   return (
     <div className={`flex w-full min-w-0 flex-col gap-4 ${embedded ? "min-h-[620px]" : "mx-auto min-h-[min(760px,calc(100dvh-7rem))] max-w-6xl"}`}>
-      {!embedded && <><DebassWorkspaceHeader title="DebSoc Debate Assistant" subtitle="Ask questions, structure arguments, and research with your connected Debass workspace." /><HowToUseCard kind="chat" /></>}
-      <div className={embedded ? "min-h-0 flex-1" : "grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,.38fr)]"}>
-      <Card className={`flex min-h-0 flex-col overflow-hidden p-0 ${embedded ? "" : "min-h-[min(720px,calc(100dvh-11rem))]"}`}>
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-white/10 sm:px-5">
-          <div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300"><Sparkles size={17} aria-hidden="true" /></div><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-950 dark:text-slate-100">DebSoc debate assistant</p><p className="truncate text-xs text-slate-500 dark:text-slate-400">Live responses from Debass when a key is accepted</p></div></div>
-          <SecondaryButton type="button" onClick={clear} disabled={messages.length === 0 && !composer && !loading} className="shrink-0 px-3 text-xs"><Trash2 size={14} aria-hidden="true" /><span className="hidden sm:inline">Clear</span></SecondaryButton>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5 sm:px-6" aria-busy={loading}>
-          {messages.length === 0 ? <div className="flex min-h-[320px] flex-col items-center justify-center py-8 text-center"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-400/25 dark:bg-indigo-400/10 dark:text-indigo-300"><MessageCircle size={26} aria-hidden="true" /></div><h2 className="mt-5 text-xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">Start with a debate question</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">Validate a key above, then ask for structure, rebuttal practice, or a research summary.</p></div> : <div className="mx-auto max-w-3xl space-y-5">{messages.map((message) => <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}><div className={`max-w-[min(90%,680px)] rounded-2xl px-4 py-3 ${message.role === "user" ? "bg-indigo-600 text-white" : "border border-slate-200 bg-slate-50 text-slate-800 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-200"}`}>{message.role === "assistant" ? <LocalMarkdown content={message.content} /> : <p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>}</div></div>)}{loading && <div role="status" aria-live="polite"><ChatMessageSkeleton /><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Thinking…</p></div>}{error && <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-5 text-red-800 dark:border-red-400/20 dark:bg-red-400/[0.08] dark:text-red-200" role="alert"><p>{error}</p>{messages.some((message) => message.role === "user") && <button type="button" onClick={retry} className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 font-semibold text-red-800 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:text-red-200">Retry</button>}</div>}{!loading && !error && messages.some((message) => message.role === "assistant") && <button type="button" onClick={retry} className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"><RefreshCw size={13} aria-hidden="true" /> Retry latest response</button>}<div ref={bottomRef} /></div>}
-        </div>
-        <div className="border-t border-slate-200 p-3 dark:border-white/10 sm:p-4"><div className="mx-auto max-w-3xl rounded-2xl border border-slate-300 bg-white p-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-500/15 dark:border-white/15 dark:bg-white/[0.05]"><textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} rows={2} aria-label="Ask DebSoc debate assistant" placeholder={keyState === "valid" ? "Ask a debate question… (Enter to send, Shift+Enter for a new line)" : "Validate your key above to start chatting"} disabled={keyState !== "valid" || loading} className="min-h-14 w-full resize-none border-0 bg-transparent px-2 py-1 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed dark:text-slate-100 dark:placeholder:text-slate-500" /><div className="flex items-center justify-between gap-2 px-1 pt-1"><span className="text-[11px] text-slate-400 dark:text-slate-500">Responses may take a few seconds</span><PrimaryButton type="button" onClick={() => void send()} disabled={!composer.trim() || keyState !== "valid" || loading} className="min-h-9 px-3 text-xs"><Send size={14} aria-hidden="true" /> Send</PrimaryButton></div></div></div>
-      </Card>
-      {!embedded && <aside className="min-w-0 xl:sticky xl:top-6" aria-label="Research Documents"><DebassDocumentsPanel /></aside>}
+      {!embedded && <><DebassWorkspaceHeader title="DebSoc Knowledge Assistant" subtitle="Answers use indexed DebSoc resources and documents you upload here." /><HowToUseCard kind="chat" /></>}
+      <div className={embedded ? "min-h-0 flex-1" : "grid min-h-0 flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,.38fr)]"}>
+        <Card className={`flex min-h-0 flex-col overflow-hidden p-0 ${embedded ? "" : "min-h-[min(720px,calc(100dvh-11rem))]"}`}>
+          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles size={17} aria-hidden="true" /></div><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">DebSoc Knowledge Assistant</p><p className="truncate text-xs text-muted-foreground">Focused debate answers from your connected knowledge workspace</p></div></div>
+            <SecondaryButton type="button" onClick={clear} disabled={messages.length === 0 && !composer && !loading} className="shrink-0 px-3 text-xs"><Trash2 size={14} aria-hidden="true" /><span className="hidden sm:inline">Clear</span></SecondaryButton>
+          </div>
+          <div className="min-h-0 flex-1" aria-busy={loading}>
+          <DebsocOverlayScrollbar className="h-full">
+            <div className="px-3 py-5 sm:px-6">
+            {messages.length === 0 ? (
+              <div className="flex min-h-[320px] flex-col items-center justify-center py-8 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary"><BookOpenText size={27} aria-hidden="true" /></div>
+                <h2 className="mt-5 text-xl font-semibold tracking-tight text-foreground">Your Debate Knowledge Assistant</h2>
+                <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">Ask about indexed DebSoc knowledge or documents you upload. Choose a prompt below to begin.</p>
+                <div className="mt-5 flex max-w-2xl flex-wrap justify-center gap-2" aria-label="Suggested questions">
+                  {SUGGESTED_QUESTIONS.map((suggestion) => <button key={suggestion} type="button" onClick={() => selectSuggestion(suggestion)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-background px-3.5 py-2 text-xs font-medium text-foreground transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none"> <FileText size={14} className="text-primary" aria-hidden="true" /> {suggestion}</button>)}
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto max-w-3xl space-y-5">
+                {messages.map((message) => message.role === "assistant" ? (
+                  <div key={message.id} className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm sm:p-5">
+                    <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary"><BookOpenText size={15} aria-hidden="true" /> Answer</div>
+                    <LocalMarkdown content={message.content} />
+                  </div>
+                ) : <div key={message.id} className="flex justify-end"><div className="max-w-[min(90%,680px)] rounded-2xl bg-primary px-4 py-3 text-primary-foreground"><p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p></div></div>)}
+                {loading && <div role="status" aria-live="polite"><ChatMessageSkeleton /><p className="mt-2 text-xs text-muted-foreground">Thinking…</p></div>}
+                {error && <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs leading-5 text-destructive" role="alert"><p>{error}</p>{messages.some((message) => message.role === "user") && <button type="button" onClick={retry} className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Retry</button>}</div>}
+                {!loading && !error && messages.some((message) => message.role === "assistant") && <button type="button" onClick={retry} className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><RefreshCw size={13} aria-hidden="true" /> Retry latest response</button>}
+                <div ref={bottomRef} />
+              </div>
+            )}
+            </div>
+          </DebsocOverlayScrollbar>
+          </div>
+          <div className="sticky bottom-0 z-10 border-t border-border bg-card/95 p-3 backdrop-blur sm:p-4"><div className="mx-auto max-w-3xl rounded-2xl border border-border bg-background p-2 shadow-sm focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30"><textarea ref={composerRef} value={composer} onChange={(event) => setComposer(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} rows={2} aria-label="Ask DebSoc Knowledge Assistant" placeholder={keyState === "valid" ? "Ask about your uploaded documents or DebSoc knowledge…" : "Validate your key above to start chatting"} disabled={keyState !== "valid" || loading} className="min-h-14 w-full resize-none border-0 bg-transparent px-2 py-1 text-sm leading-6 text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed" /><div className="flex flex-wrap items-center justify-between gap-2 px-1 pt-1"><span className="text-[11px] text-muted-foreground">PDF, DOCX, Markdown • Maximum file size 8 MB</span><PrimaryButton type="button" onClick={() => void send()} disabled={!composer.trim() || keyState !== "valid" || loading} className="min-h-9 px-3 text-xs"><Send size={14} aria-hidden="true" /> Send</PrimaryButton></div></div></div>
+        </Card>
+        {!embedded && <aside className="min-w-0 lg:sticky lg:top-6" aria-label="Knowledge Base"><DebassDocumentsPanel /></aside>}
       </div>
       {!embedded && <AssistantSettingsPrompt />}
     </div>

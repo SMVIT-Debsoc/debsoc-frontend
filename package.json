@@ -2,12 +2,14 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "node --experimental-strip-types server.ts",
     "dev:next": "next dev",
     "build": "next build",
     "start": "NODE_ENV=production node --experimental-strip-types server.ts",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --test lib/server/repositories/*.test.ts lib/server/sessions/*.test.ts lib/server/pairing/*.test.ts",
     "test:repositories": "node --experimental-strip-types --test lib/server/repositories/*.test.ts",
     "test:services": "node --experimental-strip-types --test lib/server/sessions/*.test.ts",
     "test:pairing-internals": "node --experimental-strip-types --test lib/server/pairing/*.test.ts",
@@ -15,10 +17,11 @@
     "seed:demo": "node --experimental-strip-types prisma/seed.ts"
   },
   "dependencies": {
+    "@ehfuse/overlay-scrollbar": "^1.7.27",
     "@gsap/react": "^2.1.2",
     "@next-auth/prisma-adapter": "^1.0.7",
-    "@prisma/adapter-pg": "^7.7.0",
-    "@prisma/client": "^7.7.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -47,7 +50,7 @@
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",
     "eslint": "^9",
-    "eslint-config-next": "16.2.2",
+    "eslint-config-next": "^16.3.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5"
   }

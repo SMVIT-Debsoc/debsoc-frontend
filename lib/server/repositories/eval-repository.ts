@@ -3,13 +3,13 @@ import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../prisma.ts";
 import type { EvalScenarioAggregate, EvalScenarioRecordInput, HistoricalReplayRecord, MetricAdjustmentSuggestion, TuningWindowInput } from "../eval/types.ts";
 
-type EvalRepositoryClient = PrismaClient & Record<string, any>;
+type EvalRepositoryClient = PrismaClient;
 
 function resolveParticipantId(ref: { memberId: string | null; cabinetId: string | null; presidentId: string | null }) {
   return ref.memberId ?? ref.cabinetId ?? ref.presidentId ?? "";
 }
 
-export function createEvalRepository(client: EvalRepositoryClient = prisma as EvalRepositoryClient) {
+export function createEvalRepository(client: EvalRepositoryClient = prisma) {
   async function getHistoricalReplayDataset(sessionIds?: string[], baselineVersion?: string | null): Promise<HistoricalReplayRecord[]> {
     const sessions = await client.debateSession.findMany({
       where: sessionIds && sessionIds.length > 0 ? { id: { in: sessionIds } } : { publishedProposalId: { not: null } },
@@ -357,7 +357,6 @@ export function createEvalRepository(client: EvalRepositoryClient = prisma as Ev
 }
 
 export const evalRepository = createEvalRepository();
-
 
 
 

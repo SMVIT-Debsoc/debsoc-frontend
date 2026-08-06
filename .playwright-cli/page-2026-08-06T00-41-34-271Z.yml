@@ -1,0 +1,54 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "Local Member profile photo" [ref=e6]
+        - generic [ref=e7]: Local's Dashboard
+      - generic [ref=e8]:
+        - radiogroup "Theme" [ref=e9]:
+          - radio "Light theme" [checked] [ref=e11]
+          - radio "Dark theme" [ref=e18]
+        - button "Open dashboard menu" [ref=e21]
+    - main [ref=e23]:
+      - generic [ref=e443]:
+        - generic [ref=e444]:
+          - generic [ref=e445]:
+            - paragraph [ref=e446]: Member
+            - heading "Welcome, Local Member" [level=1] [ref=e447]
+            - paragraph [ref=e448]: Your debating workspace, pairing progress, and latest performance.
+          - generic [ref=e449]:
+            - link "Debate Digest" [ref=e450] [cursor=pointer]:
+              - /url: /dashboard?tab=Digest
+            - link "Chat / New Q&A" [ref=e454] [cursor=pointer]:
+              - /url: /dashboard?tab=Chat
+            - link "Mock Drill / Start Drill" [ref=e457] [cursor=pointer]:
+              - /url: /dashboard?tab=MockDrill
+            - link "Mock Judge" [ref=e467] [cursor=pointer]:
+              - /url: /dashboard?tab=MockJudge
+        - generic [ref=e474]:
+          - generic [ref=e475]:
+            - generic [ref=e476]: Your attendance
+            - generic [ref=e482]: 0%
+          - generic [ref=e483]:
+            - generic [ref=e484]: Total sessions
+            - generic [ref=e489]: "0"
+          - button "Speaker rank --" [ref=e491]:
+            - generic [ref=e492]: Speaker rank
+            - generic [ref=e501]: "--"
+          - button "Adjudicator rank --" [ref=e507]:
+            - generic [ref=e508]: Adjudicator rank
+            - generic [ref=e516]: "--"
+        - generic [ref=e521]:
+          - generic [ref=e522]:
+            - heading "Last session you did" [level=3] [ref=e526]
+            - generic "Loading latest session" [ref=e527]
+          - generic [ref=e546]:
+            - heading "Motion-type performance" [level=3] [ref=e550]
+            - generic "Loading motion performance" [ref=e551]
+    - navigation "Primary dashboard navigation" [ref=e68]:
+      - button "Home" [ref=e69]
+      - button "Chat" [active] [ref=e75]
+      - button "Pairing" [ref=e80]
+      - button "Ranks" [ref=e87]
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]
+  - alert [ref=e236]

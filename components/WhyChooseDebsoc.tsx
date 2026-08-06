@@ -1,11 +1,10 @@
 "use client";
 
-import React, {useState, useEffect, useRef} from "react";
+import React, {startTransition, useState, useEffect, useRef} from "react";
 import {Globe, Users, Trophy, Mic} from "lucide-react";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {ElegantShape} from "./ui/shape-landing-hero";
-import {motion} from "framer-motion";
 
 if (typeof window !== "undefined") {
     gsap.registerPlugin(ScrollTrigger);
@@ -267,10 +266,10 @@ function TypewriterText({text, active}: {text: string; active: boolean}) {
 
     useEffect(() => {
         if (!active) {
-            setDisplayed("");
+            startTransition(() => setDisplayed(""));
             return;
         }
-        setDisplayed("");
+        startTransition(() => setDisplayed(""));
         let i = 0;
         // Small delay so it starts after the slide-in animation
         const startDelay = setTimeout(() => {

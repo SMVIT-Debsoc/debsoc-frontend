@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import type {Prisma} from "@prisma/client";
 import { prisma } from "@/lib/server/prisma";
 import { authenticateRole, normalizeEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
@@ -263,12 +264,6 @@ async function deleteEntityImpl(entity: "president" | "cabinet" | "member", id: 
 
 type RoleKey = "president" | "cabinet" | "member";
 
-const ROLE_TO_ID_COLUMN: Record<RoleKey, "presidentId" | "cabinetId" | "memberId"> = {
-  president: "presidentId",
-  cabinet: "cabinetId",
-  member: "memberId",
-};
-
 // Every table + column-triple that references a participant across President/cabinet/Member.
 // Each entry lists the model name (as it appears on the Prisma client) and the
 // role-scoped column names in that model.
@@ -344,7 +339,7 @@ async function changeEntityRoleImpl(
   await assertEmailAvailableForRole(toRole, source.email);
 
   const result = await prisma.$transaction(
-    async (tx: any) => {
+    async (tx: Prisma.TransactionClient) => {
     // 1. Create the new record with the same identity/credentials and verified status.
     let newId: string;
     const baseData = {
@@ -372,11 +367,19 @@ async function changeEntityRoleImpl(
     const fromCol = (m: (typeof PARTICIPANT_REFERENCE_MAP)[number]["cols"]) => m[fromRole];
     const toCol = (m: (typeof PARTICIPANT_REFERENCE_MAP)[number]["cols"]) => m[toRole];
 
+    type ReferenceDelegate = {
+      updateMany(args: {
+        where: Record<string, string>;
+        data: Record<string, string | null>;
+      }): Promise<unknown>;
+    };
+
     await Promise.all(
       PARTICIPANT_REFERENCE_MAP.map((entry) => {
         const from = fromCol(entry.cols);
         const to = toCol(entry.cols);
-        return (tx as any)[entry.model].updateMany({
+        const delegate = tx[entry.model] as unknown as ReferenceDelegate;
+        return delegate.updateMany({
           where: { [from]: id },
           data: { [from]: null, [to]: newId },
         });

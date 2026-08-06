@@ -1,0 +1,74 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "Local Member profile photo" [ref=e6]
+        - generic [ref=e7]: Local's Dashboard
+      - generic [ref=e8]:
+        - radiogroup "Theme" [ref=e9]:
+          - radio "Light theme" [checked] [ref=e11]
+          - radio "Dark theme" [ref=e18]
+        - button "Open dashboard menu" [ref=e21]
+    - main [ref=e23]:
+      - generic [ref=e353]:
+        - generic [ref=e354]:
+          - generic [ref=e355]:
+            - heading "DebSoc Debate Assistant" [level=2] [ref=e356]
+            - paragraph [ref=e357]: Ask questions, structure arguments, and research with your connected Debass workspace.
+          - generic [ref=e358]: Unavailable
+        - region [ref=e361]:
+          - button "How to use Debate Chat Collapse" [expanded] [ref=e362]:
+            - generic [ref=e366]: How to use Debate Chat
+            - generic [ref=e367]: Collapse
+          - region "How to use Debate Chat" [ref=e371]:
+            - paragraph [ref=e372]: Ask the DebSoc Assistant questions about debate topics, arguments, research, or preparation.
+            - list [ref=e373]:
+              - listitem [ref=e374]:
+                - generic [ref=e375]: "1"
+                - generic [ref=e376]: Enter a clear debate question or describe the argument you want to explore.
+              - listitem [ref=e377]:
+                - generic [ref=e378]: "2"
+                - generic [ref=e379]: Add useful context, constraints, or the side of the debate you are preparing.
+              - listitem [ref=e380]:
+                - generic [ref=e381]: "3"
+                - generic [ref=e382]: Submit your message and wait while the response is prepared.
+              - listitem [ref=e383]:
+                - generic [ref=e384]: "4"
+                - generic [ref=e385]: Review the formatted answer and continue the conversation with a follow-up question.
+            - paragraph [ref=e386]: "Tip: Ask one focused question at a time. Include the debate format or motion when relevant, and ask for counterarguments, examples, clarification, or stronger reasoning. Do not include private information or secrets."
+        - generic [ref=e387]:
+          - generic [ref=e388]:
+            - generic [ref=e389]:
+              - generic [ref=e395]:
+                - paragraph [ref=e396]: DebSoc debate assistant
+                - paragraph [ref=e397]: Live responses from Debass when a key is accepted
+              - button [disabled] [ref=e398]
+            - generic [ref=e403]:
+              - heading "Start with a debate question" [level=2] [ref=e407]
+              - paragraph [ref=e408]: Validate a key above, then ask for structure, rebuttal practice, or a research summary.
+            - generic [ref=e410]:
+              - textbox "Ask DebSoc debate assistant" [disabled] [ref=e411]:
+                - /placeholder: Validate your key above to start chatting
+              - generic [ref=e412]:
+                - generic [ref=e413]: Responses may take a few seconds
+                - button "Send" [disabled] [ref=e414]
+          - complementary "Research Documents" [ref=e418]:
+            - generic [ref=e420]:
+              - generic [ref=e421]:
+                - generic [ref=e422]:
+                  - heading "Research Documents" [level=2] [ref=e428]
+                  - paragraph [ref=e429]: Upload PDF, DOCX, or Markdown files for Debass ingestion. Searchable means the job is complete.
+                - generic [ref=e430]: Max 8 MB
+              - generic [ref=e431] [cursor=pointer]:
+                - text: Validate a key to upload
+                - button "Validate a key to upload" [disabled] [ref=e436]
+        - generic [ref=e437]:
+          - generic [ref=e438]: Validate an OpenRouter key in Assistant Settings before sending a request.
+          - button "Open Assistant Settings" [ref=e439]
+    - navigation "Primary dashboard navigation" [ref=e68]:
+      - button "Home" [ref=e69]
+      - button "Chat" [active] [ref=e75]
+      - button "Pairing" [ref=e80]
+      - button "Ranks" [ref=e87]
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]
+  - alert [ref=e236]

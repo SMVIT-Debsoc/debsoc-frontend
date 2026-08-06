@@ -90,7 +90,7 @@ export function parseDigest(text: string): DigestSection[] {
   const sections: DigestSection[] = [];
 
   let current: DigestSection | null = null;
-  let preamble: string[] = [];
+  const preamble: string[] = [];
 
   for (const line of lines) {
     const heading = detectHeading(line);

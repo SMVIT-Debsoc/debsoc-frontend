@@ -27,13 +27,13 @@ export function SectionHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 mb-4 sm:mb-5">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5">
       <div className="min-w-0">
-        <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+        <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
           {title}
         </h2>
         {subtitle && (
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
       {right}
@@ -44,23 +44,23 @@ export function SectionHeader({
 export function StateBadge({ state }: { state: LifecycleState }) {
   const map: Record<LifecycleState, string> = {
     Preparation:
-      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10",
+      "bg-muted text-muted-foreground border-border",
     Generated:
-      "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-400/10 dark:text-amber-300 dark:border-amber-400/25",
+      "bg-chart-4/15 text-chart-4 border-chart-4/30",
     Approved:
-      "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-300 dark:border-emerald-400/25",
+      "bg-chart-3/15 text-chart-3 border-chart-3/30",
     Published:
-      "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-400/10 dark:text-sky-300 dark:border-sky-400/25",
+      "bg-chart-2/15 text-chart-2 border-chart-2/30",
     Active:
-      "bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-400/10 dark:text-indigo-300 dark:border-indigo-400/25",
+      "bg-primary/15 text-primary border-primary/30",
     Completed:
-      "bg-violet-50 text-violet-800 border-violet-200 dark:bg-violet-400/10 dark:text-violet-300 dark:border-violet-400/25",
+      "bg-chart-4/15 text-chart-4 border-chart-4/30",
     Scored:
-      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10",
+      "bg-muted text-muted-foreground border-border",
   };
   return (
     <span
-      className={`inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full border backdrop-blur-sm ${map[state]}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm ${map[state]}`}
     >
       {state}
     </span>
@@ -75,8 +75,8 @@ export function ConfidenceDots({ value }: { value: 0 | 1 | 2 | 3 | 4 | 5 }) {
           key={i}
           className={`w-1.5 h-1.5 rounded-full ${
             i <= value
-              ? "bg-indigo-500 dark:bg-indigo-400"
-              : "bg-slate-300 dark:bg-white/20"
+              ? "bg-primary"
+              : "bg-muted-foreground/30"
           }`}
         />
       ))}
@@ -92,18 +92,15 @@ export function Pill({
   tone?: "slate" | "amber" | "blue" | "emerald" | "red";
 }) {
   const map = {
-    slate:
-      "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300",
-    amber:
-      "bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300",
-    blue: "bg-indigo-100 text-indigo-800 dark:bg-indigo-400/15 dark:text-indigo-300",
-    emerald:
-      "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300",
-    red: "bg-red-100 text-red-800 dark:bg-red-400/15 dark:text-red-300",
+    slate: "bg-muted text-muted-foreground",
+    amber: "bg-chart-4/15 text-chart-4",
+    blue: "bg-primary/15 text-primary",
+    emerald: "bg-chart-3/15 text-chart-3",
+    red: "bg-destructive/15 text-destructive",
   } as const;
   return (
     <span
-      className={`inline-block text-xs px-2 py-0.5 rounded-full ${map[tone]}`}
+      className={`inline-block rounded-full px-2 py-0.5 text-xs ${map[tone]}`}
     >
       {children}
     </span>
@@ -119,14 +116,14 @@ export function PrimaryButton(
 ) {
   const { className = "", variant = "default", ...rest } = props;
   const variants: Record<PrimaryButtonVariant, string> = {
-    default: "bg-white text-neutral-950 hover:bg-neutral-200 dark:bg-white",
-    success: "bg-emerald-600 text-white hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-800",
-    danger: "bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700",
+    default: "bg-primary text-primary-foreground hover:bg-primary/90",
+    success: "bg-chart-3 text-primary-foreground hover:bg-chart-3/90",
+    danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
   };
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 disabled:cursor-not-allowed disabled:opacity-45 ${variants[variant]} ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
     />
   );
 }
@@ -138,7 +135,7 @@ export function SecondaryButton(
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-4 py-2 text-sm font-medium text-slate-800 backdrop-blur-sm transition hover:bg-black/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/10 ${className}`}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground backdrop-blur-sm transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     />
   );
 }
@@ -150,7 +147,7 @@ export function GhostButton(
   return (
     <button
       {...rest}
-      className={`inline-flex min-h-[36px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white ${className}`}
+      className={`inline-flex min-h-[40px] items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${className}`}
     />
   );
 }
@@ -166,12 +163,12 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+      <span className="mb-1 block text-xs font-medium text-foreground">
         {label}
       </span>
       {children}
       {hint && (
-        <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+        <span className="mt-1 block text-[11px] text-muted-foreground">
           {hint}
         </span>
       )}
@@ -187,11 +184,11 @@ export function EmptyState({
   body: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white/40 px-5 py-10 text-center backdrop-blur-sm dark:border-white/15 dark:bg-white/[0.03]">
-      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+    <div className="rounded-2xl border border-dashed border-border bg-card/80 px-5 py-10 text-center backdrop-blur-sm">
+      <h3 className="text-sm font-semibold text-foreground">
         {title}
       </h3>
-      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
         {body}
       </p>
     </div>

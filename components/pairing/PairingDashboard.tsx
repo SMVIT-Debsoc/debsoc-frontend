@@ -1,17 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { LogOut, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
-import PairingBackdrop from "./PairingBackdrop";
+import HoldToConfirmLogout from "./HoldToConfirmLogout";
 import DebassWorkspaceProvider, { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import AssistantSettings from "./AssistantSettings";
 import MobileBottomNav from "./MobileBottomNav";
 import MobileDashboardHeader from "./MobileDashboardHeader";
 import SidebarNav from "./SidebarNav";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 import { InlineLoader, PageSkeleton } from "./Loading";
 import { usePairingRealtime } from "./usePairingRealtime";
 import AdminPairingDashboard, {
@@ -82,6 +83,7 @@ export default function PairingDashboard({
   const [state, setState] = useState<PairingDataState>(INITIAL_STATE);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const reduceMotion = useReducedMotion();
   const [pendingTab, setPendingTab] = useState<string | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
   const closeMenuRef = useRef<HTMLButtonElement | null>(null);
@@ -363,34 +365,20 @@ export default function PairingDashboard({
     setSidebarOpen(false);
   };
 
-  const navGroups = useMemo(() => {
-    const primaryKeys = new Set(["Home", "Digest", "Chat", "MyPairing", "SpeakerLeaderboard"]);
-    return [
-      {
-        key: "primary",
-        label: "Your workspace",
-        entries: navTabs.filter((entry) => primaryKeys.has(entry.key)),
-      },
-      {
-        key: "secondary",
-        label: isAdminView ? "Administration" : "More",
-        entries: navTabs.filter((entry) => !primaryKeys.has(entry.key)),
-      },
-    ].filter((group) => group.entries.length > 0);
-  }, [isAdminView, navTabs]);
-
-  // The bottom bar stays focused on the four primary destinations. Secondary
-  // and role-specific options remain in the drawer and desktop sidebar.
+  // The bottom bar keeps one predictable destination for each mobile task:
+  // home, assistant, sessions/workspace, and rankings. The remaining real
+  // destinations stay in the grouped drawer.
   const primaryTabs = useMemo(() => {
-    const primaryKeys = ["Home", "Chat", "MyPairing", "SpeakerLeaderboard"];
+    const sessionKey = isAdminView && navTabs.some((tab) => tab.key === "Workspace") ? "Workspace" : "Sessions";
+    const primaryKeys = ["Home", "Chat", sessionKey, "SpeakerLeaderboard"];
     return primaryKeys
       .map((key) => navTabs.find((tab) => tab.key === key))
       .filter((tab): tab is (typeof navTabs)[number] => Boolean(tab))
       .map((tab) => ({
         ...tab,
-        label: tab.key === "Chat" ? "Chat" : tab.key === "MyPairing" ? "Pairing" : tab.key === "SpeakerLeaderboard" ? "Ranks" : "Home",
+        label: tab.key === "Chat" ? "Assistant" : tab.key === "Workspace" ? "Workspace" : tab.key === "Sessions" ? "Sessions" : tab.key === "SpeakerLeaderboard" ? "Rankings" : "Home",
       }));
-  }, [navTabs]);
+  }, [isAdminView, navTabs]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -429,50 +417,6 @@ export default function PairingDashboard({
       });
     };
   }, [sidebarOpen]);
-
-  const renderNav = (pillId: string, onSelect: (key: string) => void = selectTab, collapsed = false) => (
-    <nav className="dashboard-nav flex min-w-0 flex-col gap-4" aria-label="Dashboard navigation">
-      {navGroups.map((group) => (
-        <div key={group.key} className="flex flex-col gap-1">
-          {!collapsed && <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">{group.label}</p>}
-          {group.entries.map((entry) => {
-        const isActive = activeTab === entry.key;
-        return (
-          <button
-            key={entry.key}
-            type="button"
-            onClick={() => onSelect(entry.key)}
-            title={collapsed ? entry.label : undefined}
-            aria-label={entry.label}
-            aria-current={isActive ? "page" : undefined}
-            className={`dashboard-nav-item relative flex min-h-[44px] items-center ${collapsed ? "justify-center px-2" : "gap-3 px-3"} rounded-2xl py-2 text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50 ${
-              isActive
-                ? "text-slate-950 bg-slate-900/[0.08] ring-1 ring-slate-900/10 dark:text-white dark:bg-white/[0.10] dark:ring-white/10"
-                : "text-slate-700 hover:bg-slate-900/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-            }`}
-          >
-            {isActive && (
-              <motion.span
-                layoutId={pillId}
-                className="absolute inset-0 rounded-2xl bg-transparent dark:bg-white/[0.04]"
-                transition={{ type: "spring", duration: 0.45, bounce: 0.15 }}
-              />
-            )}
-            <span
-              className={`dashboard-nav-content relative z-10 flex items-center gap-3 ${
-                collapsed ? "[&>svg]:h-[22px] [&>svg]:w-[22px]" : ""
-              }`}
-            >
-              {entry.icon}
-              {!collapsed && <span>{entry.label}</span>}
-            </span>
-          </button>
-        );
-          })}
-        </div>
-      ))}
-    </nav>
-  );
 
   const openLeaderboards = () => {
     navigateToTab("SpeakerLeaderboard");
@@ -582,29 +526,30 @@ export default function PairingDashboard({
 
   return (
     <DebassWorkspaceProvider>
-      <div className="pairing-shell dashboard-desktop-shell relative min-h-screen min-w-0 overflow-x-clip text-slate-900 dark:text-slate-100" data-density={role === "cabinet" || role === "President" ? "compact" : "comfortable"}>
-      <PairingBackdrop />
+      <div className="pairing-shell dashboard-desktop-shell relative min-h-screen min-w-0 overflow-x-clip text-foreground" data-density={role === "cabinet" || role === "President" ? "compact" : "comfortable"}>
       {/* Mobile top bar */}
       <MobileDashboardHeader userName={userName} fallbackName={firstName} brand={brand} onMenu={() => setSidebarOpen(true)} menuButtonRef={menuButtonRef} />
 
       {/* Desktop sidebar */}
-      <aside data-collapsed={sidebarCollapsed ? "true" : "false"} className={`dashboard-desktop-sidebar glass-sidebar relative z-10 flex min-h-0 shrink-0 flex-col p-4 transition-[width] duration-300 sticky top-4 my-4 ml-4 h-[calc(100dvh-2rem)] rounded-[28px] ${sidebarCollapsed ? "w-[88px]" : "w-80"}`}>
-        <header className={`dashboard-sidebar-header mb-5 flex w-full shrink-0 font-semibold tracking-tight text-slate-900 dark:text-white ${sidebarCollapsed ? "flex-col items-center gap-3" : "min-h-11 items-center gap-2.5"}`}>
+      <aside data-collapsed={sidebarCollapsed ? "true" : "false"} className="dashboard-desktop-sidebar glass-sidebar z-40 flex min-h-0 shrink-0 flex-col rounded-[28px] p-3 transition-[width,box-shadow] duration-300">
+        <header className={`dashboard-sidebar-header mb-5 flex w-full shrink-0 font-semibold tracking-tight text-sidebar-foreground ${sidebarCollapsed ? "flex-col items-center gap-3" : "min-h-11 items-center gap-2.5"}`}>
           <div className={`flex min-w-0 items-center gap-2.5 ${sidebarCollapsed ? "w-full justify-center" : "flex-1"}`}>
-            <ProfileAvatar name={userName || firstName} className="h-9 w-9 shrink-0 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
-            {!sidebarCollapsed && <div className="dashboard-profile-details min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-slate-500">{position || role} · Dashboard</span></div>}
+            <ProfileAvatar name={userName || firstName} className="h-9 w-9 shrink-0 shadow-sm shadow-primary/30" initialsClassName="text-sm" />
+            {!sidebarCollapsed && <div className="dashboard-profile-details min-w-0"><span className="block truncate">{userName || firstName}</span><span className="block truncate text-[11px] font-normal text-muted-foreground">{position || role} · Dashboard</span></div>}
           </div>
-          <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className={`inline-flex shrink-0 items-center justify-center rounded-2xl text-slate-700 transition hover:bg-slate-900/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/70 dark:text-slate-200 dark:hover:bg-white/10 ${sidebarCollapsed ? "min-h-[60px] w-full" : "h-11 w-11"}`}>
-            <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white/90 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white dark:border-white/15 dark:bg-[#171717]/95 dark:hover:bg-[#252525]">
-              {sidebarCollapsed ? <PanelLeftOpen size={24} /> : <PanelLeftClose size={24} />}
+          <button type="button" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"} className={`inline-flex shrink-0 items-center justify-center rounded-2xl text-sidebar-foreground transition hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${sidebarCollapsed ? "min-h-[60px] w-full" : "h-11 w-11"}`}>
+            <span aria-hidden="true" className="flex h-11 w-11 items-center justify-center rounded-full border border-sidebar-border bg-sidebar shadow-md backdrop-blur transition hover:scale-105 hover:bg-sidebar-accent">
+              {sidebarCollapsed ? <PanelLeftOpen size={24} aria-hidden="true" /> : <PanelLeftClose size={24} aria-hidden="true" />}
             </span>
           </button>
         </header>
-        <div className="dashboard-sidebar-navigation min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pr-1">
-          <SidebarNav entries={navTabs} activeKey={activeTab} collapsed={sidebarCollapsed} pillId="pairing-nav-pill-desktop" onSelect={selectTab} />
+        <div className="dashboard-sidebar-navigation min-h-0 min-w-0 flex-1">
+          <DebsocOverlayScrollbar className="h-full">
+            <SidebarNav entries={navTabs} activeKey={activeTab} collapsed={sidebarCollapsed} pillId="pairing-nav-pill-desktop" onSelect={selectTab} />
+          </DebsocOverlayScrollbar>
         </div>
-        <footer className={`dashboard-sidebar-footer mt-5 flex shrink-0 flex-col gap-2 border-t border-black/10 pt-5 dark:border-white/10 ${sidebarCollapsed ? "items-center" : "items-stretch"}`}>
-          {!sidebarCollapsed ? <div className="flex items-center gap-2"><ThemeToggle /><AssistantSettings /></div> : <AssistantSettings collapsed />}
+        <footer className={`dashboard-sidebar-footer mt-5 flex shrink-0 flex-col gap-2 border-t border-sidebar-border pt-5 ${sidebarCollapsed ? "items-center" : "items-stretch"}`}>
+          {!sidebarCollapsed ? <div className="flex items-center gap-2"><ThemeToggle /><AssistantSettings /></div> : <div className="flex flex-col items-center gap-2"><ThemeToggle compact /><AssistantSettings collapsed /></div>}
           <div className={sidebarCollapsed ? "flex w-full justify-center" : "w-full"}>
             <LogoutButton collapsed={sidebarCollapsed} />
           </div>
@@ -623,11 +568,11 @@ export default function PairingDashboard({
         {sidebarOpen && (
           <div className="dashboard-mobile-only">
             <motion.div
-              className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm"
+              className="fixed inset-0 z-40 bg-foreground/45 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               onClick={() => setSidebarOpen(false)}
             />
             <motion.aside
@@ -639,11 +584,11 @@ export default function PairingDashboard({
               initial={{ transform: "translateX(-100%)" }}
               animate={{ transform: "translateX(0%)" }}
               exit={{ transform: "translateX(-100%)" }}
-              transition={{ type: "spring", duration: 0.4, bounce: 0.08 }}
+              transition={reduceMotion ? { duration: 0 } : { type: "spring", duration: 0.3, bounce: 0.04 }}
             >
               <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-2.5 font-semibold tracking-tight text-slate-900 dark:text-white">
-                  <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-indigo-600/30" initialsClassName="text-sm" />
+                <div className="flex items-center gap-2.5 font-semibold tracking-tight text-sidebar-foreground">
+                  <ProfileAvatar name={userName || firstName} className="h-9 w-9 shadow-sm shadow-primary/30" initialsClassName="text-sm" />
                   <span>{brand}</span>
                 </div>
                 <button
@@ -651,17 +596,19 @@ export default function PairingDashboard({
                   type="button"
                   aria-label="Close menu"
                   onClick={() => setSidebarOpen(false)}
-                  className="rounded-lg p-2 transition-colors hover:bg-slate-900/5 dark:hover:bg-white/10"
+                  className="min-h-11 min-w-11 rounded-lg p-2 transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                 >
-                  <X size={20} />
+                  <X size={20} aria-hidden="true" />
                 </button>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {renderNav("pairing-nav-pill-drawer", selectTabFromDrawer)}
+              <div className="min-h-0 flex-1">
+                <DebsocOverlayScrollbar className="h-full">
+                  <SidebarNav entries={navTabs} activeKey={activeTab} collapsed={false} pillId="pairing-nav-pill-drawer" onSelect={selectTabFromDrawer} />
+                </DebsocOverlayScrollbar>
               </div>
 
-              <div className="mt-4 flex flex-col gap-2 border-t border-slate-900/[0.06] pt-4 dark:border-white/[0.06]">
+              <div className="mt-4 flex flex-col gap-2 border-t border-sidebar-border pt-4">
                 <AssistantSettings />
                 <div className="[&>button]:w-full flex-1">
                   <LogoutButton />
@@ -672,18 +619,17 @@ export default function PairingDashboard({
         )}
       </AnimatePresence>
 
-      <main
-        ref={contentRef}
-        className="pairing-main content-enter relative z-10 min-h-0 min-w-0 flex-1 p-4 sm:p-6"
-      >
-        {!initialDataLoading && (state.loading || state.loadingLeaderboard) && (
-          <div className="mb-4 flex items-center justify-end gap-2 text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite">
-            <InlineLoader label="Refreshing dashboard data" />
-            <span>Refreshing live data</span>
-          </div>
-        )}
-        {content}
-      </main>
+      <DebsocOverlayScrollbar className="pairing-main dashboard-main-scroll relative z-10 min-h-0 min-w-0 flex-1" style={{ height: "var(--dashboard-scroll-height)" }}>
+        <main ref={contentRef} className="content-enter min-h-0 min-w-0 p-4 sm:p-6">
+          {!initialDataLoading && (state.loading || state.loadingLeaderboard) && (
+            <div className="mb-4 flex items-center justify-end gap-2 text-xs text-muted-foreground" role="status" aria-live="polite">
+              <InlineLoader label="Refreshing dashboard data" />
+              <span>Refreshing live data</span>
+            </div>
+          )}
+          {content}
+        </main>
+      </DebsocOverlayScrollbar>
 
       <MobileBottomNav items={primaryTabs} activeKey={activeTab} onSelect={selectTab} />
       </div>
@@ -695,20 +641,14 @@ function LogoutButton({ collapsed = false }: { collapsed?: boolean }) {
   const { clearKey, clearAssistantSession } = useDebassWorkspace();
 
   return (
-    <button
-      type="button"
-      aria-label="Log out"
-      onClick={() => {
+    <HoldToConfirmLogout
+      collapsed={collapsed}
+      onConfirm={() => {
         clearKey();
         clearAssistantSession();
         void signOut({ callbackUrl: "/" });
       }}
-      title="Log out"
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-sm font-semibold text-red-700 backdrop-blur-md transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] ${collapsed ? "h-11 w-11 shrink-0 px-0" : "w-full flex-1"}`}
-    >
-      <LogOut size={16} />
-      {!collapsed && <span className="dashboard-logout-label">Logout</span>}
-    </button>
+    />
   );
 }
 

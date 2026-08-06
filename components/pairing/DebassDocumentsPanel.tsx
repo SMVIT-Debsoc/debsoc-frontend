@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle2, FileUp, Loader2, RefreshCw, XCircle } from "lucide-react";
+import { CheckCircle2, FileText, FileUp, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
 import type { DebassDocumentStatusResponse } from "@/lib/debass/types";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Pill, PrimaryButton } from "./ui";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 
 type DocumentJob = DebassDocumentStatusResponse;
 
@@ -23,6 +24,7 @@ export default function DebassDocumentsPanel() {
   const pollJobRef = useRef<(jobId: string) => Promise<void>>(async () => undefined);
   const mounted = useRef(true);
   const processing = jobs.some((job) => job.status === "queued" || job.status === "parsing" || job.status === "embedding");
+  const canUpload = Boolean(acceptedKey && keyState === "valid");
 
   const cancelJob = useCallback((jobId: string) => {
     pollControllers.current.get(jobId)?.abort();
@@ -134,22 +136,23 @@ export default function DebassDocumentsPanel() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <FileUp size={16} className="text-indigo-600 dark:text-indigo-300" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-slate-950 dark:text-slate-100">Research Documents</h2>
+            <FileText size={17} className="text-primary" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-foreground">Knowledge Base</h2>
           </div>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Upload PDF, DOCX, or Markdown files for Debass ingestion. Searchable means the job is complete.</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Upload documents for this assistant session. Completed files become searchable by the connected assistant.</p>
         </div>
         <Pill tone="slate">Max 8 MB</Pill>
       </div>
 
-      <label className={`mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50 focus-within:ring-2 focus-within:ring-indigo-500/40 dark:border-white/15 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:border-indigo-400/50 dark:hover:bg-indigo-400/10 ${!acceptedKey || uploading ? "cursor-not-allowed opacity-60" : ""}`}>
+      <label className={`mt-4 flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground transition hover:border-primary/50 hover:bg-accent focus-within:ring-2 focus-within:ring-ring ${!canUpload || uploading ? "cursor-not-allowed opacity-60" : ""}`}>
           {uploading ? <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> : <FileUp size={16} aria-hidden="true" />}
-          {uploading ? "Uploading…" : acceptedKey ? "Choose a document" : "Validate a key to upload"}
-          <input type="file" accept={ACCEPTED_TYPES.join(",")} className="sr-only" disabled={!acceptedKey || uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.currentTarget.value = ""; }} />
+          {uploading ? "Uploading…" : canUpload ? "Choose a document" : "Validate a key to upload"}
+          <input type="file" accept={ACCEPTED_TYPES.join(",")} className="sr-only" disabled={!canUpload || uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); event.currentTarget.value = ""; }} />
       </label>
 
-      {error && <p className="mt-3 text-xs text-red-700 dark:text-red-300" role="alert">{error}</p>}
-      {jobs.length > 0 && <div className="mt-4 max-h-[min(440px,50dvh)] space-y-2 overflow-y-auto pr-1">{jobs.map((job) => <DocumentRow key={job.job_id} job={job} onRetry={() => retryJob(job.job_id)} />)}</div>}
+      {error && <p className="mt-3 text-xs text-destructive" role="alert">{error}</p>}
+      {jobs.length > 0 ? <DebsocOverlayScrollbar className="mt-4" style={{ height: "min(440px, 50dvh)" }} contentStyle={{ paddingRight: "0.25rem" }}><div className="space-y-2">{jobs.map((job) => <DocumentRow key={job.job_id} job={job} onRetry={() => retryJob(job.job_id)} />)}</div></DebsocOverlayScrollbar> : <div className="mt-4 rounded-xl border border-border bg-muted/40 px-3 py-4 text-center"><FileText size={20} className="mx-auto text-muted-foreground" aria-hidden="true" /><p className="mt-2 text-xs font-medium text-foreground">No documents uploaded in this session</p><p className="mt-1 text-[11px] leading-5 text-muted-foreground">Upload a PDF, DOCX, or Markdown file to make it available to the assistant.</p></div>}
+      <p className="mt-4 border-t border-border pt-3 text-[11px] leading-5 text-muted-foreground">Document history, file details, delete actions, and storage totals are not available from this assistant connection.</p>
     </Card>
     </div>
   );
@@ -158,10 +161,10 @@ export default function DebassDocumentsPanel() {
 function DocumentRow({ job, onRetry }: { job: DocumentJob; onRetry: () => void }) {
   const terminal = job.status === "done" || job.status === "failed";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 dark:border-white/10 dark:bg-white/[0.04]">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-3 py-3">
       <div className="flex min-w-0 items-center gap-2">
-        {job.status === "done" ? <CheckCircle2 size={16} className="shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden="true" /> : job.status === "failed" ? <XCircle size={16} className="shrink-0 text-red-600 dark:text-red-300" aria-hidden="true" /> : <Loader2 size={16} className="shrink-0 motion-safe:animate-spin text-indigo-600 dark:text-indigo-300" aria-hidden="true" />}
-        <div className="min-w-0"><p className="truncate text-xs font-medium text-slate-800 dark:text-slate-200">{job.filename}</p><p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{job.status === "done" ? "Searchable" : job.status}{job.status === "failed" && job.error ? ` · ${job.error}` : ""}</p></div>
+        {job.status === "done" ? <CheckCircle2 size={16} className="shrink-0 text-chart-3" aria-hidden="true" /> : job.status === "failed" ? <XCircle size={16} className="shrink-0 text-destructive" aria-hidden="true" /> : <Loader2 size={16} className="shrink-0 motion-safe:animate-spin text-primary" aria-hidden="true" />}
+        <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{job.filename}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{job.status === "done" ? "Searchable" : job.status}{job.status === "failed" && job.error ? ` · ${job.error}` : ""}</p></div>
       </div>
       {terminal && job.status === "failed" && <PrimaryButton type="button" onClick={onRetry} variant="default" className="min-h-8 px-2 text-xs"><RefreshCw size={13} aria-hidden="true" /> Retry</PrimaryButton>}
     </div>

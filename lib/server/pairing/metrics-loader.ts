@@ -25,10 +25,10 @@ interface MetricsRepositoryContract {
 interface SessionRepositoryContract {
   getSessionById(sessionId: string): Promise<{
     pairingObjective: string;
-    sessionRules: SessionInputContext["rules"] extends infer _R ? {
+    sessionRules: {
       timeConstraints: Array<{ participantId: string; isStrict: boolean }>;
       eventTeamUpPreferences: Array<{ firstParticipantId: string; secondParticipantId: string; isStrict: boolean }>;
-    } : never;
+    };
   } | null>;
 }
 

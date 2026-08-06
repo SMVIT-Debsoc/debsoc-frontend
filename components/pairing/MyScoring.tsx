@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { fetchJson } from "@/lib/client/fetch-json";
 import { Card, EmptyState, Field, PrimaryButton, SectionHeader, SecondaryButton } from "./ui";
@@ -271,15 +271,17 @@ export default function MyScoring({ role, userId, sessions, attendanceHistory, o
       return;
     }
 
-    setSpeakerForm({ chairScore: "", teamDynamicsRating: "", notes: "" });
-    setChairForm({
-      adjudicatorScores: Object.fromEntries(selectedTask.panel.map((entry) => [entry.participantId, ""])),
-      speakerScores: Object.fromEntries(
-        selectedTask.speakers.map((entry) => [entry.participantId, { rawScore: "", teamResultPoints: "" }]),
-      ),
+    startTransition(() => {
+      setSpeakerForm({ chairScore: "", teamDynamicsRating: "", notes: "" });
+      setChairForm({
+        adjudicatorScores: Object.fromEntries(selectedTask.panel.map((entry) => [entry.participantId, ""])),
+        speakerScores: Object.fromEntries(
+          selectedTask.speakers.map((entry) => [entry.participantId, { rawScore: "", teamResultPoints: "" }]),
+        ),
+      });
+      setSubmitState({ saving: false, message: null, error: null });
     });
-    setSubmitState({ saving: false, message: null, error: null });
-  }, [selectedTask?.sessionId]);
+  }, [selectedTask]);
 
   async function handleSpeakerSubmit() {
     if (!selectedTask) return;

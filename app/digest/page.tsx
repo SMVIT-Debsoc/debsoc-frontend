@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Inbox } from "lucide-react";
+import { BookOpenText } from "lucide-react";
 import { getAppSession } from "@/lib/server/dev-session";
 import { getActiveDigest } from "@/lib/server/digest";
 import { parseDigest } from "@/lib/digest/parse";
@@ -30,7 +30,7 @@ export default async function DigestPage() {
   const digest = await getActiveDigest();
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950">
+    <main className="min-h-screen bg-background text-foreground">
       {digest ? (
         <DigestCards
           sections={parseDigest(digest.text)}
@@ -46,16 +46,13 @@ export default async function DigestPage() {
 function EmptyState() {
   return (
     <section className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
-      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-        <Inbox className="h-7 w-7" aria-hidden />
+      <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <BookOpenText className="h-7 w-7" aria-hidden="true" />
       </span>
-      <h1 className="mt-5 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-        No digest yet
+      <h1 className="mt-5 text-2xl font-semibold text-foreground">
+        Today&rsquo;s Digest is still being prepared.
       </h1>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        Today&rsquo;s debate digest hasn&rsquo;t arrived, or the last one has
-        expired. Check back after the next weekday digest is published.
-      </p>
+      <p className="mt-2 text-sm text-muted-foreground">Please check back later.</p>
     </section>
   );
 }

@@ -1,0 +1,19 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "Local Member profile photo" [ref=e6]
+        - generic [ref=e7]: Local's Dashboard
+      - generic [ref=e8]:
+        - radiogroup "Theme" [ref=e9]:
+          - radio "Light theme" [checked] [ref=e11]
+          - radio "Dark theme" [ref=e18]
+        - button "Open dashboard menu" [ref=e21]
+    - main [ref=e23]:
+      - generic "Loading dashboard" [ref=e24]
+    - navigation "Primary dashboard navigation" [ref=e68]:
+      - button "Home" [ref=e69]
+      - button "Chat" [ref=e75]
+      - button "Pairing" [ref=e80]
+      - button "Ranks" [ref=e87]
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]

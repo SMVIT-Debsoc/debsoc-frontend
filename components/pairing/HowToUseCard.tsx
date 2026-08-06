@@ -19,7 +19,7 @@ type HowToUseContent = {
 
 const CONTENT: Record<HowToUseKind, HowToUseContent> = {
   chat: {
-    title: "How to use Debate Chat",
+    title: "How to use Debate Assistant",
     description: "Ask the DebSoc Assistant questions about debate topics, arguments, research, or preparation.",
     steps: [
       "Enter a clear debate question or describe the argument you want to explore.",
@@ -58,7 +58,7 @@ const STORAGE_PREFIX = "debsoc:assistant-help-dismissed:";
 export default function HowToUseCard({ kind }: HowToUseCardProps) {
   const content = CONTENT[kind];
   const contentId = `how-to-use-${useId().replace(/:/g, "")}`;
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const reduceMotion = useReducedMotion();
 
   /* eslint-disable react-hooks/set-state-in-effect -- restore the same-session collapsed preference after hydration. */

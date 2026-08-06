@@ -1,11 +1,15 @@
 "use client";
 
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {startTransition, useEffect, useMemo, useRef, useState} from "react";
 import {createPortal} from "react-dom";
 import {
     ArrowLeft,
     ArrowRight,
-    ChevronDown,
+    CalendarDays,
+    Check,
+    CheckCircle2,
+    CircleAlert,
+    Clock3,
     ClipboardList,
     Gavel,
     ListChecks,
@@ -23,7 +27,6 @@ import {
     Field,
     PrimaryButton,
     SecondaryButton,
-    SectionHeader,
     StateBadge,
 } from "./ui";
 import type {
@@ -41,6 +44,7 @@ import type {
 import type { RealtimeEventEnvelope } from "@/types/realtime";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 
 type StepKey = "prepare" | "setup" | "review" | "publish" | "post";
 
@@ -61,6 +65,14 @@ const STEPS: {key: StepKey; label: string}[] = [
     {key: "publish", label: "Publish"},
     {key: "post", label: "Post-session"},
 ];
+
+const STEP_META: Record<StepKey, {description: string; icon: React.ComponentType<{size?: number; className?: string}>}> = {
+    prepare: {description: "Attendance and roles", icon: Users},
+    setup: {description: "Motion and constraints", icon: ClipboardList},
+    review: {description: "Pairings review", icon: Wand2},
+    publish: {description: "Official rooms", icon: Send},
+    post: {description: "Scores and feedback", icon: CheckCircle2},
+};
 
 const STEP_INDEX: Record<StepKey, number> = {
     prepare: 0,
@@ -131,7 +143,9 @@ export default function SessionWorkspace({
     // Mirror of the latest committed workspace so a reload can read the
     // previously-loaded proposal even after it optimistically clears state.
     const workspaceRef = useRef(workspace);
-    workspaceRef.current = workspace;
+    useEffect(() => {
+        workspaceRef.current = workspace;
+    }, [workspace]);
     const [attendanceDraft, setAttendanceDraft] = useState<AttendanceDraft>({});
     const [motionType, setMotionType] = useState("");
     const [motionText, setMotionText] = useState("");
@@ -176,12 +190,15 @@ export default function SessionWorkspace({
     >(null);
     const [pickerFilter, setPickerFilter] = useState("");
     const [wsMounted, setWsMounted] = useState(false);
+    const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
-    useEffect(() => setWsMounted(true), []);
+    useEffect(() => {
+        startTransition(() => setWsMounted(true));
+    }, []);
 
     useEffect(() => {
         if (!rolePicker) return;
-        setPickerFilter("");
+        startTransition(() => setPickerFilter(""));
         const onKey = (event: KeyboardEvent) => {
             if (event.key === "Escape") setRolePicker(null);
         };
@@ -198,7 +215,7 @@ export default function SessionWorkspace({
         if (!selectedSessionId) {
             const nextSessionId = findDefaultSessionId(sessions);
             if (nextSessionId) {
-                setSelectedSessionId(nextSessionId);
+                startTransition(() => setSelectedSessionId(nextSessionId));
             }
         }
     }, [selectedSessionId, sessions]);
@@ -356,7 +373,7 @@ export default function SessionWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [selectedSessionId, selectedSessionRefreshKey, workspaceRefreshKey]);
+    }, [participants, selectedSessionId, selectedSessionRefreshKey, setActionError, workspaceRefreshKey]);
 
     useEffect(() => {
         if (!selectedSessionId || !scoringStatusRefreshKey) {
@@ -390,14 +407,16 @@ export default function SessionWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [scoringStatusRefreshKey, selectedSessionId, setActionError]);
+    }, [participants, scoringStatusRefreshKey, selectedSessionId, setActionError]);
 
     useEffect(() => {
-        setOverrideDraft(
-            workspace.proposal
-                ? createManualOverrideDraft(workspace.proposal)
-                : null,
-        );
+        startTransition(() => {
+            setOverrideDraft(
+                workspace.proposal
+                    ? createManualOverrideDraft(workspace.proposal)
+                    : null,
+            );
+        });
     }, [workspace.proposal]);
 
     useEffect(() => {
@@ -450,7 +469,7 @@ export default function SessionWorkspace({
         // failed generation surfaces its error instead of retrying forever
         // (each retry refetches session detail, which used to loop the page).
         // Manual Generate/Regenerate buttons remain available for retries.
-        setAutoGeneratingSessionId(selectedSessionId);
+        startTransition(() => setAutoGeneratingSessionId(selectedSessionId));
         void generateProposal(
             selectedSessionId,
             setWorkspace,
@@ -559,9 +578,6 @@ export default function SessionWorkspace({
         const hasCompletedSessions = sessions.some(
             (session) => session.state === "Scored",
         );
-        const eyebrow = hasCompletedSessions
-            ? "Session closed"
-            : "Fresh workspace";
         const headline = hasCompletedSessions
             ? "Ready for the next round"
             : "Kick off a session";
@@ -577,203 +593,47 @@ export default function SessionWorkspace({
         ];
 
         return (
-            <Card className="overflow-hidden border-indigo-200 dark:border-indigo-400/25 bg-[linear-gradient(135deg,rgba(99,102,241,0.14),rgba(15,23,42,0.04))]">
-                <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1.1fr_0.9fr]">
-                    <div className="rounded-3xl border border-slate-900/10 bg-slate-950 p-5 sm:p-6 text-white shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <div className="shrink-0 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 text-2xl">
-                                {hasCompletedSessions ? "✅" : "✨"}
-                            </div>
-                            <div className="min-w-0">
-                                <div className="text-[11px] uppercase tracking-[0.22em] text-indigo-300">
-                                    {eyebrow}
-                                </div>
-                                <div className="mt-1 text-2xl sm:text-3xl font-semibold leading-tight">
-                                    {headline}
-                                </div>
-                            </div>
-                        </div>
-                        <p className="mt-4 text-sm leading-6 text-slate-300">
-                            {body}
-                        </p>
-                        <div className="mt-6 flex flex-wrap items-center gap-3">
-                            <PrimaryButton
-                                type="button"
-                                disabled={busyAction !== null}
-                                onClick={() =>
-                                    void createInitialSession(
-                                        userName,
-                                        sessions,
-                                        onSessionsChange,
-                                        setSelectedSessionId,
-                                        setFeedback,
-                                        setActionError,
-                                        setBusyAction,
-                                    )
-                                }
-                            >
-                                {busyAction
-                                    ? "Creating…"
-                                    : "Create new session"}
-                            </PrimaryButton>
-                            <span className="text-xs text-slate-400">
-                                Takes ~2 seconds
-                            </span>
-                        </div>
+            <Card className="overflow-hidden border-primary/25 bg-card/80 p-5 shadow-lg shadow-primary/5 sm:p-7">
+                <div className="flex flex-wrap items-start justify-between gap-6">
+                    <div className="min-w-0 max-w-3xl">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary"><CalendarDays size={14} aria-hidden="true" /> Session Workspace</div>
+                        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{headline}</h1>
+                        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{body}</p>
+                        <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground"><div><dt className="sr-only">Current date</dt><dd>{new Intl.DateTimeFormat("en-IN", {dateStyle: "medium"}).format(new Date())}</dd></div><div><dt className="sr-only">Chair</dt><dd>Chair: <span className="font-medium text-foreground">{userName}</span></dd></div><div><dt className="sr-only">Status</dt><dd className="inline-flex items-center gap-1.5"><Clock3 size={14} aria-hidden="true" /> Preparation</dd></div></dl>
                     </div>
-
-                    <div className="rounded-3xl border border-indigo-200 dark:border-indigo-400/25 bg-white/70 p-5 backdrop-blur dark:bg-white/[0.04]">
-                        <div className="text-xs uppercase tracking-[0.22em] text-indigo-700 dark:text-indigo-300">
-                            Workflow
-                        </div>
-                        <div className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">
-                            Four steps to close a session
-                        </div>
-                        <ol className="mt-4 space-y-3">
-                            {steps.map((step) => (
-                                <li
-                                    key={step.n}
-                                    className="flex items-center gap-3"
-                                >
-                                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-200">
-                                        {step.n}
-                                    </span>
-                                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                                        {step.label}
-                                    </span>
-                                </li>
-                            ))}
-                        </ol>
-                    </div>
+                    <PrimaryButton type="button" disabled={busyAction !== null} onClick={() => void createInitialSession(userName, sessions, onSessionsChange, setSelectedSessionId, setFeedback, setActionError, setBusyAction)} className="min-h-12 shrink-0 px-5">{busyAction ? "Creating…" : <><Plus size={17} aria-hidden="true" /> Create Session</>}</PrimaryButton>
                 </div>
+                <div className="mt-8 border-t border-border pt-6"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Lifecycle</p><ol className="mt-4 grid gap-3 sm:grid-cols-4">{steps.map((entry) => <li key={entry.n} className="flex items-center gap-3 text-sm text-muted-foreground"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-muted font-semibold">{entry.n}</span><span>{entry.label}</span></li>)}</ol></div>
             </Card>
         );
     }
 
     return (
         <div className="pb-10">
-            <SectionHeader
-                title="Session Workspace"
-                subtitle={
-                    selectedSession ? selectedSession.date : "Session workspace"
-                }
-                right={
-                    <StateBadge
-                        state={deriveUiState(workspace, selectedSession?.state)}
-                    />
-                }
-            />
-
-            <Card className="mb-6 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Session
-                        </div>
-                        <div className="mt-1 truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {selectedSession
-                                ? `${selectedSession.date} · ${selectedSession.motionType}`
-                                : "No session"}
-                        </div>
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Chair default:{" "}
-                        <span className="font-medium text-slate-900 dark:text-slate-100">
-                            {userName}
-                        </span>
-                    </div>
+            <Card className="mb-6 border-primary/20 bg-card/80 p-5 shadow-md shadow-primary/5 sm:p-6">
+                <div className="flex flex-wrap items-start justify-between gap-5">
+                    <div className="min-w-0"><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary"><CalendarDays size={14} aria-hidden="true" /> Session Workspace</div><h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{selectedSession?.date ?? "Session"}</h1><p className="mt-1 text-sm text-muted-foreground">Chair: <span className="font-medium text-foreground">{userName}</span>{selectedSession?.motionType ? ` · ${selectedSession.motionType}` : ""}</p></div>
+                    <div className="flex items-center gap-3"><StateBadge state={deriveUiState(workspace, selectedSession?.state)} /><PrimaryButton type="button" disabled={busyAction !== null} onClick={() => void createInitialSession(userName, sessions, onSessionsChange, setSelectedSessionId, setFeedback, setActionError, setBusyAction)} className="min-h-11 px-4"><Plus size={16} aria-hidden="true" /> Create Session</PrimaryButton></div>
                 </div>
             </Card>
 
-            {/* Mobile: dot breadcrumb + a step dropdown. Desktop keeps the
-                original 5-tile grid so the workflow reads at a glance. */}
-            <div className="mb-4 md:hidden">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                        {STEPS.map((entry, index) => {
-                            const isActive = step === entry.key;
-                            const isDone = STEP_INDEX[step] > index;
-                            return (
-                                <React.Fragment key={entry.key}>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            stepAvailability[entry.key] &&
-                                            setStep(entry.key)
-                                        }
-                                        disabled={!stepAvailability[entry.key]}
-                                        aria-label={`Step ${index + 1}: ${entry.label}`}
-                                        aria-current={isActive ? "step" : undefined}
-                                        className={`h-2 rounded-full transition-all ${
-                                            isActive
-                                                ? "w-6 bg-indigo-600 dark:bg-indigo-400"
-                                                : isDone
-                                                  ? "w-2 bg-indigo-400 dark:bg-indigo-500"
-                                                  : "w-2 bg-slate-300 dark:bg-white/15"
-                                        }`}
-                                    />
-                                </React.Fragment>
-                            );
-                        })}
-                    </div>
-                    <span className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                        Step {STEP_INDEX[step] + 1} of {STEPS.length}
-                    </span>
-                </div>
-                <div className="relative">
-                    <select
-                        value={step}
-                        onChange={(event) => {
-                            const next = event.target.value as StepKey;
-                            if (stepAvailability[next]) setStep(next);
-                        }}
-                        className="w-full appearance-none rounded-xl border border-indigo-200 bg-white px-3 py-2.5 pr-9 text-sm font-semibold text-indigo-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-indigo-400/25 dark:bg-white/[0.06] dark:text-indigo-200"
-                    >
-                        {STEPS.map((entry, index) => (
-                            <option
-                                key={entry.key}
-                                value={entry.key}
-                                disabled={!stepAvailability[entry.key]}
-                            >
-                                Step {index + 1} · {entry.label}
-                                {stepAvailability[entry.key] ? "" : " (locked)"}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDown
-                        size={16}
-                        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-300"
-                    />
-                </div>
-            </div>
-
-            <div className="mb-6 hidden gap-2 sm:gap-3 md:grid md:grid-cols-5">
+            <ol className="mb-6 grid gap-2 sm:grid-cols-5 sm:gap-0" aria-label="Session lifecycle">
                 {STEPS.map((entry, index) => {
                     const enabled = stepAvailability[entry.key];
-                    return (
-                        <button
-                            key={entry.key}
-                            type="button"
-                            onClick={() => enabled && setStep(entry.key)}
-                            disabled={!enabled}
-                            className={`rounded-xl border px-3 py-2.5 text-left text-sm md:px-4 md:py-3 ${
-                                step === entry.key
-                                    ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-400/10 text-indigo-900 dark:text-indigo-200"
-                                    : enabled
-                                      ? "border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.06] text-slate-600 dark:text-slate-400"
-                                      : "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-400 dark:text-slate-500"
-                            }`}
-                        >
-                            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 md:text-[11px]">
-                                Step {index + 1}
-                            </div>
-                            <div className="mt-0.5 truncate text-sm font-semibold md:mt-1">
-                                {entry.label}
-                            </div>
-                        </button>
-                    );
+                    const current = step === entry.key;
+                    const lifecycle = deriveUiState(workspace, selectedSession?.state);
+                    const completedSteps: Record<StepKey, boolean> = {
+                        prepare: lifecycle !== "Preparation",
+                        setup: ["Generated", "Approved", "Published", "Active", "Completed", "Scored"].includes(lifecycle),
+                        review: ["Approved", "Published", "Active", "Completed", "Scored"].includes(lifecycle),
+                        publish: ["Published", "Active", "Completed", "Scored"].includes(lifecycle),
+                        post: lifecycle === "Scored",
+                    };
+                    const completed = completedSteps[entry.key] && enabled;
+                    const Icon = STEP_META[entry.key].icon;
+                    return <li key={entry.key} className="relative min-w-0 sm:flex sm:items-stretch"><button type="button" onClick={() => enabled && setStep(entry.key)} disabled={!enabled} aria-current={current ? "step" : undefined} className={`group relative z-10 flex min-h-[68px] w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-24 sm:flex-col sm:items-start sm:justify-center sm:rounded-none sm:border-0 sm:px-4 sm:py-3 ${current ? "border-primary/40 bg-primary/10 text-primary shadow-sm sm:rounded-2xl" : completed ? "border-chart-3/35 bg-chart-3/10 text-chart-3 sm:rounded-2xl" : enabled ? "border-border bg-card/60 text-muted-foreground sm:bg-transparent" : "border-border/60 bg-muted/35 text-muted-foreground/60 sm:bg-transparent"}`}><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${current ? "border-primary bg-primary text-primary-foreground" : completed ? "border-chart-3/40 bg-chart-3/15 text-chart-3" : "border-border bg-muted text-muted-foreground"}`}>{completed ? <Check size={17} aria-hidden="true" /> : <Icon size={17} aria-hidden="true" />}</span><span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-[0.12em]">{entry.label}</span><span className="mt-1 block text-xs text-muted-foreground">{STEP_META[entry.key].description}</span></span></button>{index < STEPS.length - 1 && <span className={`pointer-events-none absolute left-[calc(50%+1rem)] right-[-0.5rem] top-1/2 hidden h-px sm:block ${completed ? "bg-chart-3/50" : current ? "bg-primary/50 motion-safe:animate-pulse" : "bg-border"}`} aria-hidden="true" />}</li>;
                 })}
-            </div>
+            </ol>
 
             {busyAction && (
                 <div className="mb-4 rounded-xl border border-indigo-200 dark:border-indigo-400/25 bg-indigo-50 dark:bg-indigo-400/10 px-4 py-3 text-sm text-indigo-900 dark:text-indigo-200">
@@ -813,35 +673,8 @@ export default function SessionWorkspace({
                     </Card>
 
                     <Card className="p-4">
-                        <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                            <ListChecks size={16} /> Feasibility
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                            <MetricRow
-                                label="Speakers"
-                                value={counts.speakers}
-                            />
-                            <MetricRow
-                                label="Adjudicators"
-                                value={counts.adjudicators}
-                            />
-                            <MetricRow
-                                label="Rooms possible"
-                                value={counts.rooms}
-                            />
-                            <MetricRow
-                                label="Leftover speakers"
-                                value={counts.leftover}
-                            />
-                            <MetricRow
-                                label="Adjudicator coverage"
-                                value={
-                                    counts.adjudicatorCoverage
-                                        ? "OK"
-                                        : "Needs more adjudicators"
-                                }
-                            />
-                        </div>
+                        <div className="mb-4 flex items-start justify-between gap-3"><div><h3 className="flex items-center gap-2 font-semibold"><ListChecks size={16} aria-hidden="true" /> Session health</h3><p className="mt-1 text-xs text-muted-foreground">Check the pool before generating pairings.</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${counts.speakers > 0 && counts.adjudicators > 0 && counts.adjudicatorCoverage && counts.leftover === 0 ? "bg-chart-3/15 text-chart-3" : counts.speakers === 0 || counts.adjudicators === 0 ? "bg-destructive/15 text-destructive" : "bg-chart-4/15 text-chart-4"}`}>{counts.speakers === 0 || counts.adjudicators === 0 ? "Insufficient" : counts.adjudicatorCoverage && counts.leftover === 0 ? "Ready" : "Needs Attention"}</span></div>
+                        <div className="space-y-2 text-sm"><MetricRow label="Speaker count" value={counts.speakers} /><MetricRow label="Adjudicator count" value={counts.adjudicators} />{counts.rooms > 0 && <MetricRow label="Room capacity" value={`${counts.rooms} room${counts.rooms === 1 ? "" : "s"}`} />}<MetricRow label="Coverage" value={counts.adjudicatorCoverage ? "Ready" : "Needs Attention"} /><MetricRow label="Overall readiness" value={counts.speakers > 0 && counts.adjudicators > 0 && counts.adjudicatorCoverage && counts.leftover === 0 ? "Ready" : counts.speakers === 0 || counts.adjudicators === 0 ? "Insufficient" : "Needs Attention"} /></div>
                     </Card>
                 </div>
             )}
@@ -1530,6 +1363,17 @@ export default function SessionWorkspace({
                 </Card>
             )}
 
+            {wsMounted && cancelConfirmOpen && createPortal(
+                <div className="fixed inset-0 z-[110] flex items-end justify-center bg-foreground/50 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={() => busyAction === null && setCancelConfirmOpen(false)}>
+                    <div className="w-full max-w-md rounded-[24px] border border-border bg-card p-5 text-foreground shadow-2xl sm:p-6" role="alertdialog" aria-modal="true" aria-labelledby="cancel-session-title" aria-describedby="cancel-session-description" onMouseDown={(event) => event.stopPropagation()}>
+                        <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"><CircleAlert size={19} aria-hidden="true" /></span><div><h2 id="cancel-session-title" className="text-lg font-semibold">Cancel Session?</h2><p id="cancel-session-description" className="mt-1 text-sm leading-6 text-muted-foreground">Cancelling this session will permanently discard the current session setup and unsaved progress.</p></div></div>
+                        <ul className="mt-5 space-y-2 text-sm text-muted-foreground">{(Object.values(attendanceDraft).some((entry) => entry.isPresent) ? ["Attendance and role assignments"] : []).concat(workspace.proposal ? ["Generated pairing proposal"] : []).concat(["Session setup and unsaved progress"]).map((item) => <li key={item} className="flex items-start gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" aria-hidden="true" />{item}</li>)}</ul>
+                        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><PrimaryButton type="button" onClick={() => setCancelConfirmOpen(false)} disabled={busyAction !== null} className="min-h-11">Keep Editing</PrimaryButton><PrimaryButton type="button" variant="danger" disabled={busyAction !== null} onClick={() => { setCancelConfirmOpen(false); void cancelCurrentSession(selectedSessionId, sessions, onSessionsChange, setSelectedSessionId, setWorkspace, setFeedback, setActionError, setBusyAction); }} className="min-h-11"><X size={16} aria-hidden="true" /> Cancel Session</PrimaryButton></div>
+                    </div>
+                </div>,
+                document.body,
+            )}
+
             {/* On mobile the fixed bottom tab bar (~5rem incl. safe area) would cover
                 a bottom-4 sticky panel, so it sticks higher there. */}
             <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 z-10 mt-6 rounded-xl border border-slate-200 dark:border-white/10 bg-white/90 px-2.5 py-2 sm:px-4 sm:py-4 shadow-lg backdrop-blur-xl dark:bg-slate-900/85">
@@ -1561,18 +1405,7 @@ export default function SessionWorkspace({
                                 type="button"
                                 className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-400/25 dark:text-red-300 dark:hover:bg-red-400/10"
                                 disabled={busyAction !== null}
-                                onClick={() =>
-                                    void cancelCurrentSession(
-                                        selectedSessionId,
-                                        sessions,
-                                        onSessionsChange,
-                                        setSelectedSessionId,
-                                        setWorkspace,
-                                        setFeedback,
-                                        setActionError,
-                                        setBusyAction,
-                                    )
-                                }
+                                onClick={() => setCancelConfirmOpen(true)}
                                 aria-label="Cancel session"
                             >
                                 <X size={16} />
@@ -1780,14 +1613,6 @@ async function cancelCurrentSession(
     setActionError: React.Dispatch<React.SetStateAction<string | null>>,
     setBusyAction: React.Dispatch<React.SetStateAction<string | null>>,
 ) {
-    if (
-        !window.confirm(
-            "Cancel this session? This will remove the draft session and undo attendance, roles, proposals, and any other in-progress session data.",
-        )
-    ) {
-        return;
-    }
-
     setBusyAction("Cancelling session");
     setActionError(null);
     setFeedback(null);
@@ -2473,8 +2298,9 @@ function RoleColumn({
                     onClick={onAdd}
                     className="flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 py-8 text-sm text-slate-400 transition hover:border-indigo-300 hover:text-indigo-500 dark:border-white/10 dark:text-slate-500"
                 >
-                    <Plus size={18} />
-                    Add {title.toLowerCase()}
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Plus size={18} aria-hidden="true" /></span>
+                    <span className="mt-2 font-medium text-foreground">No {title.toLowerCase()} added yet.</span>
+                    <span className="text-center text-xs leading-5 text-muted-foreground">{title === "Speakers" ? "Add participants to begin attendance." : "Add adjudicators to continue."}</span>
                 </button>
             ) : (
                 <ul className="space-y-2">
@@ -2577,7 +2403,7 @@ function RolePickerModal({
                         />
                     </div>
                 </div>
-                <div className="mt-3 flex-1 overflow-y-auto px-5 pb-5">
+                <DebsocOverlayScrollbar className="mt-3 min-h-0 flex-1" contentStyle={{ padding: "0 1.25rem 1.25rem" }}>
                     {filtered.length === 0 ? (
                         <p className="py-10 text-center text-sm text-slate-400">
                             No members found.
@@ -2637,7 +2463,7 @@ function RolePickerModal({
                             })}
                         </ul>
                     )}
-                </div>
+                </DebsocOverlayScrollbar>
                 <div className="shrink-0 border-t border-zinc-900/5 px-5 py-3 dark:border-white/10">
                     <button
                         type="button"

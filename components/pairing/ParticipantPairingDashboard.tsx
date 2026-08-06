@@ -46,17 +46,17 @@ export type ParticipantTab =
   | "Digest";
 
 export const PARTICIPANT_TABS: { key: ParticipantTab; label: string; icon: React.ReactNode }[] = [
-  { key: "Home", label: "Home", icon: <House size={18} /> },
-  { key: "Digest", label: "Debate Digest", icon: <Newspaper size={18} /> },
-  { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={18} /> },
-  { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={18} /> },
-  { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={18} /> },
-  { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={18} /> },
-  { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={18} /> },
-  { key: "SpeakerLeaderboard", label: "Leaderboards", icon: <Mic2 size={18} /> },
-  { key: "AdjudicatorLeaderboard", label: "Adj Leaderboard", icon: <Scale size={18} /> },
-  { key: "Sessions", label: "Session History", icon: <Calendar size={18} /> },
-  { key: "Spars", label: "Spars", icon: <Swords size={18} /> },
+  { key: "Home", label: "Home", icon: <House size={22} aria-hidden="true" /> },
+  { key: "Digest", label: "Debate Digest", icon: <Newspaper size={22} aria-hidden="true" /> },
+  { key: "Chat", label: "Debate Chat", icon: <MessageCircle size={22} aria-hidden="true" /> },
+  { key: "MockDrill", label: "Mock Drill", icon: <ClipboardPenLine size={22} aria-hidden="true" /> },
+  { key: "MockJudge", label: "Mock Judge", icon: <Gavel size={22} aria-hidden="true" /> },
+  { key: "MyPairing", label: "My Pairing", icon: <UserCircle size={22} aria-hidden="true" /> },
+  { key: "MyScoring", label: "My Scoring Tasks", icon: <ClipboardCheck size={22} aria-hidden="true" /> },
+  { key: "SpeakerLeaderboard", label: "Leaderboards", icon: <Mic2 size={22} aria-hidden="true" /> },
+  { key: "AdjudicatorLeaderboard", label: "Adj Leaderboard", icon: <Scale size={22} aria-hidden="true" /> },
+  { key: "Sessions", label: "Session History", icon: <Calendar size={22} aria-hidden="true" /> },
+  { key: "Spars", label: "Spars", icon: <Swords size={22} aria-hidden="true" /> },
 ];
 
 type ParticipantPairingDashboardProps = {

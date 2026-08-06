@@ -1,23 +1,19 @@
 "use client";
 
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState, type SVGProps} from "react";
 import Image from "next/image";
 import {motion} from "framer-motion";
 import {
     Shield,
     Zap,
-    Grid3X3,
-    Eye,
     Mic2,
-    ChevronDown,
-    Layers,
     Share2,
     FileText,
     Code,
     ArrowUpRight,
 } from "lucide-react";
 
-const Linkedin = (props: any) => (
+const Linkedin = (props: SVGProps<SVGSVGElement>) => (
     <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
@@ -269,7 +265,6 @@ function MemberCard({
         sm: "text-[10px] md:text-sm",
     };
 
-    const CardContainer: any = "a";
     const containerProps = {
         href: member.linkedin || "#",
         target: "_blank",
@@ -279,7 +274,7 @@ function MemberCard({
 
     return (
         <AnimatedSection delay={delay} className="group h-full min-h-0">
-            <CardContainer {...containerProps}>
+            <a {...containerProps}>
                 <div className="absolute inset-0 z-10">
                     <div className="relative w-full h-full md:grayscale md:group-hover:grayscale-0 transition-all duration-1000">
                         {contain && (
@@ -319,7 +314,7 @@ function MemberCard({
                         <Linkedin className="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-md" />
                     </div>
                 </div>
-            </CardContainer>
+            </a>
         </AnimatedSection>
     );
 }
@@ -411,7 +406,7 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
                 <p
                     className={`text-zinc-400 leading-relaxed font-light italic group-hover:text-white transition-colors ${isEquity ? "text-[9px] md:text-[10px] lg:text-[11px]" : "text-[11px] md:text-[13px]"}`}
                 >
-                    "{dept.intro}"
+                    &quot;{dept.intro}&quot;
                 </p>
             </div>
             <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-white/10 group-hover:border-white/40 transition-colors" />
@@ -841,13 +836,6 @@ function DepartmentSection({dept, id}: {dept: Department; id?: string}) {
    ───────────────────────────────────────────── */
 
 export default function TeamSection() {
-    const scrollTo = (id: string) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.scrollIntoView({behavior: "smooth"});
-        }
-    };
-
     return (
         <div
             id="team"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, {startTransition, useEffect, useState} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {usePathname, useRouter} from "next/navigation";
@@ -37,7 +37,7 @@ const Navbar = () => {
 
     // Close mobile menu when route changes
     useEffect(() => {
-        setIsMenuOpen(false);
+        startTransition(() => setIsMenuOpen(false));
     }, [pathname]);
 
     // Prevent background scroll when mobile menu is open
@@ -119,8 +119,9 @@ const Navbar = () => {
                     <Image
                         src="/logo.png"
                         alt="Debsoc Logo"
-                        width={28}
-                        height={28}
+                        width={972}
+                        height={1190}
+                        style={{width: "28px", height: "auto"}}
                         className="object-contain"
                     />
                     DEBSOC

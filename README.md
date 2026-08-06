@@ -100,6 +100,24 @@ For collaborations, queries, or participation:
 
 We welcome ideas, collaborations, and enthusiastic members who want to make a difference through dialogue and debate.
 
+## Local development and verification
+
+Use Node.js **24.x** for development and CI. Copy `.env.example` to `.env.local`, provide a local PostgreSQL `DATABASE_URL`, and set a local-only `NEXTAUTH_SECRET` before starting the app. Google OAuth must be configured with the local callback URL; no development authentication bypass is part of the supported setup.
+
+After PostgreSQL is available, apply the existing Prisma migrations with `npx prisma migrate deploy` (or use the repository’s normal development migration workflow), then run:
+
+```bash
+npm ci
+npx tsc --noEmit
+npm run lint
+npm test
+npm run build
+npm audit --omit=dev
+npm audit
+```
+
+Authenticated browser verification requires the same local database and OAuth credentials. The test suite run by `npm test` is the repository’s existing 23-test Node test suite; browser checks that require real accounts or PostgreSQL should be performed against the documented local setup.
+
 ---
 
 ## ⭐ Acknowledgements

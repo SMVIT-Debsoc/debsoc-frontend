@@ -1,4 +1,3 @@
-import {Sparkles} from "lucide-react";
 import {reviews, type Review} from "@/lib/alumni";
 
 type AlumniSectionProps = {

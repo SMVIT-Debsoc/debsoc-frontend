@@ -2,7 +2,7 @@
 
 import React, {useRef, useState} from "react";
 import Image from "next/image";
-import {ArrowUpRight, Play, Maximize2, X} from "lucide-react";
+import {Maximize2, X} from "lucide-react";
 import gsap from "gsap";
 import {useGSAP} from "@gsap/react";
 

@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import {useState, useRef, MouseEvent} from "react";
+import {useState, useRef, type MouseEvent, type SVGProps} from "react";
 
 const socialIcons = [
     {
         name: "Youtube",
         href: "https://www.youtube.com/@smvitdebsoc738",
-        icon: (props: any) => (
+        icon: (props: SVGProps<SVGSVGElement>) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -28,7 +28,7 @@ const socialIcons = [
     {
         name: "Instagram",
         href: "https://www.instagram.com/smvit_debsoc/",
-        icon: (props: any) => (
+        icon: (props: SVGProps<SVGSVGElement>) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -50,7 +50,7 @@ const socialIcons = [
     {
         name: "Linkedin",
         href: "https://www.linkedin.com/company/smvitdebsoc/",
-        icon: (props: any) => (
+        icon: (props: SVGProps<SVGSVGElement>) => (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"

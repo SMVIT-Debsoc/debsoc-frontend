@@ -1,8 +1,8 @@
 "use client";
 
-import React, {useState, useEffect} from "react";
+import React, {startTransition, useEffect, useState} from "react";
 import {motion, AnimatePresence} from "framer-motion";
-import {Sparkles, User, Users, Star, ChevronRight, Quote} from "lucide-react";
+import {User, Users, Star, ChevronRight, Quote} from "lucide-react";
 import Image from "next/image";
 import {signIn} from "next-auth/react";
 import {useSearchParams} from "next/navigation";
@@ -19,8 +19,7 @@ export default function LoginClient() {
 
   useEffect(() => {
     const m = searchParams.get("mode");
-    if (m === "signup") setMode("signup");
-    else setMode("login");
+    startTransition(() => setMode(m === "signup" ? "signup" : "login"));
   }, [searchParams]);
 
   const handleAuth = () => {
@@ -47,7 +46,7 @@ export default function LoginClient() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-12 md:mb-16">
             <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center overflow-hidden">
-              <Image src="/logo.png" alt="Debsoc" width={28} height={28} className="object-contain" />
+              <Image src="/logo.png" alt="Debsoc" width={972} height={1190} style={{width: "28px", height: "auto"}} className="object-contain" />
             </div>
             <span className="text-xl font-bold tracking-[0.3em] text-white">DEBSOC</span>
           </div>
@@ -71,7 +70,7 @@ export default function LoginClient() {
           <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 backdrop-blur-md">
             <Quote size={24} className="text-zinc-600 mb-4" />
             <p className="text-zinc-300 text-sm italic font-light leading-relaxed">
-              "Honest disagreement is often a good sign of progress."
+              &quot;Honest disagreement is often a good sign of progress.&quot;
             </p>
             <p className="text-zinc-500 text-[10px] uppercase tracking-widest mt-4 font-medium">
               Mahatma Gandhi

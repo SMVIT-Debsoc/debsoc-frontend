@@ -23,7 +23,7 @@ export class PairingPublishError extends Error {
   }
 }
 
-export interface PublishPairingResult extends PublishPairingResponse {}
+export type PublishPairingResult = PublishPairingResponse;
 
 interface PairingPublishRepositoryContract {
   publishProposalTransaction(input: { sessionId: string }): Promise<PublishedPairingView>;

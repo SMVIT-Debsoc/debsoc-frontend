@@ -1,7 +1,8 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
-import {useRouter, useSearchParams} from "next/navigation";
+import {useEffect, useRef} from "react";
+import Image from "next/image";
+import {useRouter} from "next/navigation";
 import gsap from "gsap";
 import {ScrollTrigger} from "gsap/ScrollTrigger";
 import {useGSAP} from "@gsap/react";
@@ -26,8 +27,6 @@ type NavItem = {
 };
 
 export default function HomeClient() {
-    const MIC_INTRO_DURATION = 1.9;
-
     const containerRef = useRef<HTMLDivElement>(null);
     const micWrapperRef = useRef<HTMLDivElement>(null);
     const micTopRef = useRef<HTMLDivElement>(null);
@@ -163,7 +162,7 @@ export default function HomeClient() {
             const cards = Array.from(slider.children) as HTMLElement[];
             cards.forEach((c) => gsap.set(c, {scale: 0, opacity: 0}));
 
-            let mm = gsap.matchMedia();
+            const mm = gsap.matchMedia();
 
             mm.add(
                 {
@@ -171,7 +170,7 @@ export default function HomeClient() {
                     isMobile: "(max-width: 767px)",
                 },
                 (context) => {
-                    const {isDesktop} = context.conditions as any;
+                    const {isDesktop} = context.conditions as {isDesktop?: boolean};
 
                     const getAdditionalScroll = () => {
                         if (!isDesktop || !slider) return 0;
@@ -408,9 +407,11 @@ export default function HomeClient() {
                         ref={micWrapperRef}
                         className="mic-wrapper absolute bottom-[clamp(13vh,15svh,18vh)] md:bottom-0 z-30 pointer-events-none left-1/2"
                     >
-                        <img
+                        <Image
                             src="/mic-nobg.png"
                             alt="Retro Microphone"
+                            width={1000}
+                            height={1000}
                             className="mic-element h-[clamp(70vh,76svh,84vh)] min-h-[440px] max-h-[96vh] sm:h-[54vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-auto max-w-[min(98vw,39rem)] sm:max-w-[min(78vw,42rem)] md:max-w-none object-contain object-bottom origin-center scale-[1.65] md:scale-100 [clip-path:inset(0_0_23%_0)] md:[clip-path:inset(0_0_0_0)] brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                             style={{
                                 transformStyle: "preserve-3d",
@@ -449,7 +450,7 @@ export default function HomeClient() {
                                     </button>
                                 </div>
                                 <div className="flex gap-3">
-                                    {navItems.slice(0, 2).map((item, i) => (
+                                    {navItems.slice(0, 2).map((item) => (
                                         <div
                                             key={item.title}
                                             className="relative w-32 md:w-36.25 h-24 md:h-25 group shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/10 bg-zinc-900"
@@ -459,9 +460,11 @@ export default function HomeClient() {
                                         >
                                             <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all z-10" />
                                             {item.image && (
-                                                <img
+                                                <Image
                                                     src={item.image}
                                                     alt={item.title}
+                                                    fill
+                                                    sizes="(max-width: 767px) 50vw, 18rem"
                                                     className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700"
                                                 />
                                             )}
@@ -587,9 +590,11 @@ export default function HomeClient() {
                                 className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(0 0 50% 0)"}}
                             >
-                                <img
+                                <Image
                                     src="/mic-nobg.png"
                                     alt=""
+                                    width={1000}
+                                    height={1000}
                                     className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                                     style={{display: "block"}}
                                 />
@@ -601,9 +606,11 @@ export default function HomeClient() {
                                 className="absolute bottom-[6vh] md:bottom-0 flex justify-center left-1/2 will-change-transform h-[63vh] min-h-[400px] max-h-[92vh] md:h-[90vh] lg:h-[90vh] xl:h-[90vh] w-full opacity-0"
                                 style={{clipPath: "inset(50% 0 0 0)"}}
                             >
-                                <img
+                                <Image
                                     src="/mic-nobg.png"
                                     alt=""
+                                    width={1000}
+                                    height={1000}
                                     className="h-full w-auto max-w-[min(102vw,32rem)] md:max-w-none object-contain object-bottom brightness-[1.25] contrast-[1.12] saturate-[1.06] md:brightness-100 md:contrast-100 md:saturate-100"
                                     style={{display: "block"}}
                                 />
@@ -621,7 +628,7 @@ export default function HomeClient() {
                             ref={sliderRef}
                             className="relative z-105 w-full h-[clamp(460px,74svh,720px)] md:h-[72vh] hide-scrollbar opacity-0 invisible px-3 sm:px-6 md:px-[8vw] py-2 sm:py-4 md:py-0 grid grid-cols-2 gap-2 sm:gap-4 overflow-y-auto overflow-x-hidden content-start md:flex md:items-center md:gap-10 md:overflow-x-auto md:overflow-y-hidden"
                         >
-                            {navItems.map((item, i) => (
+                            {navItems.map((item) => (
                                 <div
                                     key={item.title}
                                     onClick={() => navigateFromCard(item)}
@@ -629,9 +636,11 @@ export default function HomeClient() {
                                 >
                                     <div className="absolute inset-0 bg-black/50 group-hover:bg-black/20 transition-all z-10 duration-500" />
                                     {item.image && (
-                                        <img
+                                        <Image
                                             src={item.image}
                                             alt={item.title}
+                                            fill
+                                            sizes="(max-width: 767px) 50vw, 32rem"
                                             className="w-full h-full object-cover brightness-90 md:grayscale md:brightness-75 group-hover:grayscale-0 group-hover:brightness-110 group-hover:scale-105 transition-all duration-1000 ease-out"
                                         />
                                     )}

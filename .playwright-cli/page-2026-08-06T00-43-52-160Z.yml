@@ -1,0 +1,130 @@
+- generic [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - banner [ref=f3e3]:
+      - generic [ref=f3e4]:
+        - img "Local Member profile photo" [ref=f3e6]
+        - generic [ref=f3e7]: Local's Dashboard
+      - generic [ref=f3e8]:
+        - radiogroup "Theme" [ref=f3e9]:
+          - radio "Light theme" [checked] [ref=f3e11]
+          - radio "Dark theme" [ref=f3e18]
+        - button "Open dashboard menu" [ref=f3e21]
+    - dialog "Dashboard menu" [ref=f3e215]:
+      - generic [ref=f3e216]:
+        - generic [ref=f3e217]:
+          - img "Local Member profile photo" [ref=f3e219]
+          - generic [ref=f3e220]: Local's Dashboard
+        - button "Close menu" [ref=f3e221]
+      - navigation "Dashboard navigation" [ref=f3e226]:
+        - generic [ref=f3e227]:
+          - paragraph [ref=f3e228]: Your workspace
+          - button "Home" [ref=f3e229]
+          - button "Debate Digest" [ref=f3e236]
+          - button "Debate Chat" [ref=f3e242]
+          - button "My Pairing" [ref=f3e247]
+          - button "Leaderboards" [ref=f3e254]
+        - generic [ref=f3e261]:
+          - paragraph [ref=f3e262]: More
+          - button "Mock Drill" [ref=f3e263]
+          - button "Mock Judge" [ref=f3e271]
+          - button "My Scoring Tasks" [ref=f3e280]
+          - button "Adj Leaderboard" [ref=f3e287]
+          - button "Session History" [ref=f3e294]
+          - button "Spars" [ref=f3e299]
+      - generic [ref=f3e311]:
+        - button "Open Assistant Settings" [expanded] [active] [ref=f3e313]:
+          - generic [ref=f3e317]: Assistant Settings
+        - button "Log out" [ref=f3e319]:
+          - generic [ref=f3e323]: Logout
+    - main [ref=f3e23]:
+      - generic [ref=f3e110]:
+        - generic [ref=f3e111]:
+          - generic [ref=f3e112]:
+            - paragraph [ref=f3e113]: Member
+            - heading "Welcome, Local Member" [level=1] [ref=f3e114]
+            - paragraph [ref=f3e115]: Your debating workspace, pairing progress, and latest performance.
+          - generic [ref=f3e116]:
+            - link "Debate Digest" [ref=f3e117] [cursor=pointer]:
+              - /url: /dashboard?tab=Digest
+            - link "Chat / New Q&A" [ref=f3e121] [cursor=pointer]:
+              - /url: /dashboard?tab=Chat
+            - link "Mock Drill / Start Drill" [ref=f3e124] [cursor=pointer]:
+              - /url: /dashboard?tab=MockDrill
+            - link "Mock Judge" [ref=f3e134] [cursor=pointer]:
+              - /url: /dashboard?tab=MockJudge
+        - generic [ref=f3e141]:
+          - generic [ref=f3e142]:
+            - generic [ref=f3e143]: Your attendance
+            - generic [ref=f3e149]: 0%
+          - generic [ref=f3e150]:
+            - generic [ref=f3e151]: Total sessions
+            - generic [ref=f3e156]: "0"
+          - button "Speaker rank --" [ref=f3e158]:
+            - generic [ref=f3e159]: Speaker rank
+            - generic [ref=f3e168]: "--"
+          - button "Adjudicator rank --" [ref=f3e174]:
+            - generic [ref=f3e175]: Adjudicator rank
+            - generic [ref=f3e183]: "--"
+        - generic [ref=f3e188]:
+          - generic [ref=f3e189]:
+            - heading "Last session you did" [level=3] [ref=f3e193]
+            - generic [ref=f3e194]:
+              - heading "No recent session yet" [level=3] [ref=f3e195]
+              - paragraph [ref=f3e196]: Once your attendance is recorded, your latest session summary will show here.
+          - generic [ref=f3e197]:
+            - heading "Motion-type performance" [level=3] [ref=f3e201]
+            - generic [ref=f3e202]:
+              - heading "No motion performance data yet" [level=3] [ref=f3e203]
+              - paragraph [ref=f3e204]: Once scored sessions exist for you, your motion-type performance will show here automatically.
+    - navigation "Primary dashboard navigation" [ref=f3e68]:
+      - button "Home" [ref=f3e69]
+      - button "Chat" [ref=f3e75]
+      - button "Pairing" [ref=f3e80]
+      - button "Ranks" [ref=f3e87]
+  - button "Open Next.js Dev Tools" [ref=f3e99] [cursor=pointer]
+  - alert [ref=f3e213]
+  - dialog [ref=f3e324]:
+    - generic [ref=f3e325]:
+      - generic [ref=f3e331]:
+        - heading "Assistant Settings" [level=2] [ref=f3e332]
+        - paragraph [ref=f3e333]: One shared connection for Debate Chat, Mock Drill, Mock Judge, and research uploads.
+      - button "Close Assistant Settings" [ref=f3e334]
+    - generic [ref=f3e338]:
+      - generic [ref=f3e339]:
+        - generic [ref=f3e340]:
+          - generic [ref=f3e341]: Connection
+          - generic [ref=f3e342]: Unavailable
+        - button "Refresh health" [ref=f3e345]
+      - generic [ref=f3e351]:
+        - text: OpenRouter model
+        - combobox "OpenRouter model" [disabled] [ref=f3e352]:
+          - option "nvidia/nemotron-3-super-120b-a12b:free" [selected]
+        - paragraph [ref=f3e353]: Debass currently documents one supported free-tier model.
+    - generic [ref=f3e355]:
+      - generic [ref=f3e362]:
+        - generic [ref=f3e363]:
+          - heading "Connect your OpenRouter key" [level=2] [ref=f3e364]
+          - group [ref=f3e365]:
+            - generic "How to get an OpenRouter key" [ref=f3e366] [cursor=pointer]
+        - paragraph [ref=f3e369]: The key stays in memory by default and is sent only to the configured Debass backend. It is never placed in URLs, saved to the database, or sent directly to OpenRouter.
+      - generic [ref=f3e370]:
+        - generic [ref=f3e371]:
+          - textbox "OpenRouter API key" [ref=f3e372]:
+            - /placeholder: sk-or-v1-…
+          - button "Show OpenRouter API key" [ref=f3e373]
+        - button "Validate key" [disabled] [ref=f3e377]
+        - button "Clear OpenRouter key" [disabled] [ref=f3e378]
+      - generic [ref=f3e382]:
+        - generic [ref=f3e383] [cursor=pointer]:
+          - checkbox "Remember key on this device Stores your key in this browser until you remove it." [ref=f3e384]
+          - generic [ref=f3e385]:
+            - generic [ref=f3e386]: Remember key on this device
+            - generic [ref=f3e387]: Stores your key in this browser until you remove it.
+        - paragraph [ref=f3e388]: Only enable this on a personal, trusted device. Do not use it on a shared or public computer.
+      - generic [ref=f3e389]:
+        - paragraph [ref=f3e390]: Validate the key before sending a request.
+        - button "Refresh status" [ref=f3e391]
+    - generic [ref=f3e397]:
+      - generic [ref=f3e398]: Key stays in memory by default
+      - button "Clear local assistant state" [ref=f3e402]
+    - paragraph [ref=f3e406]: Clearing local assistant state resets conversation, drill, judge, and document status shown in this dashboard session. It does not delete Debass documents.

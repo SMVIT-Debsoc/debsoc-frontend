@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { KeyRound, RefreshCw, Settings2, Trash2, X } from "lucide-react";
-import { DEBASS_MODEL } from "@/lib/debass/types";
+import { Check, Settings2, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import DebassKeyPanel from "./DebassKeyPanel";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 import { ASSISTANT_SETTINGS_OPEN_EVENT } from "./AssistantSettingsEvents";
-import { Card, Pill, SecondaryButton } from "./ui";
+import { Pill } from "./ui";
 
 export default function AssistantSettings({ collapsed = false }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
-  const { healthState, keyState, hasRememberedKey, clearAssistantSession, refreshHealth, model } = useDebassWorkspace();
+  const { healthState, keyState } = useDebassWorkspace();
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -33,15 +33,17 @@ export default function AssistantSettings({ collapsed = false }: { collapsed?: b
     };
   }, [open]);
 
-  const status = keyState !== "valid" && healthState === "Connected"
-      ? { label: "Key required", tone: "amber" as const }
-      : healthState === "Connected"
-        ? { label: "Connected", tone: "emerald" as const }
-        : healthState === "Connecting"
-          ? { label: "Connecting", tone: "amber" as const }
-          : healthState === "Disconnected"
-            ? { label: "Disconnected", tone: "red" as const }
-            : { label: "Unavailable", tone: "slate" as const };
+  const status = keyState === "validating"
+    ? { label: "Validating", tone: "amber" as const, description: "Checking the connection securely." }
+    : keyState === "valid"
+      ? { label: "Connected", tone: "emerald" as const, description: "DebSoc AI is ready to use." }
+      : keyState === "invalid"
+        ? { label: "Invalid API Key", tone: "red" as const, description: "Check the key and try again." }
+        : healthState === "Unavailable"
+          ? { label: "Unavailable", tone: "slate" as const, description: "The AI service is not configured for this environment." }
+          : { label: "API Key Required", tone: "amber" as const, description: "Connect a key to use DebSoc AI." };
+
+  const modelLabel = "Nemotron 3 Super 120B";
 
   return (
     <>
@@ -53,30 +55,37 @@ export default function AssistantSettings({ collapsed = false }: { collapsed?: b
           aria-haspopup="dialog"
           aria-expanded={open}
           title={collapsed ? "Assistant Settings" : undefined}
-          className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-black/10 bg-black/[0.03] px-3 text-sm font-medium text-slate-700 transition hover:bg-black/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/10 ${collapsed ? "h-11 w-11 px-0" : "w-full"}`}
+          className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-border bg-secondary px-3 text-sm font-medium text-secondary-foreground transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${collapsed ? "h-11 w-11 px-0" : "w-full"}`}
         >
           <Settings2 size={17} aria-hidden="true" />
           {!collapsed && <span className="truncate">Assistant Settings</span>}
         </button>
-        {collapsed && <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg group-hover:block group-focus-within:block dark:bg-white dark:text-slate-950">Assistant Settings</span>}
+        {collapsed && <span role="tooltip" className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 hidden -translate-x-1/2 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background shadow-lg group-hover:block group-focus-within:block">Assistant Settings</span>}
       </div>
       {open && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={() => setOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="assistant-settings-title" onMouseDown={(event) => event.stopPropagation()} className="max-h-[min(760px,calc(100dvh-1.5rem))] w-full max-w-xl overflow-y-auto rounded-[28px] border border-black/10 bg-white/95 p-4 text-slate-900 shadow-2xl shadow-slate-950/20 dark:border-white/15 dark:bg-[#171717]/95 dark:text-slate-100 sm:p-6">
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-foreground/40 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={() => setOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="assistant-settings-title" onMouseDown={(event) => event.stopPropagation()} className="w-full max-w-xl overflow-hidden rounded-[28px] border border-border bg-card/95 text-foreground shadow-2xl shadow-foreground/10 backdrop-blur-xl">
+          <DebsocOverlayScrollbar className="max-h-[min(760px,calc(100dvh-1.5rem))]" style={{ height: "min(760px, calc(100dvh - 1.5rem))" }} contentStyle={{ padding: "1rem" }}>
             <div className="flex items-start justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-300"><Settings2 size={19} aria-hidden="true" /></div><div><h2 id="assistant-settings-title" className="text-lg font-semibold tracking-tight">Assistant Settings</h2><p className="mt-1 text-sm leading-5 text-slate-500 dark:text-slate-400">One shared connection for Debate Chat, Mock Drill, Mock Judge, and research uploads.</p></div></div>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close Assistant Settings" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"><X size={18} aria-hidden="true" /></button>
+              <div className="flex min-w-0 items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles size={19} aria-hidden="true" /></div><div><h2 id="assistant-settings-title" className="text-lg font-semibold tracking-tight">DebSoc AI</h2><p className="mt-1 text-sm leading-5 text-muted-foreground">Connect your OpenRouter API key to use the debate learning tools.</p></div></div>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close AI Connection Center" title="Close" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X size={18} aria-hidden="true" /></button>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <Card className="p-4"><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Connection</span><Pill tone={status.tone}><span className="inline-flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${status.tone === "emerald" ? "bg-emerald-500" : status.tone === "amber" ? "bg-amber-500" : status.tone === "red" ? "bg-red-500" : "bg-slate-400"}`} aria-hidden="true" />{status.label}</span></Pill></div><button type="button" onClick={() => void refreshHealth()} className="mt-3 inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"><RefreshCw size={13} aria-hidden="true" /> Refresh health</button></Card>
-              <Card className="p-4"><label htmlFor="assistant-model" className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">OpenRouter model</label><select id="assistant-model" value={model} disabled aria-describedby="assistant-model-help" className="mt-2 h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-800 outline-none dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-200"><option value={DEBASS_MODEL}>{DEBASS_MODEL}</option></select><p id="assistant-model-help" className="mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Debass currently documents one supported free-tier model.</p></Card>
+            <div className="mt-5 rounded-2xl border border-border bg-muted/35 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Connection status</p><p className="mt-1 text-sm text-muted-foreground">{status.description}</p></div>
+                <span aria-live="polite"><Pill tone={status.tone}><span className="inline-flex items-center gap-1.5"><span className={`h-1.5 w-1.5 rounded-full ${status.tone === "emerald" ? "bg-chart-3" : status.tone === "amber" ? "bg-chart-4" : status.tone === "red" ? "bg-destructive" : "bg-muted-foreground"}`} aria-hidden="true" />{status.label}</span></Pill></span>
+              </div>
+              <div className="mt-4 border-t border-border pt-3"><p className="text-xs text-muted-foreground">Powered by</p><p className="mt-1 text-sm font-semibold text-foreground">{modelLabel}</p><p className="mt-0.5 text-xs text-muted-foreground">Managed automatically by DebSoc</p></div>
             </div>
 
             <div className="mt-4"><DebassKeyPanel /></div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10"><div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><KeyRound size={14} aria-hidden="true" /> {hasRememberedKey ? "Key remembered on this device" : "Key stays in memory by default"}</div><SecondaryButton type="button" onClick={clearAssistantSession} className="min-h-9 px-3 text-xs"><Trash2 size={14} aria-hidden="true" /> Clear local assistant state</SecondaryButton></div>
-            <p className="mt-3 text-[11px] leading-4 text-slate-500 dark:text-slate-400">Clearing local assistant state resets conversation, drill, judge, and document status shown in this dashboard session. It does not delete Debass documents.</p>
+            <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-background/50 p-3"><div className="flex items-center gap-2 text-sm font-semibold text-foreground"><ShieldCheck size={16} className="text-primary" aria-hidden="true" /> Stored locally</div><ul className="mt-2 space-y-1 text-xs leading-5 text-muted-foreground"><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Never stored on DebSoc servers</li><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Sent only when you use DebSoc AI</li><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Can be removed anytime</li></ul></div>
+              <div className="rounded-2xl border border-border bg-background/50 p-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Used by</p><ul className="mt-2 space-y-1 text-sm text-foreground"><li>Debate Assistant</li><li>Mock Drill</li><li>Mock Judge</li></ul></div>
+            </div>
+          </DebsocOverlayScrollbar>
           </div>
         </div>,
         document.body,

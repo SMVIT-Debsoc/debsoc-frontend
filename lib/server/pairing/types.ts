@@ -8,16 +8,13 @@ import type {
   ParticipantContext,
   ParticipantKind,
   PairingProposalView,
-  PairingRoomView,
   ProposalScoreBreakdown,
-  ReviewAction,
   RoleHistorySummary,
   MotionTypeSummary,
   UnassignedParticipantView,
   BenchPosition,
   SpeakingRole,
 } from "../../../types/pairing.ts";
-import type { SessionRole } from "../../../types/session.ts";
 
 export const MAX_CANDIDATE_COUNT = 64;
 export const MAX_GENERATION_TIME_BUDGET_MS = 250;

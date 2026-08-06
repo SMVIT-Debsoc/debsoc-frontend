@@ -242,6 +242,7 @@ export async function runSyntheticReplay(
   _repository: ReplayRepositoryContract = evalRepository,
   generator?: ReplayGeneratorContract,
 ): Promise<ReplayExecutionResult> {
+  void _repository;
   const scenarios = input.scenarios ?? getSyntheticPairingScenarios();
   const aggregates: EvalScenarioAggregate[] = [];
 

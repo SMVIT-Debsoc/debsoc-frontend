@@ -6,6 +6,7 @@ import {Calendar, Crown, Users, X} from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import {Card, EmptyState, SectionHeader, StateBadge} from "./ui";
 import type {AttendanceHistoryItem, SessionRow} from "./types";
+import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 
 type SessionsProps = {
     mode: "admin" | "participant";
@@ -228,13 +229,13 @@ export default function Sessions({
                                       ) : null}
                                   </div>
                               </div>
-                              <div className="overflow-y-auto p-5">
+                              <DebsocOverlayScrollbar className="min-h-0 flex-1" contentStyle={{ padding: "1.25rem" }}>
                                   <SessionDetails
                                       mode={mode}
                                       session={selectedSession}
                                       attendanceHistory={attendanceHistory}
                                   />
-                              </div>
+                              </DebsocOverlayScrollbar>
                           </div>
                       </div>,
                       document.body,

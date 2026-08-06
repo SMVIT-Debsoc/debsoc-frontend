@@ -164,7 +164,7 @@ export default function AchievementSection() {
         if (!scrollContainerRef.current || flippedId !== null) return;
 
         const scrollContainer = scrollContainerRef.current;
-        let playhead = setInterval(() => {
+        const playhead = setInterval(() => {
             const maxScroll =
                 scrollContainer.scrollWidth - scrollContainer.clientWidth;
             // Scroll to next card, if at end, snap back to start
@@ -179,7 +179,7 @@ export default function AchievementSection() {
         }, 5000);
 
         return () => clearInterval(playhead);
-    }, [flippedId]);
+    }, [flippedId, scrollContainerRef]);
 
     return (
         <div

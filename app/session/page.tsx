@@ -1,24 +1,18 @@
 "use client";
 
-import React, {useState, useEffect, useRef} from "react";
-import {motion, AnimatePresence, useScroll, useTransform} from "framer-motion";
+import React, {startTransition, useEffect, useRef, useState} from "react";
+import {motion, AnimatePresence} from "framer-motion";
 import Navbar from "@/components/Navbar";
 import {Suspense} from "react";
 import toast, {Toaster} from "react-hot-toast";
 import {
-    Sparkles,
     RefreshCw,
-    Info,
     ChevronRight,
-    BookOpen,
     Layers,
     Users,
     Zap,
     Timer,
-    PenTool,
-    Hash,
     Target,
-    ChevronDown,
 } from "lucide-react";
 import {motionData, MotionItem} from "@/lib/motion";
 import {ElegantShape} from "@/components/ui/shape-landing-hero";
@@ -34,13 +28,8 @@ export default function Session() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [navHeight, setNavHeight] = useState(88);
     const containerRef = useRef(null);
-    const {scrollYProgress} = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"],
-    });
-
     useEffect(() => {
-        setMotions(getRandomMotions());
+        startTransition(() => setMotions(getRandomMotions()));
     }, []);
 
     useEffect(() => {

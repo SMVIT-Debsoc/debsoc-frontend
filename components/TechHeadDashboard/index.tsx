@@ -3,7 +3,6 @@
 import React, {useEffect, useState} from "react";
 import {motion, AnimatePresence} from "framer-motion";
 import {
-    Users,
     ShieldCheck,
     ShieldAlert,
     UserCheck,
@@ -14,7 +13,6 @@ import {
     RefreshCw,
     CheckCircle2,
     Clock,
-    LogOut,
     Gavel,
     ArrowUpCircle,
     ArrowDownCircle,
@@ -25,11 +23,13 @@ import {signOut} from "next-auth/react";
 import Image from "next/image";
 import PairingDashboard from "@/components/pairing/PairingDashboard";
 import ProfileAvatar from "@/components/ProfileAvatar";
-import PairingBackdrop from "@/components/pairing/PairingBackdrop";
+import DebsocOverlayScrollbar from "@/components/pairing/DebsocOverlayScrollbar";
 import ThemeToggle from "@/components/pairing/ThemeToggle";
 import DebassWorkspaceProvider, { useDebassWorkspace } from "@/components/pairing/DebassWorkspaceProvider";
 import AssistantSettings from "@/components/pairing/AssistantSettings";
 import { PageSkeleton } from "@/components/pairing/Loading";
+import HoldToConfirmLogout from "@/components/pairing/HoldToConfirmLogout";
+import { SecondaryButton } from "@/components/pairing/ui";
 
 interface UserRecord {
     id: string;
@@ -55,6 +55,7 @@ export default function TechHeadDashboard() {
     const [unverified, setUnverified] = useState<UnverifiedData | null>(null);
     const [verified, setVerified] = useState<VerifiedData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState<
         "pending" | "verified" | "pairing"
@@ -83,9 +84,11 @@ export default function TechHeadDashboard() {
     } | null>(null);
     const [rolePosition, setRolePosition] = useState("");
     const [roleSubmitting, setRoleSubmitting] = useState(false);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ user: UserRecord; role: string } | null>(null);
 
     const fetchData = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const [unres, verres] = await Promise.all([
                 fetch("/api/techhead/unverified-users"),
@@ -97,6 +100,7 @@ export default function TechHeadDashboard() {
                 setVerified(await verres.json());
             }
         } catch {
+            setLoadError("Couldn’t load TechHead user records. Try again.");
             toast.error("Failed to fetch users");
         } finally {
             setLoading(false);
@@ -136,6 +140,8 @@ export default function TechHeadDashboard() {
             toast.error("An error occurred");
         }
     };
+
+    const requestDelete = (user: UserRecord, role: string) => setDeleteConfirm({ user, role });
 
     const openRoleChange = (
         user: UserRecord,
@@ -269,9 +275,10 @@ export default function TechHeadDashboard() {
                                             )
                                         }
                                         className="rounded-full border border-emerald-600/20 bg-emerald-500/10 p-2 text-emerald-700 transition-all hover:bg-emerald-500 hover:text-white dark:text-emerald-300"
+                                        aria-label={`Verify ${user.name}`}
                                         title="Verify User"
                                     >
-                                        <UserCheck size={16} />
+                                        <UserCheck size={16} aria-hidden="true" />
                                     </button>
                                 ) : (
                                     <button
@@ -283,9 +290,10 @@ export default function TechHeadDashboard() {
                                             )
                                         }
                                         className="rounded-full border border-amber-600/20 bg-amber-500/10 p-2 text-amber-700 transition-all hover:bg-amber-500 hover:text-white dark:text-amber-300"
+                                        aria-label={`Unverify ${user.name}`}
                                         title="Unverify User"
                                     >
-                                        <UserMinus size={16} />
+                                        <UserMinus size={16} aria-hidden="true" />
                                     </button>
                                 )}
                                 {!isUnverified &&
@@ -313,23 +321,24 @@ export default function TechHeadDashboard() {
                                                     : "border border-sky-600/20 bg-sky-500/10 text-sky-800 hover:bg-sky-500 hover:text-white dark:text-sky-300"
                                             }`}
                                             title={`${t.direction === "promote" ? "Promote" : "Demote"} to ${t.toRole}`}
+                                            aria-label={`${t.direction === "promote" ? "Promote" : "Demote"} ${user.name} to ${t.toRole}`}
                                         >
                                             {t.direction === "promote" ? (
-                                                <ArrowUpCircle size={16} />
+                                                <ArrowUpCircle size={16} aria-hidden="true" />
                                             ) : (
-                                                <ArrowDownCircle size={16} />
+                                                <ArrowDownCircle size={16} aria-hidden="true" />
                                             )}
                                         </button>
                                     ))}
-                                <button
-                                    onClick={() =>
-                                        handleAction(role, user.id, "delete")
-                                    }
-                                    className="rounded-full border border-red-600/20 bg-red-500/10 p-2 text-red-700 transition-all hover:bg-red-500 hover:text-white dark:text-red-300"
-                                    title="Delete User"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => requestDelete(user, role)}
+                                        aria-label={`Delete ${user.name}`}
+                                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-destructive/30 bg-destructive/10 text-destructive transition hover:bg-destructive hover:text-destructive-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        title="Delete user"
+                                    >
+                                        <Trash2 size={16} aria-hidden="true" />
+                                    </button>
                             </div>
 
                             <div className="text-right group-hover:opacity-0 transition-opacity pr-2 hidden sm:block">
@@ -348,8 +357,7 @@ export default function TechHeadDashboard() {
 
     return (
         <DebassWorkspaceProvider>
-        <div className="pairing-shell relative min-h-screen overflow-x-hidden bg-[#f2eee8] p-4 text-slate-900 dark:bg-[#0a0a0a] dark:text-slate-100 sm:p-6 lg:p-8">
-            <PairingBackdrop />
+        <div className="pairing-shell relative min-h-screen overflow-x-hidden p-4 text-foreground sm:p-6 lg:p-8">
             <Toaster
                 position="bottom-right"
                 toastOptions={{
@@ -360,17 +368,18 @@ export default function TechHeadDashboard() {
                     },
                 }}
             />
-            <div className="relative z-10 mx-auto w-full max-w-[1440px]">
-                <header className="glass-card mb-6 flex flex-col gap-5 rounded-[28px] p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+            <DebsocOverlayScrollbar className="dashboard-main-scroll relative z-10 mx-auto w-full max-w-[1440px]" style={{ height: "var(--dashboard-scroll-height)" }}>
+            <div className="w-full">
+                <header className="glass-card mb-6 flex flex-col gap-5 rounded-[28px] border-border/80 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
                     <div>
                         <motion.div
                             initial={{x: -20, opacity: 0}}
                             animate={{x: 0, opacity: 1}}
-                            className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400"
+                            className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground"
                         >
                             <ShieldCheck
                                 size={14}
-                                className="text-slate-700 dark:text-slate-200"
+                                className="text-primary"
                             />
                             Technical Administration
                         </motion.div>
@@ -378,18 +387,19 @@ export default function TechHeadDashboard() {
                             <Image
                                 src="/logo.png"
                                 alt="Debsoc"
-                                width={36}
-                                height={36}
+                                width={972}
+                                height={1190}
+                                style={{width: "36px", height: "auto"}}
                                 className="object-contain"
                             />
-                            <h1 className="text-3xl font-medium tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+                            <h1 className="text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
                                 Tech Head{" "}
                                     <span className="font-semibold">
                                     Dashboard
                                 </span>
                             </h1>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                        <p className="text-sm text-muted-foreground">
                             Verify and manage all society members and
                             executives.
                         </p>
@@ -398,7 +408,7 @@ export default function TechHeadDashboard() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="relative flex-1 sm:flex-none">
                             <Search
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
                                 size={16}
                             />
                             <input
@@ -406,7 +416,7 @@ export default function TechHeadDashboard() {
                                 placeholder="Search users..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="h-11 w-full rounded-full border border-slate-900/10 bg-white/70 py-3 pl-12 pr-6 text-sm text-slate-950 outline-none transition focus:ring-2 focus:ring-violet-400/60 dark:border-white/10 dark:bg-white/[0.08] dark:text-white sm:w-64"
+                                className="h-11 w-full rounded-full border border-border bg-background py-3 pl-12 pr-6 text-sm text-foreground outline-none transition focus:ring-2 focus:ring-ring sm:w-64"
                             />
                         </div>
                         <div className="flex items-center gap-3">
@@ -414,20 +424,23 @@ export default function TechHeadDashboard() {
                                 onClick={() => setActiveTab("pairing")}
                                     className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border px-4 text-sm transition-all active:scale-95 sm:flex-none ${
                                     activeTab === "pairing"
-                                        ? "border-slate-900/10 bg-slate-950 text-white dark:border-white/10 dark:bg-white dark:text-slate-950"
-                                        : "border-slate-900/10 bg-white/60 text-slate-800 hover:bg-white dark:border-white/10 dark:bg-white/[0.08] dark:text-slate-100 dark:hover:bg-white/[0.14]"
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-border bg-secondary text-secondary-foreground hover:bg-accent"
                                 }`}
                                 title="Pairing dashboard"
                             >
-                                <Gavel size={16} />
+                                <Gavel size={16} aria-hidden="true" />
                                 <span>Pairing</span>
                             </button>
                             <button
                                 onClick={fetchData}
-                                className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-slate-900/10 bg-white/60 px-4 text-slate-800 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 dark:border-white/10 dark:bg-white/[0.08] dark:text-white dark:hover:bg-white/[0.14] sm:flex-none"
+                                aria-label="Refresh user records"
+                                title="Refresh user records"
+                                className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-border bg-secondary px-4 text-secondary-foreground transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
                             >
                                 <RefreshCw
                                     size={18}
+                                    aria-hidden="true"
                                     className={loading ? "motion-safe:animate-spin" : ""}
                                 />
                             </button>
@@ -438,7 +451,9 @@ export default function TechHeadDashboard() {
                     </div>
                 </header>
 
-                <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <section className="mb-6" aria-labelledby="techhead-glance-title">
+                    <h2 id="techhead-glance-title" className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">At a glance</h2>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {[
                         {
                             label: "Pending Verification",
@@ -458,39 +473,32 @@ export default function TechHeadDashboard() {
                             icon: CheckCircle2,
                             color: "text-emerald-400",
                         },
-                        {
-                            label: "Admin Status",
-                            value: "Authorized",
-                            icon: Users,
-                            color: "text-indigo-400",
-                        },
                     ].map((stat, i) => (
                         <motion.div
                             initial={{y: 20, opacity: 0}}
                             animate={{y: 0, opacity: 1}}
                             transition={{delay: i * 0.1}}
                             key={stat.label}
-                            className="glass-card rounded-[24px] p-5 sm:p-6"
+                            className="glass-card rounded-[24px] border-border/80 p-5 sm:p-6"
                         >
                             <stat.icon
                                 className={`${stat.color} mb-4 opacity-80 dark:brightness-125`}
                                 size={24}
                                 strokeWidth={1.5}
                             />
-                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                                 {stat.label}
                             </p>
-                            <p className="text-3xl font-medium text-slate-950 dark:text-white">
-                                {stat.count !== undefined
-                                    ? stat.count
-                                    : stat.value}
+                            <p className="text-3xl font-medium text-foreground">
+                                {stat.count}
                             </p>
                         </motion.div>
                     ))}
-                </div>
+                    </div>
+                </section>
 
-                <div className="glass-card mb-6 rounded-[24px] p-2">
-                    <div className="flex flex-wrap gap-1 border-b border-slate-900/10 dark:border-white/10">
+                <div className="glass-card mb-6 rounded-[24px] border-border/80 p-2">
+                    <div className="flex flex-wrap gap-1 border-b border-border">
                         {[
                             {id: "pending", label: "Pending", icon: Clock},
                             {
@@ -502,9 +510,9 @@ export default function TechHeadDashboard() {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as "pending" | "verified" | "pairing")}
-                                className={`relative flex min-h-11 items-center gap-2 rounded-full px-4 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 ${activeTab === tab.id ? "bg-slate-950 text-white dark:bg-white/[0.12] dark:text-white" : "text-slate-600 hover:bg-slate-900/5 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-white/[0.06] dark:hover:text-white"}`}
+                                className={`relative flex min-h-11 items-center gap-2 rounded-full px-4 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeTab === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}
                             >
-                                <tab.icon size={12} />
+                                <tab.icon size={15} aria-hidden="true" />
                                 {tab.label}
                                 {activeTab === tab.id && (
                                     <motion.div
@@ -535,6 +543,8 @@ export default function TechHeadDashboard() {
                                 embedded
                             />
                         </motion.div>
+                    ) : loadError ? (
+                        <div className="flex min-h-48 flex-col items-center justify-center rounded-[24px] border border-destructive/30 bg-destructive/10 px-5 text-center"><p role="alert" className="text-sm text-destructive">{loadError}</p><SecondaryRetryButton onClick={() => void fetchData()} /></div>
                     ) : loading ? (
                         <motion.div
                             key="loading"
@@ -557,6 +567,7 @@ export default function TechHeadDashboard() {
                         >
                             {activeTab === "pending" ? (
                                 <>
+                                    {unverified && (unverified.unverifiedPresidents.length + unverified.unverifiedCabinet.length + unverified.unverifiedMembers.length) > 0 && <div className="mb-4"><h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Needs attention</h2><p className="mt-1 text-sm text-muted-foreground">Verify new accounts or resolve pending access before they join the society workspace.</p></div>}
                                     {unverified && (
                                         <>
                                             {renderUsers(
@@ -617,6 +628,7 @@ export default function TechHeadDashboard() {
                     )}
                 </AnimatePresence>
             </div>
+            </DebsocOverlayScrollbar>
 
             <AnimatePresence>
                 {roleChange && (
@@ -707,6 +719,7 @@ export default function TechHeadDashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {deleteConfirm && <div className="fixed inset-0 z-[110] flex items-end justify-center bg-foreground/50 p-4 backdrop-blur-sm sm:items-center" role="presentation" onMouseDown={() => setDeleteConfirm(null)}><div className="w-full max-w-md rounded-[24px] border border-border bg-card p-6 text-foreground shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title" aria-describedby="delete-user-description" onMouseDown={(event) => event.stopPropagation()}><div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"><Trash2 size={18} aria-hidden="true" /></span><div><h2 id="delete-user-title" className="text-lg font-semibold">Delete user?</h2><p id="delete-user-description" className="mt-1 text-sm leading-6 text-muted-foreground">This permanently removes {deleteConfirm.user.name} from the {deleteConfirm.role.toLowerCase()} records. This action cannot be undone.</p></div></div><div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><SecondaryButton type="button" onClick={() => setDeleteConfirm(null)}>Keep user</SecondaryButton><button type="button" onClick={() => { const target = deleteConfirm; setDeleteConfirm(null); void handleAction(target.role, target.user.id, "delete"); }} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Trash2 size={16} aria-hidden="true" /> Delete user</button></div></div></div>}
         </div>
         </DebassWorkspaceProvider>
     );
@@ -716,17 +729,16 @@ function TechHeadLogoutButton() {
     const {clearKey, clearAssistantSession} = useDebassWorkspace();
 
     return (
-        <button
-            onClick={() => {
+        <HoldToConfirmLogout
+            onConfirm={() => {
                 clearKey();
                 clearAssistantSession();
                 void signOut({callbackUrl: "/login"});
             }}
-            className="flex min-h-11 flex-1 items-center justify-center rounded-full border border-red-600/25 bg-red-500/[0.08] px-4 text-red-700 transition hover:bg-red-500/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50 dark:border-red-300/25 dark:bg-red-500/[0.12] dark:text-red-200 dark:hover:bg-red-500/[0.20] sm:flex-none"
-            title="Log Out"
-            aria-label="Log out"
-        >
-            <LogOut size={18} aria-hidden="true" />
-        </button>
+        />
     );
+}
+
+function SecondaryRetryButton({onClick}: {onClick: () => void}) {
+    return <SecondaryButton type="button" onClick={onClick} className="mt-4">Try again</SecondaryButton>;
 }

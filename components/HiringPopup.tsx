@@ -2,7 +2,8 @@
 
 import {useEffect, useState, useRef} from "react";
 import {motion, AnimatePresence} from "framer-motion";
-import {X, ArrowRight, CheckCircle2, ChevronDown, MessageCircle} from "lucide-react";
+import Image from "next/image";
+import {X, ArrowRight, CheckCircle2, ChevronDown} from "lucide-react";
 
 const QUESTIONS = [
   {id: 1, text: "If you could change one law in the Constitution, which one would it be?", type: "text"},
@@ -533,9 +534,11 @@ export default function HiringPopup() {
                   className="flex flex-col w-full h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 >
                   <div className="relative w-full overflow-hidden group shrink-0 bg-zinc-950 flex flex-col items-center">
-                    <img
+                    <Image
                       src="/poster.jpeg"
                       alt="Hiring Poster"
+                      width={1200}
+                      height={1600}
                       className="w-full h-auto object-cover"
                     />
                     {/* Floating Apply Button */}
@@ -681,7 +684,7 @@ export default function HiringPopup() {
 
                     <div className="space-y-1 z-20">
                       <label className="text-xs text-zinc-400 uppercase tracking-wider ml-1">
-                        Position you're applying for
+                        Position you&apos;re applying for
                       </label>
                       <CustomMultiSelect
                         value={formData.position}
@@ -1031,7 +1034,7 @@ export default function HiringPopup() {
                     transition={{delay: 0.3}}
                     className="text-zinc-400 text-sm font-light leading-relaxed max-w-[300px] mb-10"
                   >
-                    Your application has been submitted successfully. We'll be in touch soon.
+                    Your application has been submitted successfully. We&apos;ll be in touch soon.
                   </motion.p>
                   
                   <motion.div 
@@ -1049,7 +1052,7 @@ export default function HiringPopup() {
                     </div>
                     
                     <p className="text-white text-sm font-light tracking-wide text-center leading-relaxed">
-                      Don't miss out on important updates. Join our WhatsApp community!
+                      Don&apos;t miss out on important updates. Join our WhatsApp community!
                     </p>
                     
                     <a

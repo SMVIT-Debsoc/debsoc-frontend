@@ -1,39 +1,66 @@
 "use client";
 
-import { Eye, EyeOff, Info, KeyRound, Loader2, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ClipboardPaste, Eye, EyeOff, Info, KeyRound, Loader2, ShieldCheck, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Pill, PrimaryButton, SecondaryButton } from "./ui";
 
 export default function DebassKeyPanel() {
-  const { draftKey, keyError, storageError, keyState, rememberKey, hasRememberedKey, setDraftKey, setRememberKey, removeRememberedKey, validateKey, clearKey, refreshHealth } = useDebassWorkspace();
+  const { draftKey, keyError, storageError, keyState, rememberKey, hasRememberedKey, setDraftKey, setRememberKey, removeRememberedKey, validateKey, clearKey } = useDebassWorkspace();
   const [showKey, setShowKey] = useState(false);
+  const [canPaste, setCanPaste] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setCanPaste(Boolean(window.isSecureContext && navigator.clipboard?.readText));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const pasteKey = async () => {
+    if (!canPaste) return;
+    try {
+      const value = await navigator.clipboard.readText();
+      if (value) setDraftKey(value);
+    } catch {
+      // Clipboard permission is optional; the field remains usable manually.
+    }
+  };
+
+  const confirmRemove = () => {
+    removeRememberedKey();
+    setRemoveOpen(false);
+  };
+
+  const actionLabel = keyState === "valid" ? "Reconnect" : "Validate & Connect";
 
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300"><KeyRound size={17} aria-hidden="true" /></div>
-          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-semibold text-slate-950 dark:text-slate-100">Connect your OpenRouter key</h2><details className="group relative"><summary className="flex min-h-8 min-w-8 cursor-pointer list-none items-center justify-center rounded-full text-slate-500 outline-none hover:bg-slate-900/5 focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-400 dark:hover:bg-white/10 [&::-webkit-details-marker]:hidden" aria-label="How to get an OpenRouter key"><Info size={15} aria-hidden="true" /></summary><div className="absolute left-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-700 shadow-xl dark:border-white/10 dark:bg-[#202126] dark:text-slate-300"><h3 className="font-semibold text-slate-950 dark:text-slate-100">How to get an OpenRouter key</h3><ol className="mt-2 list-decimal space-y-1 pl-4"><li>Open OpenRouter and sign in.</li><li>Open <span className="font-medium">Keys</span> and choose to create a key.</li><li>Copy the key and paste it into this field.</li></ol><a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-9 items-center rounded-full border border-indigo-200 px-3 font-semibold text-indigo-700 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:border-indigo-400/30 dark:text-indigo-300 dark:hover:bg-indigo-400/10">Open OpenRouter Keys</a></div></details></div><p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">The key stays in memory by default and is sent only to the configured Debass backend. It is never placed in URLs, saved to the database, or sent directly to OpenRouter.</p></div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground"><KeyRound size={17} aria-hidden="true" /></div>
+          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="text-sm font-semibold text-foreground">OpenRouter API key</h2><details className="group relative"><summary className="flex min-h-8 min-w-8 cursor-pointer list-none items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden" aria-label="How to get an OpenRouter key" title="How to get an OpenRouter key"><Info size={15} aria-hidden="true" /></summary><div className="absolute left-0 top-full z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-border bg-popover p-4 text-xs leading-5 text-popover-foreground shadow-xl"><h3 className="font-semibold">How to get an OpenRouter key</h3><ol className="mt-2 list-decimal space-y-1 pl-4"><li>Open OpenRouter and sign in.</li><li>Open <span className="font-medium">Keys</span> and create a key.</li><li>Copy the key and paste it into this field.</li></ol><a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-9 items-center rounded-full border border-border px-3 font-semibold text-primary hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open OpenRouter Keys</a></div></details></div><p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">Stored in this browser only. Sent to the configured DebSoc AI service only when you explicitly validate or use it.</p></div>
         </div>
-        {keyState === "valid" && <Pill tone="emerald"><span className="inline-flex items-center gap-1"><ShieldCheck size={13} aria-hidden="true" /> Key accepted</span></Pill>}
+        {keyState === "valid" && <Pill tone="emerald"><span className="inline-flex items-center gap-1"><ShieldCheck size={13} aria-hidden="true" /> Connected</span></Pill>}
       </div>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <div className="relative min-w-0 flex-1"><input id="assistant-openrouter-key" type={showKey ? "text" : "password"} value={draftKey} onChange={(event) => setDraftKey(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void validateKey(); }} autoComplete="off" spellCheck={false} aria-label="OpenRouter API key" aria-describedby="assistant-key-help assistant-key-warning" placeholder="sk-or-v1-…" disabled={keyState === "validating"} className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/25 disabled:cursor-wait dark:border-white/15 dark:bg-white/[0.06] dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400" /><button type="button" onClick={() => setShowKey((visible) => !visible)} aria-label={showKey ? "Hide OpenRouter API key" : "Show OpenRouter API key"} className="absolute right-1 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white">{showKey ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}</button></div>
-        <PrimaryButton type="button" onClick={() => void validateKey()} disabled={!draftKey.trim() || keyState === "validating"} className="sm:min-w-32">{keyState === "validating" ? <><Loader2 size={15} className="motion-safe:animate-spin" aria-hidden="true" /> Checking</> : "Validate key"}</PrimaryButton>
+        <div className="relative min-w-0 flex-1"><input id="assistant-openrouter-key" type={showKey ? "text" : "password"} value={draftKey} onChange={(event) => setDraftKey(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void validateKey(); }} autoComplete="off" spellCheck={false} aria-label="OpenRouter API key" aria-describedby="assistant-key-help assistant-key-warning" placeholder="Paste your OpenRouter API key..." disabled={keyState === "validating"} className="h-11 w-full rounded-xl border border-border bg-background px-3 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/25 disabled:cursor-wait" /><button type="button" onClick={() => setShowKey((visible) => !visible)} aria-label={showKey ? "Hide OpenRouter API key" : "Show OpenRouter API key"} title={showKey ? "Hide key" : "Show key"} className="absolute right-1 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{showKey ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}</button></div>
+        {canPaste && <SecondaryButton type="button" onClick={() => void pasteKey()} disabled={keyState === "validating"} aria-label="Paste OpenRouter API key" title="Paste key" className="shrink-0 px-3"><ClipboardPaste size={16} aria-hidden="true" /><span className="hidden lg:inline">Paste</span></SecondaryButton>}
+        <PrimaryButton type="button" onClick={() => void validateKey()} disabled={!draftKey.trim() || keyState === "validating"} className="sm:min-w-36">{keyState === "validating" ? <><Loader2 size={15} className="motion-safe:animate-spin" aria-hidden="true" /> Validating…</> : actionLabel}</PrimaryButton>
         <SecondaryButton type="button" onClick={clearKey} disabled={!draftKey && keyState !== "valid"} aria-label="Clear OpenRouter key" title="Clear key" className="shrink-0 px-3"><Trash2 size={15} aria-hidden="true" /></SecondaryButton>
       </div>
-      <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="mt-3 rounded-xl border border-border bg-muted/50 p-3">
         <label htmlFor="remember-assistant-key" className="flex cursor-pointer items-start gap-3">
-          <input id="remember-assistant-key" type="checkbox" checked={rememberKey} onChange={(event) => setRememberKey(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500/40 dark:border-white/20" />
-          <span className="min-w-0"><span className="block text-sm font-medium text-slate-800 dark:text-slate-200">Remember key on this device</span><span id="assistant-key-help" className="mt-0.5 block text-xs leading-5 text-slate-500 dark:text-slate-400">Stores your key in this browser until you remove it.</span></span>
+          <input id="remember-assistant-key" type="checkbox" checked={rememberKey} onChange={(event) => setRememberKey(event.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary accent-primary focus:ring-2 focus:ring-ring/40" />
+          <span className="min-w-0"><span className="block text-sm font-medium text-foreground">Remember key on this device</span><span id="assistant-key-help" className="mt-0.5 block text-xs leading-5 text-muted-foreground">Stores your key in this browser until you remove it.</span></span>
         </label>
-        <p id="assistant-key-warning" className="mt-2 text-[11px] leading-4 text-amber-800 dark:text-amber-200">Only enable this on a personal, trusted device. Do not use it on a shared or public computer.</p>
-        {hasRememberedKey && <button type="button" onClick={removeRememberedKey} className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-900/5 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"><Trash2 size={13} aria-hidden="true" /> Remove saved key</button>}
+        <p id="assistant-key-warning" className="mt-2 text-[11px] leading-4 text-muted-foreground">Only enable this on a personal, trusted device. Do not use it on a shared or public computer.</p>
+        {hasRememberedKey && !removeOpen && <button type="button" onClick={() => setRemoveOpen(true)} className="mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Trash2 size={13} aria-hidden="true" /> Remove saved key</button>}
+        {removeOpen && <div className="mt-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3" role="alertdialog" aria-labelledby="remove-key-title" aria-describedby="remove-key-description"><div className="flex items-start gap-2"><Trash2 size={16} className="mt-0.5 shrink-0 text-destructive" aria-hidden="true" /><div className="min-w-0"><p id="remove-key-title" className="text-sm font-semibold text-foreground">Remove this saved key?</p><p id="remove-key-description" className="mt-1 text-xs leading-5 text-muted-foreground">DebSoc will stop remembering it on this browser. You can connect again anytime.</p><div className="mt-3 flex flex-wrap gap-2"><PrimaryButton type="button" variant="danger" onClick={confirmRemove} className="min-h-9 px-3 text-xs">Remove key</PrimaryButton><SecondaryButton type="button" onClick={() => setRemoveOpen(false)} className="min-h-9 px-3 text-xs"><X size={14} aria-hidden="true" /> Keep key</SecondaryButton></div></div></div></div>}
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <p className={`text-xs ${keyError || storageError ? "text-red-700 dark:text-red-300" : "text-slate-500 dark:text-slate-400"}`} role={keyError || storageError ? "alert" : undefined} aria-live={keyError || storageError ? "assertive" : "polite"}>{keyError ?? storageError ?? (keyState === "valid" ? (hasRememberedKey ? "Key accepted and remembered on this device." : "Chat, Drill, Judge, and uploads are ready.") : "Validate the key before sending a request.")}</p>
-        <button type="button" onClick={() => void refreshHealth()} className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-slate-500 transition hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"><RefreshCw size={13} aria-hidden="true" /> Refresh status</button>
+        <p className={`text-xs ${keyError || storageError ? "text-destructive" : "text-muted-foreground"}`} role={keyError || storageError ? "alert" : undefined} aria-live={keyError || storageError ? "assertive" : "polite"}>{keyError ?? storageError ?? (keyState === "valid" ? (hasRememberedKey ? "Key accepted and remembered on this device." : "Chat, Drill, Judge, and uploads are ready.") : "Validation is always explicit; a remembered key is never checked automatically.")}</p>
       </div>
     </Card>
   );

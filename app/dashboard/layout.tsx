@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import AmbientConstellations from "@/components/pairing/AmbientConstellations";
 
 export const metadata: Metadata = {
   robots: {
@@ -20,7 +21,11 @@ export default function DashboardLayout({
   return (
     <>
       <Script id="theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      {children}
+      <div className="relative min-h-screen">
+        <div aria-hidden="true" className="dashboard-background pointer-events-none fixed inset-0 z-0" />
+        <AmbientConstellations />
+        <div className="relative z-10 min-h-screen">{children}</div>
+      </div>
     </>
   );
 }

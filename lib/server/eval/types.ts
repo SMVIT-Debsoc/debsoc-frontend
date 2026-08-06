@@ -84,7 +84,7 @@ export interface EvalRegressionComparison {
   decision: "PASS" | "WARN" | "FAIL";
 }
 
-export interface HistoricalReplayInput extends ReplayExecutionInput {}
+export type HistoricalReplayInput = ReplayExecutionInput;
 
 export interface SyntheticReplayInput extends ReplayExecutionInput {
   scenarios?: EvalScenarioDefinition[];

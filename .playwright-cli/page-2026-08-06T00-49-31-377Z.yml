@@ -1,0 +1,85 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - img "Local Member profile photo" [ref=e6]
+        - generic [ref=e7]: Local's Dashboard
+      - generic [ref=e8]:
+        - radiogroup "Theme" [ref=e9]:
+          - radio "Light theme" [checked] [ref=e11]
+          - radio "Dark theme" [ref=e18]
+        - button "Open dashboard menu" [ref=e21]
+    - dialog "Dashboard menu" [ref=e201]:
+      - generic [ref=e202]:
+        - generic [ref=e203]:
+          - img "Local Member profile photo" [ref=e205]
+          - generic [ref=e206]: Local's Dashboard
+        - button "Close menu" [active] [ref=e207]
+      - navigation "Dashboard navigation" [ref=e212]:
+        - generic [ref=e213]:
+          - paragraph [ref=e214]: Your workspace
+          - button "Home" [ref=e215]
+          - button "Debate Digest" [ref=e222]
+          - button "Debate Chat" [ref=e228]
+          - button "My Pairing" [ref=e233]
+          - button "Leaderboards" [ref=e240]
+        - generic [ref=e247]:
+          - paragraph [ref=e248]: More
+          - button "Mock Drill" [ref=e249]
+          - button "Mock Judge" [ref=e257]
+          - button "My Scoring Tasks" [ref=e266]
+          - button "Adj Leaderboard" [ref=e273]
+          - button "Session History" [ref=e280]
+          - button "Spars" [ref=e285]
+      - generic [ref=e297]:
+        - button "Open Assistant Settings" [ref=e299]:
+          - generic [ref=e303]: Assistant Settings
+        - button "Log out" [ref=e305]:
+          - generic [ref=e309]: Logout
+    - main [ref=e23]:
+      - generic [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - paragraph [ref=e107]: Member
+            - heading "Welcome, Local Member" [level=1] [ref=e108]
+            - paragraph [ref=e109]: Your debating workspace, pairing progress, and latest performance.
+          - generic [ref=e110]:
+            - link "Debate Digest" [ref=e111] [cursor=pointer]:
+              - /url: /dashboard?tab=Digest
+            - link "Chat / New Q&A" [ref=e115] [cursor=pointer]:
+              - /url: /dashboard?tab=Chat
+            - link "Mock Drill / Start Drill" [ref=e118] [cursor=pointer]:
+              - /url: /dashboard?tab=MockDrill
+            - link "Mock Judge" [ref=e128] [cursor=pointer]:
+              - /url: /dashboard?tab=MockJudge
+        - generic [ref=e135]:
+          - generic [ref=e136]:
+            - generic [ref=e137]: Your attendance
+            - generic [ref=e143]: 0%
+          - generic [ref=e144]:
+            - generic [ref=e145]: Total sessions
+            - generic [ref=e150]: "0"
+          - button "Speaker rank --" [ref=e152]:
+            - generic [ref=e153]: Speaker rank
+            - generic [ref=e162]: "--"
+          - button "Adjudicator rank --" [ref=e168]:
+            - generic [ref=e169]: Adjudicator rank
+            - generic [ref=e177]: "--"
+        - generic [ref=e182]:
+          - generic [ref=e183]:
+            - heading "Last session you did" [level=3] [ref=e187]
+            - generic [ref=e188]:
+              - heading "No recent session yet" [level=3] [ref=e189]
+              - paragraph [ref=e190]: Once your attendance is recorded, your latest session summary will show here.
+          - generic [ref=e191]:
+            - heading "Motion-type performance" [level=3] [ref=e195]
+            - generic [ref=e196]:
+              - heading "No motion performance data yet" [level=3] [ref=e197]
+              - paragraph [ref=e198]: Once scored sessions exist for you, your motion-type performance will show here automatically.
+    - navigation "Primary dashboard navigation" [ref=e68]:
+      - button "Home" [ref=e69]
+      - button "Chat" [ref=e75]
+      - button "Pairing" [ref=e80]
+      - button "Ranks" [ref=e87]
+  - button "Open Next.js Dev Tools" [ref=e99] [cursor=pointer]
+  - alert [ref=e199]
