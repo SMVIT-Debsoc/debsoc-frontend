@@ -27,12 +27,20 @@ import {
   Trash2,
 } from "lucide-react";
 import SearchableDropdown from "@/components/smoothui/components/searchable-dropdown";
-import ElasticSlider from "./ElasticSlider";
 import { Card, EmptyState, Field, Pill, PrimaryButton, SecondaryButton, SectionHeader } from "./ui";
 import { CardSkeleton, ListSkeleton } from "./Loading";
 import type { Participant } from "./types";
 import { benchPositions } from "@/types/pairing";
 import { sparMotionCategories } from "@/types/spar-motions";
+import {
+  formatSparScore,
+  isValidSparScoreSet,
+  parseSparScore,
+  SCORE_VALIDATION_MESSAGE,
+  SPAR_SCORE_MAX,
+  SPAR_SCORE_MIN,
+  SPAR_SCORE_STEP,
+} from "@/lib/spar/score";
 import {
   getSparRolesForApSide,
   getSparRolesForPosition,
@@ -93,19 +101,8 @@ function formatSparPosition(record: SparHistoryResponse["records"][number]) {
   return record.isIronMan ? `${format} · Iron Man` : format;
 }
 
-function scoreNumber(value: string) {
-  if (!value.trim()) return null;
-  const parsed = Number(value);
-  const hasValidPrecision = Math.abs(parsed * 10 - Math.round(parsed * 10)) <= Number.EPSILON;
-  return Number.isFinite(parsed) && parsed >= 50 && parsed <= 100 && hasValidPrecision ? parsed : null;
-}
-
 function scoreValidationMessage(value: string) {
-  if (!value.trim()) return null;
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 50 || parsed > 100) return "Enter a score from 50 to 100.";
-  if (Math.abs(parsed * 10 - Math.round(parsed * 10)) > Number.EPSILON) return "Use score increments of 0.1.";
-  return null;
+  return parseSparScore(value) === null ? SCORE_VALIDATION_MESSAGE : null;
 }
 
 function displayInitials(name: string) {
@@ -133,28 +130,29 @@ function ScoreField({
   label,
   value,
   onChange,
-  fineTuneLabel,
 }: {
   label: string;
   value: string;
   onChange: (nextValue: string) => void;
-  fineTuneLabel: string;
 }) {
   const inputId = useId();
   const errorId = `${inputId}-error`;
   const hintId = `${inputId}-hint`;
   const error = scoreValidationMessage(value);
-  const sliderValue = scoreNumber(value);
+  const selectedScore = parseSparScore(value);
 
   return (
     <div className="min-w-0">
-      <label htmlFor={inputId} className="block text-xs font-medium text-foreground">{label}</label>
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={inputId} className="block text-xs font-medium text-foreground">{label}</label>
+        {selectedScore !== null && <output htmlFor={inputId} className="text-sm font-semibold tabular-nums text-foreground" aria-label={`${label} selected score`}>{formatSparScore(selectedScore)}</output>}
+      </div>
       <input
         id={inputId}
         type="number"
-        min="50"
-        max="100"
-        step="0.1"
+        min={SPAR_SCORE_MIN}
+        max={SPAR_SCORE_MAX}
+        step={SPAR_SCORE_STEP}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}
         required
@@ -165,19 +163,8 @@ function ScoreField({
         placeholder="e.g. 78.5"
       />
       <p id={error ? errorId : hintId} className={`mt-1 text-[11px] ${error ? "text-destructive" : "text-muted-foreground"}`} role={error ? "alert" : undefined}>
-        {error ?? "50–100, in 0.1 increments"}
+        {error ?? "50–100, in 0.5-point increments"}
       </p>
-      <div className="mt-2">
-        <ElasticSlider
-          value={sliderValue}
-          min={50}
-          max={100}
-          step={0.1}
-          onValueChange={(nextValue) => onChange(nextValue.toFixed(1))}
-          ariaLabel={fineTuneLabel}
-          error={Boolean(error)}
-        />
-      </div>
     </div>
   );
 }
@@ -332,6 +319,13 @@ export default function SparManagement({
       setError("Select an approved motion category before submitting.");
       return;
     }
+    const scoreInputs = isIronMan
+      ? [firstScore, secondScore, ...(debateFormat === "AP" ? [thirdScore] : [])]
+      : [firstScore];
+    if (!isValidSparScoreSet(scoreInputs)) {
+      setError(SCORE_VALIDATION_MESSAGE);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setMessage(null);
@@ -433,9 +427,9 @@ export default function SparManagement({
             </Field>}
             {!isIronMan && <Field label="Speaking role"><div className="flex min-h-11 flex-wrap gap-1 rounded-xl border border-border bg-muted/50 p-1">{activeRoles.map((role) => <SegmentButton key={role} label={role.replace("_", " ")} active={selectedRole === role} onClick={() => setSelectedRole(role)} />)}</div></Field>}
             <div className="pt-1 lg:col-span-2"><p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Performance</p></div>
-            <div className="lg:col-span-2"><ScoreField label={isIronMan ? `${activeRoles[0]} score` : "Speaker score"} value={firstScore} onChange={setFirstScore} fineTuneLabel={isIronMan ? `${activeRoles[0]} score` : "Speaker score"} /></div>
-            {isIronMan && <div><ScoreField key={`second-score-${activeRoles[1]}`} label={`${activeRoles[1]} score`} value={secondScore} onChange={setSecondScore} fineTuneLabel={`${activeRoles[1]} score`} /></div>}
-            {isIronMan && debateFormat === "AP" && <div><ScoreField key={`third-score-${activeRoles[2]}`} label={`${activeRoles[2]} score`} value={thirdScore} onChange={setThirdScore} fineTuneLabel={`${activeRoles[2]} score`} /></div>}
+            <div className="lg:col-span-2"><ScoreField label="Score" value={firstScore} onChange={setFirstScore} /></div>
+            {isIronMan && <div><ScoreField key={`second-score-${activeRoles[1]}`} label="Score" value={secondScore} onChange={setSecondScore} /></div>}
+            {isIronMan && debateFormat === "AP" && <div><ScoreField key={`third-score-${activeRoles[2]}`} label="Score" value={thirdScore} onChange={setThirdScore} /></div>}
             <Field label="Team rank"><select className={selectClass} value={teamRank} onChange={(event) => setTeamRank(event.target.value)}>{rankOptions.map((rank) => <option key={rank} value={rank}>{rank}</option>)}</select></Field>
             <div className="lg:col-span-2"><div className="rounded-2xl border border-primary/20 bg-primary/5 p-4"><div className="flex items-center gap-2 text-primary"><ListChecks size={16} aria-hidden="true" /><h3 className="text-sm font-semibold">Review summary</h3></div>{summaryRows.length > 0 ? <dl className="mt-3 grid gap-x-4 gap-y-2 sm:grid-cols-2">{summaryRows.map((row) => <div key={row.label} className="min-w-0"><dt className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{row.label}</dt><dd className="truncate text-sm font-medium text-foreground">{row.value}</dd></div>)}</dl> : <p className="mt-2 text-xs text-muted-foreground">Complete the round details to review the submission.</p>}</div></div>
             <div className="sticky bottom-2 z-10 -mx-1 flex justify-end border-t border-border bg-card/95 px-1 pt-5 backdrop-blur lg:col-span-2"><PrimaryButton type="submit" variant="success" disabled={submitting || (debateFormat === "BP" && !isIronMan && !teammateKey)} className="min-h-[48px] w-full rounded-2xl !bg-chart-3 px-7 py-3 !text-white shadow-lg shadow-chart-3/20 hover:brightness-90 focus-visible:ring-chart-3 sm:w-auto">{submitting ? <><Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" /> Recording…</> : <><Sparkles size={16} aria-hidden="true" /> Record Spar</>}</PrimaryButton></div>

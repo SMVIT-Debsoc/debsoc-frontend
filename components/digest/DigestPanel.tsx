@@ -3,12 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpenText, RefreshCw } from "lucide-react";
 import { parseDigest } from "@/lib/digest/parse";
+import { normalizeDigestResponse } from "@/lib/digest/response";
 import { LoadingRegion, Skeleton } from "@/components/pairing/Loading";
 import DigestCards from "./DigestCards";
-
-type DigestResponse = {
-  digest: { text: string; updatedAt: string } | null;
-};
 
 type LoadState =
   | { status: "loading" }
@@ -43,11 +40,11 @@ export default function DigestPanel() {
         throw new Error("digest-request-failed");
       }
       const payload: unknown = await res.json();
-      if (!isDigestResponse(payload)) {
+      const data = normalizeDigestResponse(payload);
+      if (!data) {
         throw new Error("digest-response-invalid");
       }
-      const data = payload;
-      if (!data.digest) {
+      if (!data.digest || !data.digest.text.trim()) {
         setState({ status: "empty" });
         return;
       }
@@ -137,15 +134,4 @@ export default function DigestPanel() {
       <DigestCards sections={parseDigest(state.text)} updatedAt={state.updatedAt} />
     </div>
   );
-}
-
-function isDigestResponse(value: unknown): value is DigestResponse {
-  if (!value || typeof value !== "object") return false;
-  const digest = (value as { digest?: unknown }).digest;
-  if (digest === null) return true;
-  if (!digest || typeof digest !== "object") return false;
-  const candidate = digest as { text?: unknown; updatedAt?: unknown };
-  return typeof candidate.text === "string"
-    && typeof candidate.updatedAt === "string"
-    && !Number.isNaN(new Date(candidate.updatedAt).getTime());
 }

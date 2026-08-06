@@ -13,25 +13,29 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import type { DigestSection } from "@/lib/digest/parse";
+import { normalizeDigestSections, type DigestSection } from "@/lib/digest/parse";
 
-function clean(value: string | undefined) {
-  return value?.replace(/\s+/g, " ").trim() ?? "";
+function clean(value: unknown) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
 }
 
-function matchingSections(sections: DigestSection[], title: string) {
-  return sections.filter((section) => section.title.toUpperCase() === title && clean(section.body));
+function matchingSections(sections: unknown, title: string) {
+  const safeSections = normalizeDigestSections(sections);
+  return safeSections.filter((section) => section.title.toUpperCase() === title && clean(section.body));
 }
 
-function firstLine(value: string) {
+function firstLine(value: unknown) {
+  if (typeof value !== "string") return "";
   return value.split(/\r?\n/).map(clean).find(Boolean) ?? "";
 }
 
-function paragraphs(value: string) {
+function paragraphs(value: unknown) {
+  if (typeof value !== "string") return [];
   return value.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
 }
 
-function wordCount(value: string) {
+function wordCount(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return 0;
   return value.trim().split(/\s+/).filter(Boolean).length;
 }
 
@@ -40,7 +44,8 @@ function readTime(value: string) {
   return count > 0 ? `${Math.max(1, Math.ceil(count / 200))} min read` : null;
 }
 
-function structuredItems(value: string) {
+function structuredItems(value: unknown) {
+  if (typeof value !== "string") return [];
   const lines = value.split(/\r?\n/);
   const items: Array<{ label: string; body: string }> = [];
   let current: { label: string; body: string } | null = null;
@@ -60,7 +65,7 @@ function structuredItems(value: string) {
   return items.filter((item) => clean(item.body));
 }
 
-function BodyText({ value, editorial = false }: { value: string; editorial?: boolean }) {
+function BodyText({ value, editorial = false }: { value: unknown; editorial?: boolean }) {
   const blocks = paragraphs(value);
   return (
     <div className={`space-y-4 whitespace-pre-wrap break-words text-foreground/85 ${editorial ? "font-serif text-base leading-8 sm:text-lg" : "text-sm leading-7"}`}>
@@ -82,17 +87,18 @@ function EditorialSection({ title, icon: Icon, children, tone = "primary" }: { t
   );
 }
 
-function VocabularyLines({ body }: { body: string }) {
-  const entries = body.split(/\r?\n/).map((line) => {
+function VocabularyLines({ body }: { body: unknown }) {
+  const text = typeof body === "string" ? body : "";
+  const entries = text.split(/\r?\n/).map((line) => {
     const match = line.trim().match(/^(?:[-*•]\s*)?([^:—–-]{2,64})\s*[:—–-]\s*(.+)$/);
     return match ? { word: clean(match[1]), definition: clean(match[2]) } : null;
   }).filter((entry): entry is { word: string; definition: string } => Boolean(entry?.word && entry.definition));
 
-  if (entries.length === 0) return <BodyText value={body} />;
+  if (entries.length === 0) return <BodyText value={text} />;
   return <div className="grid gap-3 sm:grid-cols-2">{entries.map((entry) => <details key={entry.word} className="group rounded-2xl border border-border bg-background/55 open:bg-background/80"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground outline-none transition hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>{entry.word}</span><ChevronDown size={16} className="shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" /></summary><p className="border-t border-border px-4 py-3 text-sm leading-6 text-muted-foreground">{entry.definition}</p></details>)}</div>;
 }
 
-function BuildCards({ body }: { body: string }) {
+function BuildCards({ body }: { body: unknown }) {
   const items = structuredItems(body);
   if (items.length === 0) return <BodyText value={body} />;
   return <div className="space-y-2">{items.map((item) => <details key={item.label} className="group rounded-2xl border border-border bg-background/45"><summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground outline-none transition hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring [&::-webkit-details-marker]:hidden"><span>{item.label}</span><ChevronDown size={17} className="shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" /></summary><div className="border-t border-border px-4 py-4"><BodyText value={item.body} /></div></details>)}</div>;
@@ -107,7 +113,7 @@ function PracticeZone({ drills, weighing }: { drills: DigestSection[]; weighing:
 }
 
 export default function DigestCards({ sections, updatedAt }: { sections: DigestSection[]; updatedAt: Date }) {
-  const visibleSections = sections.filter((section) => clean(section.body));
+  const visibleSections = normalizeDigestSections(sections).filter((section) => clean(section.body));
   const topicSection = matchingSections(visibleSections, "TOPIC FOR TODAY")[0];
   const topic = firstLine(topicSection?.body);
   const preKnowledge = matchingSections(visibleSections, "PRE-KNOWLEDGE");
@@ -121,7 +127,9 @@ export default function DigestCards({ sections, updatedAt }: { sections: DigestS
   const economics = visibleSections.filter((section) => /ECONOM|FINANCE|MARKET|GDP|TAXATION|TRADE/i.test(section.title));
   const known = new Set(["TOPIC FOR TODAY", "PRE-KNOWLEDGE", "WORD BEFORE YOU READ", "TODAY'S ARTICLE / CASE", "YOUR DEBATING BUILD", "REBUTTAL DRILLS", "WEIGHING LANGUAGE TO USE", "VOCAB SESSION", "THINGS TO TAKE CARE"]);
   const additional = visibleSections.filter((section) => !known.has(section.title.toUpperCase()) && !economics.includes(section));
-  const date = new Intl.DateTimeFormat("en-IN", { dateStyle: "full", timeZone: "Asia/Kolkata" }).format(updatedAt);
+  const date = updatedAt instanceof Date && !Number.isNaN(updatedAt.getTime())
+    ? new Intl.DateTimeFormat("en-IN", { dateStyle: "full", timeZone: "Asia/Kolkata" }).format(updatedAt)
+    : null;
   const articleText = articles.map((section) => section.body).join("\n\n");
   const hasLearningContent = preKnowledge.length > 0 || wordsBefore.length > 0 || articles.length > 0 || build.length > 0 || drills.length > 0 || weighing.length > 0 || vocabulary.length > 0 || reminders.length > 0 || economics.length > 0 || additional.length > 0;
 
@@ -130,7 +138,7 @@ export default function DigestCards({ sections, updatedAt }: { sections: DigestS
       <header className="border-b border-border pb-8 sm:pb-10">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary"><Sparkles size={14} aria-hidden="true" /> Daily learning workspace</div>
         <h1 className="mt-5 max-w-4xl text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-5xl">{topic ? <>Today&rsquo;s Debate Topic<span className="mt-2 block font-serif font-normal text-primary">{topic}</span></> : "Today’s Debate Digest"}</h1>
-        <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays size={15} aria-hidden="true" />{date}</p>
+        {date && <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays size={15} aria-hidden="true" />{date}</p>}
       </header>
 
       {!hasLearningContent ? <section className="mx-auto flex min-h-[42vh] max-w-md flex-col items-center justify-center text-center"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><BookOpenText size={27} aria-hidden="true" /></span><h2 className="mt-5 text-xl font-semibold text-foreground">Today&rsquo;s Digest is still being prepared.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Please check back later.</p></section> : <div className="mt-8 space-y-6 sm:mt-10 sm:space-y-8">

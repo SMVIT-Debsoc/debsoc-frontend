@@ -34,6 +34,24 @@ export type DigestSection = {
   known: boolean;
 };
 
+/** Keep parser output safe for renderers and for callers receiving unknown data. */
+export function normalizeDigestSections(value: unknown): DigestSection[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return [];
+
+    const candidate = entry as { title?: unknown; body?: unknown; known?: unknown };
+    if (typeof candidate.title !== "string" || typeof candidate.body !== "string") return [];
+
+    const title = candidate.title.trim();
+    const body = candidate.body.trim();
+    if (!title || !body) return [];
+
+    return [{ title, body, known: candidate.known === true }];
+  });
+}
+
 /** Normalise a line for heading comparison: strip markdown/punctuation/emoji-ish
  * decoration, collapse whitespace, uppercase. */
 function normalizeHeading(line: string): string {
@@ -85,7 +103,9 @@ function detectHeading(rawLine: string): { title: string; known: boolean } | nul
   return null;
 }
 
-export function parseDigest(text: string): DigestSection[] {
+export function parseDigest(text: unknown): DigestSection[] {
+  if (typeof text !== "string" || !text.trim()) return [];
+
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   const sections: DigestSection[] = [];
 
@@ -117,5 +137,5 @@ export function parseDigest(text: string): DigestSection[] {
     sections.unshift({ title: "Intro", body: intro, known: false });
   }
 
-  return sections;
+  return normalizeDigestSections(sections);
 }
