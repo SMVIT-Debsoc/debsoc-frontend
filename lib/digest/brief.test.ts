@@ -85,3 +85,28 @@ test("retains long editorial and argument bodies as source content", () => {
   assert.match(model.build[0]?.body ?? "", /Sentence 180\./);
 });
 
+test("keeps debate build, rebuttals, weighing, and vocabulary as separate data sections", () => {
+  const model = buildDigestBriefModel(parseDigest(`
+VOCAB SESSION
+Burden: the obligation to prove a claim.
+
+WEIGHING LANGUAGE TO USE
+Impact comparison: Compare scale and likelihood.
+
+REBUTTAL DRILLS
+CLAIM: They say the policy is too expensive.
+RESPONSE: Compare it with the cost of inaction.
+
+YOUR DEBATING BUILD
+PROPOSITION: The policy is feasible.
+OPPOSITION: The policy creates trade-offs.
+`));
+
+  assert.equal(model.build.length, 1);
+  assert.equal(model.rebuttals.length, 1);
+  assert.equal(model.weighing.length, 1);
+  assert.equal(model.vocabulary.length, 1);
+  assert.notEqual(model.build, model.rebuttals);
+  assert.notEqual(model.rebuttals, model.weighing);
+  assert.notEqual(model.weighing, model.vocabulary);
+});

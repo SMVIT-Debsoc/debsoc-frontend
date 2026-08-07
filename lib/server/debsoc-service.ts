@@ -5,6 +5,7 @@ import { authenticateRole, normalizeEmail } from "@/lib/server/auth-models";
 import type { DebsocRole } from "@/lib/server/roles";
 import { getOrLoad, invalidateTags } from "@/lib/server/cache/cache";
 import { CACHE_TAGS, cacheKeys } from "@/lib/server/cache/keys";
+import {migrateParticipantReferences, type RoleKey} from "@/lib/server/techhead/role-migration";
 
 // Roster mutations (register/verify/unverify/delete/role-change) all alter the
 // members/cabinet/presidents lists the dashboard bootstrap reads, so each
@@ -262,65 +263,6 @@ async function deleteEntityImpl(entity: "president" | "cabinet" | "member", id: 
   return { message: "Member removed successfully" };
 }
 
-type RoleKey = "president" | "cabinet" | "member";
-
-// Every table + column-triple that references a participant across President/cabinet/Member.
-// Each entry lists the model name (as it appears on the Prisma client) and the
-// role-scoped column names in that model.
-const PARTICIPANT_REFERENCE_MAP: Array<{
-  model:
-    | "attendance"
-    | "sessionRoleAssignment"
-    | "teamSpeakerAssignment"
-    | "roomAdjudicatorAssignment"
-    | "unassignedParticipant"
-    | "speakerScoreRecord"
-    | "chairFeedbackRecord"
-    | "adjudicatorScoreRecord"
-    | "memberMetricSnapshot"
-    | "pairMetricSnapshot"
-    | "teamDynamicsRating"
-    | "leaderboardSnapshot";
-  cols: { member: string; cabinet: string; president: string };
-}> = [
-  { model: "attendance", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "sessionRoleAssignment", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "teamSpeakerAssignment", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "roomAdjudicatorAssignment", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "unassignedParticipant", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "speakerScoreRecord", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "speakerScoreRecord", cols: { member: "scoredByMemberId", cabinet: "scoredByCabinetId", president: "scoredByPresidentId" } },
-  { model: "chairFeedbackRecord", cols: { member: "speakerMemberId", cabinet: "speakerCabinetId", president: "speakerPresidentId" } },
-  { model: "chairFeedbackRecord", cols: { member: "chairMemberId", cabinet: "chairCabinetId", president: "chairPresidentId" } },
-  { model: "adjudicatorScoreRecord", cols: { member: "chairMemberId", cabinet: "chairCabinetId", president: "chairPresidentId" } },
-  { model: "adjudicatorScoreRecord", cols: { member: "adjudicatorMemberId", cabinet: "adjudicatorCabinetId", president: "adjudicatorPresidentId" } },
-  { model: "memberMetricSnapshot", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-  { model: "pairMetricSnapshot", cols: { member: "memberAId", cabinet: "cabinetAId", president: "presidentAId" } },
-  { model: "pairMetricSnapshot", cols: { member: "memberBId", cabinet: "cabinetBId", president: "presidentBId" } },
-  { model: "teamDynamicsRating", cols: { member: "raterMemberId", cabinet: "raterCabinetId", president: "raterPresidentId" } },
-  { model: "teamDynamicsRating", cols: { member: "teammateMemberId", cabinet: "teammateCabinetId", president: "teammatePresidentId" } },
-  { model: "leaderboardSnapshot", cols: { member: "memberId", cabinet: "cabinetId", president: "presidentId" } },
-];
-
-async function fetchExistingRecord(role: RoleKey, id: string) {
-  if (role === "president") return prisma.president.findUnique({ where: { id } });
-  if (role === "cabinet") return prisma.cabinet.findUnique({ where: { id } });
-  return prisma.member.findUnique({ where: { id } });
-}
-
-async function assertEmailAvailableForRole(role: RoleKey, email: string) {
-  if (role === "president") {
-    const existing = await prisma.president.findUnique({ where: { email } });
-    if (existing) throw new Error("A president with that email already exists");
-  } else if (role === "cabinet") {
-    const existing = await prisma.cabinet.findUnique({ where: { email } });
-    if (existing) throw new Error("A cabinet member with that email already exists");
-  } else {
-    const existing = await prisma.member.findUnique({ where: { email } });
-    if (existing) throw new Error("A member with that email already exists");
-  }
-}
-
 async function changeEntityRoleImpl(
   fromRole: RoleKey,
   toRole: RoleKey,
@@ -328,65 +270,66 @@ async function changeEntityRoleImpl(
   options: { position?: string; techHeadId: string },
 ) {
   if (!id) throw new Error("User ID is required");
+  if (!options.techHeadId) throw new Error("TechHead authorization is required");
   if (fromRole === toRole) throw new Error("Source and target roles are the same");
   if (toRole === "cabinet" && !options.position?.trim()) {
     throw new Error("A cabinet position is required when promoting or demoting to cabinet");
   }
 
-  const source = await fetchExistingRecord(fromRole, id);
-  if (!source) throw new Error("Source user not found");
-
-  await assertEmailAvailableForRole(toRole, source.email);
-
   const result = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
-    // 1. Create the new record with the same identity/credentials and verified status.
-    let newId: string;
-    const baseData = {
-      name: source.name,
-      email: source.email,
-      password: source.password,
-      isVerified: source.isVerified,
-      verifiedByTechHeadId: source.isVerified ? options.techHeadId : null,
-    };
-
-    if (toRole === "president") {
-      const created = await tx.president.create({ data: baseData });
-      newId = created.id;
-    } else if (toRole === "cabinet") {
-      const created = await tx.cabinet.create({
-        data: { ...baseData, position: options.position!.trim() },
+      const actor = await tx.techHead.findUnique({
+        where: {id: options.techHeadId},
+        select: {id: true},
       });
-      newId = created.id;
-    } else {
-      const created = await tx.member.create({ data: baseData });
-      newId = created.id;
-    }
+      if (!actor) throw new Error("TechHead authorization is invalid");
 
-    // 2. Rewrite every cross-table reference from old ID to new ID (moving column too).
-    const fromCol = (m: (typeof PARTICIPANT_REFERENCE_MAP)[number]["cols"]) => m[fromRole];
-    const toCol = (m: (typeof PARTICIPANT_REFERENCE_MAP)[number]["cols"]) => m[toRole];
+      const source =
+        fromRole === "president"
+          ? await tx.president.findUnique({where: {id}})
+          : fromRole === "cabinet"
+            ? await tx.cabinet.findUnique({where: {id}})
+            : await tx.member.findUnique({where: {id}});
+      if (!source) throw new Error("Source user not found");
 
-    type ReferenceDelegate = {
-      updateMany(args: {
-        where: Record<string, string>;
-        data: Record<string, string | null>;
-      }): Promise<unknown>;
-    };
+      const baseData = {
+        name: source.name,
+        email: source.email,
+        password: source.password,
+        isVerified: source.isVerified,
+        verifiedByTechHeadId: source.isVerified ? source.verifiedByTechHeadId : null,
+      };
 
-    await Promise.all(
-      PARTICIPANT_REFERENCE_MAP.map((entry) => {
-        const from = fromCol(entry.cols);
-        const to = toCol(entry.cols);
-        const delegate = tx[entry.model] as unknown as ReferenceDelegate;
-        return delegate.updateMany({
-          where: { [from]: id },
-          data: { [from]: null, [to]: newId },
+      let newId: string;
+      if (toRole === "president") {
+        const destination = await tx.president.upsert({
+          where: {email: source.email},
+          create: baseData,
+          update: baseData,
         });
-      }),
-    );
+        newId = destination.id;
+      } else if (toRole === "cabinet") {
+        const destination = await tx.cabinet.upsert({
+          where: {email: source.email},
+          create: {...baseData, position: options.position!.trim()},
+          update: {...baseData, position: options.position!.trim()},
+        });
+        newId = destination.id;
+      } else {
+        const destination = await tx.member.upsert({
+          where: {email: source.email},
+          create: baseData,
+          update: baseData,
+        });
+        newId = destination.id;
+      }
 
-    // 3. Delete the original role record now that nothing references it.
+      // Each participant reference, including both SparRecord slots, is
+      // rewritten as one old-column-null/new-column-value UPDATE.
+      await migrateParticipantReferences(tx, fromRole, toRole, id, newId);
+
+      // Delete the original role record only after every dependent reference,
+      // including check-constrained SparRecord rows, has been validated.
     if (fromRole === "president") {
       await tx.president.delete({ where: { id } });
     } else if (fromRole === "cabinet") {
@@ -395,7 +338,7 @@ async function changeEntityRoleImpl(
       await tx.member.delete({ where: { id } });
     }
 
-    return { newId };
+      return {newId};
     },
     { timeout: 30000, maxWait: 10000 },
   );

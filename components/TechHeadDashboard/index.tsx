@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {motion, AnimatePresence} from "framer-motion";
 import {
     ShieldCheck,
@@ -16,6 +16,7 @@ import {
     Gavel,
     ArrowUpCircle,
     ArrowDownCircle,
+    LogOut,
     X,
 } from "lucide-react";
 import toast, {Toaster} from "react-hot-toast";
@@ -28,7 +29,6 @@ import ThemeToggle from "@/components/pairing/ThemeToggle";
 import DebassWorkspaceProvider, { useDebassWorkspace } from "@/components/pairing/DebassWorkspaceProvider";
 import AssistantSettings from "@/components/pairing/AssistantSettings";
 import { PageSkeleton } from "@/components/pairing/Loading";
-import HoldToConfirmLogout from "@/components/pairing/HoldToConfirmLogout";
 import { SecondaryButton } from "@/components/pairing/ui";
 
 interface UserRecord {
@@ -50,6 +50,10 @@ interface VerifiedData {
     verifiedCabinet: UserRecord[];
     verifiedMembers: UserRecord[];
 }
+
+const ROLE_CHANGE_FAILURE = "Could not change this user’s role. No records were deleted. Please try again.";
+const ROLE_CHANGE_NETWORK_FAILURE = "We couldn’t complete that action. Please try again.";
+const TECHHEAD_ACTION_FAILURE = "We couldn’t complete that action. Please try again.";
 
 export default function TechHeadDashboard() {
     const [unverified, setUnverified] = useState<UnverifiedData | null>(null);
@@ -84,7 +88,68 @@ export default function TechHeadDashboard() {
     } | null>(null);
     const [rolePosition, setRolePosition] = useState("");
     const [roleSubmitting, setRoleSubmitting] = useState(false);
+    const [roleChangeError, setRoleChangeError] = useState<string | null>(null);
+    const roleChangeTriggerRef = useRef<HTMLButtonElement | null>(null);
+    const roleChangeCloseRef = useRef<HTMLButtonElement | null>(null);
+    const roleChangeDialogRef = useRef<HTMLDivElement | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ user: UserRecord; role: string } | null>(null);
+
+    const closeRoleChange = useCallback(() => {
+        if (roleSubmitting) return;
+        setRoleChange(null);
+        setRolePosition("");
+        setRoleChangeError(null);
+    }, [roleSubmitting]);
+
+    useEffect(() => {
+        if (!roleChange) {
+            const trigger = roleChangeTriggerRef.current;
+            roleChangeTriggerRef.current = null;
+            if (trigger) {
+                const focusTimer = window.setTimeout(() => trigger.focus(), 0);
+                return () => window.clearTimeout(focusTimer);
+            }
+            return;
+        }
+
+        roleChangeTriggerRef.current =
+            document.activeElement instanceof HTMLButtonElement
+                ? document.activeElement
+                : null;
+        const focusTimer = window.setTimeout(() => roleChangeCloseRef.current?.focus(), 0);
+        const handleDialogKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeRoleChange();
+                return;
+            }
+
+            if (event.key !== "Tab") return;
+            const dialog = roleChangeDialogRef.current;
+            if (!dialog) return;
+            const focusable = Array.from(
+                dialog.querySelectorAll<HTMLElement>(
+                    "button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex='-1'])",
+                ),
+            );
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        window.addEventListener("keydown", handleDialogKeyDown);
+        return () => {
+            window.clearTimeout(focusTimer);
+            window.removeEventListener("keydown", handleDialogKeyDown);
+        };
+    }, [closeRoleChange, roleChange]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -133,11 +198,10 @@ export default function TechHeadDashboard() {
                 toast.success(`Successfully ${action}ed user`);
                 fetchData();
             } else {
-                const err = await res.json();
-                toast.error(err.message || `Failed to ${action} user`);
+                toast.error(TECHHEAD_ACTION_FAILURE);
             }
         } catch {
-            toast.error("An error occurred");
+            toast.error(TECHHEAD_ACTION_FAILURE);
         }
     };
 
@@ -149,6 +213,7 @@ export default function TechHeadDashboard() {
         toRole: "President" | "Cabinet" | "Member",
     ) => {
         setRolePosition(toRole === "Cabinet" ? (user.position ?? "") : "");
+        setRoleChangeError(null);
         setRoleChange({user, fromRole, toRole});
     };
 
@@ -156,9 +221,10 @@ export default function TechHeadDashboard() {
         if (!roleChange) return;
         const {user, fromRole, toRole} = roleChange;
         if (toRole === "Cabinet" && !rolePosition.trim()) {
-            toast.error("Please enter a cabinet position");
+            setRoleChangeError("Please enter a cabinet position");
             return;
         }
+        setRoleChangeError(null);
         setRoleSubmitting(true);
         try {
             const res = await fetch("/api/techhead/change-role", {
@@ -178,11 +244,10 @@ export default function TechHeadDashboard() {
                 setRolePosition("");
                 fetchData();
             } else {
-                const err = await res.json().catch(() => ({}));
-                toast.error(err.message || "Failed to change role");
+                setRoleChangeError(ROLE_CHANGE_FAILURE);
             }
         } catch {
-            toast.error("An error occurred");
+            setRoleChangeError(ROLE_CHANGE_NETWORK_FAILURE);
         } finally {
             setRoleSubmitting(false);
         }
@@ -636,8 +701,8 @@ export default function TechHeadDashboard() {
                         initial={{opacity: 0}}
                         animate={{opacity: 1}}
                         exit={{opacity: 0}}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-                        onClick={() => !roleSubmitting && setRoleChange(null)}
+                        className="fixed inset-0 z-[110] flex items-end justify-center bg-foreground/50 p-3 backdrop-blur-sm sm:items-center sm:p-6"
+                        onClick={closeRoleChange}
                     >
                         <motion.div
                             initial={{scale: 0.95, y: 10, opacity: 0}}
@@ -645,74 +710,91 @@ export default function TechHeadDashboard() {
                             exit={{scale: 0.95, y: 10, opacity: 0}}
                             transition={{duration: 0.2}}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 relative"
+                            ref={roleChangeDialogRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="role-change-title"
+                            aria-describedby="role-change-description"
+                            className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-card p-6 text-card-foreground shadow-2xl sm:p-8"
                         >
                             <button
-                                onClick={() =>
-                                    !roleSubmitting && setRoleChange(null)
-                                }
-                                className="absolute top-4 right-4 p-2 text-zinc-500 hover:text-white rounded-lg hover:bg-white/5"
+                                ref={roleChangeCloseRef}
+                                type="button"
+                                onClick={closeRoleChange}
+                                disabled={roleSubmitting}
+                                aria-label="Close role change dialog"
+                                title="Close"
+                                className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <X size={16} />
+                                <X size={16} aria-hidden="true" />
                             </button>
-                            <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500 mb-2">
+                            <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
                                 Change Role
                             </p>
-                            <h2 className="text-xl font-light text-white mb-1">
+                            <h2 id="role-change-title" className="mb-1 text-xl font-light text-foreground">
                                 {roleChange.fromRole}{" "}
-                                <span className="text-zinc-600">→</span>{" "}
+                                <span className="text-muted-foreground">→</span>{" "}
                                 <span className="font-bold">
                                     {roleChange.toRole}
                                 </span>
                             </h2>
-                            <p className="text-sm text-zinc-500 mb-6 font-light">
+                            <p id="role-change-description" className="mb-6 text-sm font-light text-muted-foreground">
                                 {roleChange.user.name} · {roleChange.user.email}
                             </p>
 
                             {roleChange.toRole === "Cabinet" && (
                                 <div className="mb-6">
-                                    <label className="text-[10px] uppercase tracking-[0.25em] text-zinc-500 font-bold block mb-2">
+                                    <label htmlFor="role-change-position" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                                         Cabinet Position
                                     </label>
                                     <input
+                                        id="role-change-position"
                                         type="text"
                                         value={rolePosition}
                                         onChange={(e) =>
                                             setRolePosition(e.target.value)
                                         }
                                         placeholder="e.g. General Secretary"
-                                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/20"
-                                        autoFocus
+                                        className="w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                     />
                                 </div>
                             )}
 
-                            <div className="text-xs text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3 mb-6 font-light">
+                            <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-light leading-5 text-amber-900 dark:text-amber-200">
                                 Their attendance, scoring history, and pairing
                                 records will be re-linked to the new role. Login
                                 credentials are preserved.
                             </div>
 
+                            {roleChangeError && (
+                                <p className="mb-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm leading-5 text-destructive" role="alert" aria-live="polite">
+                                    {roleChangeError}
+                                </p>
+                            )}
+
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => setRoleChange(null)}
+                                    type="button"
+                                    onClick={closeRoleChange}
                                     disabled={roleSubmitting}
-                                    className="flex-1 py-3 rounded-2xl border border-white/10 text-zinc-400 hover:bg-white/5 transition-all disabled:opacity-50"
+                                    className="min-h-11 flex-1 rounded-2xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={submitRoleChange}
                                     disabled={roleSubmitting}
-                                    className="flex-1 py-3 rounded-2xl bg-white text-black font-medium hover:bg-zinc-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                    className="min-h-11 flex-1 rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2"
                                 >
                                     {roleSubmitting && (
                                         <Loader2
                                             size={14}
                                             className="motion-safe:animate-spin"
+                                            aria-hidden="true"
                                         />
                                     )}
-                                    Confirm
+                                    {roleSubmitting ? "Saving…" : "Confirm"}
                                 </button>
                             </div>
                         </motion.div>
@@ -727,15 +809,165 @@ export default function TechHeadDashboard() {
 
 function TechHeadLogoutButton() {
     const {clearKey, clearAssistantSession} = useDebassWorkspace();
+    const HOLD_DURATION_MS = 1350;
+    const RING_RADIUS = 22;
+    const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+    const [holding, setHolding] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [completed, setCompleted] = useState(false);
+    const [confirmed, setConfirmed] = useState(false);
+    const animationFrameRef = useRef<number | null>(null);
+    const startedAtRef = useRef<number | null>(null);
+    const holdingRef = useRef(false);
+    const confirmedRef = useRef(false);
+    const updateProgressRef = useRef<(timestamp: number) => void>(() => undefined);
+
+    const cancelAnimation = useCallback(() => {
+        if (animationFrameRef.current !== null) {
+            window.cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
+    }, []);
+
+    const resetHold = useCallback(() => {
+        cancelAnimation();
+        startedAtRef.current = null;
+        holdingRef.current = false;
+        setHolding(false);
+        setProgress(0);
+        setCompleted(false);
+    }, [cancelAnimation]);
+
+    const confirmLogout = useCallback(() => {
+        if (confirmedRef.current) return;
+        confirmedRef.current = true;
+        setConfirmed(true);
+        setHolding(false);
+        setCompleted(true);
+        setProgress(1);
+        clearKey();
+        clearAssistantSession();
+        void signOut({callbackUrl: "/login"});
+    }, [clearAssistantSession, clearKey]);
+
+    const updateProgress = useCallback((timestamp: number) => {
+        const startedAt = startedAtRef.current;
+        if (!holdingRef.current || startedAt === null) return;
+
+        const nextProgress = Math.min((timestamp - startedAt) / HOLD_DURATION_MS, 1);
+        setProgress(nextProgress);
+        if (nextProgress >= 1) {
+            cancelAnimation();
+            startedAtRef.current = null;
+            holdingRef.current = false;
+            confirmLogout();
+            return;
+        }
+
+        animationFrameRef.current = window.requestAnimationFrame((nextTimestamp) => updateProgressRef.current(nextTimestamp));
+    }, [cancelAnimation, confirmLogout]);
+
+    useEffect(() => {
+        updateProgressRef.current = updateProgress;
+    }, [updateProgress]);
+
+    const startHold = useCallback(() => {
+        if (holdingRef.current || confirmedRef.current) return;
+        cancelAnimation();
+        startedAtRef.current = performance.now();
+        holdingRef.current = true;
+        setCompleted(false);
+        setHolding(true);
+        setProgress(0);
+        animationFrameRef.current = window.requestAnimationFrame((timestamp) => updateProgressRef.current(timestamp));
+    }, [cancelAnimation]);
+
+    useEffect(() => {
+        const cancelOnWindowExit = () => resetHold();
+        const cancelOnVisibilityChange = () => {
+            if (document.visibilityState !== "visible") cancelOnWindowExit();
+        };
+
+        window.addEventListener("blur", cancelOnWindowExit);
+        document.addEventListener("visibilitychange", cancelOnVisibilityChange);
+        return () => {
+            window.removeEventListener("blur", cancelOnWindowExit);
+            document.removeEventListener("visibilitychange", cancelOnVisibilityChange);
+            cancelAnimation();
+        };
+    }, [cancelAnimation, resetHold]);
+
+    const releaseHold = () => {
+        if (holdingRef.current) resetHold();
+    };
+
+    const progressOffset = RING_CIRCUMFERENCE * (1 - progress);
 
     return (
-        <HoldToConfirmLogout
-            onConfirm={() => {
-                clearKey();
-                clearAssistantSession();
-                void signOut({callbackUrl: "/login"});
+        <button
+            type="button"
+            aria-label="Hold to log out"
+            title="Hold to log out"
+            disabled={confirmed}
+            aria-disabled={confirmed}
+            onPointerDown={(event) => {
+                event.preventDefault();
+                event.currentTarget.setPointerCapture(event.pointerId);
+                startHold();
             }}
-        />
+            onPointerUp={releaseHold}
+            onPointerCancel={releaseHold}
+            onPointerLeave={releaseHold}
+            onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    resetHold();
+                    return;
+                }
+                if ((event.key === "Enter" || event.key === " ") && !event.repeat) {
+                    event.preventDefault();
+                    startHold();
+                }
+            }}
+            onKeyUp={(event) => {
+                if (event.key === "Enter" || event.key === " ") releaseHold();
+            }}
+            onBlur={releaseHold}
+            className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-destructive/35 bg-destructive/10 p-0 text-destructive backdrop-blur-md transition hover:bg-destructive/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-70 motion-reduce:transition-none"
+        >
+            <svg
+                className="pointer-events-none absolute inset-0 h-full w-full -rotate-90"
+                viewBox="0 0 48 48"
+                fill="none"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <circle cx="24" cy="24" r={RING_RADIUS} className="text-destructive/25" stroke="currentColor" strokeWidth="2" />
+                <circle
+                    cx="24"
+                    cy="24"
+                    r={RING_RADIUS}
+                    className="text-destructive transition-[stroke-dashoffset] duration-75 ease-linear motion-reduce:transition-none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray={RING_CIRCUMFERENCE}
+                    strokeDashoffset={progressOffset}
+                />
+            </svg>
+            <LogOut size={18} aria-hidden="true" />
+            <span className="sr-only" role="status" aria-live="polite">
+                {completed ? "Logging out…" : holding ? "Keep holding to log out" : "Hold to log out"}
+            </span>
+            <span
+                className="sr-only"
+                role="progressbar"
+                aria-label="Logout confirmation progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress * 100)}
+            />
+        </button>
     );
 }
 

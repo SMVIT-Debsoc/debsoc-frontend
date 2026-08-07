@@ -4,6 +4,7 @@ import { changeEntityRole } from "@/lib/server/debsoc-service";
 
 type RoleKey = "president" | "cabinet" | "member";
 const ALLOWED: RoleKey[] = ["president", "cabinet", "member"];
+const ROLE_CHANGE_FAILURE = "Could not change this user’s role. No records were deleted. Please try again.";
 
 export async function POST(request: Request) {
   const guard = await requireSessionUser({ roles: ["TechHead"] });
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       techHeadId: guard.user.id,
     });
     return ok(result);
-  } catch (err) {
-    return error(err instanceof Error ? err.message : "Internal server error", 400);
+  } catch {
+    return error(ROLE_CHANGE_FAILURE, 500);
   }
 }
