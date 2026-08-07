@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Settings2, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Settings2, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import DebassKeyPanel from "./DebassKeyPanel";
 import DebsocOverlayScrollbar from "./DebsocOverlayScrollbar";
 import { ASSISTANT_SETTINGS_OPEN_EVENT } from "./AssistantSettingsEvents";
 import { Pill } from "./ui";
+import { DEBASS_KEY_PRIVACY_COPY } from "@/lib/debass/privacy";
 
 export default function AssistantSettings({ collapsed = false }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -82,7 +83,7 @@ export default function AssistantSettings({ collapsed = false }: { collapsed?: b
             <div className="mt-4"><DebassKeyPanel /></div>
 
             <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-background/50 p-3"><div className="flex items-center gap-2 text-sm font-semibold text-foreground"><ShieldCheck size={16} className="text-primary" aria-hidden="true" /> Stored locally</div><ul className="mt-2 space-y-1 text-xs leading-5 text-muted-foreground"><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Never stored on DebSoc servers</li><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Sent only when you use DebSoc AI</li><li className="flex items-center gap-1.5"><Check size={13} className="text-chart-3" aria-hidden="true" /> Can be removed anytime</li></ul></div>
+              <div className="rounded-2xl border border-border bg-background/50 p-3"><div className="flex items-center gap-2 text-sm font-semibold text-foreground"><ShieldCheck size={16} className="text-primary" aria-hidden="true" /> Stored locally</div><p className="mt-2 text-xs leading-5 text-muted-foreground">{DEBASS_KEY_PRIVACY_COPY}</p></div>
               <div className="rounded-2xl border border-border bg-background/50 p-3"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Used by</p><ul className="mt-2 space-y-1 text-sm text-foreground"><li>Debate Assistant</li><li>Mock Drill</li><li>Mock Judge</li></ul></div>
             </div>
           </DebsocOverlayScrollbar>

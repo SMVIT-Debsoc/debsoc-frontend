@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { debassClient, DebassApiError, hasDebassBackendUrl } from "@/lib/debass/client";
+import { safeDebassErrorMessage } from "@/lib/debass/safe-error";
 import { DEBASS_MODEL } from "@/lib/debass/types";
 import { readRememberedDebassKey, removeRememberedDebassKey, writeRememberedDebassKey } from "@/lib/debass/device-key";
 
@@ -156,7 +157,7 @@ export default function DebassWorkspaceProvider({
       if (response.status !== "success") {
         setAcceptedKey(null);
         setKeyState("invalid");
-        setKeyError(response.message || "The Debass service did not accept this key.");
+        setKeyError(safeDebassErrorMessage(new DebassApiError("validation rejected", "unauthorized"), "validation"));
         return;
       }
       setAcceptedKey(candidate);
@@ -174,7 +175,7 @@ export default function DebassWorkspaceProvider({
       if (controller.signal.aborted) return;
       setAcceptedKey(null);
       setKeyState("invalid");
-      setKeyError(caught instanceof Error ? caught.message : "The key could not be validated.");
+      setKeyError(safeDebassErrorMessage(caught, "validation"));
     } finally {
       if (validationController.current === controller) validationController.current = null;
     }

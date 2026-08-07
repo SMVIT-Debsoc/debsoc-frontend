@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpenText, FileText, RefreshCw, Send, Sparkles, Trash2 } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
+import { safeDebassErrorMessage } from "@/lib/debass/safe-error";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import DebassDocumentsPanel from "./DebassDocumentsPanel";
 import { Card, PrimaryButton, SecondaryButton } from "./ui";
@@ -65,7 +66,7 @@ export default function RealChatWorkspace({ embedded = false }: { embedded?: boo
         setMessages((current) => [...current, { id: `assistant-${messageCounter.current++}`, role: "assistant", content: response.content, citations: response.citations }]);
       }
     } catch (caught) {
-      if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Chat could not complete that request.");
+      if (!controller.signal.aborted) setError(safeDebassErrorMessage(caught, "chat"));
     } finally {
       if (requestController.current === controller) {
         requestController.current = null;

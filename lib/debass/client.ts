@@ -132,14 +132,15 @@ async function readPayload(response: Response): Promise<unknown> {
 }
 
 function createResponseError(status: number, payload: unknown): DebassApiError {
-  const detail = payload && typeof payload === "object" && "detail" in payload && typeof payload.detail === "string"
-    ? payload.detail
-    : null;
+  // Response details are backend/provider-controlled and must never become a
+  // user-facing Error.message. Keep the payload parameter for the response
+  // boundary, but map status to a bounded error kind instead.
+  void payload;
   if (status === 401) return new DebassApiError("The Debass service rejected the API key.", "unauthorized", status);
   if (status === 429) return new DebassApiError("The OpenRouter free-tier limit was reached. Try again shortly.", "rate-limit", status);
   if (status === 502 || status === 503 || status === 504) return new DebassApiError("The Debass service is temporarily unavailable.", "unavailable", status);
   if (status >= 500) return new DebassApiError("Debass could not complete that request.", "request", status);
-  return new DebassApiError(detail ?? "Debass rejected that request.", "request", status);
+  return new DebassApiError("Debass rejected that request.", "request", status);
 }
 
 function authHeaders(apiKey: string, model = DEBASS_MODEL): HeadersInit {

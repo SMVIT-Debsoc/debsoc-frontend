@@ -131,7 +131,7 @@ export default function DigestPanel() {
           Refreshing…
         </p>
       )}
-      <DigestCards sections={parseDigest(state.text)} updatedAt={state.updatedAt} />
+      <DigestCards sections={parseDigest(state.text)} updatedAt={state.updatedAt} refreshing={refreshing} />
     </div>
   );
 }

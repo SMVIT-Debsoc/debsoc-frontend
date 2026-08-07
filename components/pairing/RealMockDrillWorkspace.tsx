@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ClipboardPenLine, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
+import { safeDebassErrorMessage } from "@/lib/debass/safe-error";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Field, PrimaryButton, SecondaryButton } from "./ui";
 import { AssistantSettingsPrompt, DebassWorkspaceHeader, LocalMarkdown } from "./DebassWorkspaceUI";
@@ -48,7 +49,7 @@ export default function RealMockDrillWorkspace({ embedded = false }: { embedded?
         else setResponse(nextResponse);
       }
     } catch (caught) {
-      if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Drill analysis could not be completed.");
+      if (!controller.signal.aborted) setError(safeDebassErrorMessage(caught, "drill"));
     } finally {
       if (requestController.current === controller) {
         requestController.current = null;

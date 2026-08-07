@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Gavel, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
+import { safeDebassErrorMessage } from "@/lib/debass/safe-error";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Field, PrimaryButton, SecondaryButton } from "./ui";
 import { AssistantSettingsPrompt, DebassWorkspaceHeader, LocalMarkdown } from "./DebassWorkspaceUI";
@@ -48,7 +49,7 @@ export default function RealMockJudgeWorkspace({ embedded = false }: { embedded?
         else setResult(nextResult);
       }
     } catch (caught) {
-      if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Judge analysis could not be completed.");
+      if (!controller.signal.aborted) setError(safeDebassErrorMessage(caught, "judge"));
     } finally {
       if (requestController.current === controller) {
         requestController.current = null;

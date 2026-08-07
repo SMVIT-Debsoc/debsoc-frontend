@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, FileText, FileUp, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { debassClient } from "@/lib/debass/client";
+import { safeDebassErrorMessage } from "@/lib/debass/safe-error";
 import type { DebassDocumentStatusResponse } from "@/lib/debass/types";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { Card, Pill, PrimaryButton } from "./ui";
@@ -74,7 +75,7 @@ export default function DebassDocumentsPanel() {
       }
     } catch (caught) {
       if (controller.signal.aborted || !mounted.current) return;
-      setError(caught instanceof Error ? caught.message : "Document status could not be loaded.");
+      setError(safeDebassErrorMessage(caught, "document"));
     } finally {
       if (pollControllers.current.get(jobId) === controller) pollControllers.current.delete(jobId);
     }
@@ -123,7 +124,7 @@ export default function DebassDocumentsPanel() {
         void pollJob(initial.job_id);
       }
     } catch (caught) {
-      if (!controller.signal.aborted && mounted.current) setError(caught instanceof Error ? caught.message : "Document upload failed.");
+      if (!controller.signal.aborted && mounted.current) setError(safeDebassErrorMessage(caught, "document"));
     } finally {
       if (uploadController.current === controller) uploadController.current = null;
       if (mounted.current) setUploading(false);
@@ -164,7 +165,7 @@ function DocumentRow({ job, onRetry }: { job: DocumentJob; onRetry: () => void }
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-3 py-3">
       <div className="flex min-w-0 items-center gap-2">
         {job.status === "done" ? <CheckCircle2 size={16} className="shrink-0 text-chart-3" aria-hidden="true" /> : job.status === "failed" ? <XCircle size={16} className="shrink-0 text-destructive" aria-hidden="true" /> : <Loader2 size={16} className="shrink-0 motion-safe:animate-spin text-primary" aria-hidden="true" />}
-        <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{job.filename}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{job.status === "done" ? "Searchable" : job.status}{job.status === "failed" && job.error ? ` · ${job.error}` : ""}</p></div>
+        <div className="min-w-0"><p className="truncate text-xs font-medium text-foreground">{job.filename}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{job.status === "done" ? "Searchable" : job.status}{job.status === "failed" ? " · Processing failed. Retry when available." : ""}</p></div>
       </div>
       {terminal && job.status === "failed" && <PrimaryButton type="button" onClick={onRetry} variant="default" className="min-h-8 px-2 text-xs"><RefreshCw size={13} aria-hidden="true" /> Retry</PrimaryButton>}
     </div>

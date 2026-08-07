@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "NODE_ENV=production node --experimental-strip-types server.ts",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test lib/digest/*.test.ts lib/spar/*.test.ts lib/server/repositories/*.test.ts lib/server/sessions/*.test.ts lib/server/pairing/*.test.ts",
+    "test": "node --experimental-strip-types --test lib/debass/*.test.ts lib/digest/*.test.ts lib/spar/*.test.ts lib/server/repositories/*.test.ts lib/server/sessions/*.test.ts lib/server/pairing/*.test.ts",
     "test:repositories": "node --experimental-strip-types --test lib/server/repositories/*.test.ts",
     "test:services": "node --experimental-strip-types --test lib/server/sessions/*.test.ts",
     "test:pairing-internals": "node --experimental-strip-types --test lib/server/pairing/*.test.ts",
@@ -53,5 +53,8 @@
     "eslint-config-next": "^16.3.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^5"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.1"
   }
 }

@@ -5,6 +5,7 @@ import { ShieldCheck, Settings2, Sparkles } from "lucide-react";
 import { useDebassWorkspace } from "./DebassWorkspaceProvider";
 import { requestAssistantSettingsOpen } from "./AssistantSettingsEvents";
 import { Pill, SectionHeader } from "./ui";
+import { DEBASS_KEY_PRIVACY_COPY } from "@/lib/debass/privacy";
 
 export function DebassWorkspaceHeader({ title, subtitle }: { title: string; subtitle: string }) {
   const { healthState, keyState } = useDebassWorkspace();
@@ -32,7 +33,7 @@ export function OpenAssistantSettingsButton({ label = "Open AI Connection Center
 export function AssistantSettingsPrompt() {
   const { keyState } = useDebassWorkspace();
   if (keyState === "valid") return null;
-  return <section className="rounded-[24px] border border-primary/20 bg-card/80 p-4 shadow-sm" aria-labelledby="connect-debsoc-ai-title"><div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles size={18} aria-hidden="true" /></span><div className="min-w-0"><h2 id="connect-debsoc-ai-title" className="text-sm font-semibold text-foreground">Connect DebSoc AI</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">This feature requires an OpenRouter API key. Your key stays in this browser and is sent only to the configured DebSoc AI service when you explicitly validate or use it.</p><p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"><ShieldCheck size={13} className="text-chart-3" aria-hidden="true" /> Connection is opt-in and explicit.</p></div></div><OpenAssistantSettingsButton label="Connect AI" /></div></section>;
+  return <section className="rounded-[24px] border border-primary/20 bg-card/80 p-4 shadow-sm" aria-labelledby="connect-debsoc-ai-title"><div className="flex flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles size={18} aria-hidden="true" /></span><div className="min-w-0"><h2 id="connect-debsoc-ai-title" className="text-sm font-semibold text-foreground">Connect DebSoc AI</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">This feature requires an OpenRouter API key. {DEBASS_KEY_PRIVACY_COPY}</p><p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground"><ShieldCheck size={13} className="text-chart-3" aria-hidden="true" /> Connection is opt-in and explicit.</p></div></div><OpenAssistantSettingsButton label="Connect AI" /></div></section>;
 }
 
 export function LocalMarkdown({ content }: { content: string }) {

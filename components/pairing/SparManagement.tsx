@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Award,
   BookOpen,
   CalendarDays,
   Check,
+  CheckCircle2,
   Church,
   CircleDot,
+  CircleAlert,
   Globe2,
   History,
   Landmark,
@@ -32,6 +35,7 @@ import { CardSkeleton, ListSkeleton } from "./Loading";
 import type { Participant } from "./types";
 import { benchPositions } from "@/types/pairing";
 import { sparMotionCategories } from "@/types/spar-motions";
+import { getSparRankMarker, SPAR_SUCCESS_DURATION_MS, SPAR_SUCCESS_MESSAGE } from "@/lib/spar/ui";
 import {
   formatSparScore,
   isValidSparScoreSet,
@@ -110,10 +114,19 @@ function displayInitials(name: string) {
 }
 
 function RankDoodle({ rank }: { rank: number }) {
+  const marker = getSparRankMarker(rank);
+  const toneClass = marker.tone === "gold"
+    ? "text-amber-500 dark:text-amber-300"
+    : marker.tone === "silver"
+      ? "text-slate-500 dark:text-slate-300"
+      : marker.tone === "bronze"
+        ? "text-orange-700 dark:text-orange-300"
+        : "text-primary";
+  const Icon = marker.kind === "trophy" ? Trophy : Medal;
+
   return (
-    <span className="inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-full bg-primary/10 px-2 text-primary" aria-label={`rank ${rank}`}>
-      {rank <= 3 ? <Trophy size={18} aria-hidden="true" /> : <Medal size={18} aria-hidden="true" />}
-      {rank > 3 && <span className="text-xs font-semibold">{rank}</span>}
+    <span role="img" aria-label={marker.label} className={`inline-flex h-9 min-w-9 items-center justify-center gap-1 rounded-full bg-primary/10 px-2 ${toneClass}`}>
+      {marker.kind === "numeric" ? <span className="text-xs font-semibold">{rank}</span> : <Icon size={18} strokeWidth={2.25} aria-hidden="true" />}
     </span>
   );
 }
@@ -198,10 +211,56 @@ export default function SparManagement({
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [deletingSparId, setDeletingSparId] = useState<string | null>(null);
+  const [deleteConfirmSparId, setDeleteConfirmSparId] = useState<string | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const deleteDialogConfirmRef = useRef<HTMLButtonElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const successDismissTimer = useRef<number | null>(null);
+
+  function clearSuccessDismissTimer() {
+    if (successDismissTimer.current !== null) {
+      window.clearTimeout(successDismissTimer.current);
+      successDismissTimer.current = null;
+    }
+  }
+
+  function showSubmissionSuccess() {
+    clearSuccessDismissTimer();
+    setSuccessMessage(SPAR_SUCCESS_MESSAGE);
+    successDismissTimer.current = window.setTimeout(() => {
+      setSuccessMessage(null);
+      successDismissTimer.current = null;
+    }, SPAR_SUCCESS_DURATION_MS);
+  }
+
+  function resetSparForm() {
+    setSparDate(todayInputValue());
+    setMotionType("");
+    setDebateFormat("BP");
+    setBpPosition("OG");
+    setApSide("GOV");
+    setIsIronMan(false);
+    setTeammateKey("");
+    setSecondTeammateKey("");
+    setSelectedRole(getSparRolesForPosition("OG")[0]);
+    setFirstScore("");
+    setSecondScore("");
+    setThirdScore("");
+    setTeamRank("1");
+    setMessage(null);
+    setError(null);
+  }
+
+  useEffect(() => () => {
+    if (successDismissTimer.current !== null) {
+      window.clearTimeout(successDismissTimer.current);
+      successDismissTimer.current = null;
+    }
+  }, []);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -286,9 +345,32 @@ export default function SparManagement({
     finally { setHistoryLoading(false); }
   }
 
+  function requestDelete(sparId: string, trigger?: HTMLButtonElement) {
+    if (deletingSparId !== null) return;
+    deleteTriggerRef.current = trigger ?? null;
+    setDeleteConfirmSparId(sparId);
+  }
+
+  useEffect(() => {
+    if (deleteConfirmSparId === null) return;
+    const trigger = deleteTriggerRef.current;
+    const focusTimer = window.setTimeout(() => deleteDialogConfirmRef.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setDeleteConfirmSparId(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKeyDown);
+      window.requestAnimationFrame(() => trigger?.focus());
+    };
+  }, [deleteConfirmSparId]);
+
   async function removeSpar(sparId: string) {
     if (deletingSparId !== null) return;
-    if (!window.confirm("Delete this Spar record? This cannot be undone.")) return;
 
     setDeletingSparId(sparId);
     setHistoryError(null);
@@ -305,6 +387,13 @@ export default function SparManagement({
     } finally {
       setDeletingSparId(null);
     }
+  }
+
+  function confirmDelete() {
+    if (deleteConfirmSparId === null) return;
+    const sparId = deleteConfirmSparId;
+    setDeleteConfirmSparId(null);
+    void removeSpar(sparId);
   }
 
   useEffect(() => {
@@ -329,6 +418,8 @@ export default function SparManagement({
     setSubmitting(true);
     setError(null);
     setMessage(null);
+    setSuccessMessage(null);
+    clearSuccessDismissTimer();
     const teammates = isIronMan
       ? []
       : [firstTeammate, secondTeammate]
@@ -361,10 +452,8 @@ export default function SparManagement({
         const body = await response.json().catch(() => ({}));
         throw new Error(typeof body.message === "string" ? body.message : "Spar submission failed.");
       }
-      setMessage("Spar submitted.");
-      setFirstScore("");
-      setSecondScore("");
-      setThirdScore("");
+      resetSparForm();
+      showSubmissionSuccess();
       await Promise.all([loadSparData(), loadHistory()]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Spar submission failed.");
@@ -379,7 +468,7 @@ export default function SparManagement({
         <div className="flex flex-wrap items-start justify-between gap-4"><div className="max-w-2xl"><div className="flex items-center gap-2 text-primary"><Award size={19} aria-hidden="true" /><span className="text-xs font-semibold uppercase tracking-[0.18em]">Spar Practice</span></div><h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Record the round. Learn from the next one.</h1><p className="mt-2 text-sm leading-6 text-muted-foreground">Capture a real practice debate, review your performance, and keep your live practice ranking moving.</p></div><SecondaryButton type="button" disabled={loading} onClick={() => void loadSparData()}><RefreshCw size={15} className={loading ? "motion-safe:animate-spin" : ""} aria-hidden="true" /> Refresh data</SecondaryButton></div>
         {statCards.length > 0 && <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">{statCards.map((stat) => <SparStatCard key={stat.label} {...stat} />)}</div>}
       </section>
-      {(message || error) && <div role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"} className={`rounded-xl border px-4 py-3 text-sm ${error ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-chart-3/30 bg-chart-3/10 text-chart-3"}`}>{error ?? message}</div>}
+      {(message || successMessage || error) && <div role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"} className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${error ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-chart-3/30 bg-chart-3/10 text-chart-3"}`}>{!error && <CheckCircle2 size={17} aria-hidden="true" />}<span>{error ?? successMessage ?? message}</span></div>}
 
       <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(280px,1.25fr)]">
         <Card className="min-w-0 overflow-visible p-4 sm:p-6">
@@ -438,7 +527,16 @@ export default function SparManagement({
 
         <Card className="min-w-0 self-start p-4 sm:p-5"><SectionHeader title="Practice leaderboard" subtitle={leaderboard.myRank ? `Your current rank: #${leaderboard.myRank.rank}` : "Current all-practice ranking"} />{loading ? <CardSkeleton lines={4} /> : leaderboard.rankings.length === 0 ? <EmptyState title="No rankings yet" body="Record a spar to create the first live practice ranking." /> : <div className="space-y-2">{leaderboard.rankings.map((entry) => <div key={`${entry.userRole}:${entry.userId}`} className="rounded-2xl border border-border bg-muted/35 p-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transform-none"><div className="flex min-w-0 items-center gap-3"><RankDoodle rank={entry.rank} /><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary" aria-hidden="true">{displayInitials(entry.userName)}</div><div className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-foreground">{entry.userName}</span>{(entry.totalSpars > 0 || entry.currentStreak > 0) && <span className="mt-0.5 block text-xs text-muted-foreground">{entry.totalSpars > 0 ? `${entry.totalSpars} practice rounds` : ""}{entry.currentStreak > 0 ? ` · ${entry.currentStreak} round streak` : ""}</span>}</div><Pill tone="blue">{entry.userRole}</Pill></div></div>)}</div>}</Card>
       </div>
-      <section className="rounded-[24px] border border-border bg-card/70 p-4 sm:p-5" aria-labelledby="spar-history-heading"><div className="flex flex-wrap items-start justify-between gap-3"><div className="flex items-center gap-2"><History size={18} className="text-primary" aria-hidden="true" /><div><h2 id="spar-history-heading" className="text-lg font-semibold text-foreground">Recent Spar History</h2><p className="mt-0.5 text-sm text-muted-foreground">Your submitted practice rounds, newest first.</p></div></div>{hasMoreLoadedHistory && <SecondaryButton type="button" onClick={() => setShowAllHistory((current) => !current)} className="min-h-10 px-3 text-xs">{showAllHistory ? "Show recent" : "View all loaded"}</SecondaryButton>}</div>{historyLoading ? <div className="mt-4"><ListSkeleton count={3} /></div> : historyError ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive" role="alert"><span>{historyError}</span><SecondaryButton type="button" onClick={() => void loadHistory()} className="min-h-10 px-3 text-xs"><RefreshCw size={14} aria-hidden="true" /> Retry</SecondaryButton></div> : history.records.length === 0 ? <div className="mt-4"><EmptyState title="No spars recorded yet" body="Record your first practice debate to start tracking your improvement." /></div> : <div className="mt-4 grid gap-3 md:grid-cols-2">{visibleHistory.map((record) => <article key={record.id} className="rounded-2xl border border-border bg-muted/30 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{record.motionType}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><CalendarDays size={13} aria-hidden="true" /> {formatSparDate(record.sparDate)}</p></div><button type="button" onClick={() => void removeSpar(record.id)} disabled={deletingSparId !== null} aria-label={`Delete Spar from ${formatSparDate(record.sparDate)}`} title="Delete Spar" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"><span aria-hidden="true">{deletingSparId === record.id ? <Loader2 size={16} className="motion-safe:animate-spin" /> : <Trash2 size={16} />}</span></button></div><dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-muted-foreground">Format</dt><dd className="mt-0.5 font-medium text-foreground">{formatSparPosition(record)}</dd></div>{formatSparScores(record) && <div><dt className="text-muted-foreground">Scores</dt><dd className="mt-0.5 font-medium text-foreground">{formatSparScores(record)}</dd></div>}<div><dt className="text-muted-foreground">Team rank</dt><dd className="mt-0.5 font-medium text-foreground">{record.teamRank}</dd></div></dl></article>)}</div>}</section>
+      <section className="rounded-[24px] border border-border bg-card/70 p-4 sm:p-5" aria-labelledby="spar-history-heading"><div className="flex flex-wrap items-start justify-between gap-3"><div className="flex items-center gap-2"><History size={18} className="text-primary" aria-hidden="true" /><div><h2 id="spar-history-heading" className="text-lg font-semibold text-foreground">Recent Spar History</h2><p className="mt-0.5 text-sm text-muted-foreground">Your submitted practice rounds, newest first.</p></div></div>{hasMoreLoadedHistory && <SecondaryButton type="button" onClick={() => setShowAllHistory((current) => !current)} className="min-h-10 px-3 text-xs">{showAllHistory ? "Show recent" : "View all loaded"}</SecondaryButton>}</div>{historyLoading ? <div className="mt-4"><ListSkeleton count={3} /></div> : historyError ? <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive" role="alert"><span>{historyError}</span><SecondaryButton type="button" onClick={() => void loadHistory()} className="min-h-10 px-3 text-xs"><RefreshCw size={14} aria-hidden="true" /> Retry</SecondaryButton></div> : history.records.length === 0 ? <div className="mt-4"><EmptyState title="No spars recorded yet" body="Record your first practice debate to start tracking your improvement." /></div> : <div className="mt-4 grid gap-3 md:grid-cols-2">{visibleHistory.map((record) => <article key={record.id} className="rounded-2xl border border-border bg-muted/30 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{record.motionType}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><CalendarDays size={13} aria-hidden="true" /> {formatSparDate(record.sparDate)}</p></div><button type="button" onClick={(event) => requestDelete(record.id, event.currentTarget)} disabled={deletingSparId !== null} aria-label={`Delete Spar from ${formatSparDate(record.sparDate)}`} title="Delete Spar" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"><span aria-hidden="true">{deletingSparId === record.id ? <Loader2 size={16} className="motion-safe:animate-spin" /> : <Trash2 size={16} />}</span></button></div><dl className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><dt className="text-muted-foreground">Format</dt><dd className="mt-0.5 font-medium text-foreground">{formatSparPosition(record)}</dd></div>{formatSparScores(record) && <div><dt className="text-muted-foreground">Scores</dt><dd className="mt-0.5 font-medium text-foreground">{formatSparScores(record)}</dd></div>}<div><dt className="text-muted-foreground">Team rank</dt><dd className="mt-0.5 font-medium text-foreground">{record.teamRank}</dd></div></dl></article>)}</div>}</section>
+      {deleteConfirmSparId !== null && typeof document !== "undefined" && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-foreground/50 p-3 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={() => setDeleteConfirmSparId(null)}>
+          <div className="w-full max-w-md rounded-[24px] border border-border bg-card p-5 text-foreground shadow-2xl sm:p-6" role="alertdialog" aria-modal="true" aria-labelledby="delete-spar-title" aria-describedby="delete-spar-description" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"><CircleAlert size={19} aria-hidden="true" /></span><div><h2 id="delete-spar-title" className="text-lg font-semibold">Delete Spar?</h2><p id="delete-spar-description" className="mt-1 text-sm leading-6 text-muted-foreground">This permanently removes the selected practice record from your Spar history. This action cannot be undone.</p></div></div>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><SecondaryButton type="button" aria-label="Cancel deletion" onClick={() => setDeleteConfirmSparId(null)} className="min-h-11">Keep Spar</SecondaryButton><button ref={deleteDialogConfirmRef} type="button" onClick={confirmDelete} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition hover:bg-destructive/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"> <Trash2 size={16} aria-hidden="true" /> Delete Spar</button></div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
